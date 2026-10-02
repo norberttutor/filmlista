@@ -41,7 +41,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   típus műfajai) – Franchise (Összes / Franchise nélkül / a használtak);
   jobb szélen Rendezés (`SORTS`:
   legutóbb / legkorábban hozzáadott, legjobb értékelés, legújabb / legrégebbi megjelenés;
-  üres érték a végére). Az állapotgombok darabszámai a többi szűrőt már figyelembe veszik
+  üres érték a végére). Az állapotgombok darabszámai a többi szűrőt már figyelembe veszik.
+  Lapozás 25-ösével (`PAGE_SIZE`, `components/Pagination.js`), szűrés/rendezés váltásakor 1. oldal
 - `components/PosterCard.js` – borító (`https://image.tmdb.org/t/p/w342` + `poster_path`),
   állapotcsík, „Letöltve” jelvény, link IMDb-re (vagy TMDB-re, ha nincs IMDb ID),
   „Hozzáadva: <dátum>” a `created_at` alapján (csak megjelenítés, nem szerkeszthető),
@@ -50,7 +51,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (`watched_at`, csak „Megnézve” állapotnál; átváltáskor a mai nap), értékelés 10 csillaggal
   (+ „Törlés” link), megjegyzés, törlés megerősítéssel (a mobilos borítófalon a ceruza nyitja)
 - `components/TitleTable.js` – asztali soros nézet (≥ 1400 px, `DESKTOP_QUERY` a
-  `Watchlist`-ben; egy mérettel nagyobb betűk): balra borító + adatok (a cím mellett
+  `Watchlist`-ben): balra borító + adatok (a cím mellett
   Franchise lenyíló, üresen csak rámutatáskor látszik) + TMDB leírás (`overview`; ≥ 1800 px
   a cím mellett 4 sorban, alatta 2 sorban, teljes szöveg rámutatáskor), jobbra sorrendben
   Letöltve – Állapot – Mama – Értékelés (10 másfélszeres csillag középen, mellette „8/10”) –
@@ -86,6 +87,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   frissíti (25-ösével, a felhasználó jogosultságaival); a `Watchlist` betöltéskor hívja
 - `lib/server/omdb.js` – `fetchImdbRating()`, `omdbEnabled()` (csak route handlerben)
 - `components/ImdbBadge.js` – „IMDb 8,0” jelvény (rámutatva a szavazatok száma)
+- `components/ImdbRatingsImport.js` + `lib/imdbImport.js` – visszafogott „IMDb-értékelések
+  betöltése” gomb a Kilépés mellett: az IMDb értékelés-exportjából (CSV: `Const`, `Your Rating`)
+  a böngészőben IMDb ID alapján párosít, összefoglalót mutat, majd `applyMyRatings()`
+  (csillagértékenként egy update). Norbi döntései: csak a listán lévő címek, az IMDb csillaga
+  felülírja a sajátot, az állapot nem változik, új cím nem kerül fel. Teljesen automatikus
+  szinkron nincs (az IMDb-nek nincs API-ja, az oldal gépi olvasása tiltott).
 - `supabase/*.sql` – a már lefuttatott adatbázis-szkriptek (dokumentáció)
 
 ## Adatbázis (már létezik, lásd `supabase/`)
@@ -132,7 +139,9 @@ hozzáadás dátuma a kártyán, cím szerkesztése és törlése (`TitleEditor`
 asztali soros nézet soron belüli szerkesztéssel (`TitleTable`), csillagos értékelés,
 „Mama” jelző, rendezés (hozzáadás, értékelés, megjelenés éve), letisztított szűrősor,
 franchise-ok (beállítás + szűrő + törlés; átnevezés még nincs a felületen), neon türkiz színvilág,
-TMDB leírás a cím mellett, IMDb-értékelés (OMDb) + rendezés szerinte.
+TMDB leírás a cím mellett, IMDb-értékelés (OMDb) + rendezés szerinte, lapozás,
+saját IMDb-értékelések betöltése CSV-ből.
+Norbi listája (norbert.tutor@gmail.com) 2026-10-02-án Excelből importálva: 512 cím.
 Fejléc: „Megnézendő filmek”.
 
 ## Következő feladat

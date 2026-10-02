@@ -185,8 +185,26 @@ button:disabled {
 
 .account {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
+}
+
+/* visszafogott szöveges gomb (pl. "IMDb-értékelések betöltése") */
+.subtle-link {
+  padding: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+
+.subtle-link:hover {
+  color: var(--text);
+  text-decoration-color: currentColor;
 }
 
 /* ---------- Cím hozzáadása (TMDB kereső) ---------- */
@@ -692,7 +710,7 @@ button:disabled {
 }
 
 .titles-table td {
-  padding: 0.85rem;
+  padding: 0.75rem;
   vertical-align: middle;
   border-bottom: 1px solid var(--line);
 }
@@ -708,16 +726,16 @@ button:disabled {
 }
 
 .titles-table .col-check {
-  width: 6rem;
+  width: 5.5rem;
   text-align: center;
 }
 
 .titles-table .col-mama {
-  width: 9.25rem;
+  width: 8.5rem;
 }
 
 .titles-table .col-status {
-  width: 10.75rem; /* a "Folyamatban" még kiférjen */
+  width: 9.75rem; /* a "Folyamatban" még kiférjen */
 }
 
 .titles-table .col-rating {
@@ -741,7 +759,7 @@ button:disabled {
 }
 
 .titles-table .col-actions {
-  width: 3.75rem;
+  width: 3.5rem;
   text-align: center;
 }
 
@@ -751,13 +769,13 @@ button:disabled {
 }
 
 .titles-table select {
-  padding: 0.5rem 0.65rem;
-  font-size: 1rem;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.9rem;
 }
 
 .titles-table input[type='checkbox'] {
-  width: 1.3rem;
-  height: 1.3rem;
+  width: 1.15rem;
+  height: 1.15rem;
   accent-color: var(--accent);
   cursor: pointer;
 }
@@ -765,14 +783,14 @@ button:disabled {
 /* borító | adatok – a leírás alattuk (keskenyebb soros nézet) */
 .row-title {
   display: grid;
-  grid-template-columns: 4rem minmax(0, 1fr);
+  grid-template-columns: 3.5rem minmax(0, 1fr);
   align-items: center;
   column-gap: 0.9rem;
 }
 
 .row-title .thumb {
   grid-row: span 2;
-  width: 4rem;
+  width: 3.5rem;
 }
 
 .row-overview {
@@ -791,7 +809,7 @@ button:disabled {
 /* széles képernyőn: borító | adatok | leírás egymás mellett */
 @media (min-width: 1800px) {
   .row-title {
-    grid-template-columns: 4rem minmax(11rem, 16rem) minmax(0, 1fr);
+    grid-template-columns: 3.5rem minmax(11rem, 16rem) minmax(0, 1fr);
   }
 
   .row-title .thumb {
@@ -815,19 +833,19 @@ button:disabled {
 }
 
 .row-name {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 650;
   line-height: 1.25;
 }
 
-/* soros nézet: egy mérettel nagyobb másodlagos szövegek */
+/* soros nézet: másodlagos szövegek mérete */
 .titles-table .original,
 .titles-table .meta {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
 }
 
 .titles-table .added {
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
 }
 
 .titles-table .rating-number {
@@ -836,7 +854,7 @@ button:disabled {
   left: 100%;
   min-width: 0;
   margin-left: 0.45rem;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   white-space: nowrap;
   transform: translateY(-50%);
 }
@@ -875,7 +893,7 @@ button:disabled {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   color: var(--muted);
   transition: opacity 0.15s;
 }
@@ -896,7 +914,7 @@ button:disabled {
      lehetőség ("× … törlése…") szélességét venné fel, és szétnyomná a táblázatot */
   field-sizing: content;
   padding: 0.15rem 0.4rem;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: var(--accent);
   background: transparent;
   border-color: transparent;
@@ -950,7 +968,7 @@ button:disabled {
 .titles-table .notes-input {
   display: block;
   padding: 0.3rem 0.5rem;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   line-height: 1.35;
   color: var(--muted);
   background: transparent;
@@ -958,7 +976,7 @@ button:disabled {
   resize: none;
   /* a szöveghez igazodó magasság (Chrome/Edge); máshol marad a 2 soros mező */
   field-sizing: content;
-  max-height: 7.25rem;
+  max-height: 6.5rem;
 }
 
 .titles-table .notes-input::placeholder {
@@ -986,7 +1004,7 @@ button:disabled {
   right: 0.5rem;
   bottom: 0.3rem;
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   line-height: 1;
   color: var(--st-watched);
   pointer-events: none;
@@ -1003,8 +1021,8 @@ button:disabled {
 .icon-btn {
   display: inline-grid;
   place-items: center;
-  width: 2.35rem;
-  height: 2.35rem;
+  width: 2.1rem;
+  height: 2.1rem;
   padding: 0;
   color: var(--muted);
   background: none;
@@ -1013,13 +1031,127 @@ button:disabled {
 }
 
 .icon-btn svg {
-  width: 1.1rem;
-  height: 1.1rem;
+  width: 1rem;
+  height: 1rem;
 }
 
 .icon-btn:hover {
   color: var(--danger);
   border-color: var(--line);
+}
+
+/* ---------- IMDb-értékelések betöltése (ablak) ---------- */
+.import-body {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1.5rem;
+}
+
+.import-body p {
+  margin: 0;
+}
+
+.import-summary {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.import-changes {
+  max-height: 16rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.4rem 0.75rem;
+  list-style: none;
+  font-size: 0.85rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.import-changes li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.import-changes li:last-child {
+  border-bottom: 0;
+}
+
+.import-arrow {
+  flex: none;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.import-arrow b {
+  color: var(--accent);
+}
+
+/* ---------- Lapozó ---------- */
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem 1rem;
+  padding: 0 var(--gutter) 3rem;
+}
+
+/* a lista alsó margója helyett a lapozó ad helyet */
+.table-wrap:has(+ .pagination),
+.grid:has(+ .pagination) {
+  padding-bottom: 1.5rem;
+}
+
+.pagination ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pagination .page {
+  min-width: 2.2rem;
+  padding: 0.35rem 0.6rem;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pagination .page:hover {
+  border-color: var(--muted);
+}
+
+.pagination .page[aria-current='page'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 650;
+}
+
+.pagination .gap {
+  align-self: center;
+  padding: 0 0.2rem;
+  color: var(--muted);
+}
+
+.pagination .ghost:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.page-info {
+  font-size: 0.85rem;
+  color: var(--muted);
 }
 
 /* ---------- Szerkesztő ablak ---------- */

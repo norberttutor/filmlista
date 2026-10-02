@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import PosterCard from '@/components/PosterCard';
+import Pagination from '@/components/Pagination';
+import ImdbRatingsImport from '@/components/ImdbRatingsImport';
 import TitleSearch from '@/components/TitleSearch';
 import TitleEditor from '@/components/TitleEditor';
 import TitleTable from '@/components/TitleTable';
@@ -16,6 +18,8 @@ const NO_FRANCHISE = 'none';
 
 // ennél szélesebb képernyőn soros (táblázatos) nézet, alatta borítófal
 const DESKTOP_QUERY = '(min-width: 1400px)';
+
+const PAGE_SIZE = 25; // ennyi cím egy oldalon
 
 const TYPES = [
   { code: 'movie', name: 'Filmek' },
@@ -178,6 +182,19 @@ export default function Watchlist({ session }) {
     return beforeStatus.filter((t) => status === 'all' || t.status === status).sort(compare);
   }, [beforeStatus, status, sort]);
 
+  // lapozás: ha a szűrés vagy a rendezés változik (más kulcs), automatikusan az 1. oldal
+  const filterKey = [type, status, genre, franchise, onlyDownloaded, sort].join('|');
+  const [pageState, setPageState] = useState({ key: '', page: 1 });
+  const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const page = Math.min(pageState.key === filterKey ? pageState.page : 1, pageCount);
+  const paged = visible.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const filtersRef = useRef(null);
+
+  function changePage(p) {
+    setPageState({ key: filterKey, page: p });
+    filtersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   function changeType(code) {
     setType(code);
     setGenre(''); // a filmek és sorozatok műfajai eltérnek
@@ -206,6 +223,12 @@ export default function Watchlist({ session }) {
 
   function replaceTitle(row) {
     setTitles((ts) => ts.map((x) => (x.id === row.id ? row : x)));
+  }
+
+  // az IMDb-importból beírt csillagok helyben is
+  function applyRatingsLocally(changes) {
+    const byId = new Map(changes.map((c) => [c.id, c.to]));
+    setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, my_rating: byId.get(t.id) } : t)));
   }
 
   function removeTitle(id) {
@@ -242,6 +265,9 @@ export default function Watchlist({ session }) {
             </button>
           )}
           <span className="muted small">{session.user.email}</span>
+          {!loading && !loadError && (
+            <ImdbRatingsImport titles={titles} onApplied={applyRatingsLocally} />
+          )}
           <button type="button" className="ghost" onClick={() => supabase.auth.signOut()}>
             Kilépés
           </button>
@@ -265,7 +291,7 @@ export default function Watchlist({ session }) {
             />
           )}
 
-          <section className="filters" aria-label="Szűrők">
+          <section className="filters" aria-label="Szűrők" ref={filtersRef}>
             <select
               className="type-select"
               aria-label="Típus"
@@ -383,7 +409,7 @@ export default function Watchlist({ session }) {
             </p>
           ) : isDesktop ? (
             <TitleTable
-              titles={visible}
+              titles={paged}
               statuses={statuses}
               franchises={franchises}
               onCreateFranchise={handleCreateFranchise}
@@ -393,7 +419,7 @@ export default function Watchlist({ session }) {
             />
           ) : (
             <ul className="grid">
-              {visible.map((t) => (
+              {paged.map((t) => (
                 <li key={t.id}>
                   <PosterCard
                     title={t}
@@ -403,6 +429,16 @@ export default function Watchlist({ session }) {
                 </li>
               ))}
             </ul>
+          )}
+
+          {ofType.length > 0 && (
+            <Pagination
+              page={page}
+              pageCount={pageCount}
+              total={visible.length}
+              pageSize={PAGE_SIZE}
+              onChange={changePage}
+            />
           )}
         </>
       )}
