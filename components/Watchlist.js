@@ -12,15 +12,40 @@ import { useMediaQuery } from '@/lib/useMediaQuery';
 // ennél szélesebb képernyőn soros (táblázatos) nézet, alatta borítófal
 const DESKTOP_QUERY = '(min-width: 1200px)';
 
-const SORTS = [
-  { code: 'newest', name: 'Legutóbb hozzáadott elöl' },
-  { code: 'oldest', name: 'Legkorábban hozzáadott elöl' },
-];
-
 const TYPES = [
-  { code: 'all', name: 'Mind' },
   { code: 'movie', name: 'Filmek' },
   { code: 'tv', name: 'Sorozatok' },
+];
+
+const byAddedDesc = (a, b) => new Date(b.created_at) - new Date(a.created_at);
+
+// üres érték (nincs értékelés / megjelenési év) mindig a lista végére kerül;
+// dir: -1 = csökkenő, 1 = növekvő
+function nullsLast(x, y, dir) {
+  if (x == null) return y == null ? 0 : 1;
+  if (y == null) return -1;
+  return dir * (x - y);
+}
+
+// egyezésnél a legutóbb hozzáadott van elöl
+const SORTS = [
+  { code: 'added_desc', name: 'Legutóbb hozzáadott', compare: byAddedDesc },
+  { code: 'added_asc', name: 'Legkorábban hozzáadott', compare: (a, b) => -byAddedDesc(a, b) },
+  {
+    code: 'rating',
+    name: 'Legjobb értékelés',
+    compare: (a, b) => nullsLast(a.my_rating, b.my_rating, -1) || byAddedDesc(a, b),
+  },
+  {
+    code: 'year_desc',
+    name: 'Legújabb megjelenés',
+    compare: (a, b) => nullsLast(a.release_year, b.release_year, -1) || byAddedDesc(a, b),
+  },
+  {
+    code: 'year_asc',
+    name: 'Legrégebbi megjelenés',
+    compare: (a, b) => nullsLast(a.release_year, b.release_year, 1) || byAddedDesc(a, b),
+  },
 ];
 
 function Chip({ active, onClick, label, count }) {
@@ -43,10 +68,10 @@ export default function Watchlist({ session }) {
 
   // szűrők
   const [status, setStatus] = useState('all');
-  const [type, setType] = useState('all');
+  const [type, setType] = useState('movie');
   const [genre, setGenre] = useState('');
   const [onlyDownloaded, setOnlyDownloaded] = useState(false);
-  const [sort, setSort] = useState('newest');
+  const [sort, setSort] = useState('added_desc');
 
   useEffect(() => {
     let cancelled = false;
@@ -79,36 +104,46 @@ export default function Watchlist({ session }) {
     };
   }, []);
 
-  // csak azok a műfajok, amelyek ténylegesen előfordulnak a listán
+  // a kiválasztott típus (filmek / sorozatok) címei
+  const ofType = useMemo(() => titles.filter((t) => t.media_type === type), [titles, type]);
+
+  // csak azok a műfajok, amelyek ennél a típusnál ténylegesen előfordulnak
   const genres = useMemo(
     () =>
-      [...new Set(titles.flatMap((t) => t.genres ?? []))].sort((a, b) =>
+      [...new Set(ofType.flatMap((t) => t.genres ?? []))].sort((a, b) =>
         a.localeCompare(b, 'hu')
       ),
-    [titles]
+    [ofType]
   );
 
   // a keresőben ezek alapján látszik, mi van már a listán
   const existingKeys = useMemo(() => new Set(titles.map(titleKey)), [titles]);
 
+  // minden szűrő az állapot kivételével – ebből jönnek az állapotgombok darabszámai
+  const beforeStatus = useMemo(
+    () =>
+      ofType.filter(
+        (t) =>
+          (!genre || (t.genres ?? []).includes(genre)) && (!onlyDownloaded || t.is_downloaded)
+      ),
+    [ofType, genre, onlyDownloaded]
+  );
+
   const countByStatus = useMemo(() => {
     const counts = {};
-    for (const t of titles) counts[t.status] = (counts[t.status] ?? 0) + 1;
+    for (const t of beforeStatus) counts[t.status] = (counts[t.status] ?? 0) + 1;
     return counts;
-  }, [titles]);
+  }, [beforeStatus]);
 
   const visible = useMemo(() => {
-    const direction = sort === 'oldest' ? 1 : -1;
-    return titles
-      .filter(
-        (t) =>
-          (status === 'all' || t.status === status) &&
-          (type === 'all' || t.media_type === type) &&
-          (!genre || (t.genres ?? []).includes(genre)) &&
-          (!onlyDownloaded || t.is_downloaded)
-      )
-      .sort((a, b) => direction * (new Date(a.created_at) - new Date(b.created_at)));
-  }, [titles, status, type, genre, onlyDownloaded, sort]);
+    const { compare } = SORTS.find((s) => s.code === sort);
+    return beforeStatus.filter((t) => status === 'all' || t.status === status).sort(compare);
+  }, [beforeStatus, status, sort]);
+
+  function changeType(code) {
+    setType(code);
+    setGenre(''); // a filmek és sorozatok műfajai eltérnek
+  }
 
   function replaceTitle(row) {
     setTitles((ts) => ts.map((x) => (x.id === row.id ? row : x)));
@@ -118,9 +153,9 @@ export default function Watchlist({ session }) {
     setTitles((ts) => ts.filter((x) => x.id !== id));
   }
 
+  // a típust (filmek / sorozatok) meghagyja
   function resetFilters() {
     setStatus('all');
-    setType('all');
     setGenre('');
     setOnlyDownloaded(false);
   }
@@ -171,33 +206,46 @@ export default function Watchlist({ session }) {
           )}
 
           <section className="filters" aria-label="Szűrők">
-            <div className="chips" role="group" aria-label="Állapot">
-              <Chip
-                active={status === 'all'}
-                onClick={() => setStatus('all')}
-                label="Mind"
-                count={titles.length}
-              />
-              {statuses.map((s) => (
-                <Chip
-                  key={s.code}
-                  active={status === s.code}
-                  onClick={() => setStatus(s.code)}
-                  label={s.name}
-                  count={countByStatus[s.code] ?? 0}
-                />
-              ))}
-            </div>
-
-            <div className="chips" role="group" aria-label="Típus">
+            <select
+              className="type-select"
+              aria-label="Típus"
+              value={type}
+              onChange={(e) => changeType(e.target.value)}
+            >
               {TYPES.map((t) => (
-                <Chip
-                  key={t.code}
-                  active={type === t.code}
-                  onClick={() => setType(t.code)}
-                  label={t.name}
-                />
+                <option key={t.code} value={t.code}>
+                  {t.name}
+                </option>
               ))}
+            </select>
+
+            <div className="filter-group">
+              <div className="chips" role="group" aria-label="Állapot">
+                <Chip
+                  active={status === 'all'}
+                  onClick={() => setStatus('all')}
+                  label="Mind"
+                  count={beforeStatus.length}
+                />
+                {statuses.map((s) => (
+                  <Chip
+                    key={s.code}
+                    active={status === s.code}
+                    onClick={() => setStatus(s.code)}
+                    label={s.name}
+                    count={countByStatus[s.code] ?? 0}
+                  />
+                ))}
+              </div>
+
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={onlyDownloaded}
+                  onChange={(e) => setOnlyDownloaded(e.target.checked)}
+                />
+                Letöltöttek
+              </label>
             </div>
 
             {genres.length > 0 && (
@@ -214,16 +262,7 @@ export default function Watchlist({ session }) {
               </label>
             )}
 
-            <label className="check">
-              <input
-                type="checkbox"
-                checked={onlyDownloaded}
-                onChange={(e) => setOnlyDownloaded(e.target.checked)}
-              />
-              Csak a letöltöttek
-            </label>
-
-            <label className="inline-field">
+            <label className="inline-field sort-field">
               Rendezés
               <select value={sort} onChange={(e) => setSort(e.target.value)}>
                 {SORTS.map((s) => (
@@ -239,6 +278,11 @@ export default function Watchlist({ session }) {
             <p className="state">
               A listád még üres. Keress rá egy filmre vagy sorozatra a „Cím hozzáadása”
               gombbal.
+            </p>
+          ) : ofType.length === 0 ? (
+            <p className="state">
+              Még nincs {type === 'tv' ? 'sorozat' : 'film'} a listádon. Váltsd át a típust,
+              vagy adj hozzá egyet a „Cím hozzáadása” gombbal.
             </p>
           ) : visible.length === 0 ? (
             <p className="state">

@@ -33,8 +33,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `app/layout.js` – Bricolage Grotesque betűtípus (`--font-main`), `lang="hu"`
 - `app/page.js` – kliensoldali session-kezelés: belépés vagy lista
 - `components/LoginForm.js` – e-mail + jelszó belépés (regisztráció nincs, ki van kapcsolva)
-- `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből, szűrők
-  (állapot, típus, műfaj, csak letöltöttek)
+- `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből; szűrősor
+  balról: Típus lenyíló (Filmek / Sorozatok, alapból Filmek, nincs „Mind”) – állapotgombok +
+  „Letöltöttek” jelölő – Műfaj (csak az adott típus műfajai); jobb szélen Rendezés (`SORTS`:
+  legutóbb / legkorábban hozzáadott, legjobb értékelés, legújabb / legrégebbi megjelenés;
+  üres érték a végére). Az állapotgombok darabszámai a többi szűrőt már figyelembe veszik
 - `components/PosterCard.js` – borító (`https://image.tmdb.org/t/p/w342` + `poster_path`),
   állapotcsík, „Letöltve” jelvény, link IMDb-re (vagy TMDB-re, ha nincs IMDb ID),
   „Hozzáadva: <dátum>” a `created_at` alapján (csak megjelenítés, nem szerkeszthető),
@@ -91,7 +94,6 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   „Megnézendő” felirat a soron/kártyán/ablakban, és nincs színe. Csak a szűrőgomb nevezi meg.
   A szerkesztő ablakban a kiválasztott állapotra/Mamára újra kattintva lesz üres.
 - A megnézett (`watched`) címek halványak (sor és kártya), rámutatáskor teljes fényerő.
-- Lista rendezése: hozzáadás dátuma szerint (legutóbbi / legkorábbi elöl), a szűrők között.
 - Design: sötét téma a `:root` változókkal; állapotszínek `--st-<kód>` változókban.
   Új állapotnál ide is kell egy szín, és a `[data-status=...]` szabály (kártya és táblázatsor is használja).
 - Képekhez sima `<img>`, nem `next/image`.
@@ -102,7 +104,8 @@ Kész: adatbázis, projektváz, belépés, lista + szűrők, GitHub, Vercel depl
 TMDB kereső és hozzáadás (az `/api/tmdb/*` route-ok token nélkül 401-et adnak),
 hozzáadás dátuma a kártyán, cím szerkesztése és törlése (`TitleEditor`),
 asztali soros nézet soron belüli szerkesztéssel (`TitleTable`), csillagos értékelés,
-„Mama” jelző, rendezés hozzáadás dátuma szerint. Fejléc: „Megnézendő filmek”.
+„Mama” jelző, rendezés (hozzáadás, értékelés, megjelenés éve), letisztított szűrősor.
+Fejléc: „Megnézendő filmek”.
 
 ## Következő feladat
 - Tömeges import (soronként beillesztett címek, bizonytalan találatok jóváhagyása).

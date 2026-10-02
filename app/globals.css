@@ -300,6 +300,23 @@ button:disabled {
   border-bottom: 1px solid var(--line);
 }
 
+/* állapotgombok + "Letöltöttek" egy egységként */
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+}
+
+.type-select {
+  font-weight: 600;
+}
+
+/* a rendezés a szűrősor jobb szélén */
+.sort-field {
+  margin-left: auto;
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;
