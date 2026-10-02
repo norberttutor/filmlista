@@ -350,6 +350,100 @@ button:disabled {
   }
 }
 
+/* ---------- Franchise-szűrő logókkal (saját lenyíló) ---------- */
+.franchise-filter {
+  position: relative;
+}
+
+.franchise-filter-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.45rem;
+  padding: 0.35rem 0.75rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.franchise-filter-button:hover {
+  border-color: var(--muted);
+}
+
+.franchise-filter-button svg {
+  margin-left: 0.25rem;
+  color: var(--muted);
+}
+
+.franchise-listbox {
+  position: absolute;
+  z-index: 20; /* a ragadós táblázatfejléc fölött */
+  top: calc(100% + 0.35rem);
+  left: 0;
+  width: max-content;
+  min-width: 100%;
+  max-width: min(24rem, 90vw);
+  max-height: 22rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.3rem;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.45);
+}
+
+.franchise-listbox:focus {
+  outline: none;
+}
+
+.franchise-listbox li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.franchise-listbox li.active {
+  background: rgb(255 255 255 / 0.06);
+}
+
+.franchise-listbox li[aria-selected='true'] {
+  color: var(--accent);
+}
+
+/* a logók egy oszlopban, hogy a nevek egymás alá essenek */
+.franchise-listbox .logo-slot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 5.5rem;
+  height: 1.6rem;
+}
+
+.franchise-logo {
+  display: block;
+  max-width: 5.5rem;
+  max-height: 1.4rem;
+  object-fit: contain;
+}
+
+/* sötét logó → fehér, hogy a sötét háttéren is olvasható legyen */
+.franchise-logo.dark {
+  filter: brightness(0) invert(1);
+}
+
+.franchise-filter-button .franchise-logo {
+  max-width: 4.5rem;
+  max-height: 1.2rem;
+}
+
 /* a rendezés a szűrősor jobb szélén */
 .sort-field {
   margin-left: auto;

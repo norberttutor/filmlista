@@ -87,6 +87,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   frissíti (25-ösével, a felhasználó jogosultságaival); a `Watchlist` betöltéskor hívja
 - `lib/server/omdb.js` – `fetchImdbRating()`, `omdbEnabled()` (csak route handlerben)
 - `components/ImdbBadge.js` – „IMDb 8,0” jelvény (rámutatva a szavazatok száma)
+- `components/FranchiseFilter.js` – a franchise-szűrő saját lenyílója (listbox: nyilak, Home/End,
+  Enter, Esc) logókkal; `FranchiseLogo` betöltéskor megméri a logó világosságát (canvas, a TMDB
+  képszervere CORS-t enged), 0,5 alatt fehérre színezi (`.franchise-logo.dark`)
+- `app/api/franchises/logos/route.js` – `POST`: a logó nélküli franchise-oknál a franchise első
+  (legkorábbi) filmjének TMDB-címlogóját menti (`pickLogo()`: legfeljebb 6:1 arány, angol);
+  ha nincs logó, 7 napig nem próbálja újra. A `Watchlist` betöltéskor hívja
 - `components/ImdbRatingsImport.js` + `lib/imdbImport.js` – visszafogott „IMDb-értékelések
   betöltése” gomb a Kilépés mellett: az IMDb értékelés-exportjából (CSV: `Const`, `Your Rating`)
   a böngészőben IMDb ID alapján párosít, összefoglalót mutat, majd `applyMyRatings()`
@@ -105,8 +111,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   null = nincs; `on delete set null`), `imdb_rating` (numeric 0–10), `imdb_votes`,
   `imdb_rating_updated_at` (`05_imdb_rating.sql`), `my_rating` (1–10), `notes`, `watched_at`,
   `created_at`, `updated_at` (trigger); egyedi: `(user_id, media_type, tmdb_id)`
-- `franchises (id, user_id default auth.uid(), name, created_at)` – felhasználónkénti saját
-  lista, a felületen bővíthető; egyedi: `(user_id, lower(name))` – `04_franchises.sql`
+- `franchises (id, user_id default auth.uid(), name, created_at, logo_path, logo_checked_at)` –
+  felhasználónkénti saját lista, a felületen bővíthető; egyedi: `(user_id, lower(name))` –
+  `04_franchises.sql`; logó: `07_franchise_logo.sql`
 - Trigger (`06_watched_clears_downloaded.sql`): amikor egy cím „Megnézve” állapotba kerül
   (átváltáskor vagy megnézettként felvéve), az `is_downloaded` hamis lesz; ha utána kézzel
   újra letöltöttnek jelölik, az megmarad. A felület is azonnal leveszi a pipát.
@@ -143,7 +150,8 @@ asztali soros nézet soron belüli szerkesztéssel (`TitleTable`), csillagos ér
 „Mama” jelző, rendezés (hozzáadás, értékelés, megjelenés éve), letisztított szűrősor,
 franchise-ok (beállítás + szűrő + törlés; átnevezés még nincs a felületen), neon türkiz színvilág,
 TMDB leírás a cím mellett, IMDb-értékelés (OMDb) + rendezés szerinte, lapozás,
-saját IMDb-értékelések betöltése CSV-ből.
+saját IMDb-értékelések betöltése CSV-ből, franchise-logók a szűrőben.
+Franchise-filmek importja (franchise.xlsx): 194 cím, 34 franchise; hozzáadás dátuma = megjelenés.
 Norbi listája (norbert.tutor@gmail.com) 2026-10-02-án Excelből importálva: 512 cím.
 Fejléc: „Megnézendő filmek”.
 

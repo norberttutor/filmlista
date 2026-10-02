@@ -8,7 +8,14 @@ import ImdbRatingsImport from '@/components/ImdbRatingsImport';
 import TitleSearch from '@/components/TitleSearch';
 import TitleEditor from '@/components/TitleEditor';
 import TitleTable from '@/components/TitleTable';
-import { titleKey, createFranchise, deleteFranchise, refreshImdbRatings } from '@/lib/titles';
+import {
+  titleKey,
+  createFranchise,
+  deleteFranchise,
+  refreshImdbRatings,
+  refreshFranchiseLogos,
+} from '@/lib/titles';
+import FranchiseFilter from '@/components/FranchiseFilter';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
@@ -99,7 +106,7 @@ export default function Watchlist({ session }) {
           .select('*')
           .order('created_at', { ascending: false }),
         supabase.from('statuses').select('*').order('sort_order'),
-        supabase.from('franchises').select('id, name'),
+        supabase.from('franchises').select('id, name, logo_path'),
       ]);
       if (cancelled) return;
 
@@ -120,6 +127,19 @@ export default function Watchlist({ session }) {
           const byId = new Map(rows.map((r) => [r.id, r]));
           setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
         }).catch((err) => console.warn('IMDb-értékelések frissítése sikertelen:', err.message));
+
+        // hiányzó franchise-logók (a franchise első filmjének címlogója) a háttérben
+        if (franchisesRes.data.some((f) => !f.logo_path)) {
+          refreshFranchiseLogos()
+            .then((rows) => {
+              if (cancelled || rows.length === 0) return;
+              const byId = new Map(rows.map((r) => [r.id, r.logo_path]));
+              setFranchises((fs) =>
+                fs.map((f) => (byId.has(f.id) ? { ...f, logo_path: byId.get(f.id) } : f))
+              );
+            })
+            .catch((err) => console.warn('Franchise-logók lekérése sikertelen:', err.message));
+        }
       }
       setLoading(false);
     }
@@ -364,18 +384,23 @@ export default function Watchlist({ session }) {
             )}
 
             {usedFranchises.length > 0 && (
-              <label className="inline-field">
-                Franchise
-                <select value={franchise} onChange={(e) => setFranchise(e.target.value)}>
-                  <option value="">Összes</option>
-                  <option value={NO_FRANCHISE}>Franchise nélkül</option>
-                  {usedFranchises.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="inline-field">
+                <span id="franchise-filter-label">Franchise</span>
+                <FranchiseFilter
+                  labelId="franchise-filter-label"
+                  value={franchise}
+                  onChange={setFranchise}
+                  options={[
+                    { value: '', label: 'Összes' },
+                    { value: NO_FRANCHISE, label: 'Franchise nélkül' },
+                    ...usedFranchises.map((f) => ({
+                      value: String(f.id),
+                      label: f.name,
+                      logo: f.logo_path,
+                    })),
+                  ]}
+                />
+              </div>
             )}
 
             <label className="inline-field sort-field">
