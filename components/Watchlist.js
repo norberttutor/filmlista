@@ -10,7 +10,12 @@ import { titleKey } from '@/lib/titles';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 
 // ennél szélesebb képernyőn soros (táblázatos) nézet, alatta borítófal
-const DESKTOP_QUERY = '(min-width: 960px)';
+const DESKTOP_QUERY = '(min-width: 1200px)';
+
+const SORTS = [
+  { code: 'newest', name: 'Legutóbb hozzáadott elöl' },
+  { code: 'oldest', name: 'Legkorábban hozzáadott elöl' },
+];
 
 const TYPES = [
   { code: 'all', name: 'Mind' },
@@ -41,6 +46,7 @@ export default function Watchlist({ session }) {
   const [type, setType] = useState('all');
   const [genre, setGenre] = useState('');
   const [onlyDownloaded, setOnlyDownloaded] = useState(false);
+  const [sort, setSort] = useState('newest');
 
   useEffect(() => {
     let cancelled = false;
@@ -91,17 +97,18 @@ export default function Watchlist({ session }) {
     return counts;
   }, [titles]);
 
-  const visible = useMemo(
-    () =>
-      titles.filter(
+  const visible = useMemo(() => {
+    const direction = sort === 'oldest' ? 1 : -1;
+    return titles
+      .filter(
         (t) =>
           (status === 'all' || t.status === status) &&
           (type === 'all' || t.media_type === type) &&
           (!genre || (t.genres ?? []).includes(genre)) &&
           (!onlyDownloaded || t.is_downloaded)
-      ),
-    [titles, status, type, genre, onlyDownloaded]
-  );
+      )
+      .sort((a, b) => direction * (new Date(a.created_at) - new Date(b.created_at)));
+  }, [titles, status, type, genre, onlyDownloaded, sort]);
 
   function replaceTitle(row) {
     setTitles((ts) => ts.map((x) => (x.id === row.id ? row : x)));
@@ -122,7 +129,7 @@ export default function Watchlist({ session }) {
     <main>
       <header className="top">
         <div>
-          <h1 className="brand">Filmlista</h1>
+          <h1 className="brand">Megnézendő filmek</h1>
           {!loading && !loadError && (
             <p className="count">{titles.length} cím a listán</p>
           )}
@@ -214,6 +221,17 @@ export default function Watchlist({ session }) {
                 onChange={(e) => setOnlyDownloaded(e.target.checked)}
               />
               Csak a letöltöttek
+            </label>
+
+            <label className="inline-field">
+              Rendezés
+              <select value={sort} onChange={(e) => setSort(e.target.value)}>
+                {SORTS.map((s) => (
+                  <option key={s.code} value={s.code}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
             </label>
           </section>
 

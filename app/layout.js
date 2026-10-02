@@ -8,7 +8,7 @@ const mainFont = Bricolage_Grotesque({
 });
 
 export const metadata = {
-  title: 'Filmlista',
+  title: 'Megnézendő filmek',
   description: 'Megnézendő filmek és sorozatok',
 };
 

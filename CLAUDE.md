@@ -38,14 +38,17 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/PosterCard.js` – borító (`https://image.tmdb.org/t/p/w342` + `poster_path`),
   állapotcsík, „Letöltve” jelvény, link IMDb-re (vagy TMDB-re, ha nincs IMDb ID),
   „Hozzáadva: <dátum>” a `created_at` alapján (csak megjelenítés, nem szerkeszthető),
-  saját értékelés („★ 8/10”), ceruza gomb a bal felső sarokban → szerkesztő ablak
+  saját értékelés kis csillagsorként (`StarsDisplay`), ceruza gomb a bal felső sarokban → szerkesztő ablak
 - `components/TitleEditor.js` – natív `<dialog>`: állapot, letöltve, megnézve dátuma
-  (`watched_at`, csak „Megnézve” állapotnál; átváltáskor a mai nap), értékelés 1–10,
-  megjegyzés, törlés megerősítéssel (a mobilos borítófalon a ceruza nyitja)
-- `components/TitleTable.js` – asztali soros nézet (≥ 960 px, `DESKTOP_QUERY` a
-  `Watchlist`-ben): balra borító + adatok, jobbra sorrendben Letöltve – Állapot –
-  Értékelés – Megjegyzés, a végén törlés megerősítéssel. Azonnali, optimista mentés
-  (hibánál visszaáll); a megjegyzés kikattintáskor ment, Esc-re visszaáll
+  (`watched_at`, csak „Megnézve” állapotnál; átváltáskor a mai nap), értékelés 10 csillaggal
+  (+ „Törlés” link), megjegyzés, törlés megerősítéssel (a mobilos borítófalon a ceruza nyitja)
+- `components/TitleTable.js` – asztali soros nézet (≥ 1200 px, `DESKTOP_QUERY` a
+  `Watchlist`-ben): balra borító + adatok, jobbra sorrendben Letöltve – Mama – Állapot –
+  Értékelés (10 csillag + „8/10”) – Megjegyzés, a végén törlés megerősítéssel. Azonnali,
+  optimista mentés (hibánál visszaáll). A megjegyzés visszafogott (keret/háttér csak
+  rámutatáskor), kikattintáskor ment, Esc-re visszaáll
+- `components/StarRating.js` – `StarRating` (szerkeszthető: rádiógombok, nyilakkal is
+  állítható, a kiválasztott csillagra újra kattintva `null`) és `StarsDisplay` (csak kijelzés)
 - `lib/useMediaQuery.js` – `useMediaQuery(query)` hook (`useSyncExternalStore`)
 - `components/SiteFooter.js` – kötelező TMDB forrásmegjelölés, ne töröld
 - `components/TitleSearch.js` – „Cím hozzáadása” panel: késleltetett (400 ms) TMDB keresés,
@@ -56,7 +59,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `lib/titles.js` – címműveletek: `titleKey()`, `addTitle()` (műfajok upsert → `titles`
   insert → `title_genres` insert, hibánál a cím visszavonása), `updateTitle()`,
   `deleteTitle()`; mindegyik a `titles_with_genres` friss sorát adja vissza (törlés kivételével).
-  Közös segédek: `externalLink()`, `formatDate()`, `todayDate()`, `RATINGS`
+  Közös segédek: `externalLink()`, `formatDate()`, `todayDate()`, `DEFAULT_STATUS`,
+  `MAMA_OPTIONS`, `mamaLabel()`
 - `lib/server/auth.js` – `getUserFromRequest()` + `unauthorized()` (csak route handlerben)
 - `lib/server/tmdb.js` – `tmdbFetch()`, `tmdbErrorResponse()`, `yearOf()` (csak route handlerben)
 - `app/api/tmdb/search/route.js` – `GET ?q=` → `search/multi`, csak film/sorozat
@@ -69,8 +73,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `statuses (code PK, name, sort_order)` – kódok: `to_watch`, `watching`, `watched`
 - `titles` – `user_id` (default `auth.uid()`), `media_type` ('movie' | 'tv'), `title`,
   `original_title`, `release_year`, `overview`, `poster_path`, `tmdb_id`, `imdb_id`,
-  `status` (FK → statuses), `is_downloaded`, `my_rating` (1–10), `notes`, `watched_at`,
-  `created_at`, `updated_at` (trigger); egyedi: `(user_id, media_type, tmdb_id)`
+  `status` (FK → statuses), `is_downloaded`, `mama_status` (null | 'interested' | 'received',
+  „Mama” jelző: üres / Érdekli / Megkapta – `03_mama.sql`), `my_rating` (1–10), `notes`,
+  `watched_at`, `created_at`, `updated_at` (trigger); egyedi: `(user_id, media_type, tmdb_id)`
 - `title_genres (title_id, genre_id)` – kapcsolótábla
 - `titles_with_genres` nézet (`security_invoker`): `titles.*` + `status_name` + `genres text[]`
 - Minden táblán RLS: a felhasználó csak a saját címeit látja/módosítja.
@@ -82,6 +87,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - Felületi szövegek magyarul, mondatkezdő nagybetűvel, cselekvő igékkel
   (pl. „Hozzáadás a listához”, nem „Submit”).
 - Hibaüzenet mondja meg, mi a baj és mit tegyen a felhasználó.
+- Az alapállapot (`to_watch`, `DEFAULT_STATUS`) a felületen **üresen** jelenik meg: nincs
+  „Megnézendő” felirat a soron/kártyán/ablakban, és nincs színe. Csak a szűrőgomb nevezi meg.
+  A szerkesztő ablakban a kiválasztott állapotra/Mamára újra kattintva lesz üres.
+- A megnézett (`watched`) címek halványak (sor és kártya), rámutatáskor teljes fényerő.
+- Lista rendezése: hozzáadás dátuma szerint (legutóbbi / legkorábbi elöl), a szűrők között.
 - Design: sötét téma a `:root` változókkal; állapotszínek `--st-<kód>` változókban.
   Új állapotnál ide is kell egy szín, és a `[data-status=...]` szabály (kártya és táblázatsor is használja).
 - Képekhez sima `<img>`, nem `next/image`.
@@ -91,7 +101,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 Kész: adatbázis, projektváz, belépés, lista + szűrők, GitHub, Vercel deploy,
 TMDB kereső és hozzáadás (az `/api/tmdb/*` route-ok token nélkül 401-et adnak),
 hozzáadás dátuma a kártyán, cím szerkesztése és törlése (`TitleEditor`),
-asztali soros nézet soron belüli szerkesztéssel (`TitleTable`).
+asztali soros nézet soron belüli szerkesztéssel (`TitleTable`), csillagos értékelés,
+„Mama” jelző, rendezés hozzáadás dátuma szerint. Fejléc: „Megnézendő filmek”.
 
 ## Következő feladat
 - Tömeges import (soronként beillesztett címek, bizonytalan találatok jóváhagyása).

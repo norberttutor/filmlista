@@ -1,4 +1,5 @@
-import { externalLink, formatDate } from '@/lib/titles';
+import { externalLink, formatDate, mamaLabel, DEFAULT_STATUS } from '@/lib/titles';
+import { StarsDisplay } from '@/components/StarRating';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
 
@@ -60,9 +61,14 @@ export default function PosterCard({ title: t, onEdit }) {
       <p className="meta">
         {t.release_year && <span>{t.release_year}</span>}
         <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
-        <span className="status-name">{t.status_name}</span>
-        {t.my_rating && <span className="rating-value">★ {t.my_rating}/10</span>}
+        {t.status !== DEFAULT_STATUS && <span className="status-name">{t.status_name}</span>}
+        {t.mama_status && <span>Mama: {mamaLabel(t.mama_status)}</span>}
       </p>
+      {t.my_rating && (
+        <p className="card-stars">
+          <StarsDisplay value={t.my_rating} />
+        </p>
+      )}
       {t.genres?.length > 0 && <p className="genres">{t.genres.join(', ')}</p>}
       <p className="added">
         Hozzáadva: <time dateTime={t.created_at}>{formatDate(t.created_at)}</time>

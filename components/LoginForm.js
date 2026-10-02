@@ -20,7 +20,7 @@ export default function LoginForm() {
 
   return (
     <main className="login">
-      <h1 className="brand">Filmlista</h1>
+      <h1 className="brand">Megnézendő filmek</h1>
       <form className="login-form" onSubmit={handleSubmit}>
         <label>
           E-mail-cím

@@ -8,8 +8,10 @@ import {
   externalLink,
   formatDate,
   todayDate,
-  RATINGS,
+  DEFAULT_STATUS,
+  MAMA_OPTIONS,
 } from '@/lib/titles';
+import StarRating from '@/components/StarRating';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w154';
 
@@ -23,6 +25,9 @@ export default function TitleTable({ titles, statuses, onUpdated, onDeleted }) {
             <th scope="col">Cím</th>
             <th scope="col" className="col-check">
               Letöltve
+            </th>
+            <th scope="col" className="col-mama">
+              Mama
             </th>
             <th scope="col" className="col-status">
               Állapot
@@ -163,7 +168,7 @@ function TitleRow({ title: t, statuses, onUpdated, onDeleted }) {
       </td>
 
       {confirmingDelete ? (
-        <td colSpan={5} className="cell-confirm">
+        <td colSpan={6} className="cell-confirm">
           <span className="confirm-text">Biztosan törlöd a listádról?</span>
           <button type="button" className="ghost" autoFocus onClick={cancelDelete}>
             Mégse
@@ -182,6 +187,20 @@ function TitleRow({ title: t, statuses, onUpdated, onDeleted }) {
               onChange={(e) => save({ is_downloaded: e.target.checked })}
             />
           </td>
+          <td className="col-mama">
+            <select
+              aria-label={`Mama – ${t.title}`}
+              value={t.mama_status ?? ''}
+              onChange={(e) => save({ mama_status: e.target.value || null })}
+            >
+              <option value=""></option>
+              {MAMA_OPTIONS.map((o) => (
+                <option key={o.code} value={o.code}>
+                  {o.name}
+                </option>
+              ))}
+            </select>
+          </td>
           <td className="col-status">
             <select
               aria-label={`Állapot – ${t.title}`}
@@ -190,39 +209,39 @@ function TitleRow({ title: t, statuses, onUpdated, onDeleted }) {
             >
               {statuses.map((s) => (
                 <option key={s.code} value={s.code}>
-                  {s.name}
+                  {/* az alapállapot üresen jelenik meg */}
+                  {s.code === DEFAULT_STATUS ? '' : s.name}
                 </option>
               ))}
             </select>
           </td>
           <td className="col-rating">
-            <select
-              aria-label={`Értékelés – ${t.title}`}
-              value={t.my_rating ? String(t.my_rating) : ''}
-              onChange={(e) =>
-                save({ my_rating: e.target.value ? Number(e.target.value) : null })
-              }
-            >
-              <option value="">–</option>
-              {RATINGS.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
+            <div className="rating-field">
+              <StarRating
+                name={`rating-${t.id}`}
+                label={`Értékelés – ${t.title}`}
+                value={t.my_rating}
+                onChange={(n) => save({ my_rating: n })}
+              />
+              <span className="rating-number">{t.my_rating ? `${t.my_rating}/10` : ''}</span>
+            </div>
           </td>
           <td className="col-notes">
-            <textarea
-              rows={2}
-              aria-label={`Megjegyzés – ${t.title}`}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              onBlur={saveNotes}
-              onKeyDown={handleNotesKey}
-            />
-            <p className="save-state" aria-live="polite">
-              {saveState === 'saving' ? 'Mentés…' : saveState === 'saved' ? 'Mentve' : ''}
-            </p>
+            <div className="notes-field">
+              <textarea
+                className="notes-input"
+                rows={2}
+                placeholder="Megjegyzés…"
+                aria-label={`Megjegyzés – ${t.title}`}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                onBlur={saveNotes}
+                onKeyDown={handleNotesKey}
+              />
+              <p className="save-state" aria-live="polite">
+                {saveState === 'saving' ? 'Mentés…' : saveState === 'saved' ? 'Mentve' : ''}
+              </p>
+            </div>
           </td>
           <td className="col-actions">
             <button

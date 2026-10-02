@@ -10,7 +10,7 @@
   --danger: #f08a7e;
 
   /* állapotszínek – új állapotnál ide kell egy sor */
-  --st-to_watch: #7fb2e5;
+  --st-to_watch: transparent; /* alapállapot: üres, nincs színe */
   --st-watching: #f2b544;
   --st-watched: #7cc8a0;
 
@@ -375,6 +375,21 @@ button:disabled {
 
 .card {
   position: relative;
+  transition: opacity 0.15s;
+}
+
+/* a megnézett címek halványabbak; rámutatáskor / szerkesztéskor teljes fényerő */
+.card[data-status='watched'],
+.titles-table tbody tr[data-status='watched'] > td {
+  opacity: 0.45;
+  transition: opacity 0.15s;
+}
+
+.card[data-status='watched']:hover,
+.card[data-status='watched']:focus-within,
+.titles-table tbody tr[data-status='watched']:hover > td,
+.titles-table tbody tr[data-status='watched']:focus-within > td {
+  opacity: 1;
 }
 
 /* állapotszín a kártyán és a táblázatsorban – új állapotnál ide is kell egy sor */
@@ -521,8 +536,79 @@ button:disabled {
   color: var(--muted);
 }
 
-.rating-value {
-  color: var(--accent);
+.added time {
+  white-space: nowrap; /* a dátum ne törjön két sorba */
+}
+
+.card-stars {
+  margin: 0.3rem 0 0;
+  line-height: 0;
+}
+
+/* ---------- Csillagos értékelés ---------- */
+.stars,
+.stars-static {
+  display: inline-flex;
+  align-items: center;
+}
+
+.stars label {
+  position: relative; /* a láthatatlan rádiógomb ehhez igazodik */
+  display: grid;
+  padding: 1px;
+  cursor: pointer;
+}
+
+.stars svg,
+.stars-static svg {
+  display: block;
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+
+.stars .on svg,
+.stars-static .on svg {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+/* egérrel rámutatva halványabban mutatja, mennyi lenne */
+.stars.previewing .on svg {
+  opacity: 0.6;
+}
+
+.stars input:focus-visible + svg {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+
+.stars-static svg {
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
+.editor .stars svg {
+  width: 1.55rem;
+  height: 1.55rem;
+}
+
+.rating-field {
+  display: flex;
+  flex-wrap: wrap; /* keskeny képernyőn a "8/10 Törlés" új sorba kerülhet */
+  align-items: center;
+  gap: 0.3rem 0.6rem;
+}
+
+.rating-number {
+  min-width: 2.4rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---------- Soros nézet (asztali gép) ---------- */
@@ -566,20 +652,24 @@ button:disabled {
 }
 
 .titles-table .col-check {
-  width: 6rem;
+  width: 5.5rem;
   text-align: center;
 }
 
+.titles-table .col-mama {
+  width: 8.5rem;
+}
+
 .titles-table .col-status {
-  width: 10.5rem;
+  width: 9.75rem; /* a "Folyamatban" még kiférjen */
 }
 
 .titles-table .col-rating {
-  width: 6.5rem;
+  width: 16.5rem; /* 10 csillag + "10/10" */
 }
 
 .titles-table .col-notes {
-  width: 32%;
+  width: 18%;
 }
 
 .titles-table .col-actions {
@@ -590,6 +680,11 @@ button:disabled {
 .titles-table select,
 .titles-table textarea {
   width: 100%;
+}
+
+.titles-table select {
+  padding: 0.45rem 0.6rem;
+  font-size: 0.9rem;
 }
 
 .titles-table input[type='checkbox'] {
@@ -637,16 +732,51 @@ button:disabled {
 }
 
 /* "Mentés…" / "Mentve" a megjegyzésmező jobb alsó sarkában, hogy ne tolja el a sort */
-.titles-table td.col-notes {
+/* megjegyzés: visszafogott, keret és háttér csak rámutatáskor / szerkesztéskor */
+.notes-field {
   position: relative;
 }
 
+.titles-table .notes-input {
+  display: block;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  color: var(--muted);
+  background: transparent;
+  border-color: transparent;
+  resize: none;
+  /* a szöveghez igazodó magasság (Chrome/Edge); máshol marad a 2 soros mező */
+  field-sizing: content;
+  max-height: 6.5rem;
+}
+
+.titles-table .notes-input::placeholder {
+  color: transparent;
+}
+
+.titles-table tr:hover .notes-input::placeholder,
+.titles-table .notes-input:focus::placeholder {
+  color: var(--muted);
+}
+
+.titles-table .notes-input:hover {
+  border-color: var(--line);
+}
+
+.titles-table .notes-input:focus {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+/* "Mentés…" / "Mentve" a megjegyzésmező jobb alsó sarkában, hogy ne tolja el a sort */
 .save-state {
   position: absolute;
-  right: 2rem;
-  bottom: 1.2rem;
+  right: 0.5rem;
+  bottom: 0.3rem;
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   line-height: 1;
   color: var(--st-watched);
   pointer-events: none;
@@ -770,12 +900,6 @@ body:has(.editor[open]) {
 .segmented input:focus-visible + span {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-}
-
-.rating span {
-  min-width: 2.25rem;
-  padding-inline: 0.55rem;
-  text-align: center;
 }
 
 .editor-actions {

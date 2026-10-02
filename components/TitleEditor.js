@@ -2,7 +2,34 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { updateTitle, deleteTitle, todayDate, RATINGS } from '@/lib/titles';
+import {
+  updateTitle,
+  deleteTitle,
+  todayDate,
+  DEFAULT_STATUS,
+  MAMA_OPTIONS,
+} from '@/lib/titles';
+import StarRating from '@/components/StarRating';
+
+// Rádiógombok "chip" formában; a kiválasztottra újra kattintva visszaáll üresre.
+function ClearableChips({ name, options, value, onChange }) {
+  return (
+    <div className="segmented">
+      {options.map((o) => (
+        <label key={o.code}>
+          <input
+            type="radio"
+            name={name}
+            checked={value === o.code}
+            onChange={() => onChange(o.code)}
+            onClick={() => value === o.code && onChange(null)}
+          />
+          <span>{o.name}</span>
+        </label>
+      ))}
+    </div>
+  );
+}
 
 // Felugró ablak egy cím saját adatainak szerkesztésére és törlésére.
 // A natív <dialog> elemet használja: Esc-re bezárul, a fókusz az ablakban marad.
@@ -12,7 +39,8 @@ export default function TitleEditor({ title: t, statuses, onSaved, onDeleted, on
   const [form, setForm] = useState({
     status: t.status,
     is_downloaded: t.is_downloaded,
-    my_rating: t.my_rating ? String(t.my_rating) : '',
+    mama_status: t.mama_status ?? null,
+    my_rating: t.my_rating ?? null,
     notes: t.notes ?? '',
     watched_at: t.watched_at ?? '',
   });
@@ -35,6 +63,7 @@ export default function TitleEditor({ title: t, statuses, onSaved, onDeleted, on
   }
 
   function changeStatus(code) {
+    code ??= DEFAULT_STATUS; // a kiválasztott újra kattintva: vissza az (üres) alapállapotba
     setForm((f) => ({
       ...f,
       status: code,
@@ -56,7 +85,8 @@ export default function TitleEditor({ title: t, statuses, onSaved, onDeleted, on
       const row = await updateTitle(t.id, {
         status: form.status,
         is_downloaded: form.is_downloaded,
-        my_rating: form.my_rating ? Number(form.my_rating) : null,
+        mama_status: form.mama_status,
+        my_rating: form.my_rating,
         notes: form.notes.trim() || null,
         // a dátumnak csak megnézett címnél van értelme
         watched_at: form.status === 'watched' ? form.watched_at || null : null,
@@ -95,19 +125,13 @@ export default function TitleEditor({ title: t, statuses, onSaved, onDeleted, on
 
         <fieldset className="field">
           <legend>Állapot</legend>
-          <div className="segmented">
-            {statuses.map((s) => (
-              <label key={s.code}>
-                <input
-                  type="radio"
-                  name="status"
-                  checked={form.status === s.code}
-                  onChange={() => changeStatus(s.code)}
-                />
-                <span>{s.name}</span>
-              </label>
-            ))}
-          </div>
+          {/* az (üres) alapállapotnak nincs gombja: egyik sincs kiválasztva */}
+          <ClearableChips
+            name="status"
+            options={statuses.filter((s) => s.code !== DEFAULT_STATUS)}
+            value={form.status}
+            onChange={changeStatus}
+          />
         </fieldset>
 
         {form.status === 'watched' && (
@@ -131,30 +155,38 @@ export default function TitleEditor({ title: t, statuses, onSaved, onDeleted, on
         </label>
 
         <fieldset className="field">
-          <legend>Saját értékelés</legend>
-          <div className="segmented rating">
-            <label>
-              <input
-                type="radio"
-                name="my_rating"
-                checked={form.my_rating === ''}
-                onChange={() => setField('my_rating', '')}
-              />
-              <span>Nincs</span>
-            </label>
-            {RATINGS.map((n) => (
-              <label key={n}>
-                <input
-                  type="radio"
-                  name="my_rating"
-                  checked={form.my_rating === n}
-                  onChange={() => setField('my_rating', n)}
-                />
-                <span>{n}</span>
-              </label>
-            ))}
-          </div>
+          <legend>Mama</legend>
+          <ClearableChips
+            name="mama_status"
+            options={MAMA_OPTIONS}
+            value={form.mama_status}
+            onChange={(code) => setField('mama_status', code)}
+          />
         </fieldset>
+
+        <div className="field">
+          <span>Saját értékelés</span>
+          <div className="rating-field">
+            <StarRating
+              name="editor-rating"
+              label="Saját értékelés"
+              value={form.my_rating}
+              onChange={(n) => setField('my_rating', n)}
+            />
+            <span className="rating-number">
+              {form.my_rating ? `${form.my_rating}/10` : 'Nincs'}
+            </span>
+            {form.my_rating && (
+              <button
+                type="button"
+                className="link small"
+                onClick={() => setField('my_rating', null)}
+              >
+                Törlés
+              </button>
+            )}
+          </div>
+        </div>
 
         <label className="field">
           Megjegyzés
