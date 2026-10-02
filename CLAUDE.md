@@ -26,6 +26,8 @@ Egyetlen felhasználó (Norbi), de az adatmodell felhasználónként elkülöní
 - `NEXT_PUBLIC_SUPABASE_KEY` – publishable/anon kulcs (a böngészőbe kerül, RLS véd)
 - `TMDB_READ_TOKEN` – TMDB API Read Access Token, **csak szerveroldalon** használható
   (route handlerben), soha ne kapjon `NEXT_PUBLIC_` előtagot
+- `OMDB_API_KEY` – OMDb API kulcs az IMDb-értékelésekhez (ingyenes, napi 1000 lekérdezés),
+  szintén csak szerveroldalon. Ha hiányzik, az app értékelés nélkül működik (nincs hiba).
 
 Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 
@@ -34,8 +36,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `app/page.js` – kliensoldali session-kezelés: belépés vagy lista
 - `components/LoginForm.js` – e-mail + jelszó belépés (regisztráció nincs, ki van kapcsolva)
 - `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből; szűrősor
-  balról: Típus lenyíló (Filmek / Sorozatok, alapból Filmek, nincs „Mind”) – állapotgombok +
-  „Letöltöttek” jelölő – Műfaj (csak az adott típus műfajai) – Franchise (csak a használtak);
+  balról: Típus lenyíló (Filmek / Sorozatok, alapból Filmek, nincs „Mind”) – állapotgombok
+  (mobilon, ≤ 640 px: lenyíló a típus mellett) + „Letöltöttek” jelölő – Műfaj (csak az adott
+  típus műfajai) – Franchise (Összes / Franchise nélkül / a használtak);
   jobb szélen Rendezés (`SORTS`:
   legutóbb / legkorábban hozzáadott, legjobb értékelés, legújabb / legrégebbi megjelenés;
   üres érték a végére). Az állapotgombok darabszámai a többi szűrőt már figyelembe veszik
@@ -43,14 +46,15 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   állapotcsík, „Letöltve” jelvény, link IMDb-re (vagy TMDB-re, ha nincs IMDb ID),
   „Hozzáadva: <dátum>” a `created_at` alapján (csak megjelenítés, nem szerkeszthető),
   saját értékelés kis csillagsorként (`StarsDisplay`), ceruza gomb a bal felső sarokban → szerkesztő ablak
-- `components/TitleEditor.js` – natív `<dialog>`: állapot, letöltve, megnézve dátuma
+- `components/TitleEditor.js` – natív `<dialog>` (fejlécben a leírás): állapot, letöltve, megnézve dátuma
   (`watched_at`, csak „Megnézve” állapotnál; átváltáskor a mai nap), értékelés 10 csillaggal
   (+ „Törlés” link), megjegyzés, törlés megerősítéssel (a mobilos borítófalon a ceruza nyitja)
 - `components/TitleTable.js` – asztali soros nézet (≥ 1400 px, `DESKTOP_QUERY` a
   `Watchlist`-ben; egy mérettel nagyobb betűk): balra borító + adatok (a cím mellett
-  Franchise lenyíló, üresen csak rámutatáskor látszik), jobbra sorrendben Letöltve – Állapot –
-  Mama – Értékelés (10 másfélszeres csillag + „8/10”) – Megjegyzés (fejléc csak
-  képernyőolvasónak), a végén törlés megerősítéssel. Azonnali,
+  Franchise lenyíló, üresen csak rámutatáskor látszik) + TMDB leírás (`overview`; ≥ 1800 px
+  a cím mellett 4 sorban, alatta 2 sorban, teljes szöveg rámutatáskor), jobbra sorrendben
+  Letöltve – Állapot – Mama – Értékelés (10 másfélszeres csillag középen, mellette „8/10”) –
+  Megjegyzés (fejléc csak képernyőolvasónak), a végén törlés megerősítéssel. Azonnali,
   optimista mentés (hibánál visszaáll). A megjegyzés visszafogott (keret/háttér csak
   rámutatáskor), kikattintáskor ment, Esc-re visszaáll
 - `components/FranchiseSelect.js` – franchise lenyíló (üres / meglévők / „+ Új franchise…”
@@ -71,11 +75,17 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   vissza (törlés kivételével). A franchise nevét a kliens keresi ki id alapján (nincs a nézetben).
   Közös segédek: `externalLink()`, `formatDate()`, `todayDate()`, `DEFAULT_STATUS`,
   `MAMA_OPTIONS`, `mamaLabel()`
-- `lib/server/auth.js` – `getUserFromRequest()` + `unauthorized()` (csak route handlerben)
+- `lib/server/auth.js` – `getUserFromRequest()`, `supabaseAsUser()` (a felhasználó nevében,
+  RLS-sel), `unauthorized()` (csak route handlerben)
 - `lib/server/tmdb.js` – `tmdbFetch()`, `tmdbErrorResponse()`, `yearOf()` (csak route handlerben)
 - `app/api/tmdb/search/route.js` – `GET ?q=` → `search/multi`, csak film/sorozat
 - `app/api/tmdb/details/route.js` – `GET ?type=movie|tv&id=` → a `titles` oszlopainak
-  megfelelő objektum + `genres [{id, name}]`; magyar leírás híján angol
+  megfelelő objektum + `genres [{id, name}]`; magyar leírás híján angol; az IMDb-értékelést
+  is lekéri (OMDb), ha nem sikerül, a cím attól még felvehető
+- `app/api/imdb/refresh/route.js` – `POST`: a hiányzó vagy 14 napnál régebbi IMDb-értékeléseket
+  frissíti (25-ösével, a felhasználó jogosultságaival); a `Watchlist` betöltéskor hívja
+- `lib/server/omdb.js` – `fetchImdbRating()`, `omdbEnabled()` (csak route handlerben)
+- `components/ImdbBadge.js` – „IMDb 8,0” jelvény (rámutatva a szavazatok száma)
 - `supabase/*.sql` – a már lefuttatott adatbázis-szkriptek (dokumentáció)
 
 ## Adatbázis (már létezik, lásd `supabase/`)
@@ -85,7 +95,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `original_title`, `release_year`, `overview`, `poster_path`, `tmdb_id`, `imdb_id`,
   `status` (FK → statuses), `is_downloaded`, `mama_status` (null | 'interested' | 'received',
   „Mama” jelző: üres / Érdekli / Megkapta – `03_mama.sql`), `franchise_id` (FK → franchises,
-  null = nincs; `on delete set null`), `my_rating` (1–10), `notes`, `watched_at`,
+  null = nincs; `on delete set null`), `imdb_rating` (numeric 0–10), `imdb_votes`,
+  `imdb_rating_updated_at` (`05_imdb_rating.sql`), `my_rating` (1–10), `notes`, `watched_at`,
   `created_at`, `updated_at` (trigger); egyedi: `(user_id, media_type, tmdb_id)`
 - `franchises (id, user_id default auth.uid(), name, created_at)` – felhasználónkénti saját
   lista, a felületen bővíthető; egyedi: `(user_id, lower(name))` – `04_franchises.sql`
@@ -120,7 +131,8 @@ TMDB kereső és hozzáadás (az `/api/tmdb/*` route-ok token nélkül 401-et ad
 hozzáadás dátuma a kártyán, cím szerkesztése és törlése (`TitleEditor`),
 asztali soros nézet soron belüli szerkesztéssel (`TitleTable`), csillagos értékelés,
 „Mama” jelző, rendezés (hozzáadás, értékelés, megjelenés éve), letisztított szűrősor,
-franchise-ok (beállítás + szűrő + törlés; átnevezés még nincs a felületen), neon türkiz színvilág.
+franchise-ok (beállítás + szűrő + törlés; átnevezés még nincs a felületen), neon türkiz színvilág,
+TMDB leírás a cím mellett, IMDb-értékelés (OMDb) + rendezés szerinte.
 Fejléc: „Megnézendő filmek”.
 
 ## Következő feladat

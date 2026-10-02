@@ -6,10 +6,13 @@ import PosterCard from '@/components/PosterCard';
 import TitleSearch from '@/components/TitleSearch';
 import TitleEditor from '@/components/TitleEditor';
 import TitleTable from '@/components/TitleTable';
-import { titleKey, createFranchise, deleteFranchise } from '@/lib/titles';
+import { titleKey, createFranchise, deleteFranchise, refreshImdbRatings } from '@/lib/titles';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
+
+// franchise-szűrő: '' = összes, NO_FRANCHISE = franchise nélküliek, egyébként franchise id
+const NO_FRANCHISE = 'none';
 
 // ennél szélesebb képernyőn soros (táblázatos) nézet, alatta borítófal
 const DESKTOP_QUERY = '(min-width: 1400px)';
@@ -35,8 +38,13 @@ const SORTS = [
   { code: 'added_asc', name: 'Legkorábban hozzáadott', compare: (a, b) => -byAddedDesc(a, b) },
   {
     code: 'rating',
-    name: 'Legjobb értékelés',
+    name: 'Legjobb saját értékelés',
     compare: (a, b) => nullsLast(a.my_rating, b.my_rating, -1) || byAddedDesc(a, b),
+  },
+  {
+    code: 'imdb',
+    name: 'Legjobb IMDb-értékelés',
+    compare: (a, b) => nullsLast(a.imdb_rating, b.imdb_rating, -1) || byAddedDesc(a, b),
   },
   {
     code: 'year_desc',
@@ -101,6 +109,13 @@ export default function Watchlist({ session }) {
         setTitles(titlesRes.data);
         setStatuses(statusesRes.data);
         setFranchises(franchisesRes.data.sort(byName));
+
+        // hiányzó / régi IMDb-értékelések pótlása a háttérben; hiba esetén csak a konzolba ír
+        refreshImdbRatings((rows) => {
+          if (cancelled) return;
+          const byId = new Map(rows.map((r) => [r.id, r]));
+          setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
+        }).catch((err) => console.warn('IMDb-értékelések frissítése sikertelen:', err.message));
       }
       setLoading(false);
     }
@@ -143,7 +158,10 @@ export default function Watchlist({ session }) {
       ofType.filter(
         (t) =>
           (!genre || (t.genres ?? []).includes(genre)) &&
-          (!franchise || String(t.franchise_id) === franchise) &&
+          (!franchise ||
+            (franchise === NO_FRANCHISE
+              ? t.franchise_id == null
+              : String(t.franchise_id) === franchise)) &&
           (!onlyDownloaded || t.is_downloaded)
       ),
     [ofType, genre, franchise, onlyDownloaded]
@@ -164,7 +182,10 @@ export default function Watchlist({ session }) {
     setType(code);
     setGenre(''); // a filmek és sorozatok műfajai eltérnek
     // a franchise-szűrő marad, ha az új típusnál is van ilyen cím (pl. Star Wars film és sorozat)
-    if (!titles.some((t) => t.media_type === code && String(t.franchise_id) === franchise)) {
+    if (
+      franchise !== NO_FRANCHISE &&
+      !titles.some((t) => t.media_type === code && String(t.franchise_id) === franchise)
+    ) {
       setFranchise('');
     }
   }
@@ -258,8 +279,23 @@ export default function Watchlist({ session }) {
               ))}
             </select>
 
+            {/* mobilon az állapotgombok helyett lenyíló (CSS kapcsolja), a típus mellett */}
+            <select
+              className="status-select"
+              aria-label="Állapot"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              <option value="all">Minden állapot ({beforeStatus.length})</option>
+              {statuses.map((s) => (
+                <option key={s.code} value={s.code}>
+                  {s.name} ({countByStatus[s.code] ?? 0})
+                </option>
+              ))}
+            </select>
+
             <div className="filter-group">
-              <div className="chips" role="group" aria-label="Állapot">
+              <div className="chips status-chips" role="group" aria-label="Állapot">
                 <Chip
                   active={status === 'all'}
                   onClick={() => setStatus('all')}
@@ -306,6 +342,7 @@ export default function Watchlist({ session }) {
                 Franchise
                 <select value={franchise} onChange={(e) => setFranchise(e.target.value)}>
                   <option value="">Összes</option>
+                  <option value={NO_FRANCHISE}>Franchise nélkül</option>
                   {usedFranchises.map((f) => (
                     <option key={f.id} value={f.id}>
                       {f.name}

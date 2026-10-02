@@ -1,5 +1,19 @@
 import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
 import { tmdbFetch, tmdbErrorResponse, yearOf } from '@/lib/server/tmdb';
+import { omdbEnabled, fetchImdbRating } from '@/lib/server/omdb';
+
+// IMDb-értékelés az OMDb-ből; ha nem sikerül, a cím attól még felvehető,
+// a hiányzó értékelést a /api/imdb/refresh később pótolja.
+async function imdbFields(imdbId) {
+  if (!imdbId || !omdbEnabled()) return {};
+  try {
+    const rating = await fetchImdbRating(imdbId);
+    return { ...rating, imdb_rating_updated_at: new Date().toISOString() };
+  } catch (err) {
+    console.error(err);
+    return {};
+  }
+}
 
 // Ha nincs magyar leírás, az angolt használjuk – az is jobb a semminél.
 function pickOverview(data) {
@@ -34,7 +48,8 @@ export async function GET(request) {
   }
 
   // a TMDB néha üres szöveget ad IMDb ID helyett; az adatbázis csak tt1234567 formát fogad el
-  const imdbId = data.external_ids?.imdb_id;
+  const rawImdbId = data.external_ids?.imdb_id;
+  const imdbId = /^tt\d+$/.test(rawImdbId ?? '') ? rawImdbId : null;
 
   return Response.json({
     media_type: type,
@@ -44,7 +59,8 @@ export async function GET(request) {
     release_year: yearOf(data.release_date ?? data.first_air_date),
     overview: pickOverview(data),
     poster_path: data.poster_path,
-    imdb_id: /^tt\d+$/.test(imdbId ?? '') ? imdbId : null,
+    imdb_id: imdbId,
+    ...(await imdbFields(imdbId)),
     genres: (data.genres ?? []).map(({ id, name }) => ({ id, name })),
   });
 }

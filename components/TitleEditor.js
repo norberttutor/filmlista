@@ -11,6 +11,7 @@ import {
 } from '@/lib/titles';
 import StarRating from '@/components/StarRating';
 import FranchiseSelect from '@/components/FranchiseSelect';
+import ImdbBadge from '@/components/ImdbBadge';
 
 // Rádiógombok "chip" formában; a kiválasztottra újra kattintva visszaáll üresre.
 function ClearableChips({ name, options, value, onChange }) {
@@ -132,7 +133,9 @@ export default function TitleEditor({
           <p className="meta">
             {t.release_year && <span>{t.release_year}</span>}
             <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
+            <ImdbBadge title={t} />
           </p>
+          {t.overview && <p className="editor-overview">{t.overview}</p>}
         </header>
 
         <div className="field">

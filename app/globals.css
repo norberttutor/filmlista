@@ -308,8 +308,28 @@ button:disabled {
   gap: 0.6rem 1.5rem;
 }
 
-.type-select {
+.type-select,
+.status-select {
   font-weight: 600;
+}
+
+/* az állapot-lenyíló csak mobilon látszik, ott a gombok helyett */
+.status-select {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .status-select {
+    display: block;
+  }
+
+  .chips.status-chips {
+    display: none; /* a később álló .chips { display: flex } ne írja felül */
+  }
+
+  .filters {
+    gap: 0.75rem 1rem;
+  }
 }
 
 /* a rendezés a szűrősor jobb szélén */
@@ -557,6 +577,20 @@ button:disabled {
   white-space: nowrap; /* a dátum ne törjön két sorba */
 }
 
+/* "IMDb 8,0" jelvény a cím adatai között */
+.imdb {
+  padding: 0 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.imdb b {
+  color: var(--text);
+  font-weight: 650;
+}
+
 .card-stars {
   margin: 0.3rem 0 0;
   line-height: 0;
@@ -687,7 +721,19 @@ button:disabled {
 }
 
 .titles-table .col-rating {
-  width: 22rem; /* 10 (másfélszeres) csillag + "10/10" */
+  width: 23rem; /* 10 (másfélszeres) csillag középen + jobbra mellette a "10/10" */
+}
+
+/* a csillagsor az oszlop közepén (a fejléc alatt); a "8/10" mellette, a középre
+   igazítást nem tolja el */
+.titles-table td.col-rating {
+  text-align: center;
+}
+
+.titles-table .rating-field {
+  display: inline-flex;
+  position: relative;
+  vertical-align: middle;
 }
 
 .titles-table .col-notes {
@@ -716,14 +762,48 @@ button:disabled {
   cursor: pointer;
 }
 
+/* borító | adatok – a leírás alattuk (keskenyebb soros nézet) */
 .row-title {
-  display: flex;
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr);
   align-items: center;
-  gap: 0.9rem;
+  column-gap: 0.9rem;
 }
 
 .row-title .thumb {
+  grid-row: span 2;
   width: 4rem;
+}
+
+.row-overview {
+  grid-column: 2;
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+/* széles képernyőn: borító | adatok | leírás egymás mellett */
+@media (min-width: 1800px) {
+  .row-title {
+    grid-template-columns: 4rem minmax(11rem, 16rem) minmax(0, 1fr);
+  }
+
+  .row-title .thumb {
+    grid-row: auto;
+  }
+
+  .row-overview {
+    grid-column: 3;
+    margin: 0;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+  }
 }
 
 .row-text {
@@ -751,7 +831,14 @@ button:disabled {
 }
 
 .titles-table .rating-number {
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  min-width: 0;
+  margin-left: 0.45rem;
   font-size: 0.875rem;
+  white-space: nowrap;
+  transform: translateY(-50%);
 }
 
 /* másfélszeres csillagok a soros nézetben */
@@ -968,6 +1055,13 @@ body:has(.editor[open]) {
   font-weight: 750;
   line-height: 1.2;
   letter-spacing: -0.015em;
+}
+
+.editor-overview {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--muted);
 }
 
 .field {

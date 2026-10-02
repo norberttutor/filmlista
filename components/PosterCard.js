@@ -1,5 +1,6 @@
 import { externalLink, formatDate, mamaLabel, DEFAULT_STATUS } from '@/lib/titles';
 import { StarsDisplay } from '@/components/StarRating';
+import ImdbBadge from '@/components/ImdbBadge';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
 
@@ -62,6 +63,7 @@ export default function PosterCard({ title: t, franchise, onEdit }) {
       <p className="meta">
         {t.release_year && <span>{t.release_year}</span>}
         <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
+        <ImdbBadge title={t} />
         {t.status !== DEFAULT_STATUS && <span className="status-name">{t.status_name}</span>}
         {t.mama_status && <span>Mama: {mamaLabel(t.mama_status)}</span>}
       </p>
