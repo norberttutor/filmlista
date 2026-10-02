@@ -107,6 +107,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `created_at`, `updated_at` (trigger); egyedi: `(user_id, media_type, tmdb_id)`
 - `franchises (id, user_id default auth.uid(), name, created_at)` – felhasználónkénti saját
   lista, a felületen bővíthető; egyedi: `(user_id, lower(name))` – `04_franchises.sql`
+- Trigger (`06_watched_clears_downloaded.sql`): amikor egy cím „Megnézve” állapotba kerül
+  (átváltáskor vagy megnézettként felvéve), az `is_downloaded` hamis lesz; ha utána kézzel
+  újra letöltöttnek jelölik, az megmarad. A felület is azonnal leveszi a pipát.
 - `title_genres (title_id, genre_id)` – kapcsolótábla
 - `titles_with_genres` nézet (`security_invoker`): `titles.*` + `status_name` + `genres text[]`
 - Minden táblán RLS: a felhasználó csak a saját címeit látja/módosítja.

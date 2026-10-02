@@ -81,6 +81,8 @@ export default function TitleEditor({
       status: code,
       // megnézettre állításkor a mai nap az alapértelmezett
       watched_at: code === 'watched' && !f.watched_at ? todayDate() : f.watched_at,
+      // ...és a "Letöltve" törlődik (az adatbázis-trigger szabálya, itt azonnal látszik)
+      is_downloaded: code === 'watched' && f.status !== 'watched' ? false : f.is_downloaded,
     }));
   }
 

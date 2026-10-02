@@ -114,10 +114,14 @@ function TitleRow({
   }
 
   function changeStatus(code) {
+    const becomesWatched = code === 'watched' && t.status !== 'watched';
     save({
       status: code,
       // ugyanúgy, mint a szerkesztő ablakban: megnézettnél a mai nap, ha még nincs dátum
       watched_at: code === 'watched' ? t.watched_at ?? todayDate() : null,
+      // megnézettre állításkor a "Letöltve" törlődik (az adatbázis-trigger is ezt teszi,
+      // itt azért küldjük, hogy a pipa azonnal eltűnjön)
+      ...(becomesWatched && { is_downloaded: false }),
     });
   }
 
