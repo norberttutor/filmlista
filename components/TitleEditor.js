@@ -39,6 +39,7 @@ export default function TitleEditor({
   statuses,
   franchises,
   onCreateFranchise,
+  onDeleteFranchise,
   onSaved,
   onDeleted,
   onClose,
@@ -142,6 +143,7 @@ export default function TitleEditor({
             franchises={franchises}
             onChange={(id) => setField('franchise_id', id)}
             onCreate={onCreateFranchise}
+            onDelete={onDeleteFranchise}
           />
         </div>
 

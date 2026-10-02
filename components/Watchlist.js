@@ -6,13 +6,13 @@ import PosterCard from '@/components/PosterCard';
 import TitleSearch from '@/components/TitleSearch';
 import TitleEditor from '@/components/TitleEditor';
 import TitleTable from '@/components/TitleTable';
-import { titleKey, createFranchise } from '@/lib/titles';
+import { titleKey, createFranchise, deleteFranchise } from '@/lib/titles';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 
 // ennél szélesebb képernyőn soros (táblázatos) nézet, alatta borítófal
-const DESKTOP_QUERY = '(min-width: 1200px)';
+const DESKTOP_QUERY = '(min-width: 1400px)';
 
 const TYPES = [
   { code: 'movie', name: 'Filmek' },
@@ -173,6 +173,14 @@ export default function Watchlist({ session }) {
     const created = await createFranchise(name);
     setFranchises((fs) => [...fs, created].sort(byName));
     return created;
+  }
+
+  async function handleDeleteFranchise(id) {
+    await deleteFranchise(id);
+    setFranchises((fs) => fs.filter((f) => f.id !== id));
+    // az adatbázis már üresre állította a címeknél, itt csak helyben követjük
+    setTitles((ts) => ts.map((t) => (t.franchise_id === id ? { ...t, franchise_id: null } : t)));
+    if (franchise === String(id)) setFranchise('');
   }
 
   function replaceTitle(row) {
@@ -342,6 +350,7 @@ export default function Watchlist({ session }) {
               statuses={statuses}
               franchises={franchises}
               onCreateFranchise={handleCreateFranchise}
+              onDeleteFranchise={handleDeleteFranchise}
               onUpdated={replaceTitle}
               onDeleted={removeTitle}
             />
@@ -367,6 +376,7 @@ export default function Watchlist({ session }) {
           statuses={statuses}
           franchises={franchises}
           onCreateFranchise={handleCreateFranchise}
+          onDeleteFranchise={handleDeleteFranchise}
           onSaved={replaceTitle}
           onDeleted={removeTitle}
           onClose={() => setEditing(null)}

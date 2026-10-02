@@ -4,42 +4,66 @@ import { useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 
 const NEW = '__new';
+const DELETE = '__delete';
 
-// Franchise-választó: üres (alapértelmezett), a meglévők, vagy "+ Új franchise…",
-// amire helyben megadható az új név (Enter: hozzáadás, Esc: mégse).
-export default function FranchiseSelect({ value, franchises, onChange, onCreate, label, className }) {
-  const [creating, setCreating] = useState(false);
+// Franchise-választó: üres (alapértelmezett), a meglévők, "+ Új franchise…" (helyben
+// névmegadás; Enter: hozzáadás, Esc: mégse), és a kiválasztott franchise törlése
+// megerősítéssel (hibásan felvett kategóriához; minden címről lekerül).
+export default function FranchiseSelect({
+  value,
+  franchises,
+  onChange,
+  onCreate,
+  onDelete,
+  label,
+  className,
+}) {
+  const [mode, setMode] = useState(''); // '' | 'create' | 'delete'
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const selectRef = useRef(null);
+  const current = franchises.find((f) => f.id === value);
 
   // vissza a lenyílóhoz, és a fókusz is oda kerül
   function finish() {
     flushSync(() => {
-      setCreating(false);
+      setMode('');
       setName('');
       setError('');
     });
     selectRef.current?.focus();
   }
 
-  async function create() {
-    const trimmed = name.trim();
-    if (!trimmed) {
-      setError('Adj meg egy nevet.');
-      return;
-    }
+  async function run(action) {
     setBusy(true);
     setError('');
     try {
-      const franchise = await onCreate(trimmed);
-      onChange(franchise.id);
+      await action();
       finish();
     } catch (err) {
       setError(err.message);
     }
     setBusy(false);
+  }
+
+  function create() {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setError('Adj meg egy nevet.');
+      return;
+    }
+    run(async () => {
+      const franchise = await onCreate(trimmed);
+      onChange(franchise.id);
+    });
+  }
+
+  function remove() {
+    run(async () => {
+      await onDelete(current.id);
+      onChange(null);
+    });
   }
 
   function handleKey(event) {
@@ -52,7 +76,13 @@ export default function FranchiseSelect({ value, franchises, onChange, onCreate,
     }
   }
 
-  if (creating) {
+  const errorText = error && (
+    <p className="error small" role="alert">
+      {error}
+    </p>
+  );
+
+  if (mode === 'create') {
     return (
       <div className="franchise-new">
         <input
@@ -70,11 +100,24 @@ export default function FranchiseSelect({ value, franchises, onChange, onCreate,
         <button type="button" className="ghost mini" onClick={finish}>
           Mégse
         </button>
-        {error && (
-          <p className="error small" role="alert">
-            {error}
-          </p>
-        )}
+        {errorText}
+      </div>
+    );
+  }
+
+  if (mode === 'delete' && current) {
+    return (
+      <div className="franchise-new">
+        <span className="confirm-text">
+          Törlöd ezt a franchise-t: „{current.name}”? Minden címről lekerül.
+        </span>
+        <button type="button" className="ghost mini" autoFocus onClick={finish}>
+          Mégse
+        </button>
+        <button type="button" className="danger mini" disabled={busy} onClick={remove}>
+          Igen, törlés
+        </button>
+        {errorText}
       </div>
     );
   }
@@ -87,7 +130,8 @@ export default function FranchiseSelect({ value, franchises, onChange, onCreate,
       value={value ?? ''}
       onChange={(e) => {
         const v = e.target.value;
-        if (v === NEW) setCreating(true);
+        if (v === NEW) setMode('create');
+        else if (v === DELETE) setMode('delete');
         else onChange(v ? Number(v) : null);
       }}
     >
@@ -98,6 +142,7 @@ export default function FranchiseSelect({ value, franchises, onChange, onCreate,
         </option>
       ))}
       <option value={NEW}>+ Új franchise…</option>
+      {current && onDelete && <option value={DELETE}>× „{current.name}” törlése…</option>}
     </select>
   );
 }

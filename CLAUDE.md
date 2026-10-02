@@ -46,14 +46,16 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/TitleEditor.js` – natív `<dialog>`: állapot, letöltve, megnézve dátuma
   (`watched_at`, csak „Megnézve” állapotnál; átváltáskor a mai nap), értékelés 10 csillaggal
   (+ „Törlés” link), megjegyzés, törlés megerősítéssel (a mobilos borítófalon a ceruza nyitja)
-- `components/TitleTable.js` – asztali soros nézet (≥ 1200 px, `DESKTOP_QUERY` a
-  `Watchlist`-ben): balra borító + adatok (a cím mellett Franchise lenyíló, üresen csak
-  rámutatáskor látszik), jobbra sorrendben Letöltve – Állapot – Mama – Értékelés
-  (10 csillag + „8/10”) – Megjegyzés, a végén törlés megerősítéssel. Azonnali,
+- `components/TitleTable.js` – asztali soros nézet (≥ 1400 px, `DESKTOP_QUERY` a
+  `Watchlist`-ben; egy mérettel nagyobb betűk): balra borító + adatok (a cím mellett
+  Franchise lenyíló, üresen csak rámutatáskor látszik), jobbra sorrendben Letöltve – Állapot –
+  Mama – Értékelés (10 másfélszeres csillag + „8/10”) – Megjegyzés (fejléc csak
+  képernyőolvasónak), a végén törlés megerősítéssel. Azonnali,
   optimista mentés (hibánál visszaáll). A megjegyzés visszafogott (keret/háttér csak
   rámutatáskor), kikattintáskor ment, Esc-re visszaáll
 - `components/FranchiseSelect.js` – franchise lenyíló (üres / meglévők / „+ Új franchise…”
-  → helyben névmegadás, Enter: hozzáadás, Esc: mégse); soros nézet és szerkesztő ablak is
+  → helyben névmegadás, Enter: hozzáadás, Esc: mégse / „× „Név” törlése…” a kiválasztottra,
+  megerősítéssel, minden címről lekerül); soros nézet és szerkesztő ablak is
 - `components/StarRating.js` – `StarRating` (szerkeszthető: rádiógombok, nyilakkal is
   állítható, a kiválasztott csillagra újra kattintva `null`) és `StarsDisplay` (csak kijelzés)
 - `lib/useMediaQuery.js` – `useMediaQuery(query)` hook (`useSyncExternalStore`)
@@ -65,7 +67,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   hibánál a szerver magyar üzenetével dob
 - `lib/titles.js` – címműveletek: `titleKey()`, `addTitle()` (műfajok upsert → `titles`
   insert → `title_genres` insert, hibánál a cím visszavonása), `updateTitle()`,
-  `deleteTitle()`, `createFranchise()`; a címműveletek a `titles_with_genres` friss sorát adják
+  `deleteTitle()`, `createFranchise()`, `deleteFranchise()`; a címműveletek a `titles_with_genres` friss sorát adják
   vissza (törlés kivételével). A franchise nevét a kliens keresi ki id alapján (nincs a nézetben).
   Közös segédek: `externalLink()`, `formatDate()`, `todayDate()`, `DEFAULT_STATUS`,
   `MAMA_OPTIONS`, `mamaLabel()`
@@ -106,7 +108,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   „Megnézendő” felirat a soron/kártyán/ablakban, és nincs színe. Csak a szűrőgomb nevezi meg.
   A szerkesztő ablakban a kiválasztott állapotra/Mamára újra kattintva lesz üres.
 - A megnézett (`watched`) címek halványak (sor és kártya), rámutatáskor teljes fényerő.
-- Design: sötét téma a `:root` változókkal; állapotszínek `--st-<kód>` változókban.
+- Design: sötét téma a `:root` változókkal; kiemelőszín (`--accent`) neon türkiz `#33e0ef`
+  (nem sárga), a „Folyamatban” is ez; állapotszínek `--st-<kód>` változókban.
   Új állapotnál ide is kell egy szín, és a `[data-status=...]` szabály (kártya és táblázatsor is használja).
 - Képekhez sima `<img>`, nem `next/image`.
 - Nincs middleware / proxy; az auth kliensoldali.
@@ -117,7 +120,7 @@ TMDB kereső és hozzáadás (az `/api/tmdb/*` route-ok token nélkül 401-et ad
 hozzáadás dátuma a kártyán, cím szerkesztése és törlése (`TitleEditor`),
 asztali soros nézet soron belüli szerkesztéssel (`TitleTable`), csillagos értékelés,
 „Mama” jelző, rendezés (hozzáadás, értékelés, megjelenés éve), letisztított szűrősor,
-franchise-ok (beállítás + szűrő; átnevezés/törlés még nincs a felületen).
+franchise-ok (beállítás + szűrő + törlés; átnevezés még nincs a felületen), neon türkiz színvilág.
 Fejléc: „Megnézendő filmek”.
 
 ## Következő feladat

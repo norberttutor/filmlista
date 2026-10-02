@@ -22,6 +22,7 @@ export default function TitleTable({
   statuses,
   franchises,
   onCreateFranchise,
+  onDeleteFranchise,
   onUpdated,
   onDeleted,
 }) {
@@ -44,7 +45,7 @@ export default function TitleTable({
               Értékelés
             </th>
             <th scope="col" className="col-notes">
-              Megjegyzés
+              <span className="sr-only">Megjegyzés</span>
             </th>
             <th scope="col" className="col-actions">
               <span className="sr-only">Törlés</span>
@@ -59,6 +60,7 @@ export default function TitleTable({
               statuses={statuses}
               franchises={franchises}
               onCreateFranchise={onCreateFranchise}
+              onDeleteFranchise={onDeleteFranchise}
               onUpdated={onUpdated}
               onDeleted={onDeleted}
             />
@@ -69,7 +71,15 @@ export default function TitleTable({
   );
 }
 
-function TitleRow({ title: t, statuses, franchises, onCreateFranchise, onUpdated, onDeleted }) {
+function TitleRow({
+  title: t,
+  statuses,
+  franchises,
+  onCreateFranchise,
+  onDeleteFranchise,
+  onUpdated,
+  onDeleted,
+}) {
   const [notes, setNotes] = useState(t.notes ?? '');
   const [saveState, setSaveState] = useState(''); // '' | 'saving' | 'saved'
   const [error, setError] = useState('');
@@ -168,6 +178,7 @@ function TitleRow({ title: t, statuses, franchises, onCreateFranchise, onUpdated
                   franchises={franchises}
                   onChange={(id) => save({ franchise_id: id })}
                   onCreate={onCreateFranchise}
+                  onDelete={onDeleteFranchise}
                 />
               </div>
             </div>
