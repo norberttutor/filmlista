@@ -35,7 +35,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/LoginForm.js` – e-mail + jelszó belépés (regisztráció nincs, ki van kapcsolva)
 - `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből; szűrősor
   balról: Típus lenyíló (Filmek / Sorozatok, alapból Filmek, nincs „Mind”) – állapotgombok +
-  „Letöltöttek” jelölő – Műfaj (csak az adott típus műfajai); jobb szélen Rendezés (`SORTS`:
+  „Letöltöttek” jelölő – Műfaj (csak az adott típus műfajai) – Franchise (csak a használtak);
+  jobb szélen Rendezés (`SORTS`:
   legutóbb / legkorábban hozzáadott, legjobb értékelés, legújabb / legrégebbi megjelenés;
   üres érték a végére). Az állapotgombok darabszámai a többi szűrőt már figyelembe veszik
 - `components/PosterCard.js` – borító (`https://image.tmdb.org/t/p/w342` + `poster_path`),
@@ -46,10 +47,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (`watched_at`, csak „Megnézve” állapotnál; átváltáskor a mai nap), értékelés 10 csillaggal
   (+ „Törlés” link), megjegyzés, törlés megerősítéssel (a mobilos borítófalon a ceruza nyitja)
 - `components/TitleTable.js` – asztali soros nézet (≥ 1200 px, `DESKTOP_QUERY` a
-  `Watchlist`-ben): balra borító + adatok, jobbra sorrendben Letöltve – Mama – Állapot –
-  Értékelés (10 csillag + „8/10”) – Megjegyzés, a végén törlés megerősítéssel. Azonnali,
+  `Watchlist`-ben): balra borító + adatok (a cím mellett Franchise lenyíló, üresen csak
+  rámutatáskor látszik), jobbra sorrendben Letöltve – Állapot – Mama – Értékelés
+  (10 csillag + „8/10”) – Megjegyzés, a végén törlés megerősítéssel. Azonnali,
   optimista mentés (hibánál visszaáll). A megjegyzés visszafogott (keret/háttér csak
   rámutatáskor), kikattintáskor ment, Esc-re visszaáll
+- `components/FranchiseSelect.js` – franchise lenyíló (üres / meglévők / „+ Új franchise…”
+  → helyben névmegadás, Enter: hozzáadás, Esc: mégse); soros nézet és szerkesztő ablak is
 - `components/StarRating.js` – `StarRating` (szerkeszthető: rádiógombok, nyilakkal is
   állítható, a kiválasztott csillagra újra kattintva `null`) és `StarsDisplay` (csak kijelzés)
 - `lib/useMediaQuery.js` – `useMediaQuery(query)` hook (`useSyncExternalStore`)
@@ -61,7 +65,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   hibánál a szerver magyar üzenetével dob
 - `lib/titles.js` – címműveletek: `titleKey()`, `addTitle()` (műfajok upsert → `titles`
   insert → `title_genres` insert, hibánál a cím visszavonása), `updateTitle()`,
-  `deleteTitle()`; mindegyik a `titles_with_genres` friss sorát adja vissza (törlés kivételével).
+  `deleteTitle()`, `createFranchise()`; a címműveletek a `titles_with_genres` friss sorát adják
+  vissza (törlés kivételével). A franchise nevét a kliens keresi ki id alapján (nincs a nézetben).
   Közös segédek: `externalLink()`, `formatDate()`, `todayDate()`, `DEFAULT_STATUS`,
   `MAMA_OPTIONS`, `mamaLabel()`
 - `lib/server/auth.js` – `getUserFromRequest()` + `unauthorized()` (csak route handlerben)
@@ -77,14 +82,21 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `titles` – `user_id` (default `auth.uid()`), `media_type` ('movie' | 'tv'), `title`,
   `original_title`, `release_year`, `overview`, `poster_path`, `tmdb_id`, `imdb_id`,
   `status` (FK → statuses), `is_downloaded`, `mama_status` (null | 'interested' | 'received',
-  „Mama” jelző: üres / Érdekli / Megkapta – `03_mama.sql`), `my_rating` (1–10), `notes`,
-  `watched_at`, `created_at`, `updated_at` (trigger); egyedi: `(user_id, media_type, tmdb_id)`
+  „Mama” jelző: üres / Érdekli / Megkapta – `03_mama.sql`), `franchise_id` (FK → franchises,
+  null = nincs; `on delete set null`), `my_rating` (1–10), `notes`, `watched_at`,
+  `created_at`, `updated_at` (trigger); egyedi: `(user_id, media_type, tmdb_id)`
+- `franchises (id, user_id default auth.uid(), name, created_at)` – felhasználónkénti saját
+  lista, a felületen bővíthető; egyedi: `(user_id, lower(name))` – `04_franchises.sql`
 - `title_genres (title_id, genre_id)` – kapcsolótábla
 - `titles_with_genres` nézet (`security_invoker`): `titles.*` + `status_name` + `genres text[]`
 - Minden táblán RLS: a felhasználó csak a saját címeit látja/módosítja.
-- Sémamódosításnál új számozott SQL fájlt írj a `supabase/` mappába (pl. `03_...sql`),
-  amit Norbi a Supabase SQL Editorban futtat. Ha a nézet oszlopai változnak, újra kell
-  létrehozni (`drop view` + `create view`).
+- Sémamódosításnál új számozott SQL fájlt írj a `supabase/` mappába (pl. `05_...sql`).
+  Ha a nézet oszlopai változnak (a `t.*` is!), újra kell létrehozni (`drop view` + `create view`).
+- Futtatás: Claude a `SUPABASE_DB_URL`-lel (`.env.local`, Session pooler; teljes admin jog,
+  RLS nélkül) a `pg` csomaggal, egy tranzakcióban (hibánál `rollback`). A `pg` a scratchpadbe
+  települ, nem a projektbe. Csak a `supabase/` mappa számozott fájljait futtasd; adatot törlő
+  vagy táblát eldobó lépés előtt kérdezz rá (a nézet újralétrehozása kivétel). Utána ellenőrizd.
+  Push csak a séma után, mert az új kód az új oszlopokra/táblákra számít.
 
 ## Konvenciók
 - Felületi szövegek magyarul, mondatkezdő nagybetűvel, cselekvő igékkel
@@ -104,7 +116,8 @@ Kész: adatbázis, projektváz, belépés, lista + szűrők, GitHub, Vercel depl
 TMDB kereső és hozzáadás (az `/api/tmdb/*` route-ok token nélkül 401-et adnak),
 hozzáadás dátuma a kártyán, cím szerkesztése és törlése (`TitleEditor`),
 asztali soros nézet soron belüli szerkesztéssel (`TitleTable`), csillagos értékelés,
-„Mama” jelző, rendezés (hozzáadás, értékelés, megjelenés éve), letisztított szűrősor.
+„Mama” jelző, rendezés (hozzáadás, értékelés, megjelenés éve), letisztított szűrősor,
+franchise-ok (beállítás + szűrő; átnevezés/törlés még nincs a felületen).
 Fejléc: „Megnézendő filmek”.
 
 ## Következő feladat
@@ -119,3 +132,5 @@ Fejléc: „Megnézendő filmek”.
   Böngészős teszt: `playwright-core` a scratchpadbe telepítve (nem a projektbe), a gépen
   lévő Chrome-mal (`C:\Program Files\Google\Chrome\Application\chrome.exe`), a helyben
   futó `npx next start -p 3123` ellen. A teszt végén a tesztfiók listáját ürítsd ki.
+  Szkriptből (supabase-js) kilépéskor `signOut({ scope: 'local' })` kell – az alapértelmezett
+  `global` a böngészőben futó munkamenetet is lezárja, és az `/api` route-ok 401-et adnak.

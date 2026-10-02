@@ -12,11 +12,19 @@ import {
   MAMA_OPTIONS,
 } from '@/lib/titles';
 import StarRating from '@/components/StarRating';
+import FranchiseSelect from '@/components/FranchiseSelect';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w154';
 
 // Asztali nézet: egy cím soronként, a saját adatok közvetlenül a sorban szerkeszthetők.
-export default function TitleTable({ titles, statuses, onUpdated, onDeleted }) {
+export default function TitleTable({
+  titles,
+  statuses,
+  franchises,
+  onCreateFranchise,
+  onUpdated,
+  onDeleted,
+}) {
   return (
     <div className="table-wrap">
       <table className="titles-table">
@@ -26,11 +34,11 @@ export default function TitleTable({ titles, statuses, onUpdated, onDeleted }) {
             <th scope="col" className="col-check">
               Letöltve
             </th>
-            <th scope="col" className="col-mama">
-              Mama
-            </th>
             <th scope="col" className="col-status">
               Állapot
+            </th>
+            <th scope="col" className="col-mama">
+              Mama
             </th>
             <th scope="col" className="col-rating">
               Értékelés
@@ -49,6 +57,8 @@ export default function TitleTable({ titles, statuses, onUpdated, onDeleted }) {
               key={t.id}
               title={t}
               statuses={statuses}
+              franchises={franchises}
+              onCreateFranchise={onCreateFranchise}
               onUpdated={onUpdated}
               onDeleted={onDeleted}
             />
@@ -59,7 +69,7 @@ export default function TitleTable({ titles, statuses, onUpdated, onDeleted }) {
   );
 }
 
-function TitleRow({ title: t, statuses, onUpdated, onDeleted }) {
+function TitleRow({ title: t, statuses, franchises, onCreateFranchise, onUpdated, onDeleted }) {
   const [notes, setNotes] = useState(t.notes ?? '');
   const [saveState, setSaveState] = useState(''); // '' | 'saving' | 'saved'
   const [error, setError] = useState('');
@@ -138,15 +148,29 @@ function TitleRow({ title: t, statuses, onUpdated, onDeleted }) {
             {t.poster_path && <img src={THUMB_BASE + t.poster_path} alt="" loading="lazy" />}
           </div>
           <div className="row-text">
-            <p className="row-name">
-              {link ? (
-                <a href={link.href} target="_blank" rel="noopener noreferrer">
-                  {t.title}
-                </a>
-              ) : (
-                t.title
-              )}
-            </p>
+            <div className="row-head">
+              <p className="row-name">
+                {link ? (
+                  <a href={link.href} target="_blank" rel="noopener noreferrer">
+                    {t.title}
+                  </a>
+                ) : (
+                  t.title
+                )}
+              </p>
+              {/* a cím mellett; üresen csak rámutatáskor látszik, hogy ne zsúfolja a listát */}
+              <div className={t.franchise_id ? 'franchise-field' : 'franchise-field empty'}>
+                {!t.franchise_id && <span aria-hidden="true">Franchise</span>}
+                <FranchiseSelect
+                  className="franchise-select"
+                  label={`Franchise – ${t.title}`}
+                  value={t.franchise_id}
+                  franchises={franchises}
+                  onChange={(id) => save({ franchise_id: id })}
+                  onCreate={onCreateFranchise}
+                />
+              </div>
+            </div>
             {t.original_title && t.original_title !== t.title && (
               <p className="original">{t.original_title}</p>
             )}
@@ -187,20 +211,6 @@ function TitleRow({ title: t, statuses, onUpdated, onDeleted }) {
               onChange={(e) => save({ is_downloaded: e.target.checked })}
             />
           </td>
-          <td className="col-mama">
-            <select
-              aria-label={`Mama – ${t.title}`}
-              value={t.mama_status ?? ''}
-              onChange={(e) => save({ mama_status: e.target.value || null })}
-            >
-              <option value=""></option>
-              {MAMA_OPTIONS.map((o) => (
-                <option key={o.code} value={o.code}>
-                  {o.name}
-                </option>
-              ))}
-            </select>
-          </td>
           <td className="col-status">
             <select
               aria-label={`Állapot – ${t.title}`}
@@ -211,6 +221,20 @@ function TitleRow({ title: t, statuses, onUpdated, onDeleted }) {
                 <option key={s.code} value={s.code}>
                   {/* az alapállapot üresen jelenik meg */}
                   {s.code === DEFAULT_STATUS ? '' : s.name}
+                </option>
+              ))}
+            </select>
+          </td>
+          <td className="col-mama">
+            <select
+              aria-label={`Mama – ${t.title}`}
+              value={t.mama_status ?? ''}
+              onChange={(e) => save({ mama_status: e.target.value || null })}
+            >
+              <option value=""></option>
+              {MAMA_OPTIONS.map((o) => (
+                <option key={o.code} value={o.code}>
+                  {o.name}
                 </option>
               ))}
             </select>

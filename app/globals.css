@@ -652,6 +652,11 @@ button:disabled {
   box-shadow: inset 0 -1px 0 var(--line);
 }
 
+/* a "Cím" kivételével a fejlécek a vezérlők fölött középen */
+.titles-table th:not(:first-child) {
+  text-align: center;
+}
+
 .titles-table td {
   padding: 0.75rem;
   vertical-align: middle;
@@ -746,6 +751,84 @@ button:disabled {
 .row-text .added,
 .row-text .error {
   margin-top: 0.2rem;
+}
+
+/* cím + franchise egy sorban (ha nem fér ki, a franchise a következő sorba tör) */
+.row-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.1rem 0.5rem;
+}
+
+/* franchise a cím mellett: üresen csak rámutatáskor / fókuszban látszik */
+.franchise-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  transition: opacity 0.15s;
+}
+
+.franchise-field.empty {
+  opacity: 0;
+}
+
+.titles-table tr:hover .franchise-field,
+.franchise-field:focus-within {
+  opacity: 1;
+}
+
+.titles-table .franchise-select {
+  width: auto;
+  max-width: 100%;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.8rem;
+  color: var(--accent);
+  background: transparent;
+  border-color: transparent;
+}
+
+.titles-table tr:hover .franchise-select,
+.titles-table .franchise-select:focus {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.franchise-new {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.franchise-new input {
+  width: 11rem;
+  max-width: 100%;
+  padding: 0.25rem 0.5rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.franchise-new .error {
+  flex-basis: 100%;
+}
+
+.mini {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+}
+
+.card-franchise {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: var(--accent);
 }
 
 /* "Mentés…" / "Mentve" a megjegyzésmező jobb alsó sarkában, hogy ne tolja el a sort */
@@ -957,13 +1040,13 @@ body:has(.editor[open]) {
 .site-footer {
   padding: 1.25rem var(--gutter) 2rem;
   border-top: 1px solid var(--line);
-  font-size: 0.8rem;
+  font-size: 0.675rem; /* ~10,8 px */
   color: var(--muted);
 }
 
+/* nincs szélességkorlát: asztali gépen egy sorba fér, keskeny képernyőn tördel */
 .site-footer p {
   margin: 0;
-  max-width: 60ch;
 }
 
 @media (max-width: 480px) {

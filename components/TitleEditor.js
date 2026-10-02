@@ -10,6 +10,7 @@ import {
   MAMA_OPTIONS,
 } from '@/lib/titles';
 import StarRating from '@/components/StarRating';
+import FranchiseSelect from '@/components/FranchiseSelect';
 
 // Rádiógombok "chip" formában; a kiválasztottra újra kattintva visszaáll üresre.
 function ClearableChips({ name, options, value, onChange }) {
@@ -33,13 +34,22 @@ function ClearableChips({ name, options, value, onChange }) {
 
 // Felugró ablak egy cím saját adatainak szerkesztésére és törlésére.
 // A natív <dialog> elemet használja: Esc-re bezárul, a fókusz az ablakban marad.
-export default function TitleEditor({ title: t, statuses, onSaved, onDeleted, onClose }) {
+export default function TitleEditor({
+  title: t,
+  statuses,
+  franchises,
+  onCreateFranchise,
+  onSaved,
+  onDeleted,
+  onClose,
+}) {
   const dialogRef = useRef(null);
   const deleteButtonRef = useRef(null);
   const [form, setForm] = useState({
     status: t.status,
     is_downloaded: t.is_downloaded,
     mama_status: t.mama_status ?? null,
+    franchise_id: t.franchise_id ?? null,
     my_rating: t.my_rating ?? null,
     notes: t.notes ?? '',
     watched_at: t.watched_at ?? '',
@@ -86,6 +96,7 @@ export default function TitleEditor({ title: t, statuses, onSaved, onDeleted, on
         status: form.status,
         is_downloaded: form.is_downloaded,
         mama_status: form.mama_status,
+        franchise_id: form.franchise_id,
         my_rating: form.my_rating,
         notes: form.notes.trim() || null,
         // a dátumnak csak megnézett címnél van értelme
@@ -122,6 +133,17 @@ export default function TitleEditor({ title: t, statuses, onSaved, onDeleted, on
             <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
           </p>
         </header>
+
+        <div className="field">
+          <span aria-hidden="true">Franchise</span>
+          <FranchiseSelect
+            label="Franchise"
+            value={form.franchise_id}
+            franchises={franchises}
+            onChange={(id) => setField('franchise_id', id)}
+            onCreate={onCreateFranchise}
+          />
+        </div>
 
         <fieldset className="field">
           <legend>Állapot</legend>

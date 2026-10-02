@@ -3,7 +3,7 @@ import { StarsDisplay } from '@/components/StarRating';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
 
-export default function PosterCard({ title: t, onEdit }) {
+export default function PosterCard({ title: t, franchise, onEdit }) {
   const link = externalLink(t);
 
   const poster = (
@@ -58,6 +58,7 @@ export default function PosterCard({ title: t, onEdit }) {
       {t.original_title && t.original_title !== t.title && (
         <p className="original">{t.original_title}</p>
       )}
+      {franchise && <p className="card-franchise">Franchise: {franchise}</p>}
       <p className="meta">
         {t.release_year && <span>{t.release_year}</span>}
         <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>

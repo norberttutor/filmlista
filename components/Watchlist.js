@@ -6,8 +6,10 @@ import PosterCard from '@/components/PosterCard';
 import TitleSearch from '@/components/TitleSearch';
 import TitleEditor from '@/components/TitleEditor';
 import TitleTable from '@/components/TitleTable';
-import { titleKey } from '@/lib/titles';
+import { titleKey, createFranchise } from '@/lib/titles';
 import { useMediaQuery } from '@/lib/useMediaQuery';
+
+const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 
 // ennél szélesebb képernyőn soros (táblázatos) nézet, alatta borítófal
 const DESKTOP_QUERY = '(min-width: 1200px)';
@@ -60,6 +62,7 @@ function Chip({ active, onClick, label, count }) {
 export default function Watchlist({ session }) {
   const [titles, setTitles] = useState([]);
   const [statuses, setStatuses] = useState([]);
+  const [franchises, setFranchises] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [adding, setAdding] = useState(false);
@@ -70,6 +73,7 @@ export default function Watchlist({ session }) {
   const [status, setStatus] = useState('all');
   const [type, setType] = useState('movie');
   const [genre, setGenre] = useState('');
+  const [franchise, setFranchise] = useState(''); // '' = összes, egyébként franchise id
   const [onlyDownloaded, setOnlyDownloaded] = useState(false);
   const [sort, setSort] = useState('added_desc');
 
@@ -77,23 +81,26 @@ export default function Watchlist({ session }) {
     let cancelled = false;
 
     async function load() {
-      const [titlesRes, statusesRes] = await Promise.all([
+      const [titlesRes, statusesRes, franchisesRes] = await Promise.all([
         supabase
           .from('titles_with_genres')
           .select('*')
           .order('created_at', { ascending: false }),
         supabase.from('statuses').select('*').order('sort_order'),
+        supabase.from('franchises').select('id, name'),
       ]);
       if (cancelled) return;
 
-      if (titlesRes.error || statusesRes.error) {
-        console.error(titlesRes.error || statusesRes.error);
+      const error = titlesRes.error || statusesRes.error || franchisesRes.error;
+      if (error) {
+        console.error(error);
         setLoadError(
           'Nem sikerült betölteni a listát. Ellenőrizd a .env.local beállításait, és hogy fut-e a Supabase projekt.'
         );
       } else {
         setTitles(titlesRes.data);
         setStatuses(statusesRes.data);
+        setFranchises(franchisesRes.data.sort(byName));
       }
       setLoading(false);
     }
@@ -116,6 +123,17 @@ export default function Watchlist({ session }) {
     [ofType]
   );
 
+  // a szűrőben csak az ennél a típusnál ténylegesen használt franchise-ok
+  const usedFranchises = useMemo(() => {
+    const used = new Set(ofType.map((t) => t.franchise_id));
+    return franchises.filter((f) => used.has(f.id));
+  }, [ofType, franchises]);
+
+  const franchiseName = useMemo(
+    () => new Map(franchises.map((f) => [f.id, f.name])),
+    [franchises]
+  );
+
   // a keresőben ezek alapján látszik, mi van már a listán
   const existingKeys = useMemo(() => new Set(titles.map(titleKey)), [titles]);
 
@@ -124,9 +142,11 @@ export default function Watchlist({ session }) {
     () =>
       ofType.filter(
         (t) =>
-          (!genre || (t.genres ?? []).includes(genre)) && (!onlyDownloaded || t.is_downloaded)
+          (!genre || (t.genres ?? []).includes(genre)) &&
+          (!franchise || String(t.franchise_id) === franchise) &&
+          (!onlyDownloaded || t.is_downloaded)
       ),
-    [ofType, genre, onlyDownloaded]
+    [ofType, genre, franchise, onlyDownloaded]
   );
 
   const countByStatus = useMemo(() => {
@@ -143,6 +163,16 @@ export default function Watchlist({ session }) {
   function changeType(code) {
     setType(code);
     setGenre(''); // a filmek és sorozatok műfajai eltérnek
+    // a franchise-szűrő marad, ha az új típusnál is van ilyen cím (pl. Star Wars film és sorozat)
+    if (!titles.some((t) => t.media_type === code && String(t.franchise_id) === franchise)) {
+      setFranchise('');
+    }
+  }
+
+  async function handleCreateFranchise(name) {
+    const created = await createFranchise(name);
+    setFranchises((fs) => [...fs, created].sort(byName));
+    return created;
   }
 
   function replaceTitle(row) {
@@ -157,6 +187,7 @@ export default function Watchlist({ session }) {
   function resetFilters() {
     setStatus('all');
     setGenre('');
+    setFranchise('');
     setOnlyDownloaded(false);
   }
 
@@ -262,6 +293,20 @@ export default function Watchlist({ session }) {
               </label>
             )}
 
+            {usedFranchises.length > 0 && (
+              <label className="inline-field">
+                Franchise
+                <select value={franchise} onChange={(e) => setFranchise(e.target.value)}>
+                  <option value="">Összes</option>
+                  {usedFranchises.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
             <label className="inline-field sort-field">
               Rendezés
               <select value={sort} onChange={(e) => setSort(e.target.value)}>
@@ -295,6 +340,8 @@ export default function Watchlist({ session }) {
             <TitleTable
               titles={visible}
               statuses={statuses}
+              franchises={franchises}
+              onCreateFranchise={handleCreateFranchise}
               onUpdated={replaceTitle}
               onDeleted={removeTitle}
             />
@@ -302,7 +349,11 @@ export default function Watchlist({ session }) {
             <ul className="grid">
               {visible.map((t) => (
                 <li key={t.id}>
-                  <PosterCard title={t} onEdit={setEditing} />
+                  <PosterCard
+                    title={t}
+                    franchise={franchiseName.get(t.franchise_id)}
+                    onEdit={setEditing}
+                  />
                 </li>
               ))}
             </ul>
@@ -314,6 +365,8 @@ export default function Watchlist({ session }) {
         <TitleEditor
           title={editing}
           statuses={statuses}
+          franchises={franchises}
+          onCreateFranchise={handleCreateFranchise}
           onSaved={replaceTitle}
           onDeleted={removeTitle}
           onClose={() => setEditing(null)}
