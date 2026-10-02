@@ -38,7 +38,18 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/PosterCard.js` – borító (`https://image.tmdb.org/t/p/w342` + `poster_path`),
   állapotcsík, „Letöltve” jelvény, link IMDb-re (vagy TMDB-re, ha nincs IMDb ID)
 - `components/SiteFooter.js` – kötelező TMDB forrásmegjelölés, ne töröld
+- `components/TitleSearch.js` – „Cím hozzáadása” panel: késleltetett (400 ms) TMDB keresés,
+  találati lista, „Hozzáadás a listához” gomb; a már listán lévőknél „✓ A listán”
 - `lib/supabase.js` – Supabase kliens
+- `lib/api.js` – `apiGet()`: saját `/api` route hívása `Authorization: Bearer` tokennel,
+  hibánál a szerver magyar üzenetével dob
+- `lib/titles.js` – `titleKey()`, `addTitle()` (műfajok upsert → `titles` insert →
+  `title_genres` insert, hibánál a cím visszavonása); ide jönnek a további címműveletek
+- `lib/server/auth.js` – `getUserFromRequest()` + `unauthorized()` (csak route handlerben)
+- `lib/server/tmdb.js` – `tmdbFetch()`, `tmdbErrorResponse()`, `yearOf()` (csak route handlerben)
+- `app/api/tmdb/search/route.js` – `GET ?q=` → `search/multi`, csak film/sorozat
+- `app/api/tmdb/details/route.js` – `GET ?type=movie|tv&id=` → a `titles` oszlopainak
+  megfelelő objektum + `genres [{id, name}]`; magyar leírás híján angol
 - `supabase/*.sql` – a már lefuttatott adatbázis-szkriptek (dokumentáció)
 
 ## Adatbázis (már létezik, lásd `supabase/`)
@@ -65,19 +76,15 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - Nincs middleware / proxy; az auth kliensoldali.
 
 ## Állapot
-Kész: adatbázis, projektváz, belépés, lista + szűrők, GitHub, Vercel deploy.
+Kész: adatbázis, projektváz, belépés, lista + szűrők, GitHub, Vercel deploy,
+TMDB kereső és hozzáadás (az `/api/tmdb/*` route-ok token nélkül 401-et adnak).
 
-## Következő feladat: TMDB kereső és hozzáadás
-1. Route handler (pl. `app/api/tmdb/search/route.js`): TMDB `search/multi`, `hu-HU`,
-   csak `movie` és `tv` találatok, rövidített válasz (id, típus, cím, eredeti cím, év, poster_path).
-   Védelem: a kliens küldje a Supabase access tokent `Authorization: Bearer` fejlécben,
-   a route ellenőrizze (`supabase.auth.getUser(token)`), különben 401.
-2. Részletek route: `movie/{id}` vagy `tv/{id}` `append_to_response=external_ids`
-   → IMDb ID, műfajok (magyar név), leírás.
-3. Felület: kereső mező + találati lista borítóval; „Hozzáadás a listához” gomb.
-   Mentés: műfajok upsert a `genres`-be → `titles` insert → `title_genres` insert.
-   Duplikáció (Postgres `23505`): „Ez a cím már a listádon van.”
-   Mentés után frissüljön a lista oldalfrissítés nélkül.
-4. Utána: állapot és „letöltve” módosítása a kártyán, törlés, saját értékelés/megjegyzés.
-5. Később: tömeges import (soronként beillesztett címek, bizonytalan találatok jóváhagyása),
+## Következő feladat
+1. Állapot és „letöltve” módosítása a kártyán, törlés, saját értékelés/megjegyzés
+   (a műveletek a `lib/titles.js`-be kerüljenek, a lista state-je helyben frissüljön).
+2. Később: tömeges import (soronként beillesztett címek, bizonytalan találatok jóváhagyása),
    sorozatoknál a nézett epizód követése (külön tábla).
+
+## Fejlesztői megjegyzés
+- Ha a terminál nem ismeri a `node`/`npm` parancsot, a VS Code-ot újra kell indítani
+  (a Node a `C:\Program Files\nodejs` mappában van).

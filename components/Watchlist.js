@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import PosterCard from '@/components/PosterCard';
+import TitleSearch from '@/components/TitleSearch';
+import { titleKey } from '@/lib/titles';
 
 const TYPES = [
   { code: 'all', name: 'Mind' },
@@ -24,6 +26,7 @@ export default function Watchlist({ session }) {
   const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [adding, setAdding] = useState(false);
 
   // szűrők
   const [status, setStatus] = useState('all');
@@ -71,6 +74,9 @@ export default function Watchlist({ session }) {
     [titles]
   );
 
+  // a keresőben ezek alapján látszik, mi van már a listán
+  const existingKeys = useMemo(() => new Set(titles.map(titleKey)), [titles]);
+
   const countByStatus = useMemo(() => {
     const counts = {};
     for (const t of titles) counts[t.status] = (counts[t.status] ?? 0) + 1;
@@ -106,6 +112,17 @@ export default function Watchlist({ session }) {
           )}
         </div>
         <div className="account">
+          {!loading && !loadError && (
+            <button
+              type="button"
+              className="primary"
+              aria-expanded={adding}
+              aria-controls="add-panel"
+              onClick={() => setAdding((a) => !a)}
+            >
+              Cím hozzáadása
+            </button>
+          )}
           <span className="muted small">{session.user.email}</span>
           <button type="button" className="ghost" onClick={() => supabase.auth.signOut()}>
             Kilépés
@@ -122,6 +139,14 @@ export default function Watchlist({ session }) {
 
       {!loading && !loadError && (
         <>
+          {adding && (
+            <TitleSearch
+              existingKeys={existingKeys}
+              onAdded={(row) => setTitles((ts) => [row, ...ts])}
+              onClose={() => setAdding(false)}
+            />
+          )}
+
           <section className="filters" aria-label="Szűrők">
             <div className="chips" role="group" aria-label="Állapot">
               <Chip
@@ -177,7 +202,10 @@ export default function Watchlist({ session }) {
           </section>
 
           {titles.length === 0 ? (
-            <p className="state">A listád még üres.</p>
+            <p className="state">
+              A listád még üres. Keress rá egy filmre vagy sorozatra a „Cím hozzáadása”
+              gombbal.
+            </p>
           ) : visible.length === 0 ? (
             <p className="state">
               Nincs a szűrésnek megfelelő cím.{' '}
