@@ -898,13 +898,14 @@ button:disabled {
   overflow: hidden;
 }
 
-/* széles képernyőn: borító | adatok | leírás egymás mellett. Fix arány (cím 3 : leírás 5),
-   hogy a leírás minden sorban ugyanott kezdődjön és ne maradjon nagy hézag a rövid címek
-   után; előtte halvány elválasztó vonal. 1920 px-en kb. 40 karakteres címig fér ki
-   minden, a hosszabbak "…"-val (teljes cím rámutatáskor) */
+/* széles képernyőn (1440p-re optimalizálva): borító | adatok | leírás egymás mellett.
+   A cím oszlop fix 18rem (288 px): Norbi címeinek kb. 96%-a belefér (mérve: 95% ≤ 273 px),
+   a hosszabbak "…"-val. A leírás minden maradék helyet megkap, és mindkét oldalán ugyanakkora
+   a térköz (--overview-gap): a cím oszlop vége felé és a "Letöltve" oszlop felirata felé. */
 @media (min-width: 1800px) {
   .row-title {
-    grid-template-columns: 3.5rem minmax(0, 3fr) minmax(0, 5fr);
+    --overview-gap: 2.5rem;
+    grid-template-columns: 3.5rem 18rem minmax(0, 1fr);
   }
 
   .row-title .thumb {
@@ -913,9 +914,9 @@ button:disabled {
 
   .row-overview {
     grid-column: 3;
-    margin: 0 0 0 0.5rem;
-    padding-left: 1rem;
-    border-left: 1px solid var(--line);
+    /* bal: a rácsköz (0.9rem) után még ennyi; jobb: a cella belső margója (0.75rem) és a
+       középre igazított "Letöltve" felirat előtti hely (~1.125rem) már adott */
+    margin: 0 calc(var(--overview-gap) - 1.875rem) 0 calc(var(--overview-gap) - 0.9rem);
     -webkit-line-clamp: 4;
     line-clamp: 4;
   }

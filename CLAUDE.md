@@ -57,9 +57,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `Watchlist`-ben; `table-layout: fixed`, minden maradék hely a címoszlopé): balra borító +
   adatok (a cím mindig egy sorban, ha így sem fér ki „…” + tooltip; mellette a Franchise
   lenyíló, üresen csak rámutatáskor / billentyűzetes fókusznál jelenik meg; a műfajok külön
-  sorban) + TMDB leírás (`overview`; ≥ 1800 px a cím mellett fix arányban – cím 3 : leírás 5 –,
-  minden sorban egy vonalban, elválasztó vonallal, 4 sorban; alatta 2 sorban; teljes szöveg
-  rámutatáskor; 1920 px-en kb. 40 karakteres címig fér ki, a hosszabbak „…”-val),
+  sorban) + TMDB leírás (`overview`; ≥ 1800 px a cím mellett: a cím oszlop fix `18rem`
+  (288 px, Norbi címeinek kb. 96%-a belefér, a hosszabbak „…”-val), a leírás minden sorban
+  ugyanott kezdődik, minden maradék helyet megkap, és mindkét oldalán ugyanakkora a térköz
+  (`--overview-gap`: a cím oszlop és a „Letöltve” felirat felé), 4 sorban; 1440p-re (2560 px)
+  optimalizálva; 1800 px alatt a cím alatt 2 sorban; teljes szöveg rámutatáskor),
   jobbra sorrendben Letöltve – Állapot – Mama – Értékelés (10 másfélszeres csillag középen,
   mellette „8/10”), a végén törlés megerősítéssel. Azonnali, optimista mentés (hibánál
   visszaáll). Megjegyzés mező nincs a felületen (Norbi kérésére; a `notes` oszlop megmaradt)
