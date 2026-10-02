@@ -779,9 +779,11 @@ button:disabled {
   padding: 0.5rem var(--gutter) 3.5rem;
 }
 
+/* fix oszlopelrendezés: a vezérlőoszlopok szélessége rögzített, minden maradék hely a címé */
 .titles-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .titles-table th {
@@ -848,10 +850,6 @@ button:disabled {
   vertical-align: middle;
 }
 
-.titles-table .col-notes {
-  width: 14%;
-}
-
 .titles-table .col-actions {
   width: 3.5rem;
   text-align: center;
@@ -902,8 +900,9 @@ button:disabled {
 
 /* széles képernyőn: borító | adatok | leírás egymás mellett */
 @media (min-width: 1800px) {
+  /* a cím blokk annyi helyet kap, amennyi a címnek kell; a leírásnak legalább 12rem marad */
   .row-title {
-    grid-template-columns: 3.5rem minmax(11rem, 16rem) minmax(0, 1fr);
+    grid-template-columns: 3.5rem minmax(0, max-content) minmax(12rem, 1fr);
   }
 
   .row-title .thumb {
@@ -926,10 +925,16 @@ button:disabled {
   margin: 0;
 }
 
+/* a cím mindig egy sorban; ha a hely így sem elég, "…" (a teljes cím rámutatáskor látszik) */
 .row-name {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   font-size: 1rem;
   font-weight: 650;
   line-height: 1.25;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* soros nézet: másodlagos szövegek mérete */
@@ -992,13 +997,15 @@ button:disabled {
   transition: opacity 0.15s;
 }
 
+/* üresen nem foglal helyet (hosszú cím alatt se maradjon üres sor); rámutatáskor, vagy ha
+   billentyűzettel a sorban vagyunk, megjelenik – így Tabbal is elérhető */
 .franchise-field.empty {
-  opacity: 0;
+  display: none;
 }
 
-.titles-table tr:hover .franchise-field,
-.franchise-field:focus-within {
-  opacity: 1;
+.titles-table tr:hover .franchise-field.empty,
+.titles-table tr:focus-within .franchise-field.empty {
+  display: flex;
 }
 
 .titles-table .franchise-select {
@@ -1052,56 +1059,6 @@ button:disabled {
   margin: 0.15rem 0 0;
   font-size: 0.8rem;
   color: var(--accent);
-}
-
-/* megjegyzés: visszafogott, keret és háttér csak rámutatáskor / szerkesztéskor */
-.notes-field {
-  position: relative;
-}
-
-.titles-table .notes-input {
-  display: block;
-  padding: 0.3rem 0.5rem;
-  font-size: 0.85rem;
-  line-height: 1.35;
-  color: var(--muted);
-  background: transparent;
-  border-color: transparent;
-  resize: none;
-  /* a szöveghez igazodó magasság (Chrome/Edge); máshol marad a 2 soros mező */
-  field-sizing: content;
-  max-height: 6.5rem;
-}
-
-.titles-table .notes-input::placeholder {
-  color: transparent;
-}
-
-.titles-table tr:hover .notes-input::placeholder,
-.titles-table .notes-input:focus::placeholder {
-  color: var(--muted);
-}
-
-.titles-table .notes-input:hover {
-  border-color: var(--line);
-}
-
-.titles-table .notes-input:focus {
-  color: var(--text);
-  background: var(--surface);
-  border-color: var(--line);
-}
-
-/* "Mentés…" / "Mentve" a megjegyzésmező jobb alsó sarkában, hogy ne tolja el a sort */
-.save-state {
-  position: absolute;
-  right: 0.5rem;
-  bottom: 0.3rem;
-  margin: 0;
-  font-size: 0.7rem;
-  line-height: 1;
-  color: var(--st-watched);
-  pointer-events: none;
 }
 
 .cell-confirm {

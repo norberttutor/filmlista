@@ -49,15 +49,15 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   saját értékelés kis csillagsorként (`StarsDisplay`), ceruza gomb a bal felső sarokban → szerkesztő ablak
 - `components/TitleEditor.js` – natív `<dialog>` (fejlécben a leírás): állapot, letöltve, megnézve dátuma
   (`watched_at`, csak „Megnézve” állapotnál; átváltáskor a mai nap), értékelés 10 csillaggal
-  (+ „Törlés” link), megjegyzés, törlés megerősítéssel (a mobilos borítófalon a ceruza nyitja)
+  (+ „Törlés” link), törlés megerősítéssel (a mobilos borítófalon a ceruza nyitja)
 - `components/TitleTable.js` – asztali soros nézet (≥ 1400 px, `DESKTOP_QUERY` a
-  `Watchlist`-ben): balra borító + adatok (a cím mellett
-  Franchise lenyíló, üresen csak rámutatáskor látszik) + TMDB leírás (`overview`; ≥ 1800 px
-  a cím mellett 4 sorban, alatta 2 sorban, teljes szöveg rámutatáskor), jobbra sorrendben
-  Letöltve – Állapot – Mama – Értékelés (10 másfélszeres csillag középen, mellette „8/10”) –
-  Megjegyzés (fejléc csak képernyőolvasónak), a végén törlés megerősítéssel. Azonnali,
-  optimista mentés (hibánál visszaáll). A megjegyzés visszafogott (keret/háttér csak
-  rámutatáskor), kikattintáskor ment, Esc-re visszaáll
+  `Watchlist`-ben; `table-layout: fixed`, minden maradék hely a címoszlopé): balra borító +
+  adatok (a cím mindig egy sorban, ha így sem fér ki „…” + tooltip; mellette a Franchise
+  lenyíló, üresen csak rámutatáskor / billentyűzetes fókusznál jelenik meg) + TMDB leírás
+  (`overview`; ≥ 1800 px a cím mellett 4 sorban, alatta 2 sorban, teljes szöveg rámutatáskor),
+  jobbra sorrendben Letöltve – Állapot – Mama – Értékelés (10 másfélszeres csillag középen,
+  mellette „8/10”), a végén törlés megerősítéssel. Azonnali, optimista mentés (hibánál
+  visszaáll). Megjegyzés mező nincs a felületen (Norbi kérésére; a `notes` oszlop megmaradt)
 - `components/FranchiseSelect.js` – franchise lenyíló (üres / meglévők / „+ Új franchise…”
   → helyben névmegadás, Enter: hozzáadás, Esc: mégse / „× „Név” törlése…” a kiválasztottra,
   megerősítéssel, minden címről lekerül); soros nézet és szerkesztő ablak is

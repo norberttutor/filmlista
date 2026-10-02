@@ -45,9 +45,6 @@ export default function TitleTable({
             <th scope="col" className="col-rating">
               Értékelés
             </th>
-            <th scope="col" className="col-notes">
-              <span className="sr-only">Megjegyzés</span>
-            </th>
             <th scope="col" className="col-actions">
               <span className="sr-only">Törlés</span>
             </th>
@@ -81,7 +78,6 @@ function TitleRow({
   onUpdated,
   onDeleted,
 }) {
-  const [notes, setNotes] = useState(t.notes ?? '');
   const [saveState, setSaveState] = useState(''); // '' | 'saving' | 'saved'
   const [error, setError] = useState('');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -125,18 +121,6 @@ function TitleRow({
     });
   }
 
-  function saveNotes() {
-    const value = notes.trim();
-    setNotes(value);
-    if (value !== (t.notes ?? '')) save({ notes: value || null });
-  }
-
-  // Esc: visszavonás mentés nélkül. A fókusz a mezőben marad – ha itt blur()-t
-  // hívnánk, a kikattintásos mentés még a régi (eldobandó) szöveggel futna le.
-  function handleNotesKey(event) {
-    if (event.key === 'Escape') setNotes(t.notes ?? '');
-  }
-
   function cancelDelete() {
     flushSync(() => setConfirmingDelete(false));
     deleteButtonRef.current.focus();
@@ -164,7 +148,8 @@ function TitleRow({
           </div>
           <div className="row-text">
             <div className="row-head">
-              <p className="row-name">
+              {/* mindig egy sorban; ha így sem fér ki, "…" és rámutatva a teljes cím */}
+              <p className="row-name" title={t.title}>
                 {link ? (
                   <a href={link.href} target="_blank" rel="noopener noreferrer">
                     {t.title}
@@ -216,7 +201,7 @@ function TitleRow({
       </td>
 
       {confirmingDelete ? (
-        <td colSpan={6} className="cell-confirm">
+        <td colSpan={5} className="cell-confirm">
           <span className="confirm-text">Biztosan törlöd a listádról?</span>
           <button type="button" className="ghost" autoFocus onClick={cancelDelete}>
             Mégse
@@ -274,24 +259,11 @@ function TitleRow({
               <span className="rating-number">{t.my_rating ? `${t.my_rating}/10` : ''}</span>
             </div>
           </td>
-          <td className="col-notes">
-            <div className="notes-field">
-              <textarea
-                className="notes-input"
-                rows={2}
-                placeholder="Megjegyzés…"
-                aria-label={`Megjegyzés – ${t.title}`}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                onBlur={saveNotes}
-                onKeyDown={handleNotesKey}
-              />
-              <p className="save-state" aria-live="polite">
-                {saveState === 'saving' ? 'Mentés…' : saveState === 'saved' ? 'Mentve' : ''}
-              </p>
-            </div>
-          </td>
           <td className="col-actions">
+            {/* a mentés állapota képernyőolvasónak (a változás a vezérlőkön látszik) */}
+            <p className="save-state sr-only" aria-live="polite">
+              {saveState === 'saving' ? 'Mentés…' : saveState === 'saved' ? 'Mentve' : ''}
+            </p>
             <button
               type="button"
               className="icon-btn"

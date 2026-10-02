@@ -53,7 +53,6 @@ export default function TitleEditor({
     mama_status: t.mama_status ?? null,
     franchise_id: t.franchise_id ?? null,
     my_rating: t.my_rating ?? null,
-    notes: t.notes ?? '',
     watched_at: t.watched_at ?? '',
   });
   const [busy, setBusy] = useState(false);
@@ -102,7 +101,6 @@ export default function TitleEditor({
         mama_status: form.mama_status,
         franchise_id: form.franchise_id,
         my_rating: form.my_rating,
-        notes: form.notes.trim() || null,
         // a dátumnak csak megnézett címnél van értelme
         watched_at: form.status === 'watched' ? form.watched_at || null : null,
       });
@@ -216,15 +214,6 @@ export default function TitleEditor({
             )}
           </div>
         </div>
-
-        <label className="field">
-          Megjegyzés
-          <textarea
-            rows={3}
-            value={form.notes}
-            onChange={(e) => setField('notes', e.target.value)}
-          />
-        </label>
 
         {error && (
           <p className="error" role="alert">
