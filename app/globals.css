@@ -898,11 +898,12 @@ button:disabled {
   overflow: hidden;
 }
 
-/* széles képernyőn: borító | adatok | leírás egymás mellett */
+/* széles képernyőn: borító | adatok | leírás egymás mellett. Fix arány (3:1 a cím javára,
+   1920 px-en a leghosszabb cím is kifér), hogy a leírás minden sorban ugyanott kezdődjön;
+   előtte térköz és halvány elválasztó vonal */
 @media (min-width: 1800px) {
-  /* a cím blokk annyi helyet kap, amennyi a címnek kell; a leírásnak legalább 12rem marad */
   .row-title {
-    grid-template-columns: 3.5rem minmax(0, max-content) minmax(12rem, 1fr);
+    grid-template-columns: 3.5rem minmax(0, 3fr) minmax(0, 1fr);
   }
 
   .row-title .thumb {
@@ -911,7 +912,9 @@ button:disabled {
 
   .row-overview {
     grid-column: 3;
-    margin: 0;
+    margin: 0 0 0 0.75rem;
+    padding-left: 1rem;
+    border-left: 1px solid var(--line);
     -webkit-line-clamp: 4;
     line-clamp: 4;
   }
@@ -973,9 +976,16 @@ button:disabled {
 }
 
 .row-text .meta,
+.row-text .row-genres,
 .row-text .added,
 .row-text .error {
   margin-top: 0.2rem;
+}
+
+/* műfajok külön sorban (nem az évszám / IMDb sorában) */
+.row-genres {
+  font-size: 0.8rem;
+  color: var(--muted);
 }
 
 /* cím + franchise egy sorban (ha nem fér ki, a franchise a következő sorba tör) */

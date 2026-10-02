@@ -53,8 +53,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/TitleTable.js` – asztali soros nézet (≥ 1400 px, `DESKTOP_QUERY` a
   `Watchlist`-ben; `table-layout: fixed`, minden maradék hely a címoszlopé): balra borító +
   adatok (a cím mindig egy sorban, ha így sem fér ki „…” + tooltip; mellette a Franchise
-  lenyíló, üresen csak rámutatáskor / billentyűzetes fókusznál jelenik meg) + TMDB leírás
-  (`overview`; ≥ 1800 px a cím mellett 4 sorban, alatta 2 sorban, teljes szöveg rámutatáskor),
+  lenyíló, üresen csak rámutatáskor / billentyűzetes fókusznál jelenik meg; a műfajok külön
+  sorban) + TMDB leírás (`overview`; ≥ 1800 px a cím mellett fix 3:1 arányban, minden sorban
+  egy vonalban, elválasztó vonallal, 4 sorban; alatta 2 sorban; teljes szöveg rámutatáskor),
   jobbra sorrendben Letöltve – Állapot – Mama – Értékelés (10 másfélszeres csillag középen,
   mellette „8/10”), a végén törlés megerősítéssel. Azonnali, optimista mentés (hibánál
   visszaáll). Megjegyzés mező nincs a felületen (Norbi kérésére; a `notes` oszlop megmaradt)
@@ -86,6 +87,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `app/api/imdb/refresh/route.js` – `POST`: a hiányzó vagy 14 napnál régebbi IMDb-értékeléseket
   frissíti (25-ösével, a felhasználó jogosultságaival); a `Watchlist` betöltéskor hívja
 - `lib/server/omdb.js` – `fetchImdbRating()`, `omdbEnabled()` (csak route handlerben)
+- `app/api/keepalive/route.js` + `vercel.json` (crons, naponta 04:17 UTC) – ébren tartás: egy
+  apró lekérdezés, hogy a Supabase ingyenes projektje ne szüneteljen tétlenség miatt. Ha a
+  Vercelen van `CRON_SECRET`, csak azzal hívható (a Vercel Cron automatikusan küldi)
 - `components/ImdbBadge.js` – „IMDb 8,0” jelvény (rámutatva a szavazatok száma)
 - `components/FranchiseFilter.js` – a franchise-szűrő saját lenyílója (listbox: nyilak, Home/End,
   Enter, Esc) logókkal; `FranchiseLogo` betöltéskor megméri a logó világosságát (canvas, a TMDB

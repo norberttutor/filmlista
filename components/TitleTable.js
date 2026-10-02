@@ -179,8 +179,8 @@ function TitleRow({
               {t.release_year && <span>{t.release_year}</span>}
               <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
               <ImdbBadge title={t} />
-              {t.genres?.length > 0 && <span>{t.genres.join(', ')}</span>}
             </p>
+            {t.genres?.length > 0 && <p className="row-genres">{t.genres.join(', ')}</p>}
             <p className="added">
               Hozzáadva: <time dateTime={t.created_at}>{formatDate(t.created_at)}</time>
             </p>
