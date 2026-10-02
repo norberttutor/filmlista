@@ -41,7 +41,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   saját értékelés („★ 8/10”), ceruza gomb a bal felső sarokban → szerkesztő ablak
 - `components/TitleEditor.js` – natív `<dialog>`: állapot, letöltve, megnézve dátuma
   (`watched_at`, csak „Megnézve” állapotnál; átváltáskor a mai nap), értékelés 1–10,
-  megjegyzés, törlés megerősítéssel
+  megjegyzés, törlés megerősítéssel (a mobilos borítófalon a ceruza nyitja)
+- `components/TitleTable.js` – asztali soros nézet (≥ 960 px, `DESKTOP_QUERY` a
+  `Watchlist`-ben): balra borító + adatok, jobbra sorrendben Letöltve – Állapot –
+  Értékelés – Megjegyzés, a végén törlés megerősítéssel. Azonnali, optimista mentés
+  (hibánál visszaáll); a megjegyzés kikattintáskor ment, Esc-re visszaáll
+- `lib/useMediaQuery.js` – `useMediaQuery(query)` hook (`useSyncExternalStore`)
 - `components/SiteFooter.js` – kötelező TMDB forrásmegjelölés, ne töröld
 - `components/TitleSearch.js` – „Cím hozzáadása” panel: késleltetett (400 ms) TMDB keresés,
   találati lista, „Hozzáadás a listához” gomb; a már listán lévőknél „✓ A listán”
@@ -50,7 +55,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   hibánál a szerver magyar üzenetével dob
 - `lib/titles.js` – címműveletek: `titleKey()`, `addTitle()` (műfajok upsert → `titles`
   insert → `title_genres` insert, hibánál a cím visszavonása), `updateTitle()`,
-  `deleteTitle()`; mindegyik a `titles_with_genres` friss sorát adja vissza (törlés kivételével)
+  `deleteTitle()`; mindegyik a `titles_with_genres` friss sorát adja vissza (törlés kivételével).
+  Közös segédek: `externalLink()`, `formatDate()`, `todayDate()`, `RATINGS`
 - `lib/server/auth.js` – `getUserFromRequest()` + `unauthorized()` (csak route handlerben)
 - `lib/server/tmdb.js` – `tmdbFetch()`, `tmdbErrorResponse()`, `yearOf()` (csak route handlerben)
 - `app/api/tmdb/search/route.js` – `GET ?q=` → `search/multi`, csak film/sorozat
@@ -77,14 +83,15 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (pl. „Hozzáadás a listához”, nem „Submit”).
 - Hibaüzenet mondja meg, mi a baj és mit tegyen a felhasználó.
 - Design: sötét téma a `:root` változókkal; állapotszínek `--st-<kód>` változókban.
-  Új állapotnál ide is kell egy szín, és a `.card[data-status=...]` szabály.
+  Új állapotnál ide is kell egy szín, és a `[data-status=...]` szabály (kártya és táblázatsor is használja).
 - Képekhez sima `<img>`, nem `next/image`.
 - Nincs middleware / proxy; az auth kliensoldali.
 
 ## Állapot
 Kész: adatbázis, projektváz, belépés, lista + szűrők, GitHub, Vercel deploy,
 TMDB kereső és hozzáadás (az `/api/tmdb/*` route-ok token nélkül 401-et adnak),
-hozzáadás dátuma a kártyán, cím szerkesztése és törlése (`TitleEditor`).
+hozzáadás dátuma a kártyán, cím szerkesztése és törlése (`TitleEditor`),
+asztali soros nézet soron belüli szerkesztéssel (`TitleTable`).
 
 ## Következő feladat
 - Tömeges import (soronként beillesztett címek, bizonytalan találatok jóváhagyása).
@@ -93,3 +100,8 @@ hozzáadás dátuma a kártyán, cím szerkesztése és törlése (`TitleEditor`
 ## Fejlesztői megjegyzés
 - Ha a terminál nem ismeri a `node`/`npm` parancsot, a VS Code-ot újra kell indítani
   (a Node a `C:\Program Files\nodejs` mappában van).
+- Tesztfelhasználó: `TEST_USER_EMAIL` / `TEST_USER_PASSWORD` a `.env.local`-ban – külön
+  Supabase-fiók, az RLS miatt Norbi listáját nem látja. Soha ne írd ki az értékeit.
+  Böngészős teszt: `playwright-core` a scratchpadbe telepítve (nem a projektbe), a gépen
+  lévő Chrome-mal (`C:\Program Files\Google\Chrome\Application\chrome.exe`), a helyben
+  futó `npx next start -p 3123` ellen. A teszt végén a tesztfiók listáját ürítsd ki.

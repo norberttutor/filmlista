@@ -5,7 +5,12 @@ import { supabase } from '@/lib/supabase';
 import PosterCard from '@/components/PosterCard';
 import TitleSearch from '@/components/TitleSearch';
 import TitleEditor from '@/components/TitleEditor';
+import TitleTable from '@/components/TitleTable';
 import { titleKey } from '@/lib/titles';
+import { useMediaQuery } from '@/lib/useMediaQuery';
+
+// ennél szélesebb képernyőn soros (táblázatos) nézet, alatta borítófal
+const DESKTOP_QUERY = '(min-width: 960px)';
 
 const TYPES = [
   { code: 'all', name: 'Mind' },
@@ -29,6 +34,7 @@ export default function Watchlist({ session }) {
   const [loadError, setLoadError] = useState('');
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(null); // a szerkesztett cím, vagy null
+  const isDesktop = useMediaQuery(DESKTOP_QUERY);
 
   // szűrők
   const [status, setStatus] = useState('all');
@@ -96,6 +102,14 @@ export default function Watchlist({ session }) {
       ),
     [titles, status, type, genre, onlyDownloaded]
   );
+
+  function replaceTitle(row) {
+    setTitles((ts) => ts.map((x) => (x.id === row.id ? row : x)));
+  }
+
+  function removeTitle(id) {
+    setTitles((ts) => ts.filter((x) => x.id !== id));
+  }
 
   function resetFilters() {
     setStatus('all');
@@ -215,6 +229,13 @@ export default function Watchlist({ session }) {
                 Szűrők törlése
               </button>
             </p>
+          ) : isDesktop ? (
+            <TitleTable
+              titles={visible}
+              statuses={statuses}
+              onUpdated={replaceTitle}
+              onDeleted={removeTitle}
+            />
           ) : (
             <ul className="grid">
               {visible.map((t) => (
@@ -231,8 +252,8 @@ export default function Watchlist({ session }) {
         <TitleEditor
           title={editing}
           statuses={statuses}
-          onSaved={(row) => setTitles((ts) => ts.map((x) => (x.id === row.id ? row : x)))}
-          onDeleted={(id) => setTitles((ts) => ts.filter((x) => x.id !== id))}
+          onSaved={replaceTitle}
+          onDeleted={removeTitle}
           onClose={() => setEditing(null)}
         />
       )}

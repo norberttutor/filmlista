@@ -1,15 +1,6 @@
-const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
-const addedDate = new Intl.DateTimeFormat('hu-HU'); // pl. 2026. 10. 02.
+import { externalLink, formatDate } from '@/lib/titles';
 
-function externalLink(t) {
-  if (t.imdb_id) {
-    return { href: `https://www.imdb.com/title/${t.imdb_id}/`, site: 'IMDb' };
-  }
-  if (t.tmdb_id) {
-    return { href: `https://www.themoviedb.org/${t.media_type}/${t.tmdb_id}`, site: 'TMDB' };
-  }
-  return null;
-}
+const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
 
 export default function PosterCard({ title: t, onEdit }) {
   const link = externalLink(t);
@@ -74,7 +65,7 @@ export default function PosterCard({ title: t, onEdit }) {
       </p>
       {t.genres?.length > 0 && <p className="genres">{t.genres.join(', ')}</p>}
       <p className="added">
-        Hozzáadva: <time dateTime={t.created_at}>{addedDate.format(new Date(t.created_at))}</time>
+        Hozzáadva: <time dateTime={t.created_at}>{formatDate(t.created_at)}</time>
       </p>
     </article>
   );

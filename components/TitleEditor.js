@@ -2,14 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { updateTitle, deleteTitle } from '@/lib/titles';
-
-const RATINGS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
-
-// mai dátum YYYY-MM-DD formában, helyi idő szerint (a svéd formátum pont ilyen)
-function today() {
-  return new Date().toLocaleDateString('sv-SE');
-}
+import { updateTitle, deleteTitle, todayDate, RATINGS } from '@/lib/titles';
 
 // Felugró ablak egy cím saját adatainak szerkesztésére és törlésére.
 // A natív <dialog> elemet használja: Esc-re bezárul, a fókusz az ablakban marad.
@@ -46,7 +39,7 @@ export default function TitleEditor({ title: t, statuses, onSaved, onDeleted, on
       ...f,
       status: code,
       // megnézettre állításkor a mai nap az alapértelmezett
-      watched_at: code === 'watched' && !f.watched_at ? today() : f.watched_at,
+      watched_at: code === 'watched' && !f.watched_at ? todayDate() : f.watched_at,
     }));
   }
 
