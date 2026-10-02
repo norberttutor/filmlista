@@ -1,4 +1,5 @@
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
+const addedDate = new Intl.DateTimeFormat('hu-HU'); // pl. 2026. 10. 02.
 
 function externalLink(t) {
   if (t.imdb_id) {
@@ -50,6 +51,9 @@ export default function PosterCard({ title: t }) {
         <span className="status-name">{t.status_name}</span>
       </p>
       {t.genres?.length > 0 && <p className="genres">{t.genres.join(', ')}</p>}
+      <p className="added">
+        Hozzáadva: <time dateTime={t.created_at}>{addedDate.format(new Date(t.created_at))}</time>
+      </p>
     </article>
   );
 }

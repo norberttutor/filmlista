@@ -462,6 +462,12 @@ button:disabled {
   color: var(--muted);
 }
 
+.added {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
 /* ---------- Lábléc ---------- */
 .site-footer {
   padding: 1.25rem var(--gutter) 2rem;

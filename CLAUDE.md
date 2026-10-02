@@ -36,7 +36,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből, szűrők
   (állapot, típus, műfaj, csak letöltöttek)
 - `components/PosterCard.js` – borító (`https://image.tmdb.org/t/p/w342` + `poster_path`),
-  állapotcsík, „Letöltve” jelvény, link IMDb-re (vagy TMDB-re, ha nincs IMDb ID)
+  állapotcsík, „Letöltve” jelvény, link IMDb-re (vagy TMDB-re, ha nincs IMDb ID),
+  „Hozzáadva: <dátum>” a `created_at` alapján (csak megjelenítés, nem szerkeszthető)
 - `components/SiteFooter.js` – kötelező TMDB forrásmegjelölés, ne töröld
 - `components/TitleSearch.js` – „Cím hozzáadása” panel: késleltetett (400 ms) TMDB keresés,
   találati lista, „Hozzáadás a listához” gomb; a már listán lévőknél „✓ A listán”
@@ -81,8 +82,7 @@ TMDB kereső és hozzáadás (az `/api/tmdb/*` route-ok token nélkül 401-et ad
 
 ## Következő feladat
 1. Állapot és „letöltve” módosítása a kártyán, törlés, saját értékelés/megjegyzés
-   (a műveletek a `lib/titles.js`-be kerüljenek, a lista state-je helyben frissüljön).
-2. Később: tömeges import (soronként beillesztett címek, bizonytalan találatok jóváhagyása),
+   (a műveletek a `lib/titles.js`-be kerüljenek, a lista state-je helyben frissüljön).2. Később: tömeges import (soronként beillesztett címek, bizonytalan találatok jóváhagyása),
    sorozatoknál a nézett epizód követése (külön tábla).
 
 ## Fejlesztői megjegyzés
