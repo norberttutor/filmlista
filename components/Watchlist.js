@@ -32,6 +32,8 @@ const TYPES = [
   { code: 'movie', name: 'Filmek' },
   { code: 'tv', name: 'Sorozatok' },
 ];
+// csak kiválasztott franchise mellett választható (akkor ez az alapértelmezés)
+const BOTH_TYPES = { code: 'all', name: 'Filmek és sorozatok' };
 
 const byAddedDesc = (a, b) => new Date(b.created_at) - new Date(a.created_at);
 
@@ -151,7 +153,11 @@ export default function Watchlist({ session }) {
   }, []);
 
   // a kiválasztott típus (filmek / sorozatok) címei
-  const ofType = useMemo(() => titles.filter((t) => t.media_type === type), [titles, type]);
+  const ofType = useMemo(
+    () => (type === 'all' ? titles : titles.filter((t) => t.media_type === type)),
+    [titles, type]
+  );
+  const franchiseChosen = franchise !== '' && franchise !== NO_FRANCHISE;
 
   // csak azok a műfajok, amelyek ennél a típusnál ténylegesen előfordulnak
   const genres = useMemo(
@@ -162,11 +168,12 @@ export default function Watchlist({ session }) {
     [ofType]
   );
 
-  // a szűrőben csak az ennél a típusnál ténylegesen használt franchise-ok
+  // a szűrőben a listán ténylegesen használt franchise-ok – típustól függetlenül, mert a
+  // kiválasztásuk úgyis a filmeket és a sorozatokat is mutatja
   const usedFranchises = useMemo(() => {
-    const used = new Set(ofType.map((t) => t.franchise_id));
+    const used = new Set(titles.map((t) => t.franchise_id));
     return franchises.filter((f) => used.has(f.id));
-  }, [ofType, franchises]);
+  }, [titles, franchises]);
 
   const franchiseName = useMemo(
     () => new Map(franchises.map((f) => [f.id, f.name])),
@@ -220,10 +227,24 @@ export default function Watchlist({ session }) {
     setGenre(''); // a filmek és sorozatok műfajai eltérnek
     // a franchise-szűrő marad, ha az új típusnál is van ilyen cím (pl. Star Wars film és sorozat)
     if (
-      franchise !== NO_FRANCHISE &&
-      !titles.some((t) => t.media_type === code && String(t.franchise_id) === franchise)
+      franchiseChosen &&
+      !titles.some(
+        (t) => (code === 'all' || t.media_type === code) && String(t.franchise_id) === franchise
+      )
     ) {
       setFranchise('');
+    }
+  }
+
+  // franchise kiválasztásakor alapból a filmek és a sorozatok is látszanak;
+  // ha a franchise-szűrő megszűnik, a "Filmek és sorozatok" helyett újra Filmek
+  function changeFranchise(value) {
+    setFranchise(value);
+    if (value !== '' && value !== NO_FRANCHISE) {
+      setType('all');
+      setGenre('');
+    } else if (type === 'all') {
+      setType('movie');
     }
   }
 
@@ -238,7 +259,7 @@ export default function Watchlist({ session }) {
     setFranchises((fs) => fs.filter((f) => f.id !== id));
     // az adatbázis már üresre állította a címeknél, itt csak helyben követjük
     setTitles((ts) => ts.map((t) => (t.franchise_id === id ? { ...t, franchise_id: null } : t)));
-    if (franchise === String(id)) setFranchise('');
+    if (franchise === String(id)) changeFranchise('');
   }
 
   function replaceTitle(row) {
@@ -259,7 +280,7 @@ export default function Watchlist({ session }) {
   function resetFilters() {
     setStatus('all');
     setGenre('');
-    setFranchise('');
+    changeFranchise('');
     setOnlyDownloaded(false);
   }
 
@@ -318,7 +339,7 @@ export default function Watchlist({ session }) {
               value={type}
               onChange={(e) => changeType(e.target.value)}
             >
-              {TYPES.map((t) => (
+              {(franchiseChosen ? [BOTH_TYPES, ...TYPES] : TYPES).map((t) => (
                 <option key={t.code} value={t.code}>
                   {t.name}
                 </option>
@@ -389,7 +410,7 @@ export default function Watchlist({ session }) {
                 <FranchiseFilter
                   labelId="franchise-filter-label"
                   value={franchise}
-                  onChange={setFranchise}
+                  onChange={changeFranchise}
                   options={[
                     { value: '', label: 'Összes' },
                     { value: NO_FRANCHISE, label: 'Franchise nélkül' },

@@ -36,9 +36,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `app/page.js` – kliensoldali session-kezelés: belépés vagy lista
 - `components/LoginForm.js` – e-mail + jelszó belépés (regisztráció nincs, ki van kapcsolva)
 - `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből; szűrősor
-  balról: Típus lenyíló (Filmek / Sorozatok, alapból Filmek, nincs „Mind”) – állapotgombok
+  balról: Típus lenyíló (Filmek / Sorozatok, alapból Filmek; kiválasztott franchise mellett
+  plusz „Filmek és sorozatok” – `type: 'all'`, ami franchise választásakor automatikusan
+  beáll, a franchise-szűrő megszüntetésekor vissza Filmek) – állapotgombok
   (mobilon, ≤ 640 px: lenyíló a típus mellett) + „Letöltöttek” jelölő – Műfaj (csak az adott
-  típus műfajai) – Franchise (Összes / Franchise nélkül / a használtak);
+  típus műfajai) – Franchise (Összes / Franchise nélkül / a listán használtak, típustól
+  függetlenül);
   jobb szélen Rendezés (`SORTS`:
   legutóbb / legkorábban hozzáadott, legjobb értékelés, legújabb / legrégebbi megjelenés;
   üres érték a végére). Az állapotgombok darabszámai a többi szűrőt már figyelembe veszik.
@@ -54,8 +57,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `Watchlist`-ben; `table-layout: fixed`, minden maradék hely a címoszlopé): balra borító +
   adatok (a cím mindig egy sorban, ha így sem fér ki „…” + tooltip; mellette a Franchise
   lenyíló, üresen csak rámutatáskor / billentyűzetes fókusznál jelenik meg; a műfajok külön
-  sorban) + TMDB leírás (`overview`; ≥ 1800 px a cím mellett fix 3:1 arányban, minden sorban
-  egy vonalban, elválasztó vonallal, 4 sorban; alatta 2 sorban; teljes szöveg rámutatáskor),
+  sorban) + TMDB leírás (`overview`; ≥ 1800 px a cím mellett fix arányban – cím 3 : leírás 5 –,
+  minden sorban egy vonalban, elválasztó vonallal, 4 sorban; alatta 2 sorban; teljes szöveg
+  rámutatáskor; 1920 px-en kb. 40 karakteres címig fér ki, a hosszabbak „…”-val),
   jobbra sorrendben Letöltve – Állapot – Mama – Értékelés (10 másfélszeres csillag középen,
   mellette „8/10”), a végén törlés megerősítéssel. Azonnali, optimista mentés (hibánál
   visszaáll). Megjegyzés mező nincs a felületen (Norbi kérésére; a `notes` oszlop megmaradt)

@@ -898,12 +898,13 @@ button:disabled {
   overflow: hidden;
 }
 
-/* széles képernyőn: borító | adatok | leírás egymás mellett. Fix arány (3:1 a cím javára,
-   1920 px-en a leghosszabb cím is kifér), hogy a leírás minden sorban ugyanott kezdődjön;
-   előtte térköz és halvány elválasztó vonal */
+/* széles képernyőn: borító | adatok | leírás egymás mellett. Fix arány (cím 3 : leírás 5),
+   hogy a leírás minden sorban ugyanott kezdődjön és ne maradjon nagy hézag a rövid címek
+   után; előtte halvány elválasztó vonal. 1920 px-en kb. 40 karakteres címig fér ki
+   minden, a hosszabbak "…"-val (teljes cím rámutatáskor) */
 @media (min-width: 1800px) {
   .row-title {
-    grid-template-columns: 3.5rem minmax(0, 3fr) minmax(0, 1fr);
+    grid-template-columns: 3.5rem minmax(0, 3fr) minmax(0, 5fr);
   }
 
   .row-title .thumb {
@@ -912,7 +913,7 @@ button:disabled {
 
   .row-overview {
     grid-column: 3;
-    margin: 0 0 0 0.75rem;
+    margin: 0 0 0 0.5rem;
     padding-left: 1rem;
     border-left: 1px solid var(--line);
     -webkit-line-clamp: 4;
