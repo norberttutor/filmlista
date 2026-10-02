@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import PosterCard from '@/components/PosterCard';
 import TitleSearch from '@/components/TitleSearch';
+import TitleEditor from '@/components/TitleEditor';
 import { titleKey } from '@/lib/titles';
 
 const TYPES = [
@@ -27,6 +28,7 @@ export default function Watchlist({ session }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState(null); // a szerkesztett cím, vagy null
 
   // szűrők
   const [status, setStatus] = useState('all');
@@ -217,12 +219,22 @@ export default function Watchlist({ session }) {
             <ul className="grid">
               {visible.map((t) => (
                 <li key={t.id}>
-                  <PosterCard title={t} />
+                  <PosterCard title={t} onEdit={setEditing} />
                 </li>
               ))}
             </ul>
           )}
         </>
+      )}
+
+      {editing && (
+        <TitleEditor
+          title={editing}
+          statuses={statuses}
+          onSaved={(row) => setTitles((ts) => ts.map((x) => (x.id === row.id ? row : x)))}
+          onDeleted={(id) => setTitles((ts) => ts.filter((x) => x.id !== id))}
+          onClose={() => setEditing(null)}
+        />
       )}
     </main>
   );
