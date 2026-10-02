@@ -59,8 +59,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   lenyíló, üresen csak rámutatáskor / billentyűzetes fókusznál jelenik meg; a műfajok külön
   sorban) + TMDB leírás (`overview`; ≥ 1800 px a cím mellett: a cím oszlop fix `18rem`
   (288 px, Norbi címeinek kb. 96%-a belefér, a hosszabbak „…”-val), a leírás minden sorban
-  ugyanott kezdődik, minden maradék helyet megkap, és mindkét oldalán ugyanakkora a térköz
-  (`--overview-gap`: a cím oszlop és a „Letöltve” felirat felé), 4 sorban; 1440p-re (2560 px)
+  ugyanott kezdődik, minden maradék helyet megkap; térköz a cím oszlop felé `--overview-gap`
+  (40 px), a „Letöltve” felirat felé ennek háromszorosa (`--overview-gap-end`), 4 sorban; 1440p-re (2560 px)
   optimalizálva; 1800 px alatt a cím alatt 2 sorban; teljes szöveg rámutatáskor),
   jobbra sorrendben Letöltve – Állapot – Mama – Értékelés (10 másfélszeres csillag középen,
   mellette „8/10”), a végén törlés megerősítéssel. Azonnali, optimista mentés (hibánál
