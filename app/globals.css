@@ -872,10 +872,13 @@ button:disabled {
   cursor: pointer;
 }
 
-/* borító | adatok – a leírás alattuk (keskenyebb soros nézet) */
+/* borító | adatok | franchise – a leírás alattuk (keskenyebb soros nézet).
+   A franchise oszlop fix 11rem (176 px): Norbi leghosszabb franchise-neve is kifér a
+   lenyílóval együtt (mérve: 128 px a név, ~165 px a lenyíló) */
 .row-title {
+  --franchise-col: 11rem;
   display: grid;
-  grid-template-columns: 3.5rem minmax(0, 1fr);
+  grid-template-columns: 3.5rem minmax(0, 1fr) var(--franchise-col);
   align-items: center;
   column-gap: 0.9rem;
 }
@@ -886,7 +889,7 @@ button:disabled {
 }
 
 .row-overview {
-  grid-column: 2;
+  grid-column: 2 / -1;
   margin: 0.35rem 0 0;
   font-size: 0.85rem;
   line-height: 1.4;
@@ -898,15 +901,16 @@ button:disabled {
   overflow: hidden;
 }
 
-/* széles képernyőn (1440p-re optimalizálva): borító | adatok | leírás egymás mellett.
-   A cím oszlop fix 18rem (288 px): Norbi címeinek kb. 96%-a belefér (mérve: 95% ≤ 273 px),
-   a hosszabbak "…"-val. A leírás minden maradék helyet megkap; a térköz a cím oszlop vége felé
-   --overview-gap, a "Letöltve" oszlop felirata felé ennek háromszorosa (--overview-gap-end). */
-@media (min-width: 1800px) {
+/* széles képernyőn (1440p-re optimalizálva): borító | adatok | franchise | leírás egymás
+   mellett. A cím oszlop fix 18rem (288 px): Norbi címeinek kb. 96%-a belefér (mérve: 95% ≤
+   273 px), a hosszabbak "…"-val. A franchise oszlop két oldalán ugyanakkora a rácsköz. A leírás
+   minden maradék helyet megkap; a "Letöltve" oszlop felirata felé 120 px (--overview-gap-end).
+   1900 px alatt a leírás túl keskeny lenne a franchise oszlop mellett, ott a cím alatt van. */
+@media (min-width: 1900px) {
   .row-title {
-    --overview-gap: 2.5rem;
-    --overview-gap-end: calc(var(--overview-gap) * 3);
-    grid-template-columns: 3.5rem 18rem minmax(0, 1fr);
+    --overview-gap-end: 7.5rem;
+    grid-template-columns: 3.5rem 18rem var(--franchise-col) minmax(0, 1fr);
+    column-gap: 1.25rem;
   }
 
   .row-title .thumb {
@@ -914,10 +918,10 @@ button:disabled {
   }
 
   .row-overview {
-    grid-column: 3;
-    /* bal: a rácsköz (0.9rem) után még ennyi; jobb: a cella belső margója (0.75rem) és a
-       középre igazított "Letöltve" felirat előtti hely (~1.125rem) már adott */
-    margin: 0 calc(var(--overview-gap-end) - 1.875rem) 0 calc(var(--overview-gap) - 0.9rem);
+    grid-column: 4;
+    /* jobb: a cella belső margója (0.75rem) és a középre igazított "Letöltve" felirat előtti
+       hely (~1.125rem) már adott */
+    margin: 0 calc(var(--overview-gap-end) - 1.875rem) 0 0;
     -webkit-line-clamp: 4;
     line-clamp: 4;
   }
@@ -991,34 +995,39 @@ button:disabled {
   color: var(--muted);
 }
 
-/* cím + franchise egy sorban (ha nem fér ki, a franchise a következő sorba tör) */
-.row-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.1rem 1.1rem;
-}
-
-/* franchise a cím mellett: üresen csak rámutatáskor / fókuszban látszik */
+/* franchise saját oszlopban a cím és a leírás között, középre igazítva */
 .franchise-field {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
   gap: 0.35rem;
+  min-width: 0;
   font-size: 0.75rem;
+  text-align: center;
   color: var(--muted);
   transition: opacity 0.15s;
 }
 
-/* üresen nem foglal helyet (hosszú cím alatt se maradjon üres sor); rámutatáskor, vagy ha
-   billentyűzettel a sorban vagyunk, megjelenik – így Tabbal is elérhető */
+/* üresen csak rámutatáskor, vagy ha billentyűzettel a sorban vagyunk, látszik; a helyét
+   mindig megtartja, így a sor nem ugrik meg (és Tabbal is elérhető marad) */
 .franchise-field.empty {
-  display: none;
+  opacity: 0;
 }
 
 .titles-table tr:hover .franchise-field.empty,
 .titles-table tr:focus-within .franchise-field.empty {
-  display: flex;
+  opacity: 1;
+}
+
+/* új franchise / törlés megerősítése a keskeny oszlopban: egymás alatt, középen */
+.franchise-field .franchise-new {
+  width: 100%;
+  justify-content: center;
+}
+
+.franchise-field .franchise-new input {
+  width: 100%;
 }
 
 .titles-table .franchise-select {

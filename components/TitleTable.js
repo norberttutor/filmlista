@@ -147,31 +147,16 @@ function TitleRow({
             {t.poster_path && <img src={THUMB_BASE + t.poster_path} alt="" loading="lazy" />}
           </div>
           <div className="row-text">
-            <div className="row-head">
-              {/* mindig egy sorban; ha így sem fér ki, "…" és rámutatva a teljes cím */}
-              <p className="row-name" title={t.title}>
-                {link ? (
-                  <a href={link.href} target="_blank" rel="noopener noreferrer">
-                    {t.title}
-                  </a>
-                ) : (
-                  t.title
-                )}
-              </p>
-              {/* a cím mellett; üresen csak rámutatáskor látszik, hogy ne zsúfolja a listát */}
-              <div className={t.franchise_id ? 'franchise-field' : 'franchise-field empty'}>
-                {!t.franchise_id && <span aria-hidden="true">Franchise</span>}
-                <FranchiseSelect
-                  className="franchise-select"
-                  label={`Franchise – ${t.title}`}
-                  value={t.franchise_id}
-                  franchises={franchises}
-                  onChange={(id) => save({ franchise_id: id })}
-                  onCreate={onCreateFranchise}
-                  onDelete={onDeleteFranchise}
-                />
-              </div>
-            </div>
+            {/* mindig egy sorban; ha így sem fér ki, "…" és rámutatva a teljes cím */}
+            <p className="row-name" title={t.title}>
+              {link ? (
+                <a href={link.href} target="_blank" rel="noopener noreferrer">
+                  {t.title}
+                </a>
+              ) : (
+                t.title
+              )}
+            </p>
             {t.original_title && t.original_title !== t.title && (
               <p className="original">{t.original_title}</p>
             )}
@@ -189,6 +174,20 @@ function TitleRow({
                 {error}
               </p>
             )}
+          </div>
+          {/* saját, fix szélességű oszlop a cím és a leírás között, középre igazítva – így
+              a sorok nem ugrálnak; üresen csak rámutatáskor látszik, de a helyét megtartja */}
+          <div className={t.franchise_id ? 'franchise-field' : 'franchise-field empty'}>
+            {!t.franchise_id && <span aria-hidden="true">Franchise</span>}
+            <FranchiseSelect
+              className="franchise-select"
+              label={`Franchise – ${t.title}`}
+              value={t.franchise_id}
+              franchises={franchises}
+              onChange={(id) => save({ franchise_id: id })}
+              onCreate={onCreateFranchise}
+              onDelete={onDeleteFranchise}
+            />
           </div>
           {/* leírás: széles képernyőn a cím mellett, keskenyebben alatta (CSS); a teljes
               szöveg rámutatáskor látszik */}
