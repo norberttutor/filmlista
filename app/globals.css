@@ -1,0 +1,381 @@
+/* ---------- Színek és alapértékek ---------- */
+:root {
+  --bg: #151b24;          /* vetítőterem-kék háttér */
+  --surface: #1e2733;
+  --line: #2c3846;
+  --text: #e9edf2;
+  --muted: #93a1b2;
+  --accent: #f2b544;      /* vetítőfény-borostyán */
+  --accent-ink: #231a06;
+  --danger: #f08a7e;
+
+  /* állapotszínek – új állapotnál ide kell egy sor */
+  --st-to_watch: #7fb2e5;
+  --st-watching: #f2b544;
+  --st-watched: #7cc8a0;
+
+  --gutter: clamp(1rem, 4vw, 3rem);
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-main), system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+main {
+  flex: 1;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 0.85rem;
+}
+
+/* ---------- Űrlapelemek ---------- */
+input[type='email'],
+input[type='password'],
+select {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 0;
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  font-weight: 650;
+}
+
+.ghost {
+  background: none;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+}
+
+.ghost:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+.link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.error {
+  color: var(--danger);
+  margin: 0;
+}
+
+/* ---------- Belépés ---------- */
+.center,
+.login {
+  display: grid;
+  place-content: center;
+  padding: var(--gutter);
+}
+
+.login {
+  gap: 2rem;
+}
+
+.login-form {
+  display: grid;
+  gap: 1rem;
+  width: min(22rem, 85vw);
+}
+
+.login-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* ---------- Fejléc ---------- */
+.brand {
+  margin: 0;
+  font-size: clamp(2.5rem, 7vw, 4rem);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+}
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 2.5rem var(--gutter) 1.25rem;
+}
+
+.count {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* ---------- Szűrők ---------- */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.75rem;
+  padding: 0 var(--gutter) 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chip {
+  font-size: 0.9rem;
+  padding: 0.35rem 0.85rem;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.chip:hover {
+  border-color: var(--muted);
+}
+
+.chip[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.chip .n {
+  margin-left: 0.4rem;
+  color: var(--muted);
+}
+
+.chip[aria-pressed='true'] .n {
+  color: inherit;
+  opacity: 0.65;
+}
+
+.inline-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.check input {
+  accent-color: var(--accent);
+  width: 1rem;
+  height: 1rem;
+}
+
+.state {
+  padding: 2rem var(--gutter);
+  color: var(--muted);
+  max-width: 40rem;
+}
+
+/* ---------- Borítófal ---------- */
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 2rem var(--gutter) 3.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 2.25rem 1.25rem;
+}
+
+.card {
+  --strip: var(--muted);
+}
+
+.card[data-status='to_watch'] { --strip: var(--st-to_watch); }
+.card[data-status='watching'] { --strip: var(--st-watching); }
+.card[data-status='watched']  { --strip: var(--st-watched); }
+
+.card > a {
+  display: block;
+  border-radius: 6px;
+}
+
+.poster {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.poster-fallback {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  padding: 0.8rem 0.8rem 1.1rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--muted);
+}
+
+.status-strip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 5px;
+  background: var(--strip);
+}
+
+.badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+  background: rgb(21 27 36 / 0.88);
+  border-radius: 999px;
+}
+
+.card h3 {
+  margin: 0.7rem 0 0;
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.original {
+  margin: 0.1rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.7rem;
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.status-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text);
+}
+
+.status-name::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--strip);
+}
+
+.genres {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* ---------- Lábléc ---------- */
+.site-footer {
+  padding: 1.25rem var(--gutter) 2rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.site-footer p {
+  margin: 0;
+  max-width: 60ch;
+}
+
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.75rem 1rem;
+  }
+}
