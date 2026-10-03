@@ -47,13 +47,16 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/LoginForm.js` – e-mail + jelszó belépés (regisztráció nincs, ki van kapcsolva);
   minden középen: cím, alatta az űrlap (nagyobb kijelzőn kártyán, felülről halvány türkiz fény)
 - `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből; fejléc:
-  „Megnézendő filmek és sorozatok”; szűrősor
+  „Megnézendő filmek és sorozatok”; mellette (jobbra) „Cím hozzáadása”, harang (`NotificationBell`),
+  e-mail, „IMDb értékelések”, asztali nézetben „Tömeges import” (`BulkImport`) és „Mentés
+  letöltése” (`downloadListCsv`), Kilépés; szűrősor
   balról: Típus lenyíló (Filmek / Sorozatok; kiválasztott franchise vagy keresés
   mellett plusz „Filmek és sorozatok” – `type: 'all'`, ami franchise választásakor
   automatikusan beáll, a franchise-szűrő megszüntetésekor vissza Filmek) – állapotgombok
   (mobilon, ≤ 640 px: lenyíló a típus mellett; az „Abbahagyva” csak Sorozatok / Filmek és
   sorozatok típusnál) + Letöltés lenyíló (Összes / Letöltött / Nem letöltött) – Műfaj (csak az
-  adott típus műfajai) – Franchise (Összes / Franchise nélkül / a listán használtak, típustól
+  adott típus műfajai) – Mama (Összes / Érdekli / Megkapta; csak ha van Mama-jelölés) –
+  Franchise (Összes / Franchise nélkül / a listán használtak, típustól
   függetlenül) – mellette felirat nélküli ↺ gomb („Szűrők alaphelyzetbe”, rámutatva súgó;
   alapállapotban halvány, letiltott). **A szűrők alapállapota** (betöltéskor és a ↺-vel,
   `DEFAULT_FILTERS`, Norbi kérése): Filmek – Megnézendő – Nem letöltött – Összes műfaj –
@@ -124,7 +127,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (`SeasonDownloads`, `SeasonCell`); a borítókártyán a borító alján évadcsík + „x/y évad”
 - `components/FranchiseSelect.js` – franchise lenyíló (üres / meglévők / „+ Új franchise…”
   → helyben névmegadás, Enter: hozzáadás, Esc: mégse / „× „Név” törlése…” a kiválasztottra,
-  megerősítéssel, minden címről lekerül); soros nézet és szerkesztő ablak is
+  megerősítéssel, minden címről lekerül / „✎ „Név” átnevezése…” – helyben, a régi névvel
+  kitöltve, Enter: mentés, Esc: mégse; ütközésnél hibaüzenet); soros nézet és szerkesztő ablak is
 - `components/StarRating.js` – `StarRating` (szerkeszthető: rádiógombok, nyilakkal is
   állítható, a kiválasztott csillagra újra kattintva `null`) és `StarsDisplay` (csak kijelzés)
 - `lib/useMediaQuery.js` – `useMediaQuery(query)` hook (`useSyncExternalStore`)
@@ -136,9 +140,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   hibánál a szerver magyar üzenetével dob
 - `lib/titles.js` – címműveletek: `titleKey()`, `addTitle()` (műfajok upsert → `titles`
   insert → `title_genres` insert, hibánál a cím visszavonása), `updateTitle()`,
-  `deleteTitle()`, `createFranchise()`, `deleteFranchise()`; a címműveletek a `titles_with_genres` friss sorát adják
+  `deleteTitle()`, `createFranchise()`, `renameFranchise()`, `deleteFranchise()`; a címműveletek a `titles_with_genres` friss sorát adják
   vissza (törlés kivételével). A franchise nevét a kliens keresi ki id alapján (nincs a nézetben).
-  Sorozatnál az `addTitle()` az évadokat is felveszi (`title_seasons`, `seasons_checked_at` = most).
+  Sorozatnál az `addTitle()` az évadokat is felveszi (`title_seasons`, `seasons_checked_at` = most;
+  a már megjelentek `aired_notified = true`, róluk nincs értesítés; a kézi `addSeason()` is).
   Évadok: `setSeasonStatus()` (visszaad `{ row, filled, previous }`), `markAllSeasonsWatched()`,
   `restoreSeasons()` (visszavonás), `setSeasonDownloaded()`, `addSeason()` (kézi, mai dátummal),
   `removeLastSeason()`,
@@ -156,7 +161,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `app/api/tmdb/seasons/route.js` – `POST`: a még nem vagy 7 napnál régebben ellenőrzött
   sorozatok évadait frissíti a TMDB-ről (új – megjelent vagy bejelentett – évad, név,
   epizódszám, dátum; az állapothoz / letöltve jelzőhöz nem nyúl), 10-esével; a frissített
-  sorokat adja vissza. A `Watchlist` betöltéskor hívja
+  sorokat adja vissza. A `Watchlist` betöltéskor hívja. Értesítés: ha egy már ismert évadlistájú
+  (nem abbahagyott) sorozathoz új, még meg nem jelent évad érkezik → `season_announced`; az új,
+  már megjelent évadot `aired_notified = false`-szal veszi fel (arról a gyűjtés szól); az első
+  feltöltésnél a megjelentekről nem szól
 - `app/api/imdb/refresh/route.js` – `POST`: a hiányzó vagy 14 napnál régebbi IMDb-értékeléseket
   frissíti (25-ösével, a felhasználó jogosultságaival); a `Watchlist` betöltéskor hívja
 - `lib/server/omdb.js` – `fetchImdbRating()`, `omdbEnabled()` (csak route handlerben)
@@ -177,6 +185,24 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (csillagértékenként egy update). Norbi döntései: csak a listán lévő címek, az IMDb csillaga
   felülírja a sajátot, az állapot nem változik, új cím nem kerül fel. Teljesen automatikus
   szinkron nincs (az IMDb-nek nincs API-ja, az oldal gépi olvasása tiltott).
+- `components/NotificationBell.js` + `lib/notifications.js` – harang a fejlécben: a nem olvasott
+  értesítések száma türkiz jelvényben; kinyitva a legutóbbi 30 (új évad bejelentése / megjelenése,
+  borítóval); kinyitáskor mind olvasott (az adatbázisban is, `markNotificationsRead()`; a
+  közben beérkező régi lekérdezés sem írja vissza – `readIds` a Watchlistben); elemre
+  kattintva a sorozat szerkesztő ablaka; kívülre kattintás / Esc bezár. A lista a harang bal
+  széléhez igazodik, telefonon teljes szélességű. `loadNotifications()`: előbb
+  `collect_season_notifications()` (RPC), aztán a lista; a Watchlist betöltéskor és az
+  évadfrissítés után hívja. A telepített app ikonján `navigator.setAppBadge()` mutatja a számot
+- `components/BulkImport.js` + `lib/bulkImport.js` – „Tömeges import” (csak asztali nézetben,
+  az „IMDb értékelések” mellett, súgóval): soronként egy cím (legfeljebb `MAX_LINES` = 150; a sor
+  végi évszám 1900–idén+5 szűr, pl. „Dűne 2021”; az ismétlődő sorok egyszer), TMDB-keresés
+  3-asával; `matchEntry()`: biztos = egyetlen pontos (ékezet / írásjel nélküli) cím- vagy
+  eredeticím-egyezés (évszámmal az évnek is egyeznie kell) – előre kijelölve; bizonytalan →
+  borítós választók, alapból kihagyás; a listán lévő kimarad (jelöltként nem választható);
+  felvétel `addTitle()`-lal 2-esével, a sikertelenek a szövegmezőben maradnak
+- `lib/exportList.js` – „Mentés letöltése”: a teljes lista CSV-ben (UTF-8 BOM, pontosvessző,
+  tizedesvessző – Excelben dupla kattintással jól nyílik): típus, cím, év, állapot, letöltve,
+  dátum, értékelések, Mama, franchise, műfajok, évadok, hozzáadva, IMDb / TMDB ID, megjegyzés
 - `supabase/*.sql` – a már lefuttatott adatbázis-szkriptek (dokumentáció)
 
 ## Adatbázis (már létezik, lásd `supabase/`)
@@ -211,6 +237,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - Trigger (`06_watched_clears_downloaded.sql`): amikor egy cím „Megnézve” állapotba kerül
   (átváltáskor vagy megnézettként felvéve), az `is_downloaded` hamis lesz; ha utána kézzel
   újra letöltöttnek jelölik, az megmarad. A felület is azonnal leveszi a pipát.
+- `notifications (id, user_id default auth.uid(), title_id FK → titles on delete cascade,
+  season_number, kind ('season_announced' | 'season_aired'), air_date, created_at, read_at)`,
+  egyedi `(title_id, season_number, kind)`, RLS – `10_notifications.sql`.
+  `title_seasons.aired_notified`: szóltunk-e már az évad megjelenéséről.
+  `collect_season_notifications()` (a felhasználó jogaival): a még nem jelzett, már megjelent
+  évadokról értesítést ír (abbahagyott sorozatról és már megnézett évadról nem), és jelzettnek
+  állítja őket
 - `title_genres (title_id, genre_id)` – kapcsolótábla
 - `titles_with_genres` nézet (`security_invoker`): `titles.*` + `status_name` + `genres text[]`
   + `seasons jsonb` (az évadok évadszám szerint; filmnél / évad nélkül `[]`)
@@ -267,7 +300,9 @@ megjelenés-frissítés (18 javaslat, 2026-10-03), keresés a listán, középre
 új évadok hetente a TMDB-ről; epizódszintű követés Norbi kérésére nem kell),
 „Abbahagyva” állapot sorozatoknál, szűrők alapállapota + ↺ gomb, Letöltés szűrő (Összes /
 Letöltött / Nem letöltött), mobilon a borító a szerkesztőt nyitja (az IMDb-re a cím visz),
-asztali nézetben lista / rács váltó, telefonon 3 kártya egy sorban,
+asztali nézetben lista / rács váltó, telefonon 3 kártya egy sorban, értesítések haranggal (új
+évad bejelentése / megjelenése), tömeges import, mentés letöltése (CSV), franchise átnevezése,
+Mama-szűrő,
 app-ikon (filmcsapó) és manifest: Norbi asztali alkalmazásként a Chrome-ból telepítette
 (Electron-csomag helyett).
 Franchise-filmek importja (franchise.xlsx): 194 cím, 34 franchise; hozzáadás dátuma = megjelenés.
@@ -275,7 +310,15 @@ Norbi listája (norbert.tutor@gmail.com) 2026-10-02-án Excelből importálva: 5
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
-- Tömeges import (soronként beillesztett címek, bizonytalan találatok jóváhagyása).
+- Nincs kijelölve – Norbi kéri a következőt (ötletek lent).
+
+## Fejlesztési ötletek (később)
+- „Hol nézhető?” – a TMDB `watch/providers` adatai (Magyarország: Netflix, HBO Max, Disney+,
+  SkyShowtime…) logóval a soron / kártyán, szűrő az előfizetett szolgáltatókra; a TMDB a
+  JustWatch megnevezését kéri. Norbi: egyelőre nem kell, a lista végére.
+- „Mit nézzek ma?” – véletlen ajánlás a jelenlegi szűrőből (pl. letöltött, még nem látott).
+- Statisztika – havonta megnézett címek, kedvenc műfajok, átlagos értékelés (`watched_at`).
+- Előzetes (trailer) link a szerkesztő ablakban (TMDB `videos`).
 
 ## Fejlesztői megjegyzés
 - Ha a terminál nem ismeri a `node`/`npm` parancsot, a VS Code-ot újra kell indítani

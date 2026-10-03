@@ -5,20 +5,23 @@ import { flushSync } from 'react-dom';
 
 const NEW = '__new';
 const DELETE = '__delete';
+const RENAME = '__rename';
 
 // Franchise-választó: üres (alapértelmezett), a meglévők, "+ Új franchise…" (helyben
-// névmegadás; Enter: hozzáadás, Esc: mégse), és a kiválasztott franchise törlése
-// megerősítéssel (hibásan felvett kategóriához; minden címről lekerül).
+// névmegadás; Enter: hozzáadás, Esc: mégse), a kiválasztott franchise átnevezése (ugyanígy,
+// a régi névvel kitöltve) és törlése megerősítéssel (hibásan felvett kategóriához; minden
+// címről lekerül).
 export default function FranchiseSelect({
   value,
   franchises,
   onChange,
   onCreate,
   onDelete,
+  onRename,
   label,
   className,
 }) {
-  const [mode, setMode] = useState(''); // '' | 'create' | 'delete'
+  const [mode, setMode] = useState(''); // '' | 'create' | 'rename' | 'delete'
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -59,6 +62,19 @@ export default function FranchiseSelect({
     });
   }
 
+  function rename() {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setError('Adj meg egy nevet.');
+      return;
+    }
+    if (trimmed === current.name) {
+      finish();
+      return;
+    }
+    run(() => onRename(current.id, trimmed));
+  }
+
   function remove() {
     run(async () => {
       await onDelete(current.id);
@@ -69,7 +85,8 @@ export default function FranchiseSelect({
   function handleKey(event) {
     if (event.key === 'Enter') {
       event.preventDefault();
-      create();
+      if (mode === 'rename') rename();
+      else create();
     } else if (event.key === 'Escape') {
       event.preventDefault(); // a szerkesztő ablak se záródjon be
       finish();
@@ -96,6 +113,29 @@ export default function FranchiseSelect({
         />
         <button type="button" className="primary mini" disabled={busy} onClick={create}>
           Hozzáadás
+        </button>
+        <button type="button" className="ghost mini" onClick={finish}>
+          Mégse
+        </button>
+        {errorText}
+      </div>
+    );
+  }
+
+  if (mode === 'rename' && current) {
+    return (
+      <div className="franchise-new">
+        <input
+          type="text"
+          autoFocus
+          aria-label={`„${current.name}” új neve`}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={handleKey}
+          onFocus={(e) => e.target.select()}
+        />
+        <button type="button" className="primary mini" disabled={busy} onClick={rename}>
+          Mentés
         </button>
         <button type="button" className="ghost mini" onClick={finish}>
           Mégse
@@ -132,6 +172,10 @@ export default function FranchiseSelect({
         const v = e.target.value;
         if (v === NEW) setMode('create');
         else if (v === DELETE) setMode('delete');
+        else if (v === RENAME) {
+          setName(current.name);
+          setMode('rename');
+        }
         else onChange(v ? Number(v) : null);
       }}
     >
@@ -142,6 +186,7 @@ export default function FranchiseSelect({
         </option>
       ))}
       <option value={NEW}>+ Új franchise…</option>
+      {current && onRename && <option value={RENAME}>✎ „{current.name}” átnevezése…</option>}
       {current && onDelete && <option value={DELETE}>× „{current.name}” törlése…</option>}
     </select>
   );

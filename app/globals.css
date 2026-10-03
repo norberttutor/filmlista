@@ -344,6 +344,182 @@ body:has(> main.login) {
   gap: 0.75rem;
 }
 
+/* ---------- Értesítések (harang a fejlécben) ---------- */
+.notif {
+  position: relative;
+}
+
+.notif-bell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.45rem;
+  height: 2.45rem;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.notif-bell:hover,
+.notif-bell[aria-expanded='true'] {
+  color: var(--text);
+  border-color: var(--muted);
+  background-color: var(--hover-tint);
+}
+
+/* van új: türkiz harang, a szám kis türkiz jelvényben a jobb felső sarkon */
+.notif-bell[data-unread] {
+  color: var(--accent);
+  border-color: var(--accent-line);
+}
+
+.notif-count {
+  position: absolute;
+  top: -0.3rem;
+  right: -0.35rem;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.15rem;
+  text-align: center;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px var(--bg-top); /* elválik a harang keretétől */
+  font-variant-numeric: tabular-nums;
+}
+
+/* a lenyíló lista egy réteggel a lap fölött (mint a franchise-szűrőé), a harang bal széléhez
+   igazítva: a harang után a fejléc eszközei állnak, így jobbra mindig van hely */
+.notif-panel {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  width: min(25rem, calc(100vw - 2 * var(--gutter)));
+  padding: 0.5rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), var(--shadow-pop);
+}
+
+/* telefonon a harang a sor elején is lehet: a lista a képernyő teljes szélességét kapja,
+   közvetlenül a harang alatt */
+@media (max-width: 640px) {
+  .notif-panel {
+    position: fixed;
+    top: auto;
+    right: var(--gutter);
+    left: var(--gutter);
+    width: auto;
+    margin-top: 0.5rem;
+  }
+}
+
+.notif-head {
+  margin: 0.2rem 0.4rem 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.notif-empty {
+  margin: 0.2rem 0.4rem 0.4rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.notif-list {
+  display: grid;
+  gap: 2px;
+  max-height: min(26rem, 70vh);
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notif-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.45rem;
+  color: var(--text);
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+}
+
+.notif-item:hover {
+  background-color: var(--hover-tint);
+}
+
+/* a kinyitáskor még olvasatlan: halvány türkiz háttér, türkiz pötty a cím előtt */
+.notif-item[data-new] {
+  background: var(--accent-soft);
+}
+
+.notif-item[data-new] .notif-title::before {
+  content: '';
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-right: 0.4rem;
+  vertical-align: 0.1em;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+.notif-thumb {
+  flex: none;
+  width: 2.25rem;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--placeholder-bg);
+}
+
+.notif-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.notif-text {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.notif-title {
+  overflow: hidden;
+  font-size: 0.9rem;
+  font-weight: 650;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.notif-what {
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.notif-when {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
 /* visszafogott szöveges gomb (pl. "IMDb értékelések") */
 .subtle-link {
   padding: 0;
@@ -2019,6 +2195,181 @@ button.season:hover {
 
 .import-arrow b {
   color: var(--accent);
+}
+
+/* ---------- Tömeges import (ablak, csak asztali nézetben) ---------- */
+.editor.bulk-dialog {
+  width: min(56rem, calc(100vw - 2rem));
+}
+
+.bulk-dialog textarea {
+  width: 100%;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.bulk-progress {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.bulk-progress progress {
+  width: 100%;
+  height: 0.5rem;
+  accent-color: var(--accent);
+}
+
+.bulk-rows {
+  display: grid;
+  max-height: min(30rem, 60vh);
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.bulk-row {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.6rem 0.75rem;
+}
+
+.bulk-row + .bulk-row {
+  border-top: 1px solid var(--line-soft);
+}
+
+.bulk-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 0.75rem;
+}
+
+.bulk-text {
+  font-weight: 650;
+}
+
+/* állapotcímke: biztos zöld, választani kell türkiz, a többi halk */
+.bulk-tag {
+  padding: 0 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgb(255 255 255 / 0.06);
+}
+
+.bulk-row[data-status='sure'] .bulk-tag {
+  color: var(--st-watched);
+  background: color-mix(in srgb, var(--st-watched) 14%, transparent);
+}
+
+.bulk-row[data-status='unsure'] .bulk-tag {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.bulk-row[data-status='error'] .bulk-tag {
+  color: var(--danger);
+}
+
+.bulk-row:is([data-status='onList'], [data-status='none']) .bulk-text {
+  color: var(--muted);
+}
+
+.bulk-cands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* egy jelölt: kis borító + cím, év, típus; a kiválasztott türkiz keretes */
+.bulk-cand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 15rem;
+  padding: 0.3rem 0.6rem 0.3rem 0.3rem;
+  font-size: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.bulk-cand:hover {
+  border-color: var(--muted);
+  background-color: var(--hover-tint);
+}
+
+.bulk-cand:has(input:checked),
+.bulk-cand[data-picked] {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.bulk-cand:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.bulk-cand[data-on-list] {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.bulk-cand[data-picked] {
+  cursor: default;
+}
+
+/* a választógomb rejtve: maga a kártya a választó */
+.bulk-cand input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bulk-thumb {
+  flex: none;
+  width: 1.9rem;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--placeholder-bg);
+}
+
+.bulk-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bulk-info {
+  display: grid;
+  min-width: 0;
+}
+
+.bulk-info b {
+  overflow: hidden;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.bulk-info span {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.bulk-skip {
+  padding-left: 0.75rem;
+  color: var(--muted);
+}
+
+.bulk-done {
+  display: grid;
+  gap: 0.5rem;
 }
 
 /* ---------- Lapozó ---------- */

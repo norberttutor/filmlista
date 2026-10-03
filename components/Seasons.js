@@ -28,7 +28,7 @@ const STATUS_TEXT = { to_watch: 'nincs megnézve', watching: 'folyamatban', watc
 export const hasSeasons = (t) => t.media_type === 'tv' && t.seasons?.length > 0;
 
 // névelő a sorszám elé: "az 1.", "az 5.", "az 50.", egyébként "a"
-const article = (n) => (n === 1 || String(n).startsWith('5') ? 'az' : 'a');
+export const article = (n) => (n === 1 || String(n).startsWith('5') ? 'az' : 'a');
 
 // évadszámok tömören: [1, 2, 3, 5] → "1–3., 5."
 export function seasonRange(numbers) {

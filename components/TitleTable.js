@@ -26,6 +26,7 @@ export default function TitleTable({
   franchises,
   onCreateFranchise,
   onDeleteFranchise,
+  onRenameFranchise,
   onUpdated,
   onDeleted,
 }) {
@@ -61,6 +62,7 @@ export default function TitleTable({
               franchises={franchises}
               onCreateFranchise={onCreateFranchise}
               onDeleteFranchise={onDeleteFranchise}
+              onRenameFranchise={onRenameFranchise}
               onUpdated={onUpdated}
               onDeleted={onDeleted}
             />
@@ -77,6 +79,7 @@ function TitleRow({
   franchises,
   onCreateFranchise,
   onDeleteFranchise,
+  onRenameFranchise,
   onUpdated,
   onDeleted,
 }) {
@@ -189,6 +192,7 @@ function TitleRow({
               onChange={(id) => save({ franchise_id: id })}
               onCreate={onCreateFranchise}
               onDelete={onDeleteFranchise}
+              onRename={onRenameFranchise}
             />
           </div>
           {/* leírás: széles képernyőn a cím mellett, keskenyebben alatta (CSS); a teljes

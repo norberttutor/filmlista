@@ -45,6 +45,7 @@ export default function TitleEditor({
   franchises,
   onCreateFranchise,
   onDeleteFranchise,
+  onRenameFranchise,
   onSaved,
   onChanged,
   onDeleted,
@@ -158,6 +159,7 @@ export default function TitleEditor({
             onChange={(id) => setField('franchise_id', id)}
             onCreate={onCreateFranchise}
             onDelete={onDeleteFranchise}
+            onRename={onRenameFranchise}
           />
         </div>
 

@@ -12,13 +12,19 @@ import {
   titleKey,
   createFranchise,
   deleteFranchise,
+  renameFranchise,
   refreshImdbRatings,
   refreshFranchiseLogos,
   refreshSeasons,
   DEFAULT_STATUS,
   DROPPED_STATUS,
+  MAMA_OPTIONS,
 } from '@/lib/titles';
 import FranchiseFilter from '@/components/FranchiseFilter';
+import NotificationBell from '@/components/NotificationBell';
+import BulkImport from '@/components/BulkImport';
+import { loadNotifications, markNotificationsRead } from '@/lib/notifications';
+import { downloadListCsv } from '@/lib/exportList';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
@@ -63,11 +69,19 @@ const DEFAULT_FILTERS = {
   status: DEFAULT_STATUS,
   downloaded: 'no',
   genre: '',
+  mama: '',
   franchise: NO_FRANCHISE,
 };
 
 // keresés közben minden cím látszik; a keresés előtti szűrők a keresés törlésekor visszaállnak
-const SEARCH_FILTERS = { type: 'all', status: 'all', downloaded: 'all', genre: '', franchise: '' };
+const SEARCH_FILTERS = {
+  type: 'all',
+  status: 'all',
+  downloaded: 'all',
+  genre: '',
+  mama: '',
+  franchise: '',
+};
 
 const sameFilters = (a, b) => Object.keys(a).every((k) => a[k] === b[k]);
 
@@ -127,6 +141,10 @@ export default function Watchlist({ session }) {
   const [loadError, setLoadError] = useState('');
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(null); // a szerkesztett cím, vagy null
+  const [notifications, setNotifications] = useState([]); // új évadokról, legutóbbi 30
+  // itt már olvasottnak jelöltek: egy közben beérkező (korábban indult) lekérdezés se írja vissza
+  // őket olvasatlannak
+  const readIds = useRef(new Set());
   const isDesktop = useMediaQuery(DESKTOP_QUERY);
   const [view, setView] = useState(storedView); // a Watchlist csak a böngészőben fut
 
@@ -143,18 +161,20 @@ export default function Watchlist({ session }) {
   const [status, setStatus] = useState(DEFAULT_FILTERS.status);
   const [type, setType] = useState(DEFAULT_FILTERS.type);
   const [genre, setGenre] = useState(DEFAULT_FILTERS.genre);
+  const [mama, setMama] = useState(DEFAULT_FILTERS.mama); // '' | interested | received
   const [franchise, setFranchise] = useState(DEFAULT_FILTERS.franchise);
   const [downloaded, setDownloaded] = useState(DEFAULT_FILTERS.downloaded); // all | yes | no
   const [sort, setSort] = useState('added_desc');
   const [query, setQuery] = useState(''); // keresés a felvett címek között
   const [beforeSearch, setBeforeSearch] = useState(null); // a keresés előtti szűrők
-  const filters = { type, status, downloaded, genre, franchise };
+  const filters = { type, status, downloaded, genre, mama, franchise };
 
   function applyFilters(f) {
     setType(f.type);
     setStatus(f.status);
     setDownloaded(f.downloaded);
     setGenre(f.genre);
+    setMama(f.mama);
     setFranchise(f.franchise);
   }
 
@@ -192,11 +212,28 @@ export default function Watchlist({ session }) {
 
         // sorozatok évadai a háttérben: a még évad nélküliek megkapják, a hetente
         // ellenőrzöttekhez az új (megjelent / bejelentett) évad felkerül
+        // értesítések: rögtön, és az évadfrissítés után újra (az új évadokról is szóljon)
+        const reloadNotifications = () =>
+          loadNotifications()
+            .then(
+              (ns) =>
+                !cancelled &&
+                setNotifications(
+                  ns.map((n) =>
+                    !n.read_at && readIds.current.has(n.id) ? { ...n, read_at: new Date().toISOString() } : n
+                  )
+                )
+            )
+            .catch((err) => console.warn(err.message));
+        reloadNotifications();
+
         refreshSeasons((rows) => {
           if (cancelled) return;
           const byId = new Map(rows.map((r) => [r.id, r]));
           setTitles((ts) => ts.map((t) => byId.get(t.id) ?? t));
-        }).catch((err) => console.warn('Évadok frissítése sikertelen:', err.message));
+        })
+          .catch((err) => console.warn('Évadok frissítése sikertelen:', err.message))
+          .finally(reloadNotifications);
 
         // hiányzó franchise-logók (a franchise első filmjének címlogója) a háttérben
         if (franchisesRes.data.some((f) => !f.logo_path)) {
@@ -248,6 +285,28 @@ export default function Watchlist({ session }) {
     [franchises]
   );
 
+  const mamaUsed = useMemo(() => titles.some((t) => t.mama_status), [titles]);
+
+  // a telepített app ikonján (pl. a tálcán) is látszik az olvasatlan értesítések száma,
+  // ahol a böngésző tudja (Chrome / Edge)
+  const unreadCount = notifications.filter((n) => !n.read_at).length;
+  useEffect(() => {
+    try {
+      const badge = unreadCount ? navigator.setAppBadge?.(unreadCount) : navigator.clearAppBadge?.();
+      badge?.catch(() => {});
+    } catch {
+      // nincs ilyen lehetőség: semmi baj
+    }
+  }, [unreadCount]);
+
+  // a harang kinyitásakor minden olvasott (az adatbázisban is)
+  function readNotifications() {
+    const now = new Date().toISOString();
+    for (const n of notifications) if (!n.read_at) readIds.current.add(n.id);
+    setNotifications((ns) => ns.map((n) => (n.read_at ? n : { ...n, read_at: now })));
+    markNotificationsRead();
+  }
+
   // a keresőben ezek alapján látszik, mi van már a listán
   const existingKeys = useMemo(() => new Set(titles.map(titleKey)), [titles]);
 
@@ -265,6 +324,7 @@ export default function Watchlist({ session }) {
       ofType.filter(
         (t) =>
           (!genre || (t.genres ?? []).includes(genre)) &&
+          (!mama || t.mama_status === mama) &&
           (!franchise ||
             (franchise === NO_FRANCHISE
               ? t.franchise_id == null
@@ -272,7 +332,7 @@ export default function Watchlist({ session }) {
           (downloaded === 'all' || t.is_downloaded === (downloaded === 'yes')) &&
           words.every((w) => searchText.get(t.id).includes(w))
       ),
-    [ofType, genre, franchise, downloaded, words, searchText]
+    [ofType, genre, mama, franchise, downloaded, words, searchText]
   );
 
   // az "Abbahagyva" csak sorozatnál fordulhat elő: a Filmek nézetben nincs gombja
@@ -288,7 +348,7 @@ export default function Watchlist({ session }) {
   }, [beforeStatus]);
 
   // ha a szűrés vagy a rendezés változik (más kulcs): 1. oldal, és a megtartott sorok elengedve
-  const filterKey = [type, status, genre, franchise, downloaded, sort, words.join(' ')].join('|');
+  const filterKey = [type, status, genre, mama, franchise, downloaded, sort, words.join(' ')].join('|');
 
   // a most szerkesztett címek a helyükön maradnak, amíg a szűrés nem változik: pl. a "Nem
   // letöltött" nézetben letöltöttnek jelölt film nem tűnik el azonnal (a pipa visszavehető)
@@ -375,6 +435,11 @@ export default function Watchlist({ session }) {
     return created;
   }
 
+  async function handleRenameFranchise(id, name) {
+    const renamed = await renameFranchise(id, name);
+    setFranchises((fs) => fs.map((f) => (f.id === id ? { ...f, name: renamed.name } : f)).sort(byName));
+  }
+
   async function handleDeleteFranchise(id) {
     await deleteFranchise(id);
     setFranchises((fs) => fs.filter((f) => f.id !== id));
@@ -441,9 +506,40 @@ export default function Watchlist({ session }) {
               Cím hozzáadása
             </button>
           )}
+          {!loading && !loadError && (
+            <NotificationBell
+              notifications={notifications}
+              titles={titles}
+              onOpenTitle={setEditing}
+              onRead={readNotifications}
+            />
+          )}
           <span className="muted small">{session.user.email}</span>
           {!loading && !loadError && (
             <ImdbRatingsImport titles={titles} onApplied={applyRatingsLocally} />
+          )}
+          {/* tömeges import és mentés: csak asztali nézetben */}
+          {!loading && !loadError && isDesktop && (
+            <>
+              <BulkImport
+                existingKeys={existingKeys}
+                onAdded={(row) => setTitles((ts) => [row, ...ts])}
+              />
+              <span className="has-hint">
+                <button
+                  type="button"
+                  className="subtle-link"
+                  aria-describedby="export-hint"
+                  onClick={() => downloadListCsv(titles, franchiseName)}
+                >
+                  Mentés letöltése
+                </button>
+                <span id="export-hint" role="tooltip" className="hint">
+                  A teljes listát ({titles.length} cím) CSV-fájlba menti: Excelben megnyitható,
+                  biztonsági mentésnek is jó.
+                </span>
+              </span>
+            </>
           )}
           <button type="button" className="ghost" onClick={() => supabase.auth.signOut()}>
             Kilépés
@@ -536,6 +632,21 @@ export default function Watchlist({ session }) {
                   {genres.map((g) => (
                     <option key={g} value={g}>
                       {g}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            {/* csak ha van a listán Mama-jelölés */}
+            {(mamaUsed || mama) && (
+              <label className="inline-field">
+                Mama
+                <select value={mama} onChange={(e) => setMama(e.target.value)}>
+                  <option value="">Összes</option>
+                  {MAMA_OPTIONS.map((o) => (
+                    <option key={o.code} value={o.code}>
+                      {o.name}
                     </option>
                   ))}
                 </select>
@@ -694,6 +805,7 @@ export default function Watchlist({ session }) {
               franchises={franchises}
               onCreateFranchise={handleCreateFranchise}
               onDeleteFranchise={handleDeleteFranchise}
+              onRenameFranchise={handleRenameFranchise}
               onUpdated={replaceTitle}
               onDeleted={removeTitle}
             />
@@ -730,6 +842,7 @@ export default function Watchlist({ session }) {
           franchises={franchises}
           onCreateFranchise={handleCreateFranchise}
           onDeleteFranchise={handleDeleteFranchise}
+          onRenameFranchise={handleRenameFranchise}
           onSaved={replaceTitle}
           onChanged={replaceTitle}
           onDeleted={removeTitle}
