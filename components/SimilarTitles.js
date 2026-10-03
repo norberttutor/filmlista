@@ -96,7 +96,22 @@ export default function SimilarTitles({ title, existingKeys, onAdded }) {
 
       {open && (
         <div id={bodyId} className="similar-body">
-          {load.status === 'loading' && <p className="muted small">Hasonló címek keresése…</p>}
+          {/* betöltés közben borító-körvonalak (felolvasónak a szöveg) */}
+          {load.status === 'loading' && (
+            <>
+              <p className="sr-only" role="status">
+                Hasonló címek keresése…
+              </p>
+              <div className="similar-sk" aria-hidden="true">
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <span key={i} className="sk-card">
+                    <span className="sk sk-poster" />
+                    <span className="sk sk-line sk-w80" />
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
           {load.status === 'error' && (
             <p className="error small" role="alert">
               {load.error}

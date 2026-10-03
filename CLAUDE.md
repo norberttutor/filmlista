@@ -116,6 +116,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   Az „Abbahagyva” állapot csak sorozatnál választható. Alul „Hasonló címek” (`SimilarTitles`).
   Asztalon (≥ 900 px) széles, kétoszlopos ablak: balra nagy borító (w500, görgetéskor a helyén
   marad; borító nélkül filmikon), jobbra az adatok; telefonon egy oszlop, nagy borító nélkül.
+  Nézetváltás (asztalon, `lib/viewTransition.js`): a kattintott kártya / sor borítója átsiklik a
+  nagy borító helyére (a `Watchlist` `openEditor(t, forrásElem)` indítja), bezáráskor (Esc –
+  `cancel` elkapva –, Mégse, Mentés) a `morphTo` borítóra vissza; törléskor nincs. A
+  `showModal()` ezért `useLayoutEffect`-ben fut.
   Megnyitáskor a fókusz az ablak címén van (keret nélkül), nem a Franchise mezőn (Norbi kérése).
   A borító hangulatszínét megnyitáskor kiszámolja (`usePosterColor`): az ablak a film színében
   dereng. A kiválasztott Mama borostyán (`.mama-chips`).
@@ -165,7 +169,14 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   megerősítéssel, minden címről lekerül / „✎ „Név” átnevezése…” – helyben, a régi névvel
   kitöltve, Enter: mentés, Esc: mégse; ütközésnél hibaüzenet); soros nézet és szerkesztő ablak is
 - `components/StarRating.js` – `StarRating` (szerkeszthető: rádiógombok, nyilakkal is
-  állítható, a kiválasztott csillagra újra kattintva `null`) és `StarsDisplay` (csak kijelzés)
+  állítható, a kiválasztott csillagra újra kattintva `null`; választáskor a kitöltött csillagok
+  egymás után „pattannak” – `.pop` + `--i`, csak kattintásra / nyílra, betöltéskor nem) és
+  `StarsDisplay` (csak kijelzés)
+- `components/ListSkeleton.js` – csontváz-betöltés a lista helyén, amíg tölt (asztali
+  listanézetben 6 sor, egyébként 12 kártya körvonala, csillogó áthúzással; felolvasónak „Lista
+  betöltése…”); a `SimilarTitles` betöltése is borító-körvonalakkal (`.similar-sk`)
+- `lib/viewTransition.js` – `canMorph(elem)` (támogatott böngésző, ≥ 900 px, nincs „kevesebb
+  mozgás”, az elem a lapon van) és `MORPH_NAME` (`editor-poster`)
 - `lib/useMediaQuery.js` – `useMediaQuery(query)` hook (`useSyncExternalStore`)
 - `components/SiteFooter.js` – kötelező TMDB forrásmegjelölés, ne töröld
 - `components/TitleSearch.js` – „Cím hozzáadása” panel: késleltetett (400 ms) TMDB keresés,
@@ -235,7 +246,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   kattintva a sorozat szerkesztő ablaka; kívülre kattintás / Esc bezár. A lista a harang bal
   széléhez igazodik, telefonon teljes szélességű. `loadNotifications()`: előbb
   `collect_season_notifications()` (RPC), aztán a lista; a Watchlist betöltéskor és az
-  évadfrissítés után hívja. A telepített app ikonján `navigator.setAppBadge()` mutatja a számot
+  évadfrissítés után hívja. A telepített app ikonján `navigator.setAppBadge()` mutatja a számot.
+  Ha nő az olvasatlanok száma (betöltéskor is, ha van), a harang egyszer megrezzen (`.ringing`)
 - `components/BulkImport.js` + `lib/bulkImport.js` – „Tömeges import” (csak asztali nézetben,
   az „IMDb értékelések” mellett, súgóval): soronként egy cím (legfeljebb `MAX_LINES` = 150; a sor
   végi évszám 1900–idén+5 szűr, pl. „Dűne 2021”; az ismétlődő sorok egyszer), TMDB-keresés
@@ -332,11 +344,15 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - Saját lenyíló-nyíl (`--chevron`, `appearance: none`) és jelölőnégyzet (`--check-mark`); ahol egy
   szabály `background` rövidítést ad egy lenyílónak, a nyilat is újra meg kell adni. Windows nagy
   kontrasztú módban a beépített vezérlők maradnak.
-- Mozgás: legfeljebb ~0,2 s-os átmenetek; kivétel az aurora (a lap tetején három elmosott
-  fényfolt – türkiz, lila, borostyán – 36 s-os lassú lebegéssel, `body::before`; a belépési
-  oldalon nincs, kétoldalt 4% hely + maszk, hogy ne legyen éle és vízszintes görgetés). A
-  `globals.css` végén egy közös `prefers-reduced-motion: reduce` szabály minden átmenetet és
-  animációt kikapcsol.
+- Mozgás: legfeljebb ~0,2 s-os átmenetek. Kivételek („Mozgás” szakasz a `globals.css`-ben):
+  az aurora (a lap tetején három elmosott fényfolt – türkiz, lila, borostyán – 36 s-os lassú
+  lebegéssel, `body::before`; a belépési oldalon nincs, kétoldalt 4% hely + maszk, hogy ne
+  legyen éle és vízszintes görgetés); a nézetváltás borító ↔ szerkesztő (0,3 s); a borítófal
+  kártyáinak beúszása (a görgetés vezérli: `animation-timeline: view()`); a csillagok
+  pattanása (0,34 s, egymás után); a pipa bepattanása (átmenet, betöltéskor nem mozog); a harang
+  rezzenése (0,9 s, egyszer); a csontváz csillogása (1,4 s, ismétlődik). A `globals.css`
+  végén egy közös `prefers-reduced-motion: reduce` szabály minden átmenetet és animációt
+  kikapcsol (a nézetváltás álelemeit is; a nézetváltást a kód el sem indítja).
 - Hiányzó borító: a `.thumb:empty` / `.poster-fallback` filmikont kap (`--icon-film`).
 - Anyag: leheletnyi, álló filmszemcse a háttéren (`body::after`, rögzítve, a tartalom mögött);
   „squircle” sarkok (`corner-shape: squircle`, `@supports` mögött – Chrome / Edge 139+, máshol
@@ -368,7 +384,8 @@ app-ikon (filmcsapó) és manifest: Norbi asztali alkalmazásként a Chrome-ból
 (Electron-csomag helyett), megjelenés 2. kör – színek (2026-10-04): borostyán második
 kiemelőszín, OKLCH-színek + élénkebb neon P3 kijelzőn, műfajszínek, hangulatszín a borítóból,
 aurora a lap tetején; anyag és mélység: letapadó üveg szűrősor, filmszemcse, squircle sarkok,
-fénylő kártyaél.
+fénylő kártyaél; mozgás: nézetváltás borító ↔ szerkesztő, beúszó kártyák, mikroanimációk
+(csillag, pipa, harang), csontváz-betöltés.
 Franchise-filmek importja (franchise.xlsx): 194 cím, 34 franchise; hozzáadás dátuma = megjelenés.
 Norbi listája (norbert.tutor@gmail.com) 2026-10-02-án Excelből importálva: 512 cím.
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
@@ -381,8 +398,8 @@ Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnéze
   körökre bontva, technikai jegyzetekkel: `munka/dizajn-2/TERV.md` (helyi mappa). A színes
   részből (1–7) kész: 1 (borostyán változat), 2, 3, 4, 6; Norbi nem kérte: 5 (színes
   IMDb-jelvény), 7 (választható színtéma). A 8–12-ből kész: 8, 9, 10, 11; nem kérte: 12 (3D
-  billenés). Hátravan: 13–25 (mozgás, betűk, háttérkép a szerkesztőben, statisztika, telefonos
-  alsó lap…). Előbb előtte–utána képek
+  billenés). A mozgásból (13–16) kész: mind a négy. Hátravan: 17–25 (betűk, háttérkép a
+  szerkesztőben, statisztika, telefonos alsó lap…). Előbb előtte–utána képek
   (`munka/dizajn-2/eszkozok/`), beépítés csak jóváhagyás után.
 - „Hol nézhető?” – a TMDB `watch/providers` adatai (Magyarország: Netflix, HBO Max, Disney+,
   SkyShowtime…) logóval a soron / kártyán, szűrő az előfizetett szolgáltatókra; a TMDB a
@@ -413,6 +430,12 @@ Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnéze
   `munka/README.md`): a scratchpadbe másolva, ott `npm install` után futtathatók.
   Szkriptből (supabase-js) kilépéskor `signOut({ scope: 'local' })` kell – az alapértelmezett
   `global` a böngészőben futó munkamenetet is lezárja, és az `/api` route-ok 401-et adnak.
+  A böngészős teszt „kevesebb mozgás” módban fut (`emulateMedia({ reducedMotion: 'reduce' })`),
+  hogy a nézetváltás és az animációk ne zavarják a lépéseket; a mozgást a saját lépése kapcsolja
+  vissza és ellenőrzi.
+  Képernyőkép / videó a tesztfiókról: a fejléc e-mail-címét mintacímre kell cserélni
+  (`munka/dizajn-2/eszkozok/mask.mjs`); videóhoz a Playwright ffmpeg-je a scratchpadbe kerül
+  (`PLAYWRIGHT_BROWSERS_PATH`), lásd `munka/dizajn-2/eszkozok/video*.mjs`.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

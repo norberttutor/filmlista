@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import {
   updateTitle,
@@ -16,6 +16,7 @@ import ImdbBadge from '@/components/ImdbBadge';
 import { hasSeasons, SeasonList, useSeasonActions } from '@/components/Seasons';
 import SimilarTitles from '@/components/SimilarTitles';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
+import { canMorph, MORPH_NAME } from '@/lib/viewTransition';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500'; // a nagy borító (asztalon)
 
@@ -56,6 +57,7 @@ export default function TitleEditor({
   onChanged,
   onDeleted,
   onClose,
+  morphTo, // a borító, amelyről nyílt: bezáráskor oda siklik vissza (nézetváltás)
 }) {
   const dialogRef = useRef(null);
   const headingRef = useRef(null);
@@ -76,7 +78,8 @@ export default function TitleEditor({
   // a borító hangulatszíne: az ablak a film színében dereng (globals.css, "Hangulatszín")
   const ambient = usePosterColor(t.poster_path);
 
-  useEffect(() => {
+  // rajzolás előtt nyílik meg (a nézetváltás új képén már ott legyen az ablak)
+  useLayoutEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog.open) dialog.showModal(); // fejlesztői módban az effect kétszer fut
     // a böngésző az első mezőre (Franchise) tenné a fókuszt, és a kerete feleslegesen
@@ -84,9 +87,23 @@ export default function TitleEditor({
     headingRef.current?.focus();
   }, []);
 
-  // a dialog "close" eseménye hívja az onClose-t (Esc-nél is)
+  // a dialog "close" eseménye hívja az onClose-t (Esc-nél is). Asztalon a nagy borító
+  // visszasiklik a kártya / sor borítójára (nézetváltás), ha az még a helyén van.
   function close() {
-    dialogRef.current.close();
+    const dialog = dialogRef.current;
+    if (!canMorph(morphTo)) {
+      dialog.close();
+      return;
+    }
+    const transition = document.startViewTransition(() => {
+      morphTo.style.viewTransitionName = MORPH_NAME;
+      dialog.close();
+    });
+    transition.finished
+      .catch(() => {})
+      .finally(() => {
+        morphTo.style.viewTransitionName = '';
+      });
   }
 
   function setField(field, value) {
@@ -142,7 +159,7 @@ export default function TitleEditor({
     try {
       await deleteTitle(t.id);
       onDeleted(t.id);
-      close();
+      dialogRef.current.close(); // a cím eltűnik a listáról: nincs hova visszasiklani
     } catch (err) {
       setError(err.message);
       setBusy(false);
@@ -155,6 +172,11 @@ export default function TitleEditor({
       className="editor title-editor"
       aria-labelledby="editor-title"
       onClose={onClose}
+      onCancel={(e) => {
+        // Esc: a saját bezárás (nézetváltással), nem a böngésző azonnali bezárása
+        e.preventDefault();
+        close();
+      }}
       {...ambientProps(ambient)}
     >
       <form onSubmit={handleSubmit}>

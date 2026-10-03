@@ -3310,15 +3310,216 @@ body:has(.editor[open]) {
   }
 }
 
+/* ---------- Mozgás ---------- */
+/* A "kevesebb mozgás" rendszerbeállításnál mind kikapcsol (a lap végén; a nézetváltást a
+   Watchlist / TitleEditor el sem indítja). */
+
+/* nézetváltás: kattintáskor a kártya / sor borítója átsiklik a szerkesztő ablak nagy
+   borítójának helyére, bezáráskor vissza (asztalon, ≥ 900 px; View Transitions). A forrás
+   borító csak a váltás idejére kapja ugyanezt a nevet. ~0,3 s – a 0,2 s-os szabály kivétele. */
+.title-editor .editor-poster {
+  view-transition-name: editor-poster;
+}
+
+::view-transition-group(editor-poster) {
+  animation-duration: 0.3s;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+::view-transition-old(editor-poster),
+::view-transition-new(editor-poster) {
+  height: 100%;
+  object-fit: cover;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.2s;
+}
+
+/* görgetésre beúszó kártyák: a borítófal kártyái beúszáskor finoman felúsznak és kinagyulnak
+   (csak CSS, a görgetés vezérli; ahol a böngésző nem tudja, azonnal látszanak) */
+@supports (animation-timeline: view()) {
+  .grid > li {
+    animation: card-in linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 45%;
+  }
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0.25;
+    transform: translateY(28px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* csillag: kattintáskor a kitöltött csillagok egymás után "pattannak" (a StarRating adja a
+   .pop osztályt és a sorszámot) */
+.stars label.pop svg {
+  animation: star-pop 0.34s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+  animation-delay: calc(var(--i, 0) * 22ms);
+}
+
+@keyframes star-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.4);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* jelölőnégyzet: a pipa bepattan (átmenet: betöltéskor nem mozog, csak kattintásra) */
+input[type='checkbox'] {
+  background-size: 30% 30%;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    background-size 0.22s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+input[type='checkbox']:checked {
+  background-size: 100% 100%;
+}
+
+/* harang: új értesítésnél egyszer megrezzen (a NotificationBell adja a .ringing osztályt) */
+.notif-bell.ringing svg {
+  transform-origin: 50% 10%;
+  animation: bell-ring 0.9s ease-in-out;
+}
+
+@keyframes bell-ring {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  12% {
+    transform: rotate(16deg);
+  }
+  28% {
+    transform: rotate(-14deg);
+  }
+  44% {
+    transform: rotate(10deg);
+  }
+  60% {
+    transform: rotate(-6deg);
+  }
+  76% {
+    transform: rotate(3deg);
+  }
+}
+
+/* csontváz-betöltés: a lista (és a hasonló címek) helyén halvány körvonalak csillogó
+   áthúzással, amíg az adatok jönnek */
+.sk {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(
+      100deg,
+      var(--surface) 30%,
+      color-mix(in oklab, var(--surface), white 7%) 50%,
+      var(--surface) 70%
+    )
+    0 0 / 300% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+.sk-line {
+  height: 0.7rem;
+  border-radius: 999px;
+}
+
+.sk-w80 {
+  width: 80%;
+}
+
+.sk-w60 {
+  width: 60%;
+}
+
+.sk-w40 {
+  width: 40%;
+}
+
+/* lista: sorok a táblázat helyén */
+.skeleton-table {
+  display: grid;
+  gap: 1.75rem;
+  padding: 2.5rem var(--gutter) 3.5rem;
+}
+
+.sk-row {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.sk-row .sk-thumb {
+  flex: none;
+  width: 4rem;
+  aspect-ratio: 2 / 3;
+}
+
+.sk-lines {
+  display: grid;
+  flex: 1;
+  gap: 0.6rem;
+  max-width: 34rem;
+}
+
+/* rács: kártyák (a .grid elrendezésével) */
+.sk-card {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.sk-card .sk-poster {
+  aspect-ratio: 2 / 3;
+  border-radius: 8px;
+}
+
+/* hasonló címek: borítók a vízszintes sorban */
+.similar-sk {
+  display: flex;
+  gap: 0.75rem;
+  overflow: hidden;
+}
+
+.similar-sk .sk-card {
+  flex: none;
+  width: 6.75rem;
+}
+
 /* ---------- Kevesebb mozgás ---------- */
 /* ha a rendszerben be van kapcsolva: nincsenek átmenetek, animációk (aurora), beúszás és nagyítás */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after,
-  ::backdrop {
+  ::backdrop,
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
     transition: none !important;
-    animation: none !important; /* az aurora is áll */
+    animation: none !important; /* az aurora, a beúszás, a csillogás is áll */
   }
 
   .titles-table tbody tr:hover .thumb img,

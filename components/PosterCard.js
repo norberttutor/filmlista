@@ -36,7 +36,7 @@ export default function PosterCard({ title: t, franchise, onEdit }) {
       {/* a borítóra kattintva a szerkesztő ablak nyílik (mint a ceruzával; billentyűzettel és
           képernyőolvasóval a ceruza gomb ugyanez); sorozatnál a borító alján évadonként egy
           szakasz, egyébként egy állapotcsík */}
-      <div className="poster" ref={posterRef} onClick={() => onEdit(t)}>
+      <div className="poster" ref={posterRef} onClick={() => onEdit(t, posterRef.current)}>
         {t.poster_path ? (
           <img src={POSTER_BASE + t.poster_path} alt="" loading="lazy" />
         ) : (
@@ -50,7 +50,7 @@ export default function PosterCard({ title: t, franchise, onEdit }) {
         type="button"
         className="edit-btn"
         aria-label={`Szerkesztés: ${t.title}`}
-        onClick={() => onEdit(t)}
+        onClick={() => onEdit(t, posterRef.current)}
       >
         <svg
           viewBox="0 0 24 24"

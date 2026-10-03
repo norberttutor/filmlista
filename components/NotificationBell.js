@@ -37,6 +37,14 @@ export default function NotificationBell({ notifications, titles, onOpenTitle, o
     return () => document.removeEventListener('mousedown', onDown);
   }, [open]);
 
+  // új értesítés érkezett (több az olvasatlan, mint eddig): a harang egyszer megrezzen
+  const [seenUnread, setSeenUnread] = useState(0);
+  const [ringing, setRinging] = useState(false);
+  if (unread !== seenUnread) {
+    if (unread > seenUnread) setRinging(true);
+    setSeenUnread(unread);
+  }
+
   function toggle() {
     if (open) {
       setOpen(false);
@@ -62,7 +70,8 @@ export default function NotificationBell({ notifications, titles, onOpenTitle, o
       <button
         ref={buttonRef}
         type="button"
-        className="notif-bell"
+        className={ringing ? 'notif-bell ringing' : 'notif-bell'}
+        onAnimationEnd={() => setRinging(false)}
         aria-expanded={open}
         aria-controls={panelId}
         aria-label={unread ? `Értesítések: ${unread} új` : 'Értesítések'}

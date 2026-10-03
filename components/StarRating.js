@@ -16,7 +16,14 @@ function Star() {
 // nyilakkal állítható), a kiválasztott csillagra újra kattintva törlődik (null).
 export default function StarRating({ name, label, value, onChange }) {
   const [hover, setHover] = useState(0);
+  // az imént választott érték: a csillagai egymás után "pattannak" (betöltéskor nem)
+  const [popped, setPopped] = useState(0);
   const shown = hover || value || 0;
+
+  function choose(n) {
+    setPopped(n ?? 0);
+    onChange(n);
+  }
 
   return (
     <div
@@ -26,15 +33,21 @@ export default function StarRating({ name, label, value, onChange }) {
       onMouseLeave={() => setHover(0)}
     >
       {STARS.map((n) => (
-        <label key={n} className={n <= shown ? 'on' : undefined} onMouseEnter={() => setHover(n)}>
+        <label
+          key={n}
+          className={[n <= shown && 'on', n <= popped && 'pop'].filter(Boolean).join(' ') || undefined}
+          style={n <= popped ? { '--i': n - 1 } : undefined}
+          onMouseEnter={() => setHover(n)}
+          onAnimationEnd={() => n === popped && setPopped(0)}
+        >
           <input
             type="radio"
             className="sr-only"
             name={name}
             aria-label={`${n} csillag`}
             checked={value === n}
-            onChange={() => onChange(n)}
-            onClick={() => value === n && onChange(null)}
+            onChange={() => choose(n)}
+            onClick={() => value === n && choose(null)}
           />
           <Star />
         </label>

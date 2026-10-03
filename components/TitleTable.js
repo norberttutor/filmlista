@@ -167,7 +167,7 @@ function TitleRow({
             className="thumb thumb-btn"
             aria-label={`Részletek és hasonló címek: ${t.title}`}
             title="Részletek és hasonló címek"
-            onClick={() => onEdit(t)}
+            onClick={(e) => onEdit(t, e.currentTarget)}
           >
             {t.poster_path && <img src={THUMB_BASE + t.poster_path} alt="" loading="lazy" />}
           </button>

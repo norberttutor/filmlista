@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { supabase } from '@/lib/supabase';
 import PosterCard from '@/components/PosterCard';
 import Pagination from '@/components/Pagination';
@@ -24,9 +25,11 @@ import {
 import FranchiseFilter from '@/components/FranchiseFilter';
 import NotificationBell from '@/components/NotificationBell';
 import BulkImport from '@/components/BulkImport';
+import ListSkeleton from '@/components/ListSkeleton';
 import { loadNotifications, markNotificationsRead } from '@/lib/notifications';
 import { downloadListCsv } from '@/lib/exportList';
 import { useMediaQuery } from '@/lib/useMediaQuery';
+import { canMorph, MORPH_NAME } from '@/lib/viewTransition';
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 
@@ -142,6 +145,24 @@ export default function Watchlist({ session }) {
   const [loadError, setLoadError] = useState('');
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(null); // a szerkesztett cím, vagy null
+  // a borító, amelyről a szerkesztő nyílt: oda siklik vissza bezáráskor (nézetváltás)
+  const editorFrom = useRef(null);
+
+  // szerkesztő megnyitása: asztalon a kattintott borító átsiklik az ablak nagy borítójának
+  // helyére (lib/viewTransition.js); egyébként egyszerűen megnyílik
+  function openEditor(t, fromEl = null) {
+    editorFrom.current = fromEl;
+    if (!canMorph(fromEl)) {
+      setEditing(t);
+      return;
+    }
+    fromEl.style.viewTransitionName = MORPH_NAME;
+    const transition = document.startViewTransition(() => {
+      fromEl.style.viewTransitionName = '';
+      flushSync(() => setEditing(t));
+    });
+    transition.finished.catch(() => {});
+  }
   const [notifications, setNotifications] = useState([]); // új évadokról, legutóbbi 30
   // itt már olvasottnak jelöltek: egy közben beérkező (korábban indult) lekérdezés se írja vissza
   // őket olvasatlannak
@@ -558,7 +579,7 @@ export default function Watchlist({ session }) {
             <NotificationBell
               notifications={notifications}
               titles={titles}
-              onOpenTitle={setEditing}
+              onOpenTitle={(t) => openEditor(t)}
               onRead={readNotifications}
             />
           )}
@@ -595,7 +616,8 @@ export default function Watchlist({ session }) {
         </div>
       </header>
 
-      {loading && <p className="state">Lista betöltése…</p>}
+      {/* betöltés közben csontváz: a nézetnek megfelelő sorok / kártyák körvonala */}
+      {loading && <ListSkeleton table={isDesktop && view === 'list'} />}
       {loadError && (
         <p className="state error" role="alert">
           {loadError}
@@ -875,7 +897,7 @@ export default function Watchlist({ session }) {
               onCreateFranchise={handleCreateFranchise}
               onDeleteFranchise={handleDeleteFranchise}
               onRenameFranchise={handleRenameFranchise}
-              onEdit={setEditing}
+              onEdit={openEditor}
               onUpdated={replaceTitle}
               onDeleted={removeTitle}
             />
@@ -886,7 +908,7 @@ export default function Watchlist({ session }) {
                   <PosterCard
                     title={t}
                     franchise={franchiseName.get(t.franchise_id)}
-                    onEdit={setEditing}
+                    onEdit={openEditor}
                   />
                 </li>
               ))}
@@ -918,6 +940,7 @@ export default function Watchlist({ session }) {
           onSaved={replaceTitle}
           onChanged={replaceTitle}
           onDeleted={removeTitle}
+          morphTo={editorFrom.current}
           onClose={() => setEditing(null)}
         />
       )}
