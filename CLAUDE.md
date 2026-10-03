@@ -87,7 +87,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/TitleEditor.js` – natív `<dialog>` (fejlécben a leírás): állapot, letöltve, megnézve dátuma
   (`watched_at`, csak „Megnézve” állapotnál; átváltáskor a mai nap), értékelés 10 csillaggal
   (+ „Törlés” link), törlés megerősítéssel (a mobilos borítófalon a borító vagy a ceruza nyitja).
-  Az „Abbahagyva” állapot csak sorozatnál választható. Évados
+  Az „Abbahagyva” állapot csak sorozatnál választható. Alul „Hasonló címek” (`SimilarTitles`).
+  Asztalon (≥ 900 px) széles, kétoszlopos ablak: balra nagy borító (w500, görgetéskor a helyén
+  marad; borító nélkül filmikon), jobbra az adatok; telefonon egy oszlop, nagy borító nélkül.
+  Évados
   sorozatnál az állapot / letöltve / dátum helyett „Évadok” lista (`SeasonList`), ami azonnal
   ment (`onChanged`); a „Mentés” ilyenkor nem küld `status` / `is_downloaded` / `watched_at`-et
 - `components/Seasons.js` – évadok (sorozatoknál): `hasSeasons()`, `seasonCounts()`,
@@ -106,7 +109,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (→ Megnézve, a visszavonás az Abbahagyva-t is visszaadja); a „Mégis folytatom” után az
   adatbázis az évadokból számol
 - `components/TitleTable.js` – asztali soros nézet (≥ 1400 px, `DESKTOP_QUERY` a
-  `Watchlist`-ben; `table-layout: fixed`, minden maradék hely a címoszlopé): balra borító +
+  `Watchlist`-ben; `table-layout: fixed`, minden maradék hely a címoszlopé): balra borító (gomb:
+  rákattintva a szerkesztő ablak – részletek, hasonló címek; rámutatva türkiz keret) +
   adatok (a cím mindig egy sorban, ha így sem fér ki „…” + tooltip; a műfajok külön sorban)
   + Franchise lenyíló saját, fix `11rem` (176 px) oszlopban, középre igazítva (Norbi
   leghosszabb franchise-neve is kifér); üresen átlátszó, de a helyét megtartja (így a sorok nem
@@ -165,6 +169,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (nem abbahagyott) sorozathoz új, még meg nem jelent évad érkezik → `season_announced`; az új,
   már megjelent évadot `aired_notified = false`-szal veszi fel (arról a gyűjtés szól); az első
   feltöltésnél a megjelentekről nem szól
+- `app/api/tmdb/similar/route.js` – `GET ?type=movie|tv&id=` → a TMDB ajánlásai (ha nincs, a
+  hasonlók), csak borítóval, legfeljebb 12, a kereséssel azonos mezőnevekkel
+- `components/SimilarTitles.js` – „Hasonló címek” a szerkesztő ablak alján: lenyitó gomb (alapból
+  nyitva; ha becsukja, a böngésző megjegyzi: `localStorage`, `filmlista-hasonlok`; nyitva tölt be),
+  vízszintesen görgethető borítósor (évszám, típus; a borító a TMDB-adatlapra visz), „+ Hozzáadás”
+  (`addTitle()`), a listán lévőknél „✓ A listán”
 - `app/api/imdb/refresh/route.js` – `POST`: a hiányzó vagy 14 napnál régebbi IMDb-értékeléseket
   frissíti (25-ösével, a felhasználó jogosultságaival); a `Watchlist` betöltéskor hívja
 - `lib/server/omdb.js` – `fetchImdbRating()`, `omdbEnabled()` (csak route handlerben)
@@ -302,7 +312,7 @@ megjelenés-frissítés (18 javaslat, 2026-10-03), keresés a listán, középre
 Letöltött / Nem letöltött), mobilon a borító a szerkesztőt nyitja (az IMDb-re a cím visz),
 asztali nézetben lista / rács váltó, telefonon 3 kártya egy sorban, értesítések haranggal (új
 évad bejelentése / megjelenése), tömeges import, mentés letöltése (CSV), franchise átnevezése,
-Mama-szűrő,
+Mama-szűrő, hasonló címek a szerkesztő ablakban (TMDB-ajánlások, egy kattintással a listára),
 app-ikon (filmcsapó) és manifest: Norbi asztali alkalmazásként a Chrome-ból telepítette
 (Electron-csomag helyett).
 Franchise-filmek importja (franchise.xlsx): 194 cím, 34 franchise; hozzáadás dátuma = megjelenés.
@@ -319,6 +329,16 @@ Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnéze
 - „Mit nézzek ma?” – véletlen ajánlás a jelenlegi szűrőből (pl. letöltött, még nem látott).
 - Statisztika – havonta megnézett címek, kedvenc műfajok, átlagos értékelés (`watched_at`).
 - Előzetes (trailer) link a szerkesztő ablakban (TMDB `videos`).
+- Filmek megjelenésének figyelése – „Hamarosan” jelzés, és a harang szól, ha letölthető lett
+  (TMDB `release_dates`, digitális megjelenés).
+- Játékidő a soron (sorozatnál egy rész hossza) és szűrő rá (pl. 2 óránál rövidebb).
+- Értesítés a telefonra akkor is, ha az app nincs nyitva (web push, napi ellenőrzés).
+- Saját címkék (pl. „családi”, „karácsonyi”) szűrővel.
+- Mamának megosztható, csak olvasható lista titkos linkkel (gondos jogosultságkezeléssel).
+- Szinkron / felirat jelölése a letöltött címeknél.
+- Automatikus heti mentés az adatbázisba (néhány hétre visszaállítható).
+- Törlés visszavonása (megerősítés helyett pár másodpercig „Visszavonás”).
+- Billentyűparancsok asztalon (`/` keresés, `N` új cím, nyilak: lapozás).
 
 ## Fejlesztői megjegyzés
 - Ha a terminál nem ismeri a `node`/`npm` parancsot, a VS Code-ot újra kell indítani

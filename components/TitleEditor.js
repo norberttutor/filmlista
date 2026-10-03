@@ -14,6 +14,9 @@ import StarRating from '@/components/StarRating';
 import FranchiseSelect from '@/components/FranchiseSelect';
 import ImdbBadge from '@/components/ImdbBadge';
 import { hasSeasons, SeasonList, useSeasonActions } from '@/components/Seasons';
+import SimilarTitles from '@/components/SimilarTitles';
+
+const POSTER_BASE = 'https://image.tmdb.org/t/p/w500'; // a nagy borító (asztalon)
 
 // Rádiógombok "chip" formában; a kiválasztottra újra kattintva visszaáll üresre.
 function ClearableChips({ name, options, value, onChange }) {
@@ -46,6 +49,8 @@ export default function TitleEditor({
   onCreateFranchise,
   onDeleteFranchise,
   onRenameFranchise,
+  existingKeys,
+  onAdded,
   onSaved,
   onChanged,
   onDeleted,
@@ -138,149 +143,163 @@ export default function TitleEditor({
   }
 
   return (
-    <dialog ref={dialogRef} className="editor" aria-labelledby="editor-title" onClose={onClose}>
+    <dialog
+      ref={dialogRef}
+      className="editor title-editor"
+      aria-labelledby="editor-title"
+      onClose={onClose}
+    >
       <form onSubmit={handleSubmit}>
-        <header>
-          <h2 id="editor-title">{t.title}</h2>
-          <p className="meta">
-            {t.release_year && <span>{t.release_year}</span>}
-            <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
-            <ImdbBadge title={t} />
-          </p>
-          {t.overview && <p className="editor-overview">{t.overview}</p>}
-        </header>
-
-        <div className="field">
-          <span aria-hidden="true">Franchise</span>
-          <FranchiseSelect
-            label="Franchise"
-            value={form.franchise_id}
-            franchises={franchises}
-            onChange={(id) => setField('franchise_id', id)}
-            onCreate={onCreateFranchise}
-            onDelete={onDeleteFranchise}
-            onRename={onRenameFranchise}
-          />
+        {/* asztalon a borító nagyban, balra (görgetéskor a helyén marad); telefonon rejtve */}
+        <div className="editor-poster" aria-hidden="true">
+          {t.poster_path && <img src={POSTER_BASE + t.poster_path} alt="" />}
         </div>
+        <div className="editor-main">
+          <header>
+            <h2 id="editor-title">{t.title}</h2>
+            <p className="meta">
+              {t.release_year && <span>{t.release_year}</span>}
+              <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
+              <ImdbBadge title={t} />
+            </p>
+            {t.overview && <p className="editor-overview">{t.overview}</p>}
+          </header>
 
-        {seasonal ? (
-          <fieldset className="field">
-            <legend>Évadok</legend>
-            <p className="muted small season-hint">Az évadok változása azonnal mentődik.</p>
-            <SeasonList title={t} actions={seasonActions} />
-          </fieldset>
-        ) : (
-          <>
-            <fieldset className="field">
-              <legend>Állapot</legend>
-              {/* az (üres) alapállapotnak nincs gombja: egyik sincs kiválasztva; az
-                  "Abbahagyva" csak sorozatnál */}
-              <ClearableChips
-                name="status"
-                options={statuses.filter(
-                  (s) =>
-                    s.code !== DEFAULT_STATUS &&
-                    (s.code !== DROPPED_STATUS || t.media_type === 'tv' || t.status === s.code)
-                )}
-                value={form.status}
-                onChange={changeStatus}
-              />
-            </fieldset>
-
-            {form.status === 'watched' && (
-              <label className="field">
-                Megnézve
-                <input
-                  type="date"
-                  value={form.watched_at}
-                  onChange={(e) => setField('watched_at', e.target.value)}
-                />
-              </label>
-            )}
-
-            <label className="check">
-              <input
-                type="checkbox"
-                checked={form.is_downloaded}
-                onChange={(e) => setField('is_downloaded', e.target.checked)}
-              />
-              Letöltve
-            </label>
-          </>
-        )}
-
-        <fieldset className="field">
-          <legend>Mama</legend>
-          <ClearableChips
-            name="mama_status"
-            options={MAMA_OPTIONS}
-            value={form.mama_status}
-            onChange={(code) => setField('mama_status', code)}
-          />
-        </fieldset>
-
-        <div className="field">
-          <span>Saját értékelés</span>
-          <div className="rating-field">
-            <StarRating
-              name="editor-rating"
-              label="Saját értékelés"
-              value={form.my_rating}
-              onChange={(n) => setField('my_rating', n)}
+          <div className="field">
+            <span aria-hidden="true">Franchise</span>
+            <FranchiseSelect
+              label="Franchise"
+              value={form.franchise_id}
+              franchises={franchises}
+              onChange={(id) => setField('franchise_id', id)}
+              onCreate={onCreateFranchise}
+              onDelete={onDeleteFranchise}
+              onRename={onRenameFranchise}
             />
-            <span className="rating-number">
-              {form.my_rating ? `${form.my_rating}/10` : 'Nincs'}
-            </span>
-            {form.my_rating && (
-              <button
-                type="button"
-                className="link small"
-                onClick={() => setField('my_rating', null)}
-              >
-                Törlés
-              </button>
-            )}
           </div>
-        </div>
 
-        {error && (
-          <p className="error" role="alert">
-            {error}
-          </p>
-        )}
-
-        <div className="editor-actions">
-          {confirmingDelete ? (
-            <>
-              <span className="confirm-text">Biztosan törlöd a listádról?</span>
-              <span className="spacer" />
-              <button type="button" className="ghost" autoFocus onClick={cancelDelete}>
-                Mégse
-              </button>
-              <button type="button" className="danger" disabled={busy} onClick={handleDelete}>
-                {busy ? 'Törlés…' : 'Igen, törlés'}
-              </button>
-            </>
+          {seasonal ? (
+            <fieldset className="field">
+              <legend>Évadok</legend>
+              <p className="muted small season-hint">Az évadok változása azonnal mentődik.</p>
+              <SeasonList title={t} actions={seasonActions} />
+            </fieldset>
           ) : (
             <>
-              <button
-                type="button"
-                className="danger-link"
-                ref={deleteButtonRef}
-                disabled={busy}
-                onClick={() => setConfirmingDelete(true)}
-              >
-                Törlés a listáról
-              </button>
-              <span className="spacer" />
-              <button type="button" className="ghost" onClick={close}>
-                Mégse
-              </button>
-              <button type="submit" className="primary" disabled={busy}>
-                {busy ? 'Mentés…' : 'Mentés'}
-              </button>
+              <fieldset className="field">
+                <legend>Állapot</legend>
+                {/* az (üres) alapállapotnak nincs gombja: egyik sincs kiválasztva; az
+                    "Abbahagyva" csak sorozatnál */}
+                <ClearableChips
+                  name="status"
+                  options={statuses.filter(
+                    (s) =>
+                      s.code !== DEFAULT_STATUS &&
+                      (s.code !== DROPPED_STATUS || t.media_type === 'tv' || t.status === s.code)
+                  )}
+                  value={form.status}
+                  onChange={changeStatus}
+                />
+              </fieldset>
+
+              {form.status === 'watched' && (
+                <label className="field">
+                  Megnézve
+                  <input
+                    type="date"
+                    value={form.watched_at}
+                    onChange={(e) => setField('watched_at', e.target.value)}
+                  />
+                </label>
+              )}
+
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={form.is_downloaded}
+                  onChange={(e) => setField('is_downloaded', e.target.checked)}
+                />
+                Letöltve
+              </label>
             </>
           )}
+
+          <fieldset className="field">
+            <legend>Mama</legend>
+            <ClearableChips
+              name="mama_status"
+              options={MAMA_OPTIONS}
+              value={form.mama_status}
+              onChange={(code) => setField('mama_status', code)}
+            />
+          </fieldset>
+
+          <div className="field">
+            <span>Saját értékelés</span>
+            <div className="rating-field">
+              <StarRating
+                name="editor-rating"
+                label="Saját értékelés"
+                value={form.my_rating}
+                onChange={(n) => setField('my_rating', n)}
+              />
+              <span className="rating-number">
+                {form.my_rating ? `${form.my_rating}/10` : 'Nincs'}
+              </span>
+              {form.my_rating && (
+                <button
+                  type="button"
+                  className="link small"
+                  onClick={() => setField('my_rating', null)}
+                >
+                  Törlés
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* a TMDB ajánlásai: egy kattintással a listára */}
+          <SimilarTitles title={t} existingKeys={existingKeys} onAdded={onAdded} />
+
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
+
+          <div className="editor-actions">
+            {confirmingDelete ? (
+              <>
+                <span className="confirm-text">Biztosan törlöd a listádról?</span>
+                <span className="spacer" />
+                <button type="button" className="ghost" autoFocus onClick={cancelDelete}>
+                  Mégse
+                </button>
+                <button type="button" className="danger" disabled={busy} onClick={handleDelete}>
+                  {busy ? 'Törlés…' : 'Igen, törlés'}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="danger-link"
+                  ref={deleteButtonRef}
+                  disabled={busy}
+                  onClick={() => setConfirmingDelete(true)}
+                >
+                  Törlés a listáról
+                </button>
+                <span className="spacer" />
+                <button type="button" className="ghost" onClick={close}>
+                  Mégse
+                </button>
+                <button type="submit" className="primary" disabled={busy}>
+                  {busy ? 'Mentés…' : 'Mentés'}
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </form>
     </dialog>

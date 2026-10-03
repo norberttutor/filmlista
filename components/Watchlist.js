@@ -806,6 +806,7 @@ export default function Watchlist({ session }) {
               onCreateFranchise={handleCreateFranchise}
               onDeleteFranchise={handleDeleteFranchise}
               onRenameFranchise={handleRenameFranchise}
+              onEdit={setEditing}
               onUpdated={replaceTitle}
               onDeleted={removeTitle}
             />
@@ -843,6 +844,8 @@ export default function Watchlist({ session }) {
           onCreateFranchise={handleCreateFranchise}
           onDeleteFranchise={handleDeleteFranchise}
           onRenameFranchise={handleRenameFranchise}
+          existingKeys={existingKeys}
+          onAdded={(row) => setTitles((ts) => [row, ...ts])}
           onSaved={replaceTitle}
           onChanged={replaceTitle}
           onDeleted={removeTitle}

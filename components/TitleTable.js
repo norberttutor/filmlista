@@ -27,6 +27,7 @@ export default function TitleTable({
   onCreateFranchise,
   onDeleteFranchise,
   onRenameFranchise,
+  onEdit,
   onUpdated,
   onDeleted,
 }) {
@@ -63,6 +64,7 @@ export default function TitleTable({
               onCreateFranchise={onCreateFranchise}
               onDeleteFranchise={onDeleteFranchise}
               onRenameFranchise={onRenameFranchise}
+              onEdit={onEdit}
               onUpdated={onUpdated}
               onDeleted={onDeleted}
             />
@@ -80,6 +82,7 @@ function TitleRow({
   onCreateFranchise,
   onDeleteFranchise,
   onRenameFranchise,
+  onEdit,
   onUpdated,
   onDeleted,
 }) {
@@ -148,9 +151,16 @@ function TitleRow({
     <tr data-status={t.status}>
       <td className="cell-title">
         <div className="row-title">
-          <div className="thumb">
+          {/* a borítóra kattintva a szerkesztő ablak (részletek, hasonló címek) – mint a kártyán */}
+          <button
+            type="button"
+            className="thumb thumb-btn"
+            aria-label={`Részletek és hasonló címek: ${t.title}`}
+            title="Részletek és hasonló címek"
+            onClick={() => onEdit(t)}
+          >
             {t.poster_path && <img src={THUMB_BASE + t.poster_path} alt="" loading="lazy" />}
-          </div>
+          </button>
           <div className="row-text">
             {/* mindig egy sorban; ha így sem fér ki, "…" és rámutatva a teljes cím */}
             <p className="row-name" title={t.title}>
