@@ -86,7 +86,22 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   ceruzával – Norbi kérése), az IMDb- (vagy TMDB-, ha nincs IMDb ID) adatlapra csak a cím visz
   (halvány aláhúzással), „Hozzáadva: <dátum>” a `created_at` alapján (csak megjelenítés, nem
   szerkeszthető), saját értékelés kis csillagsorként (`StarsDisplay`), ceruza gomb a bal felső
-  sarokban → szerkesztő ablak (billentyűzettel / felolvasóval ez a borító-kattintás megfelelője)
+  sarokban → szerkesztő ablak (billentyűzettel / felolvasóval ez a borító-kattintás megfelelője);
+  „Mama: …” borostyánnal (`.mama-tag`), műfajok színes pöttyel (`GenreList`); az első
+  rámutatáskor kiszámolja a borító hangulatszínét (`usePosterColor`), rámutatva a borító ebben fénylik
+- `components/GenreList.js` + `lib/genreColors.js` – műfajok, mindegyik előtt kis színes pötty
+  (`genreColor(név)`: OKLCH, egyforma világosság, a rokon műfajok rokon színt kapnak; ismeretlen
+  műfaj szürke; a kulcs a TMDB magyar műfajneve); felolvasónak vesszővel elválasztva (`sr-only`).
+  A kártyán és a táblázat sorában; megnézett / abbahagyott címnél a pötty szürke
+- `lib/posterColor.js` – hangulatszín a borítóból: `usePosterColor(poster_path, enabled)` a kis
+  (w185) borítót vászonra rajzolja (a TMDB képszervere CORS-t enged, de csak CORS-os kérésre: a
+  w185-ös borítót ezért máshol ne töltsd be `crossOrigin` nélkül – a gyorsítótárból engedély
+  nélküli választ kapna, ahogy a harang w92-es képeinél történt), a legjellemzőbb élénk
+  színt adja OKLCH-ban, rögzített világossággal (0,72) és telítettséggel (0,04–0,13) – így a
+  szövegek olvashatósága nem változik; borítónként egyszer számol (`Map`). `ambientProps(szín)`:
+  `--ambient` CSS-változó + `data-ambient` jelző; a CSS („Hangulatszín a borítóból” szakasz)
+  csak ilyenkor színez: a szerkesztő ablak a borító mögül dereng (színezett keret, árnyék,
+  háttér), a kártya rámutatva fénylik, a táblázat rámutatott sora halványan színeződik
 - `components/TitleEditor.js` – natív `<dialog>` (fejlécben a leírás): állapot, letöltve, megnézve dátuma
   (`watched_at`, csak „Megnézve” állapotnál; átváltáskor a mai nap), értékelés 10 csillaggal
   (+ „Törlés” link), törlés megerősítéssel (a mobilos borítófalon a borító vagy a ceruza nyitja).
@@ -94,6 +109,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   Asztalon (≥ 900 px) széles, kétoszlopos ablak: balra nagy borító (w500, görgetéskor a helyén
   marad; borító nélkül filmikon), jobbra az adatok; telefonon egy oszlop, nagy borító nélkül.
   Megnyitáskor a fókusz az ablak címén van (keret nélkül), nem a Franchise mezőn (Norbi kérése).
+  A borító hangulatszínét megnyitáskor kiszámolja (`usePosterColor`): az ablak a film színében
+  dereng. A kiválasztott Mama borostyán (`.mama-chips`).
   Évados
   sorozatnál az állapot / letöltve / dátum helyett „Évadok” lista (`SeasonList`), ami azonnal
   ment (`onChanged`); a „Mentés” ilyenkor nem küld `status` / `is_downloaded` / `watched_at`-et
@@ -125,8 +142,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   „Letöltve” felirat felé 120 px (`--overview-gap-end`), 4 sorban; 1440p-re (2560 px)
   optimalizálva; 1900 px alatt a franchise a cím adatai mellett, a leírás alattuk 2 sorban;
   teljes szöveg rámutatáskor),
-  jobbra sorrendben Letöltve – Állapot – Mama – Értékelés (10 másfélszeres csillag középen,
-  mellette „8/10”), a végén törlés megerősítéssel (a sor halvány pirosat kap). Az üres
+  jobbra sorrendben Letöltve – Állapot – Mama (kitöltve borostyán: `.mama-set`) – Értékelés
+  (10 másfélszeres csillag középen, mellette „8/10”), a végén törlés megerősítéssel (a sor
+  halvány pirosat kap). A sor az első rámutatáskor / fókusznál kiszámolja a borító
+  hangulatszínét, és rámutatva halványan felveszi. Az üres
   Állapot / Mama lenyíló és a kuka csak a sorra mutatva (vagy fókusznál) látszik teljesen
   (`@media (hover: hover)`). Fejléc: kis, ritkított nagybetűs címkék; állapotcsík: lekerekített
   pálca a borító mellett (`td:first-child::before`). Azonnali, optimista mentés (hibánál
@@ -200,7 +219,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   felülírja a sajátot, az állapot nem változik, új cím nem kerül fel. Teljesen automatikus
   szinkron nincs (az IMDb-nek nincs API-ja, az oldal gépi olvasása tiltott).
 - `components/NotificationBell.js` + `lib/notifications.js` – harang a fejlécben: a nem olvasott
-  értesítések száma türkiz jelvényben; kinyitva a legutóbbi 30 (új évad bejelentése / megjelenése,
+  értesítések száma borostyán jelvényben (`--accent-2`); kinyitva a legutóbbi 30 (új évad bejelentése / megjelenése,
   borítóval); kinyitáskor mind olvasott (az adatbázisban is, `markNotificationsRead()`; a
   közben beérkező régi lekérdezés sem írja vissza – `readIds` a Watchlistben); elemre
   kattintva a sorozat szerkesztő ablaka; kívülre kattintás / Esc bezár. A lista a harang bal
@@ -279,12 +298,23 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   A szerkesztő ablakban a kiválasztott állapotra/Mamára újra kattintva lesz üres.
 - A megnézett (`watched`) és az abbahagyott (`dropped`) címek háttérbe húzódnak (sor és kártya):
   fekete-fehér, fakó borító,
-  tompított, de olvasható szöveg (`--watched-text`, ≥ 4,5:1), halványabb vezérlők – nem az egész
-  sor átlátszó. Rámutatáskor, fókusznál és a törlés megerősítésekor minden teljes színű.
+  tompított, de olvasható szöveg (`--watched-text`, ≥ 4,5:1), halványabb vezérlők, szürke
+  műfajpötty, tompa „Mama” felirat – nem az egész sor átlátszó. Rámutatáskor, fókusznál és a
+  törlés megerősítésekor minden teljes színű.
 - Design: sötét téma a `:root` változókkal; kiemelőszín (`--accent`) neon türkiz `#33e0ef`
-  (nem sárga), a „Folyamatban” is ez; állapotszínek `--st-<kód>` változókban (Abbahagyva:
-  halvány lila `--st-dropped`).
+  (nem sárga), a „Folyamatban” is ez (`--st-watching: var(--accent)`); állapotszínek
+  `--st-<kód>` változókban (Abbahagyva: halvány lila `--st-dropped`).
   Új állapotnál ide is kell egy szín, és a `[data-status=...]` szabály (kártya és táblázatsor is használja).
+- Második kiemelőszín (`--accent-2`, borostyán `#ffb547`, `-ink`, `-soft`, `-line`): **csak a
+  saját jelöléseken** – saját értékelés csillagai, Mama (szerkesztő chip, táblázat lenyíló,
+  kártya), a harang száma. Soha nem gombszín; a türkiz marad a gomboké, az állapotoké, a
+  kiválasztott szűrőké és a fókuszkereté.
+- A színtokenek OKLCH-ban (`oklch(L% C h)`), mellettük megjegyzésben a hex: hagyományos (sRGB)
+  kijelzőn pontosan az a szín. Széles színterű (P3) kijelzőn a `@media (color-gamut: p3)` szabály
+  élénkebb `--accent` / `--accent-2`-t ad (ugyanaz a világosság és árnyalat, nagyobb
+  telítettség). A build (Lightning CSS) a böngészőknek hex / `lab()` tartalékot is generál, ezért
+  a számított érték `lab(…)` lehet – a teszt a színeket vásznon át, sRGB-ben hasonlítja (`rgbOf`).
+  Új színt OKLCH-ban adj meg (hexből: `munka/dizajn-2/eszkozok/oklch.mjs`).
 - Teli türkiz csak a fő műveleteknél (Cím hozzáadása, Mentés, Belépés); a kiválasztott állapot
   (szűrőgomb, aktuális oldal, választott lehetőség) `--accent-soft` háttér + `--accent-line` keret.
   A gombok kerek végűek, rámutatva világosodnak, lenyomva sötétednek (`--accent-hover/-press`,
@@ -292,8 +322,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - Saját lenyíló-nyíl (`--chevron`, `appearance: none`) és jelölőnégyzet (`--check-mark`); ahol egy
   szabály `background` rövidítést ad egy lenyílónak, a nyilat is újra meg kell adni. Windows nagy
   kontrasztú módban a beépített vezérlők maradnak.
-- Mozgás: legfeljebb ~0,2 s-os átmenetek; a `globals.css` végén egy közös
-  `prefers-reduced-motion: reduce` szabály mindet kikapcsolja.
+- Mozgás: legfeljebb ~0,2 s-os átmenetek; kivétel az aurora (a lap tetején három elmosott
+  fényfolt – türkiz, lila, borostyán – 36 s-os lassú lebegéssel, `body::before`; a belépési
+  oldalon nincs, kétoldalt 4% hely + maszk, hogy ne legyen éle és vízszintes görgetés). A
+  `globals.css` végén egy közös `prefers-reduced-motion: reduce` szabály minden átmenetet és
+  animációt kikapcsol.
 - Hiányzó borító: a `.thumb:empty` / `.poster-fallback` filmikont kap (`--icon-film`).
 - A 2026-10-03-i megjelenés-frissítés javaslatai és mérései: `munka/dizajn/` (helyi mappa, lásd
   `munka/README.md`); a 10-es javaslat (álló betűs eredeti cím) Norbi kérésére kimaradt.
@@ -318,7 +351,9 @@ asztali nézetben lista / rács váltó, telefonon 3 kártya egy sorban, értes�
 évad bejelentése / megjelenése), tömeges import, mentés letöltése (CSV), franchise átnevezése,
 Mama-szűrő, hasonló címek a szerkesztő ablakban (TMDB-ajánlások, egy kattintással a listára),
 app-ikon (filmcsapó) és manifest: Norbi asztali alkalmazásként a Chrome-ból telepítette
-(Electron-csomag helyett).
+(Electron-csomag helyett), megjelenés 2. kör – színek (2026-10-04): borostyán második
+kiemelőszín, OKLCH-színek + élénkebb neon P3 kijelzőn, műfajszínek, hangulatszín a borítóból,
+aurora a lap tetején.
 Franchise-filmek importja (franchise.xlsx): 194 cím, 34 franchise; hozzáadás dátuma = megjelenés.
 Norbi listája (norbert.tutor@gmail.com) 2026-10-02-án Excelből importálva: 512 cím.
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
@@ -327,6 +362,12 @@ Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnéze
 - Nincs kijelölve – Norbi kéri a következőt (ötletek lent).
 
 ## Fejlesztési ötletek (később)
+- **Megjelenés, 2. kör (terv, 2026-10-03):** 25 dizájnjavaslat 2026-os trendek szerint,
+  körökre bontva, technikai jegyzetekkel: `munka/dizajn-2/TERV.md` (helyi mappa). A színes
+  részből (1–7) kész: 1 (borostyán változat), 2, 3, 4, 6; Norbi nem kérte: 5 (színes
+  IMDb-jelvény), 7 (választható színtéma). Hátravan: 8–25 (üveghatású szűrősor, mozgás,
+  háttérkép a szerkesztőben, statisztika, telefonos alsó lap…). Előbb előtte–utána képek
+  (`munka/dizajn-2/eszkozok/`), beépítés csak jóváhagyás után.
 - „Hol nézhető?” – a TMDB `watch/providers` adatai (Magyarország: Netflix, HBO Max, Disney+,
   SkyShowtime…) logóval a soron / kártyán, szűrő az előfizetett szolgáltatókra; a TMDB a
   JustWatch megnevezését kéri. Norbi: egyelőre nem kell, a lista végére.

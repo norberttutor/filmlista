@@ -15,7 +15,9 @@ import {
 import StarRating from '@/components/StarRating';
 import FranchiseSelect from '@/components/FranchiseSelect';
 import ImdbBadge from '@/components/ImdbBadge';
+import GenreList from '@/components/GenreList';
 import { hasSeasons, SeasonCell, SeasonDownloads } from '@/components/Seasons';
+import { usePosterColor, ambientProps } from '@/lib/posterColor';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w154';
 
@@ -93,6 +95,9 @@ function TitleRow({
   const savedTimer = useRef(null);
   const deleteButtonRef = useRef(null);
   const link = externalLink(t);
+  // a borító hangulatszíne: az első rámutatáskor / fókusznál számolódik, a sor halványan felveszi
+  const [pointed, setPointed] = useState(false);
+  const ambient = usePosterColor(t.poster_path, pointed);
 
   // Mentés azonnal: a sor rögtön az új értéket mutatja, hiba esetén visszaáll.
   async function save(changes) {
@@ -148,7 +153,12 @@ function TitleRow({
   }
 
   return (
-    <tr data-status={t.status}>
+    <tr
+      data-status={t.status}
+      onPointerEnter={() => setPointed(true)}
+      onFocus={() => setPointed(true)}
+      {...ambientProps(ambient)}
+    >
       <td className="cell-title">
         <div className="row-title">
           {/* a borítóra kattintva a szerkesztő ablak (részletek, hasonló címek) – mint a kártyán */}
@@ -180,7 +190,7 @@ function TitleRow({
               <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
               <ImdbBadge title={t} />
             </p>
-            {t.genres?.length > 0 && <p className="row-genres">{t.genres.join(', ')}</p>}
+            <GenreList className="row-genres" genres={t.genres} />
             <p className="added">
               Hozzáadva: <time dateTime={t.created_at}>{formatDate(t.created_at)}</time>
             </p>
@@ -265,6 +275,7 @@ function TitleRow({
           <td className="col-mama">
             <select
               aria-label={`Mama – ${t.title}`}
+              className={t.mama_status ? 'mama-set' : undefined}
               value={t.mama_status ?? ''}
               onChange={(e) => save({ mama_status: e.target.value || null })}
             >

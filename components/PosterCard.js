@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { externalLink, formatDate, mamaLabel, DEFAULT_STATUS } from '@/lib/titles';
+import { usePosterColor, ambientProps } from '@/lib/posterColor';
 import { StarsDisplay } from '@/components/StarRating';
 import ImdbBadge from '@/components/ImdbBadge';
+import GenreList from '@/components/GenreList';
 import { hasSeasons, seasonCounts, SeasonStrip } from '@/components/Seasons';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
@@ -8,9 +11,17 @@ const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
 export default function PosterCard({ title: t, franchise, onEdit }) {
   const link = externalLink(t);
   const seasons = hasSeasons(t) ? seasonCounts(t) : null;
+  // a borító hangulatszíne: az első rámutatáskor számolódik, rámutatva a borító ebben fénylik
+  const [pointed, setPointed] = useState(false);
+  const ambient = usePosterColor(t.poster_path, pointed);
 
   return (
-    <article className="card" data-status={t.status}>
+    <article
+      className="card"
+      data-status={t.status}
+      onPointerEnter={() => setPointed(true)}
+      {...ambientProps(ambient)}
+    >
       {/* a borítóra kattintva a szerkesztő ablak nyílik (mint a ceruzával; billentyűzettel és
           képernyőolvasóval a ceruza gomb ugyanez); sorozatnál a borító alján évadonként egy
           szakasz, egyébként egy állapotcsík */}
@@ -74,14 +85,14 @@ export default function PosterCard({ title: t, franchise, onEdit }) {
             {seasons.watched}/{seasons.aired} évad
           </span>
         )}
-        {t.mama_status && <span>Mama: {mamaLabel(t.mama_status)}</span>}
+        {t.mama_status && <span className="mama-tag">Mama: {mamaLabel(t.mama_status)}</span>}
       </p>
       {t.my_rating && (
         <p className="card-stars">
           <StarsDisplay value={t.my_rating} />
         </p>
       )}
-      {t.genres?.length > 0 && <p className="genres">{t.genres.join(', ')}</p>}
+      <GenreList className="genres" genres={t.genres} />
       <p className="added">
         Hozzáadva: <time dateTime={t.created_at}>{formatDate(t.created_at)}</time>
       </p>

@@ -1,25 +1,34 @@
 /* ---------- Színek és alapértékek ---------- */
+/* A színek OKLCH-ban (érzékelt világosság, telítettség, árnyalat): az egyforma világosságú
+   színek egyformán olvashatók. Mellettük a régi hex érték – a hagyományos (sRGB) kijelzőn
+   pontosan ez látszik. A széles színterű (P3) kijelzőn a két kiemelőszín élénkebb (lent). */
 :root {
-  --bg: #151b24;          /* vetítőterem-kék háttér */
-  --surface: #1e2733;
-  --line: #2c3846;
-  --text: #e9edf2;
-  --muted: #93a1b2;
-  --accent: #33e0ef;      /* neon türkiz */
-  --accent-ink: #032a30;
-  --danger: #f08a7e;
+  --bg: oklch(22.04% 0.0199 258.35);          /* #151b24 vetítőterem-kék háttér */
+  --surface: oklch(26.97% 0.0259 255.74);     /* #1e2733 */
+  --line: oklch(33.59% 0.0296 252.57);        /* #2c3846 */
+  --text: oklch(94.45% 0.008 253.85);         /* #e9edf2 */
+  --muted: oklch(70.35% 0.0296 253.31);       /* #93a1b2 */
+  --accent: oklch(83.05% 0.1328 204.05);      /* #33e0ef neon türkiz */
+  --accent-ink: oklch(26.21% 0.0429 210.13);  /* #032a30 */
+  --danger: oklch(73.99% 0.1265 27.61);       /* #f08a7e */
+
+  /* második kiemelőszín: borostyán – csak a saját jelöléseken (saját csillagok, Mama, a harang
+     száma); a türkiz marad a gomboké, az állapotoké és a kiválasztott szűrőké. 9,8:1 a háttéren */
+  --accent-2: oklch(82.45% 0.1486 73.35);     /* #ffb547 */
+  --accent-2-ink: oklch(28.11% 0.0594 74.74); /* #3a2400 */
+  --accent-2-soft: color-mix(in oklab, var(--accent-2) 16%, transparent);
+  --accent-2-line: color-mix(in oklab, var(--accent-2) 55%, transparent);
 
   /* állapotszínek – új állapotnál ide kell egy sor */
   --st-to_watch: transparent; /* alapállapot: üres, nincs színe */
-  --st-watching: #33e0ef;
-  --st-watched: #7cc8a0;
-  --st-dropped: #a993e6;      /* Abbahagyva (sorozat): halvány lila, 6,6:1 a háttéren */
+  --st-watching: var(--accent);
+  --st-watched: oklch(77.21% 0.0957 160.07);  /* #7cc8a0 */
+  --st-dropped: oklch(71.49% 0.1204 295.38);  /* #a993e6 Abbahagyva (sorozat): halvány lila, 6,6:1 */
 
   /* árnyalatok */
-  --bg-top: #1a222d;                 /* a lap teteje egy árnyalattal világosabb */
-  --glow: rgb(51 224 239 / 0.06);    /* a türkiz leheletnyi "vetítőfénye" */
-  --line-soft: #232c38;              /* halk vonal a táblázat sorai között */
-  --surface-raised: #222c39;         /* felugró elemek (lenyíló lista, súgó) */
+  --bg-top: oklch(24.94% 0.024 256.44);         /* #1a222d a lap teteje egy árnyalattal világosabb */
+  --line-soft: oklch(29% 0.0254 255.73);        /* #232c38 halk vonal a táblázat sorai között */
+  --surface-raised: oklch(28.97% 0.0277 255.17); /* #222c39 felugró elemek (lenyíló lista, súgó) */
   --edge: rgb(255 255 255 / 0.08);   /* vékony világos keret a felugró elemeken */
   --shadow-pop: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 20px -6px rgb(0 0 0 / 0.4),
     0 28px 56px -14px rgb(0 0 0 / 0.6);
@@ -31,8 +40,8 @@
   --press-tint: rgb(255 255 255 / 0.09);
   --control-border: color-mix(in srgb, var(--muted) 60%, var(--bg)); /* 3:1 a háttéren */
   --star-empty: color-mix(in srgb, var(--muted) 60%, var(--bg));     /* 3:1 a háttéren */
-  --watched-text: #7c8998;   /* megnézett cím szövegei: 4,85:1 a háttéren */
-  --watched-accent: #2895a2; /* megnézett cím türkiz szövegei: 4,87:1 */
+  --watched-text: oklch(62.46% 0.0273 252.02);   /* #7c8998 megnézett cím szövegei: 4,85:1 */
+  --watched-accent: oklch(61.64% 0.0954 206.9);  /* #2895a2 megnézett cím türkiz szövegei: 4,87:1 */
 
   /* ikonok (a színt a CSS adja: a lenyíló-nyíl és a pipa itt, a többi maszkként) */
   --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%2393a1b2' stroke-width='1.6'/%3E%3C/svg%3E");
@@ -47,6 +56,15 @@
   color-scheme: dark;
 }
 
+/* széles színterű (P3) kijelzőn a két kiemelőszín élénkebb: ugyanaz a világosság és árnyalat,
+   nagyobb telítettség (a P3 határának 90%-a), így az olvashatóság nem változik */
+@media (color-gamut: p3) {
+  :root {
+    --accent: oklch(83.05% 0.1832 204.05);
+    --accent-2: oklch(82.45% 0.1819 73.35);
+  }
+}
+
 *,
 *::before,
 *::after {
@@ -58,19 +76,55 @@ body {
   margin: 0;
 }
 
-/* a lap tetején halvány türkiz "vetítőfény", lejjebb a sima háttér */
+/* a lap teteje egy árnyalattal világosabb, lejjebb a sima háttér */
 body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(64rem 18rem at 14% -5rem, var(--glow), transparent 72%),
     linear-gradient(180deg, var(--bg-top) 0, var(--bg) 12rem) no-repeat,
     var(--bg);
   color: var(--text);
   font-family: var(--font-main), system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.5;
+}
+
+/* aurora "vetítőfény" a lap tetején: három elmosott fényfolt (türkiz, lila, borostyán), nagyon
+   lassan lebeg; görgetéskor nem követ, a tartalom mögött van. Kétoldalt 4% hely marad, hogy a
+   mozgás se okozzon vízszintes görgetést. A belépési oldalnak saját fénye van. */
+body::before {
+  content: '';
+  position: absolute;
+  inset: 0 4% auto;
+  height: 38rem;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(50rem 20rem at 12% -4rem, color-mix(in oklab, var(--accent) 30%, transparent), transparent 70%),
+    radial-gradient(44rem 18rem at 50% -6rem, color-mix(in oklab, var(--st-dropped) 30%, transparent), transparent 70%),
+    radial-gradient(46rem 18rem at 88% -5rem, color-mix(in oklab, var(--accent-2) 26%, transparent), transparent 70%);
+  filter: blur(8px);
+  /* két szélén lágyan elfogy (ne legyen éle) */
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+  animation: aurora 36s ease-in-out infinite alternate;
+}
+
+body:has(main.login)::before {
+  content: none;
+}
+
+@keyframes aurora {
+  from {
+    transform: translateX(-3%) scaleY(1);
+  }
+  50% {
+    transform: translateX(1.5%) scaleY(1.12);
+  }
+  to {
+    transform: translateX(3%) scaleY(0.94);
+  }
 }
 
 main {
@@ -267,7 +321,7 @@ button:disabled {
   gap: 2rem;
   justify-items: center;
   text-align: center;
-  background: radial-gradient(ellipse 60rem 30rem at 50% -6rem, rgb(51 224 239 / 0.09), transparent 70%);
+  background: radial-gradient(ellipse 60rem 30rem at 50% -6rem, color-mix(in oklab, var(--accent) 9%, transparent), transparent 70%);
 }
 
 body:has(> main.login) {
@@ -369,7 +423,7 @@ body:has(> main.login) {
   background-color: var(--hover-tint);
 }
 
-/* van új: türkiz harang, a szám kis türkiz jelvényben a jobb felső sarkon */
+/* van új: türkiz harang, a szám kis borostyán jelvényben a jobb felső sarkon */
 .notif-bell[data-unread] {
   color: var(--accent);
   border-color: var(--accent-line);
@@ -386,8 +440,8 @@ body:has(> main.login) {
   font-weight: 700;
   line-height: 1.15rem;
   text-align: center;
-  color: var(--accent-ink);
-  background: var(--accent);
+  color: var(--accent-2-ink);
+  background: var(--accent-2);
   border-radius: 999px;
   box-shadow: 0 0 0 2px var(--bg-top); /* elválik a harang keretétől */
   font-variant-numeric: tabular-nums;
@@ -1178,13 +1232,20 @@ body:has(> main.login) {
 
 .titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within):not(:has(> td.cell-confirm))
   :is(.row-name, .original, .meta, .row-genres, .added, .row-overview, .rating-number),
-.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) :is(h3, .original, .meta, .status-name, .genres, .added) {
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) :is(h3, .original, .meta, .status-name, .genres, .added, .mama-tag) {
   color: var(--watched-text);
 }
 
 .titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within):not(:has(> td.cell-confirm)) .imdb b,
 .card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .imdb b {
   color: inherit;
+}
+
+/* a műfajok színes pöttye is szürke */
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within):not(:has(> td.cell-confirm)) .genre::before,
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .genre::before {
+  filter: grayscale(1);
+  opacity: 0.55;
 }
 
 .titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within):not(:has(> td.cell-confirm)) .franchise-select,
@@ -1395,7 +1456,26 @@ body:has(> main.login) {
   margin: 0.25rem 0 0;
   font-size: 0.8rem;
   color: var(--muted);
-  text-wrap: balance;
+}
+
+/* műfajok (GenreList): mindegyik előtt kis színes pötty – a szín műfajonként más
+   (lib/genreColors.js), a szöveg színe nem változik; tördeléskor nincs behúzás */
+.genres,
+.row-genres {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 0.75em;
+}
+
+.genre::before {
+  content: '';
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  margin-right: 0.35em;
+  border-radius: 50%;
+  background: var(--genre);
+  vertical-align: 0.06em;
 }
 
 .added {
@@ -1462,17 +1542,18 @@ body:has(> main.login) {
   transition: stroke 0.15s, fill 0.15s, transform 0.12s ease-out;
 }
 
+/* a saját értékelés a második kiemelőszínnel (borostyán) */
 .stars .on svg,
 .stars-static .on svg {
-  fill: var(--accent);
-  stroke: var(--accent);
+  fill: var(--accent-2);
+  stroke: var(--accent-2);
 }
 
-/* egérrel rámutatva halvány türkiz kitöltéssel mutatja, mennyi lenne; a rámutatott
+/* egérrel rámutatva halvány borostyán kitöltéssel mutatja, mennyi lenne; a rámutatott
    csillag picit megnő (a helye nem változik) */
 .stars.previewing .on svg {
-  fill: color-mix(in srgb, var(--accent) 38%, transparent);
-  stroke: var(--accent);
+  fill: color-mix(in srgb, var(--accent-2) 38%, transparent);
+  stroke: var(--accent-2);
 }
 
 .stars label:hover svg {
@@ -1509,7 +1590,7 @@ body:has(> main.login) {
 }
 
 .editor .stars .on svg {
-  stroke: var(--accent);
+  stroke: var(--accent-2);
 }
 
 .rating-field {
@@ -1675,6 +1756,11 @@ body:has(> main.login) {
   transition: opacity 0.15s, color 0.15s, background-color 0.15s, border-color 0.15s;
 }
 
+/* kitöltött Mama: saját jelölés, a második kiemelőszínnel (borostyán) */
+.titles-table td.col-mama select.mama-set {
+  color: var(--accent-2);
+}
+
 @media (hover: hover) {
   .titles-table td.col-status select:where(:has(> option[value='to_watch']:checked)),
   .titles-table td.col-mama select:where(:has(> option[value='']:checked)) {
@@ -1827,7 +1913,6 @@ body:has(> main.login) {
 .row-genres {
   font-size: 0.8rem;
   color: var(--muted);
-  text-wrap: balance;
 }
 
 /* franchise saját oszlopban a cím és a leírás között, középre igazítva */
@@ -1918,6 +2003,11 @@ body:has(> main.login) {
   margin: 0.15rem 0 0;
   font-size: 0.8rem;
   color: var(--accent);
+}
+
+/* "Mama: …" a kártyán: saját jelölés, borostyán */
+.card .mama-tag {
+  color: var(--accent-2);
 }
 
 .cell-confirm {
@@ -2833,6 +2923,13 @@ body:has(.editor[open]) {
   outline-offset: 2px;
 }
 
+/* Mama: saját jelölés, a második kiemelőszínnel */
+.mama-chips input:checked + span {
+  background: var(--accent-2-soft);
+  border-color: var(--accent-2-line);
+  color: var(--accent-2);
+}
+
 .editor-actions {
   display: flex;
   flex-wrap: wrap;
@@ -2989,14 +3086,98 @@ body:has(.editor[open]) {
   }
 }
 
+/* ---------- Hangulatszín a borítóból ---------- */
+/* a borító legjellemzőbb élénk színe (lib/posterColor.js → --ambient, rögzített világossággal);
+   csak ha már ki van számolva ([data-ambient]) – addig és borító nélkül minden a megszokott */
+
+/* szerkesztő ablak: a borító mögül színes fény árad (beúszik), színezett keret és árnyék */
+.title-editor::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1; /* az ablak háttere fölött, a tartalom alatt */
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(60rem 38rem at 8% 0%, color-mix(in oklab, var(--ambient, transparent) 30%, transparent), transparent 70%),
+    radial-gradient(40rem 28rem at 100% 100%, color-mix(in oklab, var(--ambient, transparent) 12%, transparent), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+}
+
+.title-editor[data-ambient]::before {
+  opacity: 1;
+}
+
+.title-editor[open] {
+  transition: opacity 0.16s ease-out, translate 0.16s ease-out, border-color 0.2s, box-shadow 0.2s;
+}
+
+.editor.title-editor[data-ambient] {
+  border-color: color-mix(in oklab, var(--ambient) 45%, rgb(255 255 255 / 0.09));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.05),
+    0 2px 6px rgb(0 0 0 / 0.3),
+    0 28px 70px -12px rgb(0 0 0 / 0.65),
+    0 0 160px -20px color-mix(in oklab, var(--ambient) 55%, transparent);
+}
+
+/* a háttér (elsötétített lista) is kicsit a film színét kapja */
+.title-editor[data-ambient][open]::backdrop {
+  background-color: color-mix(in oklab, var(--ambient, rgb(7 10 15)) 18%, rgb(7 10 15 / 0.66));
+}
+
+/* telefonon (nincs nagy borító): az ablak teteje dereng */
+@media (max-width: 899px) {
+  .title-editor::before {
+    background: radial-gradient(30rem 18rem at 50% -4rem, color-mix(in oklab, var(--ambient, transparent) 34%, transparent), transparent 75%);
+  }
+}
+
+@media (min-width: 900px) {
+  .title-editor .editor-poster {
+    transition: box-shadow 0.2s ease-out;
+  }
+
+  .title-editor[data-ambient] .editor-poster {
+    box-shadow:
+      inset 0 0 0 1px rgb(255 255 255 / 0.08),
+      0 20px 60px -10px color-mix(in oklab, var(--ambient) 80%, transparent);
+  }
+}
+
+/* kártya: rámutatáskor a borító a saját színében fénylik */
+.card .poster {
+  transition: box-shadow 0.2s ease-out;
+}
+
+.card[data-ambient]:hover .poster {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--ambient) 70%, transparent),
+    0 18px 50px -8px color-mix(in oklab, var(--ambient) 85%, transparent);
+}
+
+/* táblázat: a rámutatott (fókuszban lévő) sor halványan a borító színét veszi fel; a törlés
+   megerősítésének pirosa marad */
+.titles-table tbody tr[data-ambient]:is(:hover, :has(:focus-visible)):not(:has(> td.cell-confirm)) > td {
+  background: color-mix(in oklab, var(--ambient) 7%, transparent);
+}
+
+.titles-table tbody tr[data-ambient]:hover .thumb {
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.45),
+    0 6px 20px -6px color-mix(in oklab, var(--ambient) 75%, transparent);
+}
+
 /* ---------- Kevesebb mozgás ---------- */
-/* ha a rendszerben be van kapcsolva: nincsenek átmenetek, beúszás és nagyítás */
+/* ha a rendszerben be van kapcsolva: nincsenek átmenetek, animációk (aurora), beúszás és nagyítás */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after,
   ::backdrop {
     transition: none !important;
+    animation: none !important; /* az aurora is áll */
   }
 
   .titles-table tbody tr:hover .thumb img,

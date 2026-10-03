@@ -15,13 +15,14 @@ import FranchiseSelect from '@/components/FranchiseSelect';
 import ImdbBadge from '@/components/ImdbBadge';
 import { hasSeasons, SeasonList, useSeasonActions } from '@/components/Seasons';
 import SimilarTitles from '@/components/SimilarTitles';
+import { usePosterColor, ambientProps } from '@/lib/posterColor';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500'; // a nagy borító (asztalon)
 
 // Rádiógombok "chip" formában; a kiválasztottra újra kattintva visszaáll üresre.
-function ClearableChips({ name, options, value, onChange }) {
+function ClearableChips({ name, options, value, onChange, className }) {
   return (
-    <div className="segmented">
+    <div className={className ? `segmented ${className}` : 'segmented'}>
       {options.map((o) => (
         <label key={o.code}>
           <input
@@ -72,6 +73,8 @@ export default function TitleEditor({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const seasonal = hasSeasons(t);
   const seasonActions = useSeasonActions(t, onChanged, setError);
+  // a borító hangulatszíne: az ablak a film színében dereng (globals.css, "Hangulatszín")
+  const ambient = usePosterColor(t.poster_path);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -152,6 +155,7 @@ export default function TitleEditor({
       className="editor title-editor"
       aria-labelledby="editor-title"
       onClose={onClose}
+      {...ambientProps(ambient)}
     >
       <form onSubmit={handleSubmit}>
         {/* asztalon a borító nagyban, balra (görgetéskor a helyén marad); telefonon rejtve */}
@@ -232,8 +236,10 @@ export default function TitleEditor({
 
           <fieldset className="field">
             <legend>Mama</legend>
+            {/* saját jelölés: kiválasztva a második kiemelőszínnel (borostyán) */}
             <ClearableChips
               name="mama_status"
+              className="mama-chips"
               options={MAMA_OPTIONS}
               value={form.mama_status}
               onChange={(code) => setField('mama_status', code)}
