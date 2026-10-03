@@ -9,6 +9,7 @@ import {
   formatDate,
   todayDate,
   DEFAULT_STATUS,
+  DROPPED_STATUS,
   MAMA_OPTIONS,
 } from '@/lib/titles';
 import StarRating from '@/components/StarRating';
@@ -235,12 +236,15 @@ function TitleRow({
                 value={t.status}
                 onChange={(e) => changeStatus(e.target.value)}
               >
-                {statuses.map((s) => (
-                  <option key={s.code} value={s.code}>
-                    {/* az alapállapot üresen jelenik meg */}
-                    {s.code === DEFAULT_STATUS ? '' : s.name}
-                  </option>
-                ))}
+                {/* az "Abbahagyva" csak sorozatnál */}
+                {statuses
+                  .filter((s) => s.code !== DROPPED_STATUS || t.media_type === 'tv' || t.status === s.code)
+                  .map((s) => (
+                    <option key={s.code} value={s.code}>
+                      {/* az alapállapot üresen jelenik meg */}
+                      {s.code === DEFAULT_STATUS ? '' : s.name}
+                    </option>
+                  ))}
               </select>
             )}
           </td>

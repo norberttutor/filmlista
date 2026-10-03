@@ -15,6 +15,8 @@ import {
   refreshImdbRatings,
   refreshFranchiseLogos,
   refreshSeasons,
+  DEFAULT_STATUS,
+  DROPPED_STATUS,
 } from '@/lib/titles';
 import FranchiseFilter from '@/components/FranchiseFilter';
 import { useMediaQuery } from '@/lib/useMediaQuery';
@@ -35,6 +37,26 @@ const TYPES = [
 ];
 // csak kiválasztott franchise vagy keresés mellett választható (akkor ez az alapértelmezés)
 const BOTH_TYPES = { code: 'all', name: 'Filmek és sorozatok' };
+
+const DOWNLOAD_FILTERS = [
+  { code: 'all', name: 'Összes' },
+  { code: 'yes', name: 'Letöltött' },
+  { code: 'no', name: 'Nem letöltött' },
+];
+
+// a szűrők alapállapota (betöltéskor és a ↺ gombbal)
+const DEFAULT_FILTERS = {
+  type: 'movie',
+  status: DEFAULT_STATUS,
+  downloaded: 'no',
+  genre: '',
+  franchise: NO_FRANCHISE,
+};
+
+// keresés közben minden cím látszik; a keresés előtti szűrők a keresés törlésekor visszaállnak
+const SEARCH_FILTERS = { type: 'all', status: 'all', downloaded: 'all', genre: '', franchise: '' };
+
+const sameFilters = (a, b) => Object.keys(a).every((k) => a[k] === b[k]);
 
 // keresés: kis- és nagybetű, valamint ékezet nélkül hasonlít ("dune" → "Dűne")
 const fold = (s) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
@@ -95,13 +117,23 @@ export default function Watchlist({ session }) {
   const isDesktop = useMediaQuery(DESKTOP_QUERY);
 
   // szűrők
-  const [status, setStatus] = useState('all');
-  const [type, setType] = useState('movie');
-  const [genre, setGenre] = useState('');
-  const [franchise, setFranchise] = useState(''); // '' = összes, egyébként franchise id
-  const [onlyDownloaded, setOnlyDownloaded] = useState(false);
+  const [status, setStatus] = useState(DEFAULT_FILTERS.status);
+  const [type, setType] = useState(DEFAULT_FILTERS.type);
+  const [genre, setGenre] = useState(DEFAULT_FILTERS.genre);
+  const [franchise, setFranchise] = useState(DEFAULT_FILTERS.franchise);
+  const [downloaded, setDownloaded] = useState(DEFAULT_FILTERS.downloaded); // all | yes | no
   const [sort, setSort] = useState('added_desc');
   const [query, setQuery] = useState(''); // keresés a felvett címek között
+  const [beforeSearch, setBeforeSearch] = useState(null); // a keresés előtti szűrők
+  const filters = { type, status, downloaded, genre, franchise };
+
+  function applyFilters(f) {
+    setType(f.type);
+    setStatus(f.status);
+    setDownloaded(f.downloaded);
+    setGenre(f.genre);
+    setFranchise(f.franchise);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -214,10 +246,16 @@ export default function Watchlist({ session }) {
             (franchise === NO_FRANCHISE
               ? t.franchise_id == null
               : String(t.franchise_id) === franchise)) &&
-          (!onlyDownloaded || t.is_downloaded) &&
+          (downloaded === 'all' || t.is_downloaded === (downloaded === 'yes')) &&
           words.every((w) => searchText.get(t.id).includes(w))
       ),
-    [ofType, genre, franchise, onlyDownloaded, words, searchText]
+    [ofType, genre, franchise, downloaded, words, searchText]
+  );
+
+  // az "Abbahagyva" csak sorozatnál fordulhat elő: a Filmek nézetben nincs gombja
+  const shownStatuses = useMemo(
+    () => (type === 'movie' ? statuses.filter((s) => s.code !== DROPPED_STATUS) : statuses),
+    [statuses, type]
   );
 
   const countByStatus = useMemo(() => {
@@ -226,13 +264,25 @@ export default function Watchlist({ session }) {
     return counts;
   }, [beforeStatus]);
 
+  // ha a szűrés vagy a rendezés változik (más kulcs): 1. oldal, és a megtartott sorok elengedve
+  const filterKey = [type, status, genre, franchise, downloaded, sort, words.join(' ')].join('|');
+
+  // a most szerkesztett címek a helyükön maradnak, amíg a szűrés nem változik: pl. a "Nem
+  // letöltött" nézetben letöltöttnek jelölt film nem tűnik el azonnal (a pipa visszavehető)
+  const [kept, setKept] = useState({ key: filterKey, ids: [] });
+  // szűrésváltáskor elengedjük őket (akkor is, ha később ugyanez a szűrés jön vissza)
+  if (kept.key !== filterKey) setKept({ key: filterKey, ids: [] });
+  const keptIds = useMemo(() => new Set(kept.ids), [kept]);
+
   const visible = useMemo(() => {
     const { compare } = SORTS.find((s) => s.code === sort);
-    return beforeStatus.filter((t) => status === 'all' || t.status === status).sort(compare);
-  }, [beforeStatus, status, sort]);
+    const matching = beforeStatus.filter((t) => status === 'all' || t.status === status);
+    const ids = new Set(matching.map((t) => t.id));
+    const stayed = ofType.filter((t) => keptIds.has(t.id) && !ids.has(t.id));
+    return [...matching, ...stayed].sort(compare);
+  }, [beforeStatus, ofType, keptIds, status, sort]);
 
-  // lapozás: ha a szűrés vagy a rendezés változik (más kulcs), automatikusan az 1. oldal
-  const filterKey = [type, status, genre, franchise, onlyDownloaded, sort, words.join(' ')].join('|');
+  // lapozás
   const [pageState, setPageState] = useState({ key: '', page: 1 });
   const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const page = Math.min(pageState.key === filterKey ? pageState.page : 1, pageCount);
@@ -247,6 +297,7 @@ export default function Watchlist({ session }) {
   function changeType(code) {
     setType(code);
     setGenre(''); // a filmek és sorozatok műfajai eltérnek
+    if (code === 'movie' && status === DROPPED_STATUS) setStatus('all');
     // a franchise-szűrő marad, ha az új típusnál is van ilyen cím (pl. Star Wars film és sorozat)
     if (
       franchiseChosen &&
@@ -264,6 +315,7 @@ export default function Watchlist({ session }) {
     if (genre && !titles.some((t) => t.media_type === 'movie' && t.genres?.includes(genre))) {
       setGenre('');
     }
+    if (status === DROPPED_STATUS) setStatus('all');
   }
 
   // franchise kiválasztásakor alapból a filmek és a sorozatok is látszanak;
@@ -278,15 +330,17 @@ export default function Watchlist({ session }) {
     }
   }
 
-  // gépeléskor a filmek és a sorozatok között is keres; a keresés törlésekor (ha nincs
-  // kiválasztott franchise) újra Filmek
+  // gépeléskor az egész listán keres (a szűrők félreállnak, keresés közben szűkíthető); a
+  // keresés törlésekor visszaállnak a keresés előtti szűrők
   function changeQuery(value) {
     const nowSearching = fold(value).trim() !== '';
     setQuery(value);
     if (nowSearching && !searching) {
-      setType('all');
-    } else if (!nowSearching && searching && type === 'all' && !franchiseChosen) {
-      backToMovies();
+      setBeforeSearch(filters);
+      applyFilters(SEARCH_FILTERS);
+    } else if (!nowSearching && searching) {
+      applyFilters(beforeSearch ?? DEFAULT_FILTERS);
+      setBeforeSearch(null);
     }
   }
 
@@ -302,12 +356,18 @@ export default function Watchlist({ session }) {
     // az adatbázis már üresre állította a címeknél, itt csak helyben követjük
     setTitles((ts) => ts.map((t) => (t.franchise_id === id ? { ...t, franchise_id: null } : t)));
     if (franchise === String(id)) changeFranchise('');
+    setBeforeSearch((b) => (b?.franchise === String(id) ? { ...b, franchise: '' } : b));
   }
 
-  // a nyitott szerkesztő ablak is a friss sort kapja (pl. évadok változása után)
+  // a nyitott szerkesztő ablak is a friss sort kapja (pl. évadok változása után); a sor a
+  // szűrés változásáig a helyén marad
   function replaceTitle(row) {
     setTitles((ts) => ts.map((x) => (x.id === row.id ? row : x)));
     setEditing((e) => (e && e.id === row.id ? row : e));
+    setKept((k) => ({
+      key: filterKey,
+      ids: k.key === filterKey ? [...new Set([...k.ids, row.id])] : [row.id],
+    }));
   }
 
   // az IMDb-importból beírt csillagok helyben is
@@ -320,15 +380,19 @@ export default function Watchlist({ session }) {
     setTitles((ts) => ts.filter((x) => x.id !== id));
   }
 
-  // a típust (filmek / sorozatok) meghagyja; a "Filmek és sorozatok" csak franchise-szal
-  // vagy kereséssel választható, abból Filmek lesz
-  function resetFilters() {
-    setStatus('all');
-    setGenre('');
-    setFranchise('');
-    setOnlyDownloaded(false);
+  // ↺: a szűrők alapállapota, keresés nélkül
+  const atDefault = !searching && sameFilters(filters, DEFAULT_FILTERS);
+
+  function resetToDefault() {
     setQuery('');
-    if (type === 'all') setType('movie');
+    setBeforeSearch(null);
+    applyFilters(DEFAULT_FILTERS);
+  }
+
+  // "Szűrők törlése" üres találatnál: minden cím látszik. Keresés közben a keresés marad; anélkül
+  // a típus is (a "Filmek és sorozatok" csak franchise-szal választható, abból Filmek lesz).
+  function clearFilters() {
+    applyFilters(searching ? SEARCH_FILTERS : { ...SEARCH_FILTERS, type: type === 'all' ? 'movie' : type });
   }
 
   return (
@@ -401,7 +465,7 @@ export default function Watchlist({ session }) {
               onChange={(e) => setStatus(e.target.value)}
             >
               <option value="all">Minden állapot ({beforeStatus.length})</option>
-              {statuses.map((s) => (
+              {shownStatuses.map((s) => (
                 <option key={s.code} value={s.code}>
                   {s.name} ({countByStatus[s.code] ?? 0})
                 </option>
@@ -416,7 +480,7 @@ export default function Watchlist({ session }) {
                   label="Mind"
                   count={beforeStatus.length}
                 />
-                {statuses.map((s) => (
+                {shownStatuses.map((s) => (
                   <Chip
                     key={s.code}
                     active={status === s.code}
@@ -427,13 +491,15 @@ export default function Watchlist({ session }) {
                 ))}
               </div>
 
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={onlyDownloaded}
-                  onChange={(e) => setOnlyDownloaded(e.target.checked)}
-                />
-                Letöltöttek
+              <label className="inline-field">
+                Letöltés
+                <select value={downloaded} onChange={(e) => setDownloaded(e.target.value)}>
+                  {DOWNLOAD_FILTERS.map((d) => (
+                    <option key={d.code} value={d.code}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
               </label>
             </div>
 
@@ -451,25 +517,59 @@ export default function Watchlist({ session }) {
               </label>
             )}
 
-            {usedFranchises.length > 0 && (
-              <div className="inline-field">
-                <span id="franchise-filter-label">Franchise</span>
-                <FranchiseFilter
-                  labelId="franchise-filter-label"
-                  value={franchise}
-                  onChange={changeFranchise}
-                  options={[
-                    { value: '', label: 'Összes' },
-                    { value: NO_FRANCHISE, label: 'Franchise nélkül' },
-                    ...usedFranchises.map((f) => ({
-                      value: String(f.id),
-                      label: f.name,
-                      logo: f.logo_path,
-                    })),
-                  ]}
-                />
-              </div>
-            )}
+            {/* a Franchise és mellette az alaphelyzet gomb együtt törik új sorba */}
+            <div className="filter-end">
+              {usedFranchises.length > 0 && (
+                <div className="inline-field">
+                  <span id="franchise-filter-label">Franchise</span>
+                  <FranchiseFilter
+                    labelId="franchise-filter-label"
+                    value={franchise}
+                    onChange={changeFranchise}
+                    options={[
+                      { value: '', label: 'Összes' },
+                      { value: NO_FRANCHISE, label: 'Franchise nélkül' },
+                      ...usedFranchises.map((f) => ({
+                        value: String(f.id),
+                        label: f.name,
+                        logo: f.logo_path,
+                      })),
+                    ]}
+                  />
+                </div>
+              )}
+
+              {/* alaphelyzet gomb: felirat nélkül, rámutatva súgó; alapállapotban halvány */}
+              <span className="has-hint filter-reset-wrap">
+                <button
+                  type="button"
+                  className="filter-reset"
+                  aria-label="Szűrők alaphelyzetbe"
+                  aria-describedby="filter-reset-hint"
+                  disabled={atDefault}
+                  onClick={resetToDefault}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="18"
+                    height="18"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                  </svg>
+                </button>
+                <span id="filter-reset-hint" role="tooltip" className="hint">
+                  {atDefault ? 'A szűrők alaphelyzetben: ' : 'Szűrők alaphelyzetbe: '}
+                  Filmek · Megnézendő · Nem letöltött · Összes műfaj · Franchise nélkül
+                </span>
+              </span>
+            </div>
 
             {/* jobb szélen: keresés a felvett címek között, mellette a rendezés */}
             <div className="list-tools">
@@ -504,9 +604,15 @@ export default function Watchlist({ session }) {
           ) : visible.length === 0 ? (
             <p className="state">
               {searching ? 'Nincs a keresésnek megfelelő cím.' : 'Nincs a szűrésnek megfelelő cím.'}{' '}
-              <button type="button" className="link" onClick={resetFilters}>
-                {searching ? 'Keresés és szűrők törlése' : 'Szűrők törlése'}
-              </button>
+              {searching && sameFilters(filters, SEARCH_FILTERS) ? (
+                <button type="button" className="link" onClick={() => changeQuery('')}>
+                  Keresés törlése
+                </button>
+              ) : (
+                <button type="button" className="link" onClick={clearFilters}>
+                  Szűrők törlése
+                </button>
+              )}
             </p>
           ) : isDesktop ? (
             <TitleTable

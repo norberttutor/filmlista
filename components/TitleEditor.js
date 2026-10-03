@@ -7,6 +7,7 @@ import {
   deleteTitle,
   todayDate,
   DEFAULT_STATUS,
+  DROPPED_STATUS,
   MAMA_OPTIONS,
 } from '@/lib/titles';
 import StarRating from '@/components/StarRating';
@@ -170,10 +171,15 @@ export default function TitleEditor({
           <>
             <fieldset className="field">
               <legend>Állapot</legend>
-              {/* az (üres) alapállapotnak nincs gombja: egyik sincs kiválasztva */}
+              {/* az (üres) alapállapotnak nincs gombja: egyik sincs kiválasztva; az
+                  "Abbahagyva" csak sorozatnál */}
               <ClearableChips
                 name="status"
-                options={statuses.filter((s) => s.code !== DEFAULT_STATUS)}
+                options={statuses.filter(
+                  (s) =>
+                    s.code !== DEFAULT_STATUS &&
+                    (s.code !== DROPPED_STATUS || t.media_type === 'tv' || t.status === s.code)
+                )}
                 value={form.status}
                 onChange={changeStatus}
               />

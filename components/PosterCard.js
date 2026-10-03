@@ -9,33 +9,20 @@ export default function PosterCard({ title: t, franchise, onEdit }) {
   const link = externalLink(t);
   const seasons = hasSeasons(t) ? seasonCounts(t) : null;
 
-  // sorozatnál a borító alján évadonként egy szakasz, egyébként egy állapotcsík
-  const poster = (
-    <div className="poster">
-      {t.poster_path ? (
-        <img src={POSTER_BASE + t.poster_path} alt="" loading="lazy" />
-      ) : (
-        <span className="poster-fallback">{t.title}</span>
-      )}
-      {t.is_downloaded && <span className="badge">Letöltve</span>}
-      {seasons ? <SeasonStrip title={t} /> : <span className="status-strip" aria-hidden="true" />}
-    </div>
-  );
-
   return (
     <article className="card" data-status={t.status}>
-      {link ? (
-        <a
-          href={link.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={`${t.title} megnyitása: ${link.site}`}
-        >
-          {poster}
-        </a>
-      ) : (
-        poster
-      )}
+      {/* a borítóra kattintva a szerkesztő ablak nyílik (mint a ceruzával; billentyűzettel és
+          képernyőolvasóval a ceruza gomb ugyanez); sorozatnál a borító alján évadonként egy
+          szakasz, egyébként egy állapotcsík */}
+      <div className="poster" onClick={() => onEdit(t)}>
+        {t.poster_path ? (
+          <img src={POSTER_BASE + t.poster_path} alt="" loading="lazy" />
+        ) : (
+          <span className="poster-fallback">{t.title}</span>
+        )}
+        {t.is_downloaded && <span className="badge">Letöltve</span>}
+        {seasons ? <SeasonStrip title={t} /> : <span className="status-strip" aria-hidden="true" />}
+      </div>
 
       <button
         type="button"
@@ -58,7 +45,21 @@ export default function PosterCard({ title: t, franchise, onEdit }) {
         </svg>
       </button>
 
-      <h3>{t.title}</h3>
+      {/* az IMDb- (vagy TMDB-) adatlap a címre kattintva nyílik */}
+      <h3>
+        {link ? (
+          <a
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${t.title} megnyitása: ${link.site}`}
+          >
+            {t.title}
+          </a>
+        ) : (
+          t.title
+        )}
+      </h3>
       {t.original_title && t.original_title !== t.title && (
         <p className="original">{t.original_title}</p>
       )}

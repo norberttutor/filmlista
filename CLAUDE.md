@@ -48,26 +48,38 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   minden középen: cím, alatta az űrlap (nagyobb kijelzőn kártyán, felülről halvány türkiz fény)
 - `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből; fejléc:
   „Megnézendő filmek és sorozatok”; szűrősor
-  balról: Típus lenyíló (Filmek / Sorozatok, alapból Filmek; kiválasztott franchise vagy keresés
-  mellett plusz „Filmek és sorozatok” – `type: 'all'`, ami franchise választásakor / gépeléskor
-  automatikusan beáll, a franchise-szűrő / keresés megszüntetésekor vissza Filmek) – állapotgombok
-  (mobilon, ≤ 640 px: lenyíló a típus mellett) + „Letöltöttek” jelölő – Műfaj (csak az adott
-  típus műfajai) – Franchise (Összes / Franchise nélkül / a listán használtak, típustól
-  függetlenül);
+  balról: Típus lenyíló (Filmek / Sorozatok; kiválasztott franchise vagy keresés
+  mellett plusz „Filmek és sorozatok” – `type: 'all'`, ami franchise választásakor
+  automatikusan beáll, a franchise-szűrő megszüntetésekor vissza Filmek) – állapotgombok
+  (mobilon, ≤ 640 px: lenyíló a típus mellett; az „Abbahagyva” csak Sorozatok / Filmek és
+  sorozatok típusnál) + Letöltés lenyíló (Összes / Letöltött / Nem letöltött) – Műfaj (csak az
+  adott típus műfajai) – Franchise (Összes / Franchise nélkül / a listán használtak, típustól
+  függetlenül) – mellette felirat nélküli ↺ gomb („Szűrők alaphelyzetbe”, rámutatva súgó;
+  alapállapotban halvány, letiltott). **A szűrők alapállapota** (betöltéskor és a ↺-vel,
+  `DEFAULT_FILTERS`, Norbi kérése): Filmek – Megnézendő – Nem letöltött – Összes műfaj –
+  Franchise nélkül;
   jobb szélen keresőmező („Keresés a listán”: a címben és az eredeti címben, kis-/nagybetű és
-  ékezet nélkül – `fold()`; több szónál mindegyiknek szerepelnie kell; telefonon külön sorban),
+  ékezet nélkül – `fold()`; több szónál mindegyiknek szerepelnie kell; telefonon külön sorban;
+  gépeléskor az egész listán keres: a szűrők félreállnak – `SEARCH_FILTERS`, keresés közben
+  szűkíthetők –, a keresés törlésekor a keresés előtti szűrők állnak vissza),
   mellette felirat nélkül (`aria-label`) a Rendezés (`SORTS`:
   legutóbb / legkorábban hozzáadott, legjobb értékelés, legújabb / legrégebbi megjelenés;
   üres érték a végére). Az állapotgombok darabszámai a többi szűrőt már figyelembe veszik.
+  A most szerkesztett sor a szűrés változásáig a helyén marad (`kept`), akkor is, ha már nem
+  illik a szűrőbe (pl. „Nem letöltött” nézetben letöltöttnek jelölve) – így visszavehető.
+  Üres találatnál „Szűrők törlése” (minden cím látszik) vagy keresésnél „Keresés törlése”.
   Lapozás 25-ösével (`PAGE_SIZE`, `components/Pagination.js`), szűrés/rendezés/keresés
   váltásakor 1. oldal
 - `components/PosterCard.js` – borító (`https://image.tmdb.org/t/p/w342` + `poster_path`),
-  állapotcsík, „Letöltve” jelvény, link IMDb-re (vagy TMDB-re, ha nincs IMDb ID),
-  „Hozzáadva: <dátum>” a `created_at` alapján (csak megjelenítés, nem szerkeszthető),
-  saját értékelés kis csillagsorként (`StarsDisplay`), ceruza gomb a bal felső sarokban → szerkesztő ablak
+  állapotcsík, „Letöltve” jelvény; a borítóra kattintva a szerkesztő ablak nyílik (mint a
+  ceruzával – Norbi kérése), az IMDb- (vagy TMDB-, ha nincs IMDb ID) adatlapra csak a cím visz
+  (halvány aláhúzással), „Hozzáadva: <dátum>” a `created_at` alapján (csak megjelenítés, nem
+  szerkeszthető), saját értékelés kis csillagsorként (`StarsDisplay`), ceruza gomb a bal felső
+  sarokban → szerkesztő ablak (billentyűzettel / felolvasóval ez a borító-kattintás megfelelője)
 - `components/TitleEditor.js` – natív `<dialog>` (fejlécben a leírás): állapot, letöltve, megnézve dátuma
   (`watched_at`, csak „Megnézve” állapotnál; átváltáskor a mai nap), értékelés 10 csillaggal
-  (+ „Törlés” link), törlés megerősítéssel (a mobilos borítófalon a ceruza nyitja). Évados
+  (+ „Törlés” link), törlés megerősítéssel (a mobilos borítófalon a borító vagy a ceruza nyitja).
+  Az „Abbahagyva” állapot csak sorozatnál választható. Évados
   sorozatnál az állapot / letöltve / dátum helyett „Évadok” lista (`SeasonList`), ami azonnal
   ment (`onChanged`); a „Mentés” ilyenkor nem küld `status` / `is_downloaded` / `watched_at`-et
 - `components/Seasons.js` – évadok (sorozatoknál): `hasSeasons()`, `seasonCounts()`,
@@ -76,10 +88,15 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   „Visszavonás”), `SeasonStrip` (évadonként egy szakasz az állapotszínnel; a bejelentett –
   jövőbeli / dátum nélküli – szaggatott, nem jelölhető; táblázatban kattintásra lépteti:
   üres → Folyamatban → Megnézve → üres), `SeasonList` (évadonként állapot + „Letöltve”,
-  „Mind megnézve”, „+ Évad hozzáadása”, „Utolsó évad törlése” megerősítéssel – ha a TMDB-n is
-  szerepel, a heti frissítés üresen visszahozza), `SeasonCell` (táblázat Állapot cellája: csík +
-  „x/y évad”, ami lenyíló panelt nyit; kívülre kattintás / Esc bezár), `SeasonDownloads`
-  (Letöltve cella: a letöltött évadok)
+  „Mind megnézve”, „Nem nézem tovább” / „Mégis folytatom” (ugyanaz a gomb vált feliratot),
+  „+ Évad hozzáadása”, „Utolsó évad törlése” megerősítéssel – ha a TMDB-n is
+  szerepel, a heti frissítés üresen visszahozza; abbahagyott sorozatnál a lista tetején lila
+  sáv), `SeasonCell` (táblázat Állapot cellája: csík + „x/y évad”, ami lenyíló panelt nyit,
+  alatta „Abbahagyva”, ha az; kívülre kattintás / Esc bezár), `SeasonDownloads`
+  (Letöltve cella: a letöltött évadok). „Abbahagyva” (sorozat, amit Norbi nem néz tovább, de a
+  listán marad): kézi, az évadjelölés és az új évad sem írja felül; a „Mind megnézve” feloldja
+  (→ Megnézve, a visszavonás az Abbahagyva-t is visszaadja); a „Mégis folytatom” után az
+  adatbázis az évadokból számol
 - `components/TitleTable.js` – asztali soros nézet (≥ 1400 px, `DESKTOP_QUERY` a
   `Watchlist`-ben; `table-layout: fixed`, minden maradék hely a címoszlopé): balra borító +
   adatok (a cím mindig egy sorban, ha így sem fér ki „…” + tooltip; a műfajok külön sorban)
@@ -122,7 +139,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `removeLastSeason()`,
   `refreshSeasons()` (háttér), `seasonAired()`, `NEXT_SEASON_STATUS`.
   Közös segédek: `externalLink()`, `formatDate()`, `todayDate()`, `DEFAULT_STATUS`,
-  `MAMA_OPTIONS`, `mamaLabel()`
+  `DROPPED_STATUS` („Abbahagyva”, csak sorozatnál), `MAMA_OPTIONS`, `mamaLabel()`
 - `lib/server/auth.js` – `getUserFromRequest()`, `supabaseAsUser()` (a felhasználó nevében,
   RLS-sel), `unauthorized()` (csak route handlerben)
 - `lib/server/tmdb.js` – `tmdbFetch()`, `tmdbErrorResponse()`, `yearOf()`, `pickSeasons()`
@@ -159,7 +176,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 
 ## Adatbázis (már létezik, lásd `supabase/`)
 - `genres (id integer PK = TMDB műfaj ID, name)` – bejelentkezve olvasható/írható
-- `statuses (code PK, name, sort_order)` – kódok: `to_watch`, `watching`, `watched`
+- `statuses (code PK, name, sort_order)` – kódok: `to_watch`, `watching`, `watched`,
+  `dropped` (Abbahagyva – `09_dropped.sql`; a felület csak sorozatnál kínálja)
 - `titles` – `user_id` (default `auth.uid()`), `media_type` ('movie' | 'tv'), `title`,
   `original_title`, `release_year`, `overview`, `poster_path`, `tmdb_id`, `imdb_id`,
   `status` (FK → statuses), `is_downloaded`, `mama_status` (null | 'interested' | 'received',
@@ -177,6 +195,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (`air_date` ≤ ma) évad megnézve → `watched`; van megkezdett / megnézett → `watching`;
   különben `to_watch`; letöltve = van letöltött évad. Évadok nélkül a cím kézi marad.
   A bejelentett évad (`air_date` üres vagy jövőbeli) nem számít a „minden megnézve” feltételbe.
+  Kivétel a `dropped` (Abbahagyva): kézi, az évadok változása nem írja felül (csak a letöltve
+  követi őket). Évados sorozat `status`-ának közvetlen írásakor (BEFORE UPDATE OF status trigger,
+  `titles_status_from_seasons`) a `dropped` kivételével mindig az évadokból számolt érték kerül
+  be (a `status`, `is_downloaded`, `watched_at` is) – így a „Mégis folytatom” bármit küldhet.
+  Közös számítás: `seasons_summary(title_id)` – `09_dropped.sql`.
 - `franchises (id, user_id default auth.uid(), name, created_at, logo_path, logo_checked_at)` –
   felhasználónkénti saját lista, a felületen bővíthető; egyedi: `(user_id, lower(name))` –
   `04_franchises.sql`; logó: `07_franchise_logo.sql`
@@ -202,11 +225,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - Az alapállapot (`to_watch`, `DEFAULT_STATUS`) a felületen **üresen** jelenik meg: nincs
   „Megnézendő” felirat a soron/kártyán/ablakban, és nincs színe. Csak a szűrőgomb nevezi meg.
   A szerkesztő ablakban a kiválasztott állapotra/Mamára újra kattintva lesz üres.
-- A megnézett (`watched`) címek háttérbe húzódnak (sor és kártya): fekete-fehér, fakó borító,
+- A megnézett (`watched`) és az abbahagyott (`dropped`) címek háttérbe húzódnak (sor és kártya):
+  fekete-fehér, fakó borító,
   tompított, de olvasható szöveg (`--watched-text`, ≥ 4,5:1), halványabb vezérlők – nem az egész
   sor átlátszó. Rámutatáskor, fókusznál és a törlés megerősítésekor minden teljes színű.
 - Design: sötét téma a `:root` változókkal; kiemelőszín (`--accent`) neon türkiz `#33e0ef`
-  (nem sárga), a „Folyamatban” is ez; állapotszínek `--st-<kód>` változókban.
+  (nem sárga), a „Folyamatban” is ez; állapotszínek `--st-<kód>` változókban (Abbahagyva:
+  halvány lila `--st-dropped`).
   Új állapotnál ide is kell egy szín, és a `[data-status=...]` szabály (kártya és táblázatsor is használja).
 - Teli türkiz csak a fő műveleteknél (Cím hozzáadása, Mentés, Belépés); a kiválasztott állapot
   (szűrőgomb, aktuális oldal, választott lehetőség) `--accent-soft` háttér + `--accent-line` keret.
@@ -235,6 +260,8 @@ saját IMDb-értékelések betöltése CSV-ből, franchise-logók a szűrőben,
 megjelenés-frissítés (18 javaslat, 2026-10-03), keresés a listán, középre zárt belépés,
 évadok a sorozatoknál (évadonkénti állapot és letöltve, a sorozat állapota ebből számolódik,
 új évadok hetente a TMDB-ről; epizódszintű követés Norbi kérésére nem kell),
+„Abbahagyva” állapot sorozatoknál, szűrők alapállapota + ↺ gomb, Letöltés szűrő (Összes /
+Letöltött / Nem letöltött), mobilon a borító a szerkesztőt nyitja (az IMDb-re a cím visz),
 app-ikon (filmcsapó) és manifest: Norbi asztali alkalmazásként a Chrome-ból telepítette
 (Electron-csomag helyett).
 Franchise-filmek importja (franchise.xlsx): 194 cím, 34 franchise; hozzáadás dátuma = megjelenés.

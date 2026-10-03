@@ -11,12 +11,16 @@ import {
   restoreSeasons,
   addSeason,
   removeLastSeason,
+  updateTitle,
   formatDate,
   todayDate,
+  DEFAULT_STATUS,
+  DROPPED_STATUS,
 } from '@/lib/titles';
 
 // Évadok a sorozatoknál: évadcsík (táblázat, kártya), évadlista (a sorból lenyíló panelben és a
-// szerkesztő ablakban) és a közös műveletek. A sorozat állapotát az adatbázis számolja.
+// szerkesztő ablakban) és a közös műveletek. A sorozat állapotát az adatbázis számolja, kivéve
+// az "Abbahagyva"-t (kézi: "Nem nézem tovább" / "Mégis folytatom").
 
 const STATUS_TEXT = { to_watch: 'nincs megnézve', watching: 'folyamatban', watched: 'megnézve' };
 
@@ -43,6 +47,14 @@ export function seasonRange(numbers) {
 export function seasonCounts(t) {
   const aired = t.seasons.filter((s) => seasonAired(s));
   return { aired: aired.length, watched: aired.filter((s) => s.status === 'watched').length };
+}
+
+// a sorozat állapota az évadokból, ahogy az adatbázis is számolja (az azonnali megjelenítéshez):
+// minden megjelent évad megnézve → Megnézve; van megkezdett / megnézett → Folyamatban
+function statusFromSeasons(t) {
+  const aired = t.seasons.filter((s) => seasonAired(s));
+  if (aired.length > 0 && aired.every((s) => s.status === 'watched')) return 'watched';
+  return t.seasons.some((s) => s.status !== DEFAULT_STATUS) ? 'watching' : DEFAULT_STATUS;
 }
 
 // "2019 · 8 rész", bejelentett évadnál "hamarosan: 2026. 03. 12." / "bejelentve"
@@ -81,9 +93,10 @@ export function useSeasonActions(title, onUpdated, onError) {
     }
   }
 
-  function showNote(result, text) {
+  // dropped: a művelet előtt "Abbahagyva" volt (a visszavonás azt is visszaállítja)
+  function showNote(result, text, dropped = false) {
     clearTimeout(noteTimer.current);
-    setNote({ text, previous: result.previous });
+    setNote({ text, previous: result.previous, dropped });
     noteTimer.current = setTimeout(() => setNote(null), 10000);
   }
 
@@ -101,25 +114,56 @@ export function useSeasonActions(title, onUpdated, onError) {
     if (result?.filled.length) showNote(result, `${seasonRange(result.filled)} évad is megnézve.`);
   }
 
+  // "Mind megnézve": minden megjelent évad megnézett lesz; az "Abbahagyva"-t is feloldja
+  // (a sorozat így Megnézve)
   async function allWatched() {
     const numbers = title.seasons
       .filter((s) => seasonAired(s) && s.status !== 'watched')
       .map((s) => s.season_number);
-    if (numbers.length === 0) return;
-    const result = await run(withSeasons(numbers, { status: 'watched', is_downloaded: false }), () =>
-      markAllSeasonsWatched(title)
+    const dropped = title.status === DROPPED_STATUS;
+    if (numbers.length === 0 && !dropped) return;
+    const marked = withSeasons(numbers, { status: 'watched', is_downloaded: false });
+    const result = await run(
+      dropped ? { ...marked, status: statusFromSeasons(marked) } : marked,
+      async () => {
+        const done = await markAllSeasonsWatched(title);
+        return dropped
+          ? { ...done, row: await updateTitle(title.id, { status: DEFAULT_STATUS }) }
+          : done;
+      }
     );
-    if (result?.filled.length) showNote(result, `Megnézve: ${seasonRange(result.filled)} évad.`);
+    if (result && (result.filled.length || dropped)) {
+      const text = result.filled.length
+        ? `Megnézve: ${seasonRange(result.filled)} évad.`
+        : 'A sorozat megnézve.';
+      showNote(result, text, dropped);
+    }
   }
 
   async function undo() {
-    const { previous } = note;
+    const { previous, dropped } = note;
     clearTimeout(noteTimer.current);
     setNote(null);
     const restore = new Map(previous.map((p) => [p.season_number, p]));
     await run(
-      { ...title, seasons: title.seasons.map((s) => ({ ...s, ...restore.get(s.season_number) })) },
-      () => restoreSeasons(title.id, previous)
+      {
+        ...title,
+        seasons: title.seasons.map((s) => ({ ...s, ...restore.get(s.season_number) })),
+        ...(dropped && { status: DROPPED_STATUS }),
+      },
+      async () => {
+        const row = await restoreSeasons(title.id, previous);
+        return dropped ? updateTitle(title.id, { status: DROPPED_STATUS }) : row;
+      }
+    );
+  }
+
+  // "Nem nézem tovább" / "Mégis folytatom". Folytatáskor az adatbázis az évadokból számolja
+  // újra a sorozat állapotát (bármit küldünk, ami nem "Abbahagyva").
+  function setDropped(dropped) {
+    return run(
+      { ...title, status: dropped ? DROPPED_STATUS : statusFromSeasons(title) },
+      () => updateTitle(title.id, { status: dropped ? DROPPED_STATUS : DEFAULT_STATUS })
     );
   }
 
@@ -128,6 +172,7 @@ export function useSeasonActions(title, onUpdated, onError) {
     setStatus,
     allWatched,
     undo,
+    setDropped,
     setDownloaded: (number, value) =>
       run(withSeasons([number], { is_downloaded: value }), () =>
         setSeasonDownloaded(title.id, number, value)
@@ -184,8 +229,8 @@ const SEASON_CHOICES = [
 ];
 
 // Évadlista: évadonként állapot (a kiválasztottra újra kattintva üres) és "Letöltve";
-// alul "Mind megnézve", "+ Évad hozzáadása", "Utolsó évad törlése" (megerősítéssel),
-// visszavonás.
+// alul "Mind megnézve", "Nem nézem tovább" / "Mégis folytatom", "+ Évad hozzáadása",
+// "Utolsó évad törlése" (megerősítéssel), visszavonás.
 export function SeasonList({ title, actions }) {
   const id = useId();
   const today = todayDate();
@@ -193,6 +238,7 @@ export function SeasonList({ title, actions }) {
   const removeRef = useRef(null);
   const [confirming, setConfirming] = useState(false);
   const last = title.seasons.at(-1)?.season_number;
+  const dropped = title.status === DROPPED_STATUS;
 
   function cancelRemove() {
     flushSync(() => setConfirming(false));
@@ -206,6 +252,14 @@ export function SeasonList({ title, actions }) {
   }
   return (
     <div className="season-list-wrap" ref={wrapRef} tabIndex={-1}>
+      {/* felolvasó is jelzi, ha "Nem nézem tovább"-ra vált (üresen nem foglal helyet) */}
+      <div role="status">
+        {dropped && (
+          <p className="season-dropped">
+            Abbahagyva: nem nézed tovább, az új évadok sem változtatnak rajta.
+          </p>
+        )}
+      </div>
       <ul className="season-list">
         {title.seasons.map((s) => {
           const n = s.season_number;
@@ -286,9 +340,19 @@ export function SeasonList({ title, actions }) {
         </div>
       ) : (
         <div className="season-actions">
-          <button type="button" className="ghost mini" onClick={actions.allWatched}>
-            Mind megnézve
-          </button>
+          <span className="season-actions-group">
+            <button type="button" className="ghost mini" onClick={actions.allWatched}>
+              Mind megnézve
+            </button>
+            {/* ugyanaz a gomb vált feliratot, így a fókusz rajta marad */}
+            <button
+              type="button"
+              className="ghost mini"
+              onClick={() => actions.setDropped(!dropped)}
+            >
+              {dropped ? 'Mégis folytatom' : 'Nem nézem tovább'}
+            </button>
+          </span>
           <span className="season-actions-group">
             <button type="button" className="ghost mini" onClick={actions.add}>
               + Évad hozzáadása
@@ -353,6 +417,7 @@ export function SeasonCell({ title, onUpdated, onError }) {
           <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6" />
         </svg>
       </button>
+      {title.status === DROPPED_STATUS && <span className="season-dropped-tag">Abbahagyva</span>}
       {!open && actions.note && (
         <span className="season-note" role="status">
           {actions.note.text}{' '}

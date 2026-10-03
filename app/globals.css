@@ -13,6 +13,7 @@
   --st-to_watch: transparent; /* alapállapot: üres, nincs színe */
   --st-watching: #33e0ef;
   --st-watched: #7cc8a0;
+  --st-dropped: #a993e6;      /* Abbahagyva (sorozat): halvány lila, 6,6:1 a háttéren */
 
   /* árnyalatok */
   --bg-top: #1a222d;                 /* a lap teteje egy árnyalattal világosabb */
@@ -578,12 +579,48 @@ body:has(> main.login) {
   border-image: linear-gradient(90deg, transparent, var(--line) 15%, var(--line) 85%, transparent) 1;
 }
 
-/* állapotgombok + "Letöltöttek" egy egységként */
+/* állapotgombok + "Letöltés" egy egységként */
 .filter-group {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.6rem 1.5rem;
+}
+
+/* a Franchise és mellette az alaphelyzet gomb együtt (együtt törnek új sorba) */
+.filter-end {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+/* ↺ a szűrők alaphelyzetbe: kerek ikongomb. Ha van mit visszaállítani, türkiz körvonalas;
+   alapállapotban halvány és nem kattintható (a súgója akkor is olvasható) */
+.filter-reset {
+  display: grid;
+  place-items: center;
+  width: 2.45rem;
+  height: 2.45rem;
+  padding: 0;
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--accent-line);
+  border-radius: 50%;
+}
+
+.filter-reset:hover:not(:disabled) {
+  background-color: var(--accent-soft);
+}
+
+.filter-reset:active:not(:disabled) {
+  background-color: color-mix(in oklab, var(--accent) 26%, transparent);
+}
+
+.filter-reset:disabled {
+  color: var(--muted);
+  border-color: var(--line);
+  cursor: default;
+  opacity: 0.5;
 }
 
 .type-select,
@@ -833,49 +870,64 @@ body:has(> main.login) {
 [data-status='to_watch']      { --strip: var(--st-to_watch); }
 [data-status='watching']      { --strip: var(--st-watching); }
 [data-status='watched']       { --strip: var(--st-watched); }
+[data-status='dropped']       { --strip: var(--st-dropped); }
 
-/* a megnézett címek háttérbe húzódnak: fekete-fehér, fakó borító, tompított, de olvasható
-   (≥ 4,5:1) szövegek, halványabb vezérlők. Rámutatáskor, fókusznál (szerkesztés) és a törlés
-   megerősítésekor minden teljes színű. */
+/* a megnézett (és az abbahagyott) címek háttérbe húzódnak: fekete-fehér, fakó borító,
+   tompított, de olvasható (≥ 4,5:1) szövegek, halványabb vezérlők. Rámutatáskor, fókusznál
+   (szerkesztés) és a törlés megerősítésekor minden teljes színű. */
 .titles-table tbody tr[data-status='watched']:not(:hover):not(:focus-within):not(:has(> td.cell-confirm)),
 .card[data-status='watched']:not(:hover):not(:focus-within) {
   --strip: color-mix(in srgb, var(--st-watched) 55%, transparent);
 }
 
-.titles-table tbody tr[data-status='watched']:not(:hover):not(:focus-within):not(:has(> td.cell-confirm)) .thumb img,
-.card[data-status='watched']:not(:hover):not(:focus-within) .poster img {
+.titles-table tbody tr[data-status='dropped']:not(:hover):not(:focus-within):not(:has(> td.cell-confirm)),
+.card[data-status='dropped']:not(:hover):not(:focus-within) {
+  --strip: color-mix(in srgb, var(--st-dropped) 55%, transparent);
+}
+
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within):not(:has(> td.cell-confirm)) .thumb img,
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .poster img {
   filter: grayscale(1) brightness(0.8);
   opacity: 0.55;
 }
 
-.titles-table tbody tr[data-status='watched']:not(:hover):not(:focus-within):not(:has(> td.cell-confirm))
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within):not(:has(> td.cell-confirm))
   :is(.row-name, .original, .meta, .row-genres, .added, .row-overview, .rating-number),
-.card[data-status='watched']:not(:hover):not(:focus-within) :is(h3, .original, .meta, .status-name, .genres, .added) {
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) :is(h3, .original, .meta, .status-name, .genres, .added) {
   color: var(--watched-text);
 }
 
-.titles-table tbody tr[data-status='watched']:not(:hover):not(:focus-within):not(:has(> td.cell-confirm)) .imdb b,
-.card[data-status='watched']:not(:hover):not(:focus-within) .imdb b {
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within):not(:has(> td.cell-confirm)) .imdb b,
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .imdb b {
   color: inherit;
 }
 
-.titles-table tbody tr[data-status='watched']:not(:hover):not(:focus-within):not(:has(> td.cell-confirm)) .franchise-select,
-.card[data-status='watched']:not(:hover):not(:focus-within) .card-franchise {
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within):not(:has(> td.cell-confirm)) .franchise-select,
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .card-franchise {
   color: var(--watched-accent);
 }
 
 /* a vezérlők (pipa, lenyílók, csillagok, kuka) halványabbak */
-.titles-table tbody tr[data-status='watched']:not(:hover):not(:focus-within):not(:has(> td.cell-confirm))
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within):not(:has(> td.cell-confirm))
   > td:is(.col-check, .col-status, .col-mama, .col-actions),
-.titles-table tbody tr[data-status='watched']:not(:hover):not(:focus-within):not(:has(> td.cell-confirm)) .stars,
-.card[data-status='watched']:not(:hover):not(:focus-within) .card-stars {
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within):not(:has(> td.cell-confirm)) .stars,
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .card-stars {
   opacity: 0.55;
 }
 
-.card > a {
-  display: block;
-  border-radius: 8px;
-  text-decoration: none; /* a borító nem szöveges link: a helykitöltő cím se legyen aláhúzva */
+/* a borítóra kattintva a szerkesztő ablak nyílik */
+.card .poster {
+  cursor: pointer;
+}
+
+/* a cím az IMDb-adatlapra visz: halvány aláhúzás jelzi (telefonon nincs rámutatás) */
+.card h3 a {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+}
+
+.card h3 a:hover {
+  text-decoration-color: currentColor;
 }
 
 /* borító keret helyett mélységgel: puha árnyék alatta, hajszálvékony világos gyűrű a kép
@@ -1698,6 +1750,25 @@ button.season:hover {
   line-height: 1.35;
   color: var(--muted);
   text-align: center;
+}
+
+/* "Abbahagyva" a táblázat évadcellájában, a "3/5 évad" alatt */
+.season-dropped-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--st-dropped);
+}
+
+/* az évadlista tetején, ha a sorozatot nem nézi tovább */
+.season-dropped {
+  margin: 0 0 0.35rem;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--text);
+  background: color-mix(in srgb, var(--st-dropped) 14%, transparent);
+  border-left: 3px solid var(--st-dropped);
+  border-radius: 6px;
 }
 
 /* lenyíló évadlista: egy réteggel a lap fölött (mint a franchise-szűrő listája); a sor
