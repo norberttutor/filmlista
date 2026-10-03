@@ -6,8 +6,9 @@ import { applyMyRatings } from '@/lib/titles';
 
 const stars = (n) => (n == null ? '–' : `${n}`);
 
-// Visszafogott "IMDb-értékelések betöltése" gomb: az IMDb exportált CSV-jéből a listán lévő
-// címek saját csillagát frissíti (előtte összefoglalót mutat). A fájl nem kerül fel sehova.
+// Visszafogott "IMDb értékelések" gomb (rámutatva súgóval): az IMDb exportált CSV-jéből a
+// listán lévő címek saját csillagát frissíti (előtte összefoglalót mutat). A fájl nem kerül
+// fel sehova.
 export default function ImdbRatingsImport({ titles, onApplied }) {
   const inputRef = useRef(null);
   const dialogRef = useRef(null);
@@ -46,9 +47,21 @@ export default function ImdbRatingsImport({ titles, onApplied }) {
 
   return (
     <>
-      <button type="button" className="subtle-link" onClick={() => inputRef.current.click()}>
-        IMDb-értékelések betöltése
-      </button>
+      <span className="has-hint">
+        <button
+          type="button"
+          className="subtle-link"
+          aria-describedby="imdb-hint"
+          onClick={() => inputRef.current.click()}
+        >
+          IMDb értékelések
+        </button>
+        <span id="imdb-hint" role="tooltip" className="hint">
+          A saját IMDb-csillagaidat tölti át a listádra. Válaszd ki az IMDb „Your Ratings”
+          oldalán exportált CSV-fájlt: előbb összefoglalót mutat, és csak a listádon már
+          szereplő címek csillagai változnak.
+        </span>
+      </span>
       <input
         ref={inputRef}
         type="file"

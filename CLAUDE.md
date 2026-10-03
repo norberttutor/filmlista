@@ -32,20 +32,27 @@ Egyetlen felhasználó (Norbi), de az adatmodell felhasználónként elkülöní
 Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 
 ## Fájlszerkezet
-- `app/layout.js` – Bricolage Grotesque betűtípus (`--font-main`), `lang="hu"`
+- `app/layout.js` – Bricolage Grotesque betűtípus (`--font-main`) az optikai méret
+  (`axes: ['opsz']`) tengellyel is (a nagy főcím a nagy méretre rajzolt formát kapja), `lang="hu"`;
+  a böngészőfül címe „Megnézendő filmek”
 - `app/page.js` – kliensoldali session-kezelés: belépés vagy lista
-- `components/LoginForm.js` – e-mail + jelszó belépés (regisztráció nincs, ki van kapcsolva)
-- `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből; szűrősor
-  balról: Típus lenyíló (Filmek / Sorozatok, alapból Filmek; kiválasztott franchise mellett
-  plusz „Filmek és sorozatok” – `type: 'all'`, ami franchise választásakor automatikusan
-  beáll, a franchise-szűrő megszüntetésekor vissza Filmek) – állapotgombok
+- `components/LoginForm.js` – e-mail + jelszó belépés (regisztráció nincs, ki van kapcsolva);
+  minden középen: cím, alatta az űrlap (nagyobb kijelzőn kártyán, felülről halvány türkiz fény)
+- `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből; fejléc:
+  „Megnézendő filmek és sorozatok”; szűrősor
+  balról: Típus lenyíló (Filmek / Sorozatok, alapból Filmek; kiválasztott franchise vagy keresés
+  mellett plusz „Filmek és sorozatok” – `type: 'all'`, ami franchise választásakor / gépeléskor
+  automatikusan beáll, a franchise-szűrő / keresés megszüntetésekor vissza Filmek) – állapotgombok
   (mobilon, ≤ 640 px: lenyíló a típus mellett) + „Letöltöttek” jelölő – Műfaj (csak az adott
   típus műfajai) – Franchise (Összes / Franchise nélkül / a listán használtak, típustól
   függetlenül);
-  jobb szélen Rendezés (`SORTS`:
+  jobb szélen keresőmező („Keresés a listán”: a címben és az eredeti címben, kis-/nagybetű és
+  ékezet nélkül – `fold()`; több szónál mindegyiknek szerepelnie kell; telefonon külön sorban),
+  mellette felirat nélkül (`aria-label`) a Rendezés (`SORTS`:
   legutóbb / legkorábban hozzáadott, legjobb értékelés, legújabb / legrégebbi megjelenés;
   üres érték a végére). Az állapotgombok darabszámai a többi szűrőt már figyelembe veszik.
-  Lapozás 25-ösével (`PAGE_SIZE`, `components/Pagination.js`), szűrés/rendezés váltásakor 1. oldal
+  Lapozás 25-ösével (`PAGE_SIZE`, `components/Pagination.js`), szűrés/rendezés/keresés
+  váltásakor 1. oldal
 - `components/PosterCard.js` – borító (`https://image.tmdb.org/t/p/w342` + `poster_path`),
   állapotcsík, „Letöltve” jelvény, link IMDb-re (vagy TMDB-re, ha nincs IMDb ID),
   „Hozzáadva: <dátum>” a `created_at` alapján (csak megjelenítés, nem szerkeszthető),
@@ -66,7 +73,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   optimalizálva; 1900 px alatt a franchise a cím adatai mellett, a leírás alattuk 2 sorban;
   teljes szöveg rámutatáskor),
   jobbra sorrendben Letöltve – Állapot – Mama – Értékelés (10 másfélszeres csillag középen,
-  mellette „8/10”), a végén törlés megerősítéssel. Azonnali, optimista mentés (hibánál
+  mellette „8/10”), a végén törlés megerősítéssel (a sor halvány pirosat kap). Az üres
+  Állapot / Mama lenyíló és a kuka csak a sorra mutatva (vagy fókusznál) látszik teljesen
+  (`@media (hover: hover)`). Fejléc: kis, ritkított nagybetűs címkék; állapotcsík: lekerekített
+  pálca a borító mellett (`td:first-child::before`). Azonnali, optimista mentés (hibánál
   visszaáll). Megjegyzés mező nincs a felületen (Norbi kérésére; a `notes` oszlop megmaradt)
 - `components/FranchiseSelect.js` – franchise lenyíló (üres / meglévők / „+ Új franchise…”
   → helyben névmegadás, Enter: hozzáadás, Esc: mégse / „× „Név” törlése…” a kiválasztottra,
@@ -106,8 +116,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `app/api/franchises/logos/route.js` – `POST`: a logó nélküli franchise-oknál a franchise első
   (legkorábbi) filmjének TMDB-címlogóját menti (`pickLogo()`: legfeljebb 6:1 arány, angol);
   ha nincs logó, 7 napig nem próbálja újra. A `Watchlist` betöltéskor hívja
-- `components/ImdbRatingsImport.js` + `lib/imdbImport.js` – visszafogott „IMDb-értékelések
-  betöltése” gomb a Kilépés mellett: az IMDb értékelés-exportjából (CSV: `Const`, `Your Rating`)
+- `components/ImdbRatingsImport.js` + `lib/imdbImport.js` – visszafogott „IMDb értékelések”
+  gomb a Kilépés mellett, rámutatva súgóval (`.has-hint` + `.hint`, `aria-describedby`):
+  az IMDb értékelés-exportjából (CSV: `Const`, `Your Rating`)
   a böngészőben IMDb ID alapján párosít, összefoglalót mutat, majd `applyMyRatings()`
   (csillagértékenként egy update). Norbi döntései: csak a listán lévő címek, az IMDb csillaga
   felülírja a sajátot, az állapot nem változik, új cím nem kerül fel. Teljesen automatikus
@@ -148,10 +159,24 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - Az alapállapot (`to_watch`, `DEFAULT_STATUS`) a felületen **üresen** jelenik meg: nincs
   „Megnézendő” felirat a soron/kártyán/ablakban, és nincs színe. Csak a szűrőgomb nevezi meg.
   A szerkesztő ablakban a kiválasztott állapotra/Mamára újra kattintva lesz üres.
-- A megnézett (`watched`) címek halványak (sor és kártya), rámutatáskor teljes fényerő.
+- A megnézett (`watched`) címek háttérbe húzódnak (sor és kártya): fekete-fehér, fakó borító,
+  tompított, de olvasható szöveg (`--watched-text`, ≥ 4,5:1), halványabb vezérlők – nem az egész
+  sor átlátszó. Rámutatáskor, fókusznál és a törlés megerősítésekor minden teljes színű.
 - Design: sötét téma a `:root` változókkal; kiemelőszín (`--accent`) neon türkiz `#33e0ef`
   (nem sárga), a „Folyamatban” is ez; állapotszínek `--st-<kód>` változókban.
   Új állapotnál ide is kell egy szín, és a `[data-status=...]` szabály (kártya és táblázatsor is használja).
+- Teli türkiz csak a fő műveleteknél (Cím hozzáadása, Mentés, Belépés); a kiválasztott állapot
+  (szűrőgomb, aktuális oldal, választott lehetőség) `--accent-soft` háttér + `--accent-line` keret.
+  A gombok kerek végűek, rámutatva világosodnak, lenyomva sötétednek (`--accent-hover/-press`,
+  `--hover-tint/--press-tint`).
+- Saját lenyíló-nyíl (`--chevron`, `appearance: none`) és jelölőnégyzet (`--check-mark`); ahol egy
+  szabály `background` rövidítést ad egy lenyílónak, a nyilat is újra meg kell adni. Windows nagy
+  kontrasztú módban a beépített vezérlők maradnak.
+- Mozgás: legfeljebb ~0,2 s-os átmenetek; a `globals.css` végén egy közös
+  `prefers-reduced-motion: reduce` szabály mindet kikapcsolja.
+- Hiányzó borító: a `.thumb:empty` / `.poster-fallback` filmikont kap (`--icon-film`).
+- A 2026-10-03-i megjelenés-frissítés javaslatai és mérései: `munka/dizajn/` (helyi mappa, lásd
+  `munka/README.md`); a 10-es javaslat (álló betűs eredeti cím) Norbi kérésére kimaradt.
 - Képekhez sima `<img>`, nem `next/image`.
 - Nincs middleware / proxy; az auth kliensoldali.
 
@@ -163,10 +188,11 @@ asztali soros nézet soron belüli szerkesztéssel (`TitleTable`), csillagos ér
 „Mama” jelző, rendezés (hozzáadás, értékelés, megjelenés éve), letisztított szűrősor,
 franchise-ok (beállítás + szűrő + törlés; átnevezés még nincs a felületen), neon türkiz színvilág,
 TMDB leírás a cím mellett, IMDb-értékelés (OMDb) + rendezés szerinte, lapozás,
-saját IMDb-értékelések betöltése CSV-ből, franchise-logók a szűrőben.
+saját IMDb-értékelések betöltése CSV-ből, franchise-logók a szűrőben,
+megjelenés-frissítés (18 javaslat, 2026-10-03), keresés a listán, középre zárt belépés.
 Franchise-filmek importja (franchise.xlsx): 194 cím, 34 franchise; hozzáadás dátuma = megjelenés.
 Norbi listája (norbert.tutor@gmail.com) 2026-10-02-án Excelből importálva: 512 cím.
-Fejléc: „Megnézendő filmek”.
+Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
 - Tömeges import (soronként beillesztett címek, bizonytalan találatok jóváhagyása).
@@ -180,5 +206,7 @@ Fejléc: „Megnézendő filmek”.
   Böngészős teszt: `playwright-core` a scratchpadbe telepítve (nem a projektbe), a gépen
   lévő Chrome-mal (`C:\Program Files\Google\Chrome\Application\chrome.exe`), a helyben
   futó `npx next start -p 3123` ellen. A teszt végén a tesztfiók listáját ürítsd ki.
+  A teszt és a segédszkriptek a helyi `munka/` mappában vannak (git-ből kizárva, lásd
+  `munka/README.md`): a scratchpadbe másolva, ott `npm install` után futtathatók.
   Szkriptből (supabase-js) kilépéskor `signOut({ scope: 'local' })` kell – az alapértelmezett
   `global` a böngészőben futó munkamenetet is lezárja, és az `/api` route-ok 401-et adnak.

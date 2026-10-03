@@ -32,8 +32,11 @@ const TYPES = [
   { code: 'movie', name: 'Filmek' },
   { code: 'tv', name: 'Sorozatok' },
 ];
-// csak kiválasztott franchise mellett választható (akkor ez az alapértelmezés)
+// csak kiválasztott franchise vagy keresés mellett választható (akkor ez az alapértelmezés)
 const BOTH_TYPES = { code: 'all', name: 'Filmek és sorozatok' };
+
+// keresés: kis- és nagybetű, valamint ékezet nélkül hasonlít ("dune" → "Dűne")
+const fold = (s) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
 const byAddedDesc = (a, b) => new Date(b.created_at) - new Date(a.created_at);
 
@@ -97,6 +100,7 @@ export default function Watchlist({ session }) {
   const [franchise, setFranchise] = useState(''); // '' = összes, egyébként franchise id
   const [onlyDownloaded, setOnlyDownloaded] = useState(false);
   const [sort, setSort] = useState('added_desc');
+  const [query, setQuery] = useState(''); // keresés a felvett címek között
 
   useEffect(() => {
     let cancelled = false;
@@ -183,6 +187,14 @@ export default function Watchlist({ session }) {
   // a keresőben ezek alapján látszik, mi van már a listán
   const existingKeys = useMemo(() => new Set(titles.map(titleKey)), [titles]);
 
+  // keresés a címben és az eredeti címben; több szónál mindegyiknek szerepelnie kell
+  const words = useMemo(() => fold(query).split(/\s+/).filter(Boolean), [query]);
+  const searching = words.length > 0;
+  const searchText = useMemo(
+    () => new Map(titles.map((t) => [t.id, fold(`${t.title} ${t.original_title ?? ''}`)])),
+    [titles]
+  );
+
   // minden szűrő az állapot kivételével – ebből jönnek az állapotgombok darabszámai
   const beforeStatus = useMemo(
     () =>
@@ -193,9 +205,10 @@ export default function Watchlist({ session }) {
             (franchise === NO_FRANCHISE
               ? t.franchise_id == null
               : String(t.franchise_id) === franchise)) &&
-          (!onlyDownloaded || t.is_downloaded)
+          (!onlyDownloaded || t.is_downloaded) &&
+          words.every((w) => searchText.get(t.id).includes(w))
       ),
-    [ofType, genre, franchise, onlyDownloaded]
+    [ofType, genre, franchise, onlyDownloaded, words, searchText]
   );
 
   const countByStatus = useMemo(() => {
@@ -210,7 +223,7 @@ export default function Watchlist({ session }) {
   }, [beforeStatus, status, sort]);
 
   // lapozás: ha a szűrés vagy a rendezés változik (más kulcs), automatikusan az 1. oldal
-  const filterKey = [type, status, genre, franchise, onlyDownloaded, sort].join('|');
+  const filterKey = [type, status, genre, franchise, onlyDownloaded, sort, words.join(' ')].join('|');
   const [pageState, setPageState] = useState({ key: '', page: 1 });
   const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const page = Math.min(pageState.key === filterKey ? pageState.page : 1, pageCount);
@@ -236,15 +249,35 @@ export default function Watchlist({ session }) {
     }
   }
 
+  // "Filmek és sorozatok" helyett újra Filmek; a műfaj marad, ha a filmek között is van ilyen
+  function backToMovies() {
+    setType('movie');
+    if (genre && !titles.some((t) => t.media_type === 'movie' && t.genres?.includes(genre))) {
+      setGenre('');
+    }
+  }
+
   // franchise kiválasztásakor alapból a filmek és a sorozatok is látszanak;
-  // ha a franchise-szűrő megszűnik, a "Filmek és sorozatok" helyett újra Filmek
+  // ha a franchise-szűrő megszűnik (és nincs keresés), újra Filmek
   function changeFranchise(value) {
     setFranchise(value);
     if (value !== '' && value !== NO_FRANCHISE) {
       setType('all');
       setGenre('');
-    } else if (type === 'all') {
-      setType('movie');
+    } else if (type === 'all' && !searching) {
+      backToMovies();
+    }
+  }
+
+  // gépeléskor a filmek és a sorozatok között is keres; a keresés törlésekor (ha nincs
+  // kiválasztott franchise) újra Filmek
+  function changeQuery(value) {
+    const nowSearching = fold(value).trim() !== '';
+    setQuery(value);
+    if (nowSearching && !searching) {
+      setType('all');
+    } else if (!nowSearching && searching && type === 'all' && !franchiseChosen) {
+      backToMovies();
     }
   }
 
@@ -276,19 +309,22 @@ export default function Watchlist({ session }) {
     setTitles((ts) => ts.filter((x) => x.id !== id));
   }
 
-  // a típust (filmek / sorozatok) meghagyja
+  // a típust (filmek / sorozatok) meghagyja; a "Filmek és sorozatok" csak franchise-szal
+  // vagy kereséssel választható, abból Filmek lesz
   function resetFilters() {
     setStatus('all');
     setGenre('');
-    changeFranchise('');
+    setFranchise('');
     setOnlyDownloaded(false);
+    setQuery('');
+    if (type === 'all') setType('movie');
   }
 
   return (
     <main>
       <header className="top">
         <div>
-          <h1 className="brand">Megnézendő filmek</h1>
+          <h1 className="brand">Megnézendő filmek és sorozatok</h1>
           {!loading && !loadError && (
             <p className="count">{titles.length} cím a listán</p>
           )}
@@ -339,7 +375,7 @@ export default function Watchlist({ session }) {
               value={type}
               onChange={(e) => changeType(e.target.value)}
             >
-              {(franchiseChosen ? [BOTH_TYPES, ...TYPES] : TYPES).map((t) => (
+              {(franchiseChosen || searching ? [BOTH_TYPES, ...TYPES] : TYPES).map((t) => (
                 <option key={t.code} value={t.code}>
                   {t.name}
                 </option>
@@ -424,16 +460,24 @@ export default function Watchlist({ session }) {
               </div>
             )}
 
-            <label className="inline-field sort-field">
-              Rendezés
-              <select value={sort} onChange={(e) => setSort(e.target.value)}>
+            {/* jobb szélen: keresés a felvett címek között, mellette a rendezés */}
+            <div className="list-tools">
+              <input
+                type="search"
+                className="list-search"
+                aria-label="Keresés a listán"
+                placeholder="Keresés a listán"
+                value={query}
+                onChange={(e) => changeQuery(e.target.value)}
+              />
+              <select aria-label="Rendezés" value={sort} onChange={(e) => setSort(e.target.value)}>
                 {SORTS.map((s) => (
                   <option key={s.code} value={s.code}>
                     {s.name}
                   </option>
                 ))}
               </select>
-            </label>
+            </div>
           </section>
 
           {titles.length === 0 ? (
@@ -448,9 +492,9 @@ export default function Watchlist({ session }) {
             </p>
           ) : visible.length === 0 ? (
             <p className="state">
-              Nincs a szűrésnek megfelelő cím.{' '}
+              {searching ? 'Nincs a keresésnek megfelelő cím.' : 'Nincs a szűrésnek megfelelő cím.'}{' '}
               <button type="button" className="link" onClick={resetFilters}>
-                Szűrők törlése
+                {searching ? 'Keresés és szűrők törlése' : 'Szűrők törlése'}
               </button>
             </p>
           ) : isDesktop ? (
