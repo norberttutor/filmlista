@@ -93,10 +93,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   szerkeszthető), saját értékelés kis csillagsorként (`StarsDisplay`), ceruza gomb a bal felső
   sarokban → szerkesztő ablak (billentyűzettel / felolvasóval ez a borító-kattintás megfelelője);
   „Mama: …” borostyánnal (`.mama-tag`), műfajok színes pöttyel (`GenreList`); az első
-  rámutatáskor kiszámolja a borító hangulatszínét (`usePosterColor`), rámutatva a borító ebben fénylik;
-  fénylő kártyaél: egérrel a kurzor helye (`--mx`, `--my`, közvetlenül a stílusba) – a borító
-  keretén ott fény fut (hangulatszínben), a felülete is halványan világosabb (`.poster::before`,
-  `::after`; érintőképernyőn nincs)
+  rámutatáskor kiszámolja a borító hangulatszínét (`usePosterColor`), rámutatva a borító ebben fénylik
+  (a kurzort követő „fénylő kártyaél” 2026-10-04-én Norbi kérésére kikerült)
 - `components/GenreList.js` + `lib/genreColors.js` – műfajok, mindegyik előtt kis színes pötty
   (`genreColor(név)`: OKLCH, egyforma világosság, a rokon műfajok rokon színt kapnak; ismeretlen
   műfaj szürke; a kulcs a TMDB magyar műfajneve); felolvasónak vesszővel elválasztva (`sr-only`).
@@ -383,8 +381,8 @@ Mama-szűrő, hasonló címek a szerkesztő ablakban (TMDB-ajánlások, egy katt
 app-ikon (filmcsapó) és manifest: Norbi asztali alkalmazásként a Chrome-ból telepítette
 (Electron-csomag helyett), megjelenés 2. kör – színek (2026-10-04): borostyán második
 kiemelőszín, OKLCH-színek + élénkebb neon P3 kijelzőn, műfajszínek, hangulatszín a borítóból,
-aurora a lap tetején; anyag és mélység: letapadó üveg szűrősor, filmszemcse, squircle sarkok,
-fénylő kártyaél; mozgás: nézetváltás borító ↔ szerkesztő, beúszó kártyák, mikroanimációk
+aurora a lap tetején; anyag és mélység: letapadó üveg szűrősor, filmszemcse, squircle sarkok;
+mozgás: nézetváltás borító ↔ szerkesztő, beúszó kártyák, mikroanimációk
 (csillag, pipa, harang), csontváz-betöltés.
 Franchise-filmek importja (franchise.xlsx): 194 cím, 34 franchise; hozzáadás dátuma = megjelenés.
 Norbi listája (norbert.tutor@gmail.com) 2026-10-02-án Excelből importálva: 512 cím.
@@ -397,8 +395,8 @@ Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnéze
 - **Megjelenés, 2. kör (terv, 2026-10-03):** 25 dizájnjavaslat 2026-os trendek szerint,
   körökre bontva, technikai jegyzetekkel: `munka/dizajn-2/TERV.md` (helyi mappa). A színes
   részből (1–7) kész: 1 (borostyán változat), 2, 3, 4, 6; Norbi nem kérte: 5 (színes
-  IMDb-jelvény), 7 (választható színtéma). A 8–12-ből kész: 8, 9, 10, 11; nem kérte: 12 (3D
-  billenés). A mozgásból (13–16) kész: mind a négy. Hátravan: 17–25 (betűk, háttérkép a
+  IMDb-jelvény), 7 (választható színtéma). A 8–12-ből kész: 8, 9, 10; a 11-et (fénylő kártyaél) beépítés után
+  visszavonatta, a 12-t (3D billenés) nem kérte. A mozgásból (13–16) kész: mind a négy. Hátravan: 17–25 (betűk, háttérkép a
   szerkesztőben, statisztika, telefonos alsó lap…). Előbb előtte–utána képek
   (`munka/dizajn-2/eszkozok/`), beépítés csak jóváhagyás után.
 - „Hol nézhető?” – a TMDB `watch/providers` adatai (Magyarország: Netflix, HBO Max, Disney+,

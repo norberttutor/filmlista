@@ -14,23 +14,14 @@ export default function PosterCard({ title: t, franchise, onEdit }) {
   // a borító hangulatszíne: az első rámutatáskor számolódik, rámutatva a borító ebben fénylik
   const [pointed, setPointed] = useState(false);
   const ambient = usePosterColor(t.poster_path, pointed);
+  // a borító: innen siklik át a szerkesztő ablakba (nézetváltás)
   const posterRef = useRef(null);
-
-  // fénylő kártyaél: a kurzor helye a borítón (--mx, --my) – a CSS ide teszi a fényt; csak
-  // egérrel, közvetlenül a stílusba (nem rajzolja újra a kártyát)
-  function trackPointer(e) {
-    if (e.pointerType !== 'mouse' || !posterRef.current) return;
-    const r = posterRef.current.getBoundingClientRect();
-    e.currentTarget.style.setProperty('--mx', `${(((e.clientX - r.left) / r.width) * 100).toFixed(1)}%`);
-    e.currentTarget.style.setProperty('--my', `${(((e.clientY - r.top) / r.height) * 100).toFixed(1)}%`);
-  }
 
   return (
     <article
       className="card"
       data-status={t.status}
       onPointerEnter={() => setPointed(true)}
-      onPointerMove={trackPointer}
       {...ambientProps(ambient)}
     >
       {/* a borítóra kattintva a szerkesztő ablak nyílik (mint a ceruzával; billentyűzettel és

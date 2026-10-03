@@ -3212,42 +3212,6 @@ body:has(.editor[open]) {
     0 6px 20px -6px color-mix(in oklab, var(--ambient) 75%, transparent);
 }
 
-/* ---------- Fénylő kártyaél ---------- */
-/* rámutatáskor a borító keretén fény fut az egér körül (a borító hangulatszínében, ha az már
-   megvan; különben türkiz), és a borító felülete is halványan világosabb a kurzornál. A kurzor
-   helyét (--mx, --my) a PosterCard adja. Csak egérrel. */
-@media (hover: hover) and (pointer: fine) {
-  .card .poster::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    padding: 2px;
-    border-radius: inherit;
-    pointer-events: none;
-    background: radial-gradient(
-      14rem circle at var(--mx, 50%) var(--my, 50%),
-      rgb(255 255 255 / 0.95),
-      color-mix(in oklab, var(--ambient, var(--accent)) 90%, transparent) 30%,
-      transparent 62%
-    );
-    /* csak a 2 px-es keretsáv látszik */
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-    opacity: 0;
-    transition: opacity 0.2s ease-out;
-  }
-
-  .card:hover .poster::before {
-    opacity: 1;
-  }
-
-  .card:hover .poster::after {
-    background: radial-gradient(12rem circle at var(--mx, 50%) var(--my, 50%), rgb(255 255 255 / 0.2), transparent 60%);
-  }
-}
-
 /* ---------- Squircle sarkok ---------- */
 /* iOS-szerű, folytonos ívű sarkok (Chrome / Edge 139+; máshol a kerek sarok marad). Ugyanakkora
    sugárral a squircle kevésbé kerek, ezért a sugár nagyobb. A kerek végű (pirula) gombok és a
@@ -3255,7 +3219,6 @@ body:has(.editor[open]) {
 @supports (corner-shape: squircle) {
   /* borítók */
   .poster,
-  .poster::before,
   .poster::after {
     corner-shape: squircle;
     border-radius: 22px;
