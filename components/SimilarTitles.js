@@ -5,10 +5,16 @@ import { apiGet } from '@/lib/api';
 import { addTitle, titleKey } from '@/lib/titles';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w154';
-// alapból nyitva; ha becsukja, a böngésző megjegyzi (ha nem tudja, nyitva marad)
+// alapból nyitva; ha becsukja, a böngésző megjegyzi (ha nem tudja, nyitva marad). Telefonon
+// (≤ 640 px, mint a CSS-ben) mindig csukva indul – kevés a hely (Norbi kérése); ott a nyitás /
+// csukás csak az adott ablakra szól, a megjegyzett beállítást nem írja felül.
 const OPEN_KEY = 'filmlista-hasonlok';
+const PHONE_QUERY = '(max-width: 640px)';
+
+const isPhone = () => window.matchMedia(PHONE_QUERY).matches;
 
 function storedOpen() {
+  if (isPhone()) return false;
   try {
     return localStorage.getItem(OPEN_KEY) !== '0';
   } catch {
@@ -18,7 +24,8 @@ function storedOpen() {
 
 // "Hasonló címek" a szerkesztő ablakban: a TMDB ajánlásai borítóval, vízszintesen görgetve;
 // mindegyik egy kattintással felvehető a listára (mint a "Cím hozzáadása" panelen), a már
-// listán lévőknél "✓ A listán". Nyitva tölt be; ha becsukja, azt a böngésző megjegyzi.
+// listán lévőknél "✓ A listán". Nyitva tölt be; ha becsukja, azt a böngésző megjegyzi
+// (telefonon mindig csukva indul).
 export default function SimilarTitles({ title, existingKeys, onAdded }) {
   const bodyId = useId();
   const [open, setOpen] = useState(storedOpen);
@@ -50,6 +57,7 @@ export default function SimilarTitles({ title, existingKeys, onAdded }) {
   function toggle() {
     const next = !open;
     setOpen(next);
+    if (isPhone()) return;
     try {
       localStorage.setItem(OPEN_KEY, next ? '1' : '0');
     } catch {

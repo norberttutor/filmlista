@@ -195,7 +195,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `app/api/tmdb/similar/route.js` – `GET ?type=movie|tv&id=` → a TMDB ajánlásai (ha nincs, a
   hasonlók), csak borítóval, legfeljebb 12, a kereséssel azonos mezőnevekkel
 - `components/SimilarTitles.js` – „Hasonló címek” a szerkesztő ablak alján: lenyitó gomb (alapból
-  nyitva; ha becsukja, a böngésző megjegyzi: `localStorage`, `filmlista-hasonlok`; nyitva tölt be),
+  nyitva; ha becsukja, a böngésző megjegyzi: `localStorage`, `filmlista-hasonlok`; nyitva tölt be;
+  telefonon – ≤ 640 px – mindig csukva indul, Norbi kérése, és ott a nyitás / csukás nem
+  jegyződik meg),
   vízszintesen görgethető borítósor (évszám, típus; a borító a TMDB-adatlapra visz), „+ Hozzáadás”
   (`addTitle()`), a listán lévőknél „✓ A listán”
 - `app/api/imdb/refresh/route.js` – `POST`: a hiányzó vagy 14 napnál régebbi IMDb-értékeléseket
