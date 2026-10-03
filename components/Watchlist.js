@@ -375,10 +375,41 @@ export default function Watchlist({ session }) {
   const page = Math.min(pageState.key === filterKey ? pageState.page : 1, pageCount);
   const paged = visible.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const filtersRef = useRef(null);
+  // a szűrősor eredeti helye: lapozáskor ide görget (a letapadt szűrősorhoz nem lehetne)
+  const filtersAnchorRef = useRef(null);
+  const [filtersStuck, setFiltersStuck] = useState(false);
+
+  // a szűrősor görgetéskor a lap tetejére tapad: letapadva üveghatású ([data-stuck]); a
+  // magasságát (--filters-h) a táblázat ragadós fejléce kapja, hogy alatta tapadjon
+  const listShown = !loading && !loadError;
+  useEffect(() => {
+    const el = filtersRef.current;
+    if (!el) return;
+    let frame = 0;
+    const check = () => {
+      frame = 0;
+      setFiltersStuck(window.scrollY > 0 && el.getBoundingClientRect().top <= 0.5);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(check);
+    };
+    const resize = new ResizeObserver(() => {
+      document.documentElement.style.setProperty('--filters-h', `${el.offsetHeight}px`);
+      onScroll();
+    });
+    resize.observe(el);
+    check();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      resize.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, [listShown]);
 
   function changePage(p) {
     setPageState({ key: filterKey, page: p });
-    filtersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    filtersAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function changeType(code) {
@@ -581,10 +612,12 @@ export default function Watchlist({ session }) {
             />
           )}
 
+          <div ref={filtersAnchorRef} aria-hidden="true" />
           <section
             className={filtersOpen ? 'filters open' : 'filters'}
             aria-label="Szűrők"
             ref={filtersRef}
+            data-stuck={filtersStuck ? '' : undefined}
           >
             {/* telefonon a szűrők alapból összecsukva: a gomb röviden mutatja a beállítást,
                 kinyitva minden szűrő és a rendezés látszik (a kereső mindig) */}

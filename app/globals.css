@@ -115,6 +115,18 @@ body:has(main.login)::before {
   content: none;
 }
 
+/* finom filmszemcse: leheletnyi, álló zajtextúra a háttéren, a tartalom mögött (a borítókra
+   és a szövegre nem kerül) – a sima sötét felület "vásznasabb"; nem mozog */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.11;
+}
+
 @keyframes aurora {
   from {
     transform: translateX(-3%) scaleY(1);
@@ -820,6 +832,37 @@ body:has(> main.login) {
   padding: 0 var(--gutter) 1.5rem;
   border-bottom: 1px solid var(--line);
   border-image: linear-gradient(90deg, transparent, var(--line) 15%, var(--line) 85%, transparent) 1;
+}
+
+/* görgetéskor a szűrősor a lap tetejére tapad; amíg a helyén van, semmi nem változik,
+   letapadva ([data-stuck], a Watchlist jelzi) áttetsző, elmosott üveg – a lista átúszik
+   alatta. A felső belső margó mindig ott van (negatív külső margóval kiegyenlítve), így a
+   letapadáskor semmi nem ugrik. A magasságát (--filters-h) a Watchlist méri: a táblázat
+   ragadós fejléce ez alá tapad. */
+.filters {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  margin-top: -0.85rem;
+  padding-top: 0.85rem;
+  transition: background-color 0.2s, box-shadow 0.2s, backdrop-filter 0.2s;
+}
+
+.filters[data-stuck] {
+  background-color: color-mix(in oklab, var(--bg) 68%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
+  border-image: none;
+  border-bottom-color: rgb(255 255 255 / 0.07);
+  box-shadow: 0 12px 28px -16px rgb(0 0 0 / 0.75);
+}
+
+/* telefonon kinyitva se takarja el az egész képernyőt: legfeljebb 70%, belül görgethető */
+@media (max-width: 640px) {
+  .filters[data-stuck].open {
+    max-height: 70dvh;
+    overflow-y: auto;
+  }
 }
 
 /* állapotgombok + "Letöltés" egy egységként */
@@ -1623,7 +1666,7 @@ body:has(> main.login) {
    fejléc magassága nem változik) */
 .titles-table th {
   position: sticky;
-  top: 0;
+  top: var(--filters-h, 0px); /* a letapadt szűrősor alatt */
   z-index: 1;
   padding: 0.9rem 0.75rem 0.6rem;
   text-align: left;
@@ -3167,6 +3210,104 @@ body:has(.editor[open]) {
   box-shadow:
     0 1px 2px rgb(0 0 0 / 0.45),
     0 6px 20px -6px color-mix(in oklab, var(--ambient) 75%, transparent);
+}
+
+/* ---------- Fénylő kártyaél ---------- */
+/* rámutatáskor a borító keretén fény fut az egér körül (a borító hangulatszínében, ha az már
+   megvan; különben türkiz), és a borító felülete is halványan világosabb a kurzornál. A kurzor
+   helyét (--mx, --my) a PosterCard adja. Csak egérrel. */
+@media (hover: hover) and (pointer: fine) {
+  .card .poster::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    padding: 2px;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(
+      14rem circle at var(--mx, 50%) var(--my, 50%),
+      rgb(255 255 255 / 0.95),
+      color-mix(in oklab, var(--ambient, var(--accent)) 90%, transparent) 30%,
+      transparent 62%
+    );
+    /* csak a 2 px-es keretsáv látszik */
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+  }
+
+  .card:hover .poster::before {
+    opacity: 1;
+  }
+
+  .card:hover .poster::after {
+    background: radial-gradient(12rem circle at var(--mx, 50%) var(--my, 50%), rgb(255 255 255 / 0.2), transparent 60%);
+  }
+}
+
+/* ---------- Squircle sarkok ---------- */
+/* iOS-szerű, folytonos ívű sarkok (Chrome / Edge 139+; máshol a kerek sarok marad). Ugyanakkora
+   sugárral a squircle kevésbé kerek, ezért a sugár nagyobb. A kerek végű (pirula) gombok és a
+   körök maradnak. */
+@supports (corner-shape: squircle) {
+  /* borítók */
+  .poster,
+  .poster::before,
+  .poster::after {
+    corner-shape: squircle;
+    border-radius: 22px;
+  }
+
+  .thumb,
+  .thumb::after,
+  .similar-poster,
+  .notif-thumb {
+    corner-shape: squircle;
+    border-radius: 13px;
+  }
+
+  .editor-poster {
+    corner-shape: squircle;
+    border-radius: 28px;
+  }
+
+  /* ablakok és felugró panelek */
+  .editor,
+  .title-editor::before {
+    corner-shape: squircle;
+    border-radius: 32px;
+  }
+
+  .notif-panel,
+  .season-panel,
+  .franchise-listbox,
+  .add-panel,
+  .hint {
+    corner-shape: squircle;
+    border-radius: 20px;
+  }
+
+  /* mezők, lenyílók, címkék */
+  select,
+  input:not([type='checkbox']):not([type='radio']),
+  .franchise-filter-button,
+  .result,
+  .notif-item,
+  .season-count,
+  .season-dropped,
+  .bulk-cand {
+    corner-shape: squircle;
+    border-radius: 12px;
+  }
+
+  .imdb,
+  input[type='checkbox'] {
+    corner-shape: squircle;
+    border-radius: 7px;
+  }
 }
 
 /* ---------- Kevesebb mozgás ---------- */
