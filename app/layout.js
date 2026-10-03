@@ -15,6 +15,11 @@ export const metadata = {
   description: 'Megnézendő filmek és sorozatok',
 };
 
+// a böngésző / telepített app címsorának színe (--bg-top), hogy egybeolvadjon a lap tetejével
+export const viewport = {
+  themeColor: '#1a222d',
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="hu" className={mainFont.variable}>

@@ -34,7 +34,15 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 ## Fájlszerkezet
 - `app/layout.js` – Bricolage Grotesque betűtípus (`--font-main`) az optikai méret
   (`axes: ['opsz']`) tengellyel is (a nagy főcím a nagy méretre rajzolt formát kapja), `lang="hu"`;
-  a böngészőfül címe „Megnézendő filmek”
+  a böngészőfül címe „Megnézendő filmek”; a címsor színe (`viewport.themeColor`) `#1a222d` (`--bg-top`)
+- `app/icon.svg` – az app ikonja (böngészőfül): sötét, lekerekített négyzeten neon türkiz
+  filmcsapó. PNG-változatai: `app/apple-icon.png` (iPhone, 180 px), `public/icon-192.png`,
+  `public/icon-512.png` (telepített app), `public/icon-maskable-512.png` (Android: teljes négyzet,
+  a csapó a kör alakú vágáson belül). Mind egy forrásból készül: `munka/e2e/ikon.mjs` (helyi
+  mappa); az ikon változtatásakor ezzel kell újragenerálni mindet
+- `app/manifest.js` – webalkalmazás-manifest (`/manifest.webmanifest`): ettől telepíthető az oldal
+  Chrome-ból / Edge-ből saját ablakos alkalmazásként (név: „Megnézendő filmek és sorozatok”, rövid
+  név: „Megnézendő filmek”, `theme_color` = `--bg-top`). Ellenőrzés: `munka/e2e/verify-ikon.mjs`
 - `app/page.js` – kliensoldali session-kezelés: belépés vagy lista
 - `components/LoginForm.js` – e-mail + jelszó belépés (regisztráció nincs, ki van kapcsolva);
   minden középen: cím, alatta az űrlap (nagyobb kijelzőn kártyán, felülről halvány türkiz fény)
@@ -226,7 +234,9 @@ TMDB leírás a cím mellett, IMDb-értékelés (OMDb) + rendezés szerinte, lap
 saját IMDb-értékelések betöltése CSV-ből, franchise-logók a szűrőben,
 megjelenés-frissítés (18 javaslat, 2026-10-03), keresés a listán, középre zárt belépés,
 évadok a sorozatoknál (évadonkénti állapot és letöltve, a sorozat állapota ebből számolódik,
-új évadok hetente a TMDB-ről; epizódszintű követés Norbi kérésére nem kell).
+új évadok hetente a TMDB-ről; epizódszintű követés Norbi kérésére nem kell),
+app-ikon (filmcsapó) és manifest: Norbi asztali alkalmazásként a Chrome-ból telepítette
+(Electron-csomag helyett).
 Franchise-filmek importja (franchise.xlsx): 194 cím, 34 franchise; hozzáadás dátuma = megjelenés.
 Norbi listája (norbert.tutor@gmail.com) 2026-10-02-án Excelből importálva: 512 cím.
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).

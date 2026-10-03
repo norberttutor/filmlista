@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#243142"/><stop offset="1" stop-color="#121820"/></linearGradient>
+<linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#fff" stop-opacity=".03"/></linearGradient>
+<radialGradient id="glow" cx="32" cy="31" r="30" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#33e0ef" stop-opacity=".2"/><stop offset="1" stop-color="#33e0ef" stop-opacity="0"/></radialGradient>
+<mask id="bar"><rect width="64" height="5" fill="#fff"/><path d="M15.5 5L20.5 0H26.5L21.5 5ZM27.5 5L32.5 0H38.5L33.5 5ZM39.5 5L44.5 0H50.5L45.5 5Z"/></mask>
+<mask id="arm"><rect width="64" height="5" fill="#fff"/><path d="M15.5 0L20.5 5H26.5L21.5 0ZM27.5 0L32.5 5H38.5L33.5 0ZM39.5 0L44.5 5H50.5L45.5 0Z"/></mask>
+</defs>
+<rect width="64" height="64" rx="14" fill="url(#bg)"/>
+<rect width="64" height="64" rx="14" fill="url(#glow)"/>
+<rect x=".375" y=".375" width="63.25" height="63.25" rx="13.6" fill="none" stroke="url(#rim)" stroke-width=".75"/>
+<g fill="#33e0ef" transform="translate(32 32) scale(1.08) translate(-32 -31)">
+<rect x="14" y="33" width="36" height="18" rx="3"/>
+<g transform="translate(0 26.5)"><rect x="14" width="36" height="5" rx="1.2" fill-opacity=".3"/><rect x="14" width="36" height="5" rx="1.2" mask="url(#bar)"/></g>
+<g transform="rotate(-15 14 25) translate(0 20)"><rect x="14" width="36" height="5" rx="1.2" fill-opacity=".3"/><rect x="14" width="36" height="5" rx="1.2" mask="url(#arm)"/></g>
+</g>
+</svg>
