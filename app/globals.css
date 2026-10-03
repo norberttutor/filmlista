@@ -776,6 +776,65 @@ body:has(> main.login) {
   gap: 0.6rem 1.5rem;
 }
 
+/* telefonon a szűrők alapból összecsukva: a "Szűrők" gomb (mellette röviden a beállítás)
+   nyitja ki őket; összecsukva csak a gomb és a kereső látszik. Asztalon nincs gomb. */
+.filters-toggle {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .filters-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.6rem 0.9rem;
+    color: var(--text);
+    text-align: left;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+
+  .filters-toggle:hover {
+    border-color: var(--muted);
+  }
+
+  .filters-toggle[aria-expanded='true'] {
+    border-color: var(--accent-line);
+  }
+
+  .filters-toggle b {
+    flex: none;
+    font-weight: 650;
+  }
+
+  .filters-summary {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.85rem;
+    color: var(--muted);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .filters-toggle svg {
+    flex: none;
+    color: var(--muted);
+    transition: rotate 0.15s;
+  }
+
+  .filters-toggle[aria-expanded='true'] svg {
+    rotate: 180deg;
+  }
+
+  .filters:not(.open) > :not(.filters-toggle):not(.list-tools),
+  .filters:not(.open) .list-tools > :not(.list-search) {
+    display: none;
+  }
+}
+
 /* a Franchise és mellette az alaphelyzet gomb együtt (együtt törnek új sorba) */
 .filter-end {
   display: flex;

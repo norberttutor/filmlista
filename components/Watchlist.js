@@ -19,6 +19,7 @@ import {
   DEFAULT_STATUS,
   DROPPED_STATUS,
   MAMA_OPTIONS,
+  mamaLabel,
 } from '@/lib/titles';
 import FranchiseFilter from '@/components/FranchiseFilter';
 import NotificationBell from '@/components/NotificationBell';
@@ -167,6 +168,7 @@ export default function Watchlist({ session }) {
   const [sort, setSort] = useState('added_desc');
   const [query, setQuery] = useState(''); // keresés a felvett címek között
   const [beforeSearch, setBeforeSearch] = useState(null); // a keresés előtti szűrők
+  const [filtersOpen, setFiltersOpen] = useState(false); // telefonon alapból összecsukva
   const filters = { type, status, downloaded, genre, mama, franchise };
 
   function applyFilters(f) {
@@ -470,6 +472,21 @@ export default function Watchlist({ session }) {
     setTitles((ts) => ts.filter((x) => x.id !== id));
   }
 
+  // a telefonos "Szűrők" gomb rövid összegzése, pl. "Filmek · Megnézendő · Nem letöltött ·
+  // Franchise nélkül"
+  const filterSummary = [
+    (type === 'all' ? BOTH_TYPES : TYPES.find((t) => t.code === type))?.name,
+    status === 'all' ? 'Minden állapot' : statuses.find((s) => s.code === status)?.name,
+    downloaded !== 'all' && DOWNLOAD_FILTERS.find((d) => d.code === downloaded)?.name,
+    genre,
+    mama && `Mama: ${mamaLabel(mama)}`,
+    franchise === NO_FRANCHISE
+      ? usedFranchises.length > 0 && 'Franchise nélkül'
+      : franchise && franchiseName.get(Number(franchise)),
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   // ↺: a szűrők alapállapota, keresés nélkül
   const atDefault = !searching && sameFilters(filters, DEFAULT_FILTERS);
 
@@ -564,7 +581,26 @@ export default function Watchlist({ session }) {
             />
           )}
 
-          <section className="filters" aria-label="Szűrők" ref={filtersRef}>
+          <section
+            className={filtersOpen ? 'filters open' : 'filters'}
+            aria-label="Szűrők"
+            ref={filtersRef}
+          >
+            {/* telefonon a szűrők alapból összecsukva: a gomb röviden mutatja a beállítást,
+                kinyitva minden szűrő és a rendezés látszik (a kereső mindig) */}
+            <button
+              type="button"
+              className="filters-toggle"
+              aria-expanded={filtersOpen}
+              onClick={() => setFiltersOpen((o) => !o)}
+            >
+              <b>Szűrők</b>
+              <span className="filters-summary">{filterSummary}</span>
+              <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true">
+                <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6" />
+              </svg>
+            </button>
+
             <select
               className="type-select"
               aria-label="Típus"

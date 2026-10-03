@@ -61,6 +61,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   alapállapotban halvány, letiltott). **A szűrők alapállapota** (betöltéskor és a ↺-vel,
   `DEFAULT_FILTERS`, Norbi kérése): Filmek – Megnézendő – Nem letöltött – Összes műfaj –
   Franchise nélkül;
+  telefonon (≤ 640 px) a szűrők alapból összecsukva: „Szűrők” gomb, mellette röviden a beállítás
+  (`filterSummary`, pl. „Filmek · Megnézendő · Nem letöltött · Franchise nélkül”), kinyitva minden
+  szűrő és a rendezés; a kereső összecsukva is látszik (Norbi kérése);
   jobb szélen keresőmező („Keresés a listán”: a címben és az eredeti címben, kis-/nagybetű és
   ékezet nélkül – `fold()`; több szónál mindegyiknek szerepelnie kell; telefonon külön sorban;
   gépeléskor az egész listán keres: a szűrők félreállnak – `SEARCH_FILTERS`, keresés közben
