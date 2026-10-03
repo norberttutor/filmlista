@@ -93,6 +93,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   Az „Abbahagyva” állapot csak sorozatnál választható. Alul „Hasonló címek” (`SimilarTitles`).
   Asztalon (≥ 900 px) széles, kétoszlopos ablak: balra nagy borító (w500, görgetéskor a helyén
   marad; borító nélkül filmikon), jobbra az adatok; telefonon egy oszlop, nagy borító nélkül.
+  Megnyitáskor a fókusz az ablak címén van (keret nélkül), nem a Franchise mezőn (Norbi kérése).
   Évados
   sorozatnál az állapot / letöltve / dátum helyett „Évadok” lista (`SeasonList`), ami azonnal
   ment (`onChanged`); a „Mentés” ilyenkor nem küld `status` / `is_downloaded` / `watched_at`-et

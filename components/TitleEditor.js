@@ -57,6 +57,7 @@ export default function TitleEditor({
   onClose,
 }) {
   const dialogRef = useRef(null);
+  const headingRef = useRef(null);
   const deleteButtonRef = useRef(null);
   const [form, setForm] = useState({
     status: t.status,
@@ -75,6 +76,9 @@ export default function TitleEditor({
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog.open) dialog.showModal(); // fejlesztői módban az effect kétszer fut
+    // a böngésző az első mezőre (Franchise) tenné a fókuszt, és a kerete feleslegesen
+    // világítana: helyette az ablak címe kapja (billentyűzettel a Tab innen a Franchise-ra visz)
+    headingRef.current?.focus();
   }, []);
 
   // a dialog "close" eseménye hívja az onClose-t (Esc-nél is)
@@ -156,7 +160,9 @@ export default function TitleEditor({
         </div>
         <div className="editor-main">
           <header>
-            <h2 id="editor-title">{t.title}</h2>
+            <h2 id="editor-title" ref={headingRef} tabIndex={-1}>
+              {t.title}
+            </h2>
             <p className="meta">
               {t.release_year && <span>{t.release_year}</span>}
               <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>

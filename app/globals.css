@@ -2757,6 +2757,11 @@ body:has(.editor[open]) {
   text-wrap: balance;
 }
 
+/* megnyitáskor a cím kapja a fókuszt (nem a Franchise mező): rajta ne legyen keret */
+.editor h2:focus {
+  outline: none;
+}
+
 .editor-overview {
   margin: 0.6rem 0 0;
   font-size: 0.85rem;
