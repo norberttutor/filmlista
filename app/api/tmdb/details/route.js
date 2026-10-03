@@ -1,5 +1,5 @@
 import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
-import { tmdbFetch, tmdbErrorResponse, yearOf } from '@/lib/server/tmdb';
+import { tmdbFetch, tmdbErrorResponse, yearOf, pickSeasons } from '@/lib/server/tmdb';
 import { omdbEnabled, fetchImdbRating } from '@/lib/server/omdb';
 
 // IMDb-értékelés az OMDb-ből; ha nem sikerül, a cím attól még felvehető,
@@ -23,7 +23,8 @@ function pickOverview(data) {
 }
 
 // GET /api/tmdb/details?type=movie&id=438631
-// Egy film/sorozat adatai a titles táblába illeszthető formában, plusz a műfajai.
+// Egy film/sorozat adatai a titles táblába illeszthető formában, plusz a műfajai;
+// sorozatnál az évadai is (seasons: a title_seasons tábla oszlopaival).
 export async function GET(request) {
   if (!(await getUserFromRequest(request))) return unauthorized();
 
@@ -62,5 +63,6 @@ export async function GET(request) {
     imdb_id: imdbId,
     ...(await imdbFields(imdbId)),
     genres: (data.genres ?? []).map(({ id, name }) => ({ id, name })),
+    ...(type === 'tv' && { seasons: pickSeasons(data) }),
   });
 }

@@ -14,6 +14,7 @@ import {
 import StarRating from '@/components/StarRating';
 import FranchiseSelect from '@/components/FranchiseSelect';
 import ImdbBadge from '@/components/ImdbBadge';
+import { hasSeasons, SeasonCell, SeasonDownloads } from '@/components/Seasons';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w154';
 
@@ -211,27 +212,37 @@ function TitleRow({
         </td>
       ) : (
         <>
+          {/* sorozatnál évadonként: a letöltött évadok és az évadcsík (az állapot ebből
+              számolódik); évadok nélkül marad a kézi pipa és lenyíló */}
           <td className="col-check">
-            <input
-              type="checkbox"
-              aria-label={`Letöltve – ${t.title}`}
-              checked={t.is_downloaded}
-              onChange={(e) => save({ is_downloaded: e.target.checked })}
-            />
+            {hasSeasons(t) ? (
+              <SeasonDownloads title={t} />
+            ) : (
+              <input
+                type="checkbox"
+                aria-label={`Letöltve – ${t.title}`}
+                checked={t.is_downloaded}
+                onChange={(e) => save({ is_downloaded: e.target.checked })}
+              />
+            )}
           </td>
           <td className="col-status">
-            <select
-              aria-label={`Állapot – ${t.title}`}
-              value={t.status}
-              onChange={(e) => changeStatus(e.target.value)}
-            >
-              {statuses.map((s) => (
-                <option key={s.code} value={s.code}>
-                  {/* az alapállapot üresen jelenik meg */}
-                  {s.code === DEFAULT_STATUS ? '' : s.name}
-                </option>
-              ))}
-            </select>
+            {hasSeasons(t) ? (
+              <SeasonCell title={t} onUpdated={onUpdated} onError={setError} />
+            ) : (
+              <select
+                aria-label={`Állapot – ${t.title}`}
+                value={t.status}
+                onChange={(e) => changeStatus(e.target.value)}
+              >
+                {statuses.map((s) => (
+                  <option key={s.code} value={s.code}>
+                    {/* az alapállapot üresen jelenik meg */}
+                    {s.code === DEFAULT_STATUS ? '' : s.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </td>
           <td className="col-mama">
             <select

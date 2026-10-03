@@ -14,6 +14,7 @@ import {
   deleteFranchise,
   refreshImdbRatings,
   refreshFranchiseLogos,
+  refreshSeasons,
 } from '@/lib/titles';
 import FranchiseFilter from '@/components/FranchiseFilter';
 import { useMediaQuery } from '@/lib/useMediaQuery';
@@ -133,6 +134,14 @@ export default function Watchlist({ session }) {
           const byId = new Map(rows.map((r) => [r.id, r]));
           setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
         }).catch((err) => console.warn('IMDb-értékelések frissítése sikertelen:', err.message));
+
+        // sorozatok évadai a háttérben: a még évad nélküliek megkapják, a hetente
+        // ellenőrzöttekhez az új (megjelent / bejelentett) évad felkerül
+        refreshSeasons((rows) => {
+          if (cancelled) return;
+          const byId = new Map(rows.map((r) => [r.id, r]));
+          setTitles((ts) => ts.map((t) => byId.get(t.id) ?? t));
+        }).catch((err) => console.warn('Évadok frissítése sikertelen:', err.message));
 
         // hiányzó franchise-logók (a franchise első filmjének címlogója) a háttérben
         if (franchisesRes.data.some((f) => !f.logo_path)) {
@@ -295,8 +304,10 @@ export default function Watchlist({ session }) {
     if (franchise === String(id)) changeFranchise('');
   }
 
+  // a nyitott szerkesztő ablak is a friss sort kapja (pl. évadok változása után)
   function replaceTitle(row) {
     setTitles((ts) => ts.map((x) => (x.id === row.id ? row : x)));
+    setEditing((e) => (e && e.id === row.id ? row : e));
   }
 
   // az IMDb-importból beírt csillagok helyben is
@@ -541,6 +552,7 @@ export default function Watchlist({ session }) {
           onCreateFranchise={handleCreateFranchise}
           onDeleteFranchise={handleDeleteFranchise}
           onSaved={replaceTitle}
+          onChanged={replaceTitle}
           onDeleted={removeTitle}
           onClose={() => setEditing(null)}
         />

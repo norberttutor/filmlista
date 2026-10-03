@@ -12,6 +12,7 @@ import {
 import StarRating from '@/components/StarRating';
 import FranchiseSelect from '@/components/FranchiseSelect';
 import ImdbBadge from '@/components/ImdbBadge';
+import { hasSeasons, SeasonList, useSeasonActions } from '@/components/Seasons';
 
 // Rádiógombok "chip" formában; a kiválasztottra újra kattintva visszaáll üresre.
 function ClearableChips({ name, options, value, onChange }) {
@@ -35,6 +36,8 @@ function ClearableChips({ name, options, value, onChange }) {
 
 // Felugró ablak egy cím saját adatainak szerkesztésére és törlésére.
 // A natív <dialog> elemet használja: Esc-re bezárul, a fókusz az ablakban marad.
+// Sorozatnál az állapot és a "Letöltve" helyett az évadlista látszik; az évadok változása
+// azonnal mentődik (onChanged), a többi mező a "Mentés" gombbal.
 export default function TitleEditor({
   title: t,
   statuses,
@@ -42,6 +45,7 @@ export default function TitleEditor({
   onCreateFranchise,
   onDeleteFranchise,
   onSaved,
+  onChanged,
   onDeleted,
   onClose,
 }) {
@@ -58,6 +62,8 @@ export default function TitleEditor({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const seasonal = hasSeasons(t);
+  const seasonActions = useSeasonActions(t, onChanged, setError);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -96,13 +102,17 @@ export default function TitleEditor({
     setError('');
     try {
       const row = await updateTitle(t.id, {
-        status: form.status,
-        is_downloaded: form.is_downloaded,
+        // sorozatnál az állapotot, a "Letöltve" jelzőt és a dátumot az évadokból számolja
+        // az adatbázis
+        ...(!seasonal && {
+          status: form.status,
+          is_downloaded: form.is_downloaded,
+          // a dátumnak csak megnézett címnél van értelme
+          watched_at: form.status === 'watched' ? form.watched_at || null : null,
+        }),
         mama_status: form.mama_status,
         franchise_id: form.franchise_id,
         my_rating: form.my_rating,
-        // a dátumnak csak megnézett címnél van értelme
-        watched_at: form.status === 'watched' ? form.watched_at || null : null,
       });
       onSaved(row);
       close();
@@ -150,36 +160,46 @@ export default function TitleEditor({
           />
         </div>
 
-        <fieldset className="field">
-          <legend>Állapot</legend>
-          {/* az (üres) alapállapotnak nincs gombja: egyik sincs kiválasztva */}
-          <ClearableChips
-            name="status"
-            options={statuses.filter((s) => s.code !== DEFAULT_STATUS)}
-            value={form.status}
-            onChange={changeStatus}
-          />
-        </fieldset>
+        {seasonal ? (
+          <fieldset className="field">
+            <legend>Évadok</legend>
+            <p className="muted small season-hint">Az évadok változása azonnal mentődik.</p>
+            <SeasonList title={t} actions={seasonActions} />
+          </fieldset>
+        ) : (
+          <>
+            <fieldset className="field">
+              <legend>Állapot</legend>
+              {/* az (üres) alapállapotnak nincs gombja: egyik sincs kiválasztva */}
+              <ClearableChips
+                name="status"
+                options={statuses.filter((s) => s.code !== DEFAULT_STATUS)}
+                value={form.status}
+                onChange={changeStatus}
+              />
+            </fieldset>
 
-        {form.status === 'watched' && (
-          <label className="field">
-            Megnézve
-            <input
-              type="date"
-              value={form.watched_at}
-              onChange={(e) => setField('watched_at', e.target.value)}
-            />
-          </label>
+            {form.status === 'watched' && (
+              <label className="field">
+                Megnézve
+                <input
+                  type="date"
+                  value={form.watched_at}
+                  onChange={(e) => setField('watched_at', e.target.value)}
+                />
+              </label>
+            )}
+
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={form.is_downloaded}
+                onChange={(e) => setField('is_downloaded', e.target.checked)}
+              />
+              Letöltve
+            </label>
+          </>
         )}
-
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={form.is_downloaded}
-            onChange={(e) => setField('is_downloaded', e.target.checked)}
-          />
-          Letöltve
-        </label>
 
         <fieldset className="field">
           <legend>Mama</legend>

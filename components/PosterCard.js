@@ -1,12 +1,15 @@
 import { externalLink, formatDate, mamaLabel, DEFAULT_STATUS } from '@/lib/titles';
 import { StarsDisplay } from '@/components/StarRating';
 import ImdbBadge from '@/components/ImdbBadge';
+import { hasSeasons, seasonCounts, SeasonStrip } from '@/components/Seasons';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
 
 export default function PosterCard({ title: t, franchise, onEdit }) {
   const link = externalLink(t);
+  const seasons = hasSeasons(t) ? seasonCounts(t) : null;
 
+  // sorozatnál a borító alján évadonként egy szakasz, egyébként egy állapotcsík
   const poster = (
     <div className="poster">
       {t.poster_path ? (
@@ -15,7 +18,7 @@ export default function PosterCard({ title: t, franchise, onEdit }) {
         <span className="poster-fallback">{t.title}</span>
       )}
       {t.is_downloaded && <span className="badge">Letöltve</span>}
-      <span className="status-strip" aria-hidden="true" />
+      {seasons ? <SeasonStrip title={t} /> : <span className="status-strip" aria-hidden="true" />}
     </div>
   );
 
@@ -65,6 +68,11 @@ export default function PosterCard({ title: t, franchise, onEdit }) {
         <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
         <ImdbBadge title={t} />
         {t.status !== DEFAULT_STATUS && <span className="status-name">{t.status_name}</span>}
+        {seasons && (
+          <span>
+            {seasons.watched}/{seasons.aired} évad
+          </span>
+        )}
         {t.mama_status && <span>Mama: {mamaLabel(t.mama_status)}</span>}
       </p>
       {t.my_rating && (
