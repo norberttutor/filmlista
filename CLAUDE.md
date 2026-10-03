@@ -64,12 +64,17 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   szűkíthetők –, a keresés törlésekor a keresés előtti szűrők állnak vissza),
   mellette felirat nélkül (`aria-label`) a Rendezés (`SORTS`:
   legutóbb / legkorábban hozzáadott, legjobb értékelés, legújabb / legrégebbi megjelenés;
-  üres érték a végére). Az állapotgombok darabszámai a többi szűrőt már figyelembe veszik.
+  üres érték a végére), a sor legvégén (csak ≥ 1400 px-en) felirat nélküli nézetváltó: két
+  ikongomb, lista (táblázat, `TitleTable`) | rács (borítófal) – `aria-pressed`, `title`; a
+  választást a böngésző megjegyzi (`localStorage`, `filmlista-nezet`), alapból lista;
+  1400 px alatt mindig borítófal. Borítófal: telefonon (≤ 640 px) 3 kártya egy sorban (kisebb
+  betűk és csillagok, a „Letöltve” jelvény csak ikon), asztali rácsban `minmax(185px)` kártyák.
+  Az állapotgombok darabszámai a többi szűrőt már figyelembe veszik.
   A most szerkesztett sor a szűrés változásáig a helyén marad (`kept`), akkor is, ha már nem
   illik a szűrőbe (pl. „Nem letöltött” nézetben letöltöttnek jelölve) – így visszavehető.
   Üres találatnál „Szűrők törlése” (minden cím látszik) vagy keresésnél „Keresés törlése”.
   Lapozás 25-ösével (`PAGE_SIZE`, `components/Pagination.js`), szűrés/rendezés/keresés
-  váltásakor 1. oldal
+  váltásakor 1. oldal (akkor is, ha később ugyanaz a szűrés jön vissza)
 - `components/PosterCard.js` – borító (`https://image.tmdb.org/t/p/w342` + `poster_path`),
   állapotcsík, „Letöltve” jelvény; a borítóra kattintva a szerkesztő ablak nyílik (mint a
   ceruzával – Norbi kérése), az IMDb- (vagy TMDB-, ha nincs IMDb ID) adatlapra csak a cím visz
@@ -262,6 +267,7 @@ megjelenés-frissítés (18 javaslat, 2026-10-03), keresés a listán, középre
 új évadok hetente a TMDB-ről; epizódszintű követés Norbi kérésére nem kell),
 „Abbahagyva” állapot sorozatoknál, szűrők alapállapota + ↺ gomb, Letöltés szűrő (Összes /
 Letöltött / Nem letöltött), mobilon a borító a szerkesztőt nyitja (az IMDb-re a cím visz),
+asztali nézetben lista / rács váltó, telefonon 3 kártya egy sorban,
 app-ikon (filmcsapó) és manifest: Norbi asztali alkalmazásként a Chrome-ból telepítette
 (Electron-csomag helyett).
 Franchise-filmek importja (franchise.xlsx): 194 cím, 34 franchise; hozzáadás dátuma = megjelenés.

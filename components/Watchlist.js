@@ -26,10 +26,23 @@ const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 // franchise-szűrő: '' = összes, NO_FRANCHISE = franchise nélküliek, egyébként franchise id
 const NO_FRANCHISE = 'none';
 
-// ennél szélesebb képernyőn soros (táblázatos) nézet, alatta borítófal
+// ennél szélesebb képernyőn választható a soros (táblázatos) nézet és a borítófal, alatta
+// mindig borítófal
 const DESKTOP_QUERY = '(min-width: 1400px)';
 
 const PAGE_SIZE = 25; // ennyi cím egy oldalon
+
+// asztali szélességen választható nézet: 'list' (táblázat) vagy 'grid' (borítófal); a böngésző
+// megjegyzi (ha a tárhely nem érhető el, marad a lista)
+const VIEW_KEY = 'filmlista-nezet';
+
+function storedView() {
+  try {
+    return localStorage.getItem(VIEW_KEY) === 'grid' ? 'grid' : 'list';
+  } catch {
+    return 'list';
+  }
+}
 
 const TYPES = [
   { code: 'movie', name: 'Filmek' },
@@ -115,6 +128,16 @@ export default function Watchlist({ session }) {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(null); // a szerkesztett cím, vagy null
   const isDesktop = useMediaQuery(DESKTOP_QUERY);
+  const [view, setView] = useState(storedView); // a Watchlist csak a böngészőben fut
+
+  function changeView(next) {
+    setView(next);
+    try {
+      localStorage.setItem(VIEW_KEY, next);
+    } catch {
+      // a választás így csak most érvényes
+    }
+  }
 
   // szűrők
   const [status, setStatus] = useState(DEFAULT_FILTERS.status);
@@ -283,7 +306,9 @@ export default function Watchlist({ session }) {
   }, [beforeStatus, ofType, keptIds, status, sort]);
 
   // lapozás
-  const [pageState, setPageState] = useState({ key: '', page: 1 });
+  const [pageState, setPageState] = useState({ key: filterKey, page: 1 });
+  // szűrés- / rendezésváltáskor 1. oldal (akkor is, ha később ugyanez a szűrés jön vissza)
+  if (pageState.key !== filterKey) setPageState({ key: filterKey, page: 1 });
   const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const page = Math.min(pageState.key === filterKey ? pageState.page : 1, pageCount);
   const paged = visible.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -588,6 +613,54 @@ export default function Watchlist({ session }) {
                   </option>
                 ))}
               </select>
+              {/* lista / rács váltó felirat nélkül (keskenyebben mindig rács) */}
+              {isDesktop && (
+                <div className="view-toggle" role="group" aria-label="Nézet">
+                  <button
+                    type="button"
+                    aria-label="Listás nézet"
+                    title="Listás nézet"
+                    aria-pressed={view === 'list'}
+                    onClick={() => changeView('list')}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="18"
+                      height="18"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Rácsos nézet"
+                    title="Rácsos nézet"
+                    aria-pressed={view === 'grid'}
+                    onClick={() => changeView('grid')}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="18"
+                      height="18"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
+                      <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
+                      <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
+                      <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
+                    </svg>
+                  </button>
+                </div>
+              )}
             </div>
           </section>
 
@@ -614,7 +687,7 @@ export default function Watchlist({ session }) {
                 </button>
               )}
             </p>
-          ) : isDesktop ? (
+          ) : isDesktop && view === 'list' ? (
             <TitleTable
               titles={paged}
               statuses={statuses}
