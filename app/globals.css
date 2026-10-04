@@ -2504,6 +2504,72 @@ button.season:hover {
   color: var(--accent);
 }
 
+/* ---------- Mentések (ablak) ---------- */
+.editor.backups-dialog {
+  width: min(38rem, calc(100vw - 2rem));
+}
+
+.backup-list {
+  max-height: 22rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.2rem 0.75rem;
+  list-style: none;
+  font-size: 0.9rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.backup-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.9rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.backup-list li:last-child {
+  border-bottom: 0;
+}
+
+.backup-when,
+.backup-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.backup-kind,
+.backup-count {
+  color: var(--muted);
+}
+
+.backup-count {
+  margin-left: auto;
+}
+
+/* a visszaállítás megerősítése a sor helyén, pirosas háttérrel (mint a törlésé a táblázatban) */
+.backup-list li.backup-confirm {
+  margin: 0 -0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: color-mix(in oklab, var(--danger) 8%, transparent);
+}
+
+.backup-confirm p {
+  flex: 1 1 18rem;
+  margin: 0;
+}
+
+.backup-confirm-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.backup-confirm .danger {
+  padding: 0.35rem 0.9rem;
+}
+
 /* ---------- Hasonló címek (szerkesztő ablak) ---------- */
 .similar {
   display: grid;
@@ -3369,7 +3435,8 @@ body:has(.editor[open]) {
   .notif-item,
   .season-count,
   .season-dropped,
-  .bulk-cand {
+  .bulk-cand,
+  .backup-list {
     corner-shape: squircle;
     border-radius: 12px;
   }

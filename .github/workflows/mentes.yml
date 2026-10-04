@@ -1,0 +1,60 @@
+# Heti mentés a Supabase-től független helyre: hétfőnként kiolvassa a legfrissebb mentést
+# (az adatbázis 03:00 UTC-kor készíti – supabase/12_backups.sql), és 8 hétre (56 nap)
+# artifactként eltárolja; utána a GitHub magától törli. Letöltés: Actions → „Heti mentés” →
+# egy futás → Artifacts.
+# Kell hozzá a BACKUP_DB_URL titok (Settings → Secrets and variables → Actions): a csak olvasó
+# backup_reader szerep kapcsolata (ugyanez van a .env.local-ban).
+name: Heti mentés
+
+on:
+  schedule:
+    - cron: '30 4 * * 1' # hétfő 04:30 UTC
+  workflow_dispatch: # kézzel is indítható: Actions → Heti mentés → Run workflow
+
+permissions:
+  contents: read
+
+jobs:
+  mentes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      BACKUP_DB_URL: ${{ secrets.BACKUP_DB_URL }}
+    steps:
+      - name: Legfrissebb mentés kiolvasása
+        run: |
+          if [ -z "$BACKUP_DB_URL" ]; then
+            echo "::error::Hiányzik a BACKUP_DB_URL titok (Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+          command -v psql >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client; }
+          mkdir mentes
+          # felhasználónként a legfrissebb mentés, teljes tartalommal, egy JSON-tömbben
+          psql "$BACKUP_DB_URL" -X -v ON_ERROR_STOP=1 -At -c "
+            select coalesce(jsonb_agg(jsonb_build_object(
+                     'id', b.id, 'user_id', b.user_id, 'kind', b.kind, 'created_at', b.created_at,
+                     'title_count', b.title_count, 'data', b.data) order by b.user_id), '[]')
+              from (select distinct on (user_id) * from public.backups
+                     order by user_id, created_at desc) b" > mentes/filmlista-mentes.json
+          echo "DATUM=$(date -u +%Y-%m-%d)" >> "$GITHUB_ENV"
+          echo "Fájl: $(du -h mentes/filmlista-mentes.json | cut -f1)"
+
+      - name: Feltöltés (56 napig megmarad)
+        uses: actions/upload-artifact@v4
+        with:
+          name: filmlista-mentes-${{ env.DATUM }}
+          path: mentes/filmlista-mentes.json
+          retention-days: 56
+          if-no-files-found: error
+
+      # ha az adatbázis heti mentése elmaradt (8 napnál régebbi a legfrissebb), a futás hibával
+      # áll le – erről a GitHub e-mailt küld
+      - name: Friss-e az adatbázis mentése
+        run: |
+          fresh=$(psql "$BACKUP_DB_URL" -X -v ON_ERROR_STOP=1 -At -c \
+            "select count(*) from public.backups where created_at > now() - interval '8 days'")
+          echo "Mentések az utolsó 8 napból: $fresh"
+          if [ "$fresh" = "0" ]; then
+            echo "::error::Nincs 8 napon belüli mentés az adatbázisban – elmaradt a heti mentés (pg_cron)."
+            exit 1
+          fi

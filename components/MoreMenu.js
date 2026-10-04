@@ -9,6 +9,8 @@ const ICONS = {
   chart: <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
   list: <path d="M8 6h13M8 12h13M8 18h8M3 6h.01M3 12h.01M3 18h.01M19 15v6M16 18h6" />,
   download: <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />,
+  // óra visszafelé mutató nyíllal (mentések, visszaállítás)
+  history: <path d="M3.5 12a8.5 8.5 0 1 0 2.5-6M3 3.5V8h4.5M12 7.5V12l3 2" />,
 };
 
 // "További műveletek" (⋮) gomb a fejlécben, mint a Chrome menüje: kattintásra vagy

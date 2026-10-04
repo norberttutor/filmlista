@@ -11,7 +11,7 @@ A részletes leírás (felépítés, adatbázis, konvenciók): `CLAUDE.md`.
 ### 1. Adatbázis (Supabase)
 
 1. Supabase → **SQL Editor**: futtasd le a `supabase/` mappa fájljait sorrendben
-   (`01_schema.sql` … `11_backdrop.sql`).
+   (`01_schema.sql` … `12_backups.sql`).
 2. **Authentication → Users → Add user → Create new user**: e-mail-cím, jelszó, és pipáld be az
    **Auto Confirm User** opciót.
 3. Kapcsold ki az új regisztrációkat, hogy idegen ne hozhasson létre fiókot:
@@ -44,3 +44,11 @@ Utána nyisd meg: http://localhost:3000 – és lépj be az 1. pontban létrehoz
    Vercelre ne kerüljön.
 3. **Deploy**. Ezután minden `git push` után a Vercel magától frissíti az oldalt, és naponta
    egyszer ébren tartja a Supabase-projektet (`vercel.json`).
+
+### 5. Heti mentés
+
+Az adatbázis hétfőnként maga ment a listáról (8 hétig őrzi meg; az appban: ⋮ → Mentések). A
+GitHub ugyanekkor egy külső másolatot is eltesz 56 napra (`.github/workflows/mentes.yml`,
+Actions → „Heti mentés” → Artifacts). Ehhez a GitHubon egyszer be kell állítani a titkot:
+**Settings → Secrets and variables → Actions → New repository secret**, név: `BACKUP_DB_URL`,
+érték: a `.env.local` `BACKUP_DB_URL` sora az egyenlőségjel után.

@@ -29,6 +29,11 @@ Egyetlen felhasználó (Norbi), de az adatmodell felhasználónként elkülöní
 - `OMDB_API_KEY` – OMDb API kulcs az IMDb-értékelésekhez (ingyenes, napi 1000 lekérdezés),
   szintén csak szerveroldalon. Ha hiányzik, az app értékelés nélkül működik (nincs hiba).
 
+Csak helyben (`.env.local`), a Vercelre nem: `TEST_USER_EMAIL` / `TEST_USER_PASSWORD`,
+`SUPABASE_DB_URL` (admin) és `BACKUP_DB_URL` – a csak olvasó `backup_reader` szerep kapcsolata
+(`munka/e2e/mentes-olvaso.mjs` állítja be); ugyanez a GitHubon is titok (Settings → Secrets and
+variables → Actions → `BACKUP_DB_URL`) a heti mentés-feladathoz.
+
 Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 
 ## Fájlszerkezet
@@ -50,7 +55,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   „Megnézendő filmek és sorozatok”; mellette (jobbra) „Cím hozzáadása”, harang (`NotificationBell`),
   e-mail, Kilépés, a sor végén a „További műveletek” (⋮) menü (`MoreMenu`, Norbi kérése, mint a
   Chrome-ban): „IMDb értékelések”, „Statisztika” (`StatsDialog`), asztali nézetben „Tömeges
-  import” (`BulkImport`) és „Mentés letöltése” (`downloadListCsv`). Telefonon (≤ 640 px) a
+  import” (`BulkImport`) és „Mentés letöltése” (`downloadListCsv`), a végén „Mentések”
+  (`BackupsDialog`, telefonon is). Telefonon (≤ 640 px) a
   „Cím hozzáadása” helyett lebegő, kerek „+” gomb a jobb alsó sarokban (`.fab`; lefelé
   görgetéskor elhúzódik, felfelé visszajön – ugyanaz a görgetésfigyelő, mint a szűrősoré;
   kattintva megnyitja a keresőt és a lap tetejére görget); szűrősor
@@ -233,7 +239,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `aria-describedby`). Kattintással vagy Enter / Szóköz / nyilakkal nyílik, a menüben nyilak,
   Home / End, Esc (a fókusz vissza a gombra), Tab és kívülre kattintás bezárja. Választáskor a
   fókusz a gombra kerül (a megnyíló ablak bezárásakor oda tér vissza). A pontok:
-  `{ id, label, description, icon, onSelect }` (ikonok: star, chart, list, download)
+  `{ id, label, description, icon, onSelect }` (ikonok: star, chart, list, download, history)
 - `components/StatsDialog.js` + `lib/stats.js` – „Statisztika” ablak (a ⋮ menüből): csempék
   a betöltött listából (`listStats()`, adatbázis-lekérdezés nélkül) – megnézve az utolsó 12
   hónapban, havonta megnézett címek (saját SVG-oszlopdiagram, `watched_at`), műfajok (a
@@ -285,6 +291,18 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `lib/exportList.js` – „Mentés letöltése”: a teljes lista CSV-ben (UTF-8 BOM, pontosvessző,
   tizedesvessző – Excelben dupla kattintással jól nyílik): típus, cím, év, állapot, letöltve,
   dátum, értékelések, Mama, franchise, műfajok, évadok, hozzáadva, IMDb / TMDB ID, megjegyzés
+- `components/BackupsDialog.js` + `lib/backups.js` – „Mentések” ablak (a ⋮ menüből): a mentések
+  listája (legújabb elöl: dátum, fajta – Heti / Kézi / Visszaállítás előtt / Feltöltött –, címek
+  száma; a tartalmuk nem töltődik le), „Mentés most” (`create_my_backup`), soronként
+  „Visszaállítás” → a sor helyén megerősítés (pirosas, Mégse / Visszaállítás) →
+  `restore_my_backup`, utána `Watchlist.reloadAfterRestore()` (lista, franchise-ok,
+  értesítések újra). A felirat a lista frissülése után jelenik meg (egyszerre változnak)
+- `.github/workflows/mentes.yml` – „Heti mentés” (GitHub Actions, hétfő 04:30 UTC, kézzel is
+  indítható): a `BACKUP_DB_URL` titokkal (`backup_reader`, psql) felhasználónként kiolvassa a
+  legfrissebb mentést egy JSON-ba, és 56 napra artifactként tárolja (utána a GitHub törli); ha
+  nincs 8 napon belüli mentés, a futás hibával áll le (a GitHub e-mailt küld). Visszatöltés:
+  `munka/e2e/mentes-feltoltes.mjs <fájl.json> <e-mail>` → „Feltöltött” mentés → a felületen
+  visszaállítható
 - `supabase/*.sql` – a már lefuttatott adatbázis-szkriptek (dokumentáció)
 
 ## Adatbázis (már létezik, lásd `supabase/`)
@@ -328,6 +346,23 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `collect_season_notifications()` (a felhasználó jogaival): a még nem jelzett, már megjelent
   évadokról értesítést ír (abbahagyott sorozatról és már megnézett évadról nem), és jelzettnek
   állítja őket
+- `backups (id, user_id default auth.uid(), kind ('weekly' | 'manual' | 'before_restore' |
+  'imported'), created_at, title_count, data jsonb)` – `12_backups.sql`. A `data` a felhasználó
+  sorai változatlanul (`to_jsonb`): `{ version: 1, franchises, titles, title_genres, genres,
+  title_seasons, notifications }` (`backup_snapshot(user)`). RLS: a sajátját látja és törölheti,
+  írni csak a függvények írnak. `write_backup(user, kind)`: üres listáról nem ment; mentés után
+  a 8 hétnél (55 nap 23 óránál) régebbieket törli – üres listánál nem, így a régiek megmaradnak.
+  `backup_all_users()`: pg_cron, `filmlista-heti-mentes`, hétfő 03:00 UTC. A felületről:
+  `create_my_backup()`, `restore_my_backup(id)` (előbb `before_restore` mentés; töröl és az
+  eredeti azonosítókkal visszatölt; a számlálókat továbbállítja). A belső függvényeket
+  (`backup_snapshot`, `write_backup`, `backup_all_users`) anon / authenticated nem hívhatja.
+  Visszaállítás alatt `set_config('filmlista.restoring', 'on', true)`: a
+  `clear_downloaded_when_watched`, `title_seasons_before_write`, `sync_title_from_seasons`
+  trigger ilyenkor nem módosít (különben a megnézett, de újra letöltött cím / évad jelét
+  levennék) – ha ezeket a függvényeket módosítod, a jelző-vizsgálat maradjon az elejükön.
+  `backup_reader` szerep: bejelentkezhet (jelszó csak a `.env.local`-ban és a GitHubon),
+  csak olvas, csak a `backups` táblát látja (saját RLS-szabály). A `session_replication_role`
+  itt nem állítható (nincs jog).
 - `title_genres (title_id, genre_id)` – kapcsolótábla
 - `titles_with_genres` nézet (`security_invoker`): `titles.*` + `status_name` + `genres text[]`
   + `seasons jsonb` (az évadok évadszám szerint; filmnél / évad nélkül `[]`)
@@ -420,7 +455,9 @@ kiemelőszín, OKLCH-színek + élénkebb neon P3 kijelzőn, műfajszínek, hang
 aurora a lap tetején; anyag és mélység: letapadó üveg szűrősor, filmszemcse, squircle sarkok;
 új felületek: háttérkép a szerkesztő ablakban, statisztika, telefonon alsó lap és lebegő „+”;
 mozgás: nézetváltás borító ↔ szerkesztő, beúszó kártyák, mikroanimációk
-(csillag, pipa, harang), csontváz-betöltés.
+(csillag, pipa, harang), csontváz-betöltés; listanézetben nagyobb borító (72 px) és cím (20 px);
+automatikus heti mentés (2026-10-04): az adatbázisban 8 hétig (pg_cron), „Mentések” ablak
+(mentés most, visszaállítás), külső másolat a GitHubon (artifact, 56 nap).
 Franchise-filmek importja (franchise.xlsx): 194 cím, 34 franchise; hozzáadás dátuma = megjelenés.
 Norbi listája (norbert.tutor@gmail.com) 2026-10-02-án Excelből importálva: 512 cím.
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
@@ -441,7 +478,6 @@ Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnéze
 - Saját címkék (pl. „családi”, „karácsonyi”) szűrővel.
 - Mamának megosztható, csak olvasható lista titkos linkkel (gondos jogosultságkezeléssel).
 - Szinkron / felirat jelölése a letöltött címeknél.
-- Automatikus heti mentés az adatbázisba (néhány hétre visszaállítható).
 - Törlés visszavonása (megerősítés helyett pár másodpercig „Visszavonás”).
 - Billentyűparancsok asztalon (`/` keresés, `N` új cím, nyilak: lapozás).
 

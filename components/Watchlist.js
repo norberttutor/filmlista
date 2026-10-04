@@ -28,6 +28,7 @@ import NotificationBell from '@/components/NotificationBell';
 import BulkImport from '@/components/BulkImport';
 import ListSkeleton from '@/components/ListSkeleton';
 import StatsDialog from '@/components/StatsDialog';
+import BackupsDialog from '@/components/BackupsDialog';
 import MoreMenu from '@/components/MoreMenu';
 import { loadNotifications, markNotificationsRead } from '@/lib/notifications';
 import { downloadListCsv } from '@/lib/exportList';
@@ -148,6 +149,7 @@ export default function Watchlist({ session }) {
   const [loadError, setLoadError] = useState('');
   const [adding, setAdding] = useState(false);
   const [showStats, setShowStats] = useState(false); // a statisztika ablak nyitva
+  const [showBackups, setShowBackups] = useState(false); // a mentések ablak nyitva
   // a ⋮ menüből nyíló importok (a saját ablakukat / fájlválasztójukat nyitják)
   const imdbImportRef = useRef(null);
   const bulkImportRef = useRef(null);
@@ -342,6 +344,24 @@ export default function Watchlist({ session }) {
     for (const n of notifications) if (!n.read_at) readIds.current.add(n.id);
     setNotifications((ns) => ns.map((n) => (n.read_at ? n : { ...n, read_at: now })));
     markNotificationsRead();
+  }
+
+  // visszaállítás (Mentések) után: a lista, a franchise-ok és az értesítések újra az adatbázisból
+  async function reloadAfterRestore() {
+    const [titlesRes, franchisesRes] = await Promise.all([
+      supabase.from('titles_with_genres').select('*').order('created_at', { ascending: false }),
+      supabase.from('franchises').select('id, name, logo_path'),
+    ]);
+    const error = titlesRes.error || franchisesRes.error;
+    if (error) {
+      console.error(error);
+      throw new Error('A visszaállítás sikerült, de a lista nem töltődött be. Frissítsd az oldalt.');
+    }
+    setTitles(titlesRes.data);
+    setFranchises(franchisesRes.data.sort(byName));
+    loadNotifications()
+      .then(setNotifications)
+      .catch((err) => console.warn(err.message));
   }
 
   // a keresőben ezek alapján látszik, mi van már a listán
@@ -651,6 +671,13 @@ export default function Watchlist({ session }) {
                         },
                       ]
                     : []),
+                  {
+                    id: 'backups',
+                    label: 'Mentések',
+                    description: 'Heti automatikus mentés; mentés most, visszaállítás',
+                    icon: 'history',
+                    onSelect: () => setShowBackups(true),
+                  },
                 ]}
               />
               <ImdbRatingsImport ref={imdbImportRef} titles={titles} onApplied={applyRatingsLocally} />
@@ -979,6 +1006,14 @@ export default function Watchlist({ session }) {
 
       {showStats && (
         <StatsDialog titles={titles} franchiseName={franchiseName} onClose={() => setShowStats(false)} />
+      )}
+
+      {showBackups && (
+        <BackupsDialog
+          titleCount={titles.length}
+          onRestored={reloadAfterRestore}
+          onClose={() => setShowBackups(false)}
+        />
       )}
 
       {/* telefonon lebegő "+" gomb a fejléc "Cím hozzáadása" gombja helyett (a CSS csak
