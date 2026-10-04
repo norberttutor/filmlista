@@ -6,6 +6,7 @@ import { flushSync } from 'react-dom';
 import {
   updateTitle,
   todayDate,
+  releaseState,
   DEFAULT_STATUS,
   DROPPED_STATUS,
   MAMA_OPTIONS,
@@ -13,6 +14,7 @@ import {
 import StarRating from '@/components/StarRating';
 import FranchiseSelect from '@/components/FranchiseSelect';
 import ImdbBadge from '@/components/ImdbBadge';
+import ReleaseBadge from '@/components/ReleaseBadge';
 import { hasSeasons, SeasonList, SeasonTimeline, useSeasonActions } from '@/components/Seasons';
 import SimilarTitles from '@/components/SimilarTitles';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
@@ -257,6 +259,7 @@ export default function TitleEditor({
               {t.release_year && <span>{t.release_year}</span>}
               <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
               <ImdbBadge title={t} />
+              <ReleaseBadge state={releaseState(t)} />
             </p>
             {trailer && (
               <button

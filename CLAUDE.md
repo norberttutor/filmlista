@@ -125,7 +125,15 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   sarokban → szerkesztő ablak (billentyűzettel / felolvasóval ez a borító-kattintás megfelelője);
   „Mama: …” borostyánnal (`.mama-tag`), műfajok színes pöttyel (`GenreList`); az első
   rámutatáskor kiszámolja a borító hangulatszínét (`usePosterColor`), rámutatva a borító ebben fénylik
-  (a kurzort követő „fénylő kártyaél” 2026-10-04-én Norbi kérésére kikerült)
+  (a kurzort követő „fénylő kártyaél” 2026-10-04-én Norbi kérésére kikerült). Még meg nem
+  jelent filmnél (`releaseState(t)`, `data-release`) szaggatott keret a borító körül és
+  `ReleaseBadge` a borító alján (a „digitálisan: …” második sorban; telefonon csak a dátum –
+  „okt. 15.” – vagy „Moziban” / „Hamarosan”; borító nélkül a helykitöltő cím feljebb csúszik)
+- `components/ReleaseBadge.js` – a még meg nem jelent film jelvénye (naptár ikon, szaggatott
+  keretű pirula): „Hamarosan · okt. 15.” / „Hamarosan · 2027” / „Moziban · digitálisan: nov.
+  20.” vagy „… még nincs dátum”; a kártyán, a táblázat sorában (a cím adatai között) és a
+  szerkesztő ablakban. Norbi döntése (2026-10-04): szűrőgomb nem kell, csak a szaggatott
+  megjelenítés (+ a harang)
 - `components/GenreList.js` + `lib/genreColors.js` – műfajok, mindegyik előtt kis színes pötty
   (`genreColor(név)`: OKLCH, egyforma világosság, a rokon műfajok rokon színt kapnak; ismeretlen
   műfaj szürke; a kulcs a TMDB magyar műfajneve); felolvasónak vesszővel elválasztva (`sr-only`).
@@ -270,11 +278,18 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `restoreSeasons()` (visszavonás), `setSeasonDownloaded()`, `addSeason()` (kézi, mai dátummal),
   `removeLastSeason()`,
   `refreshSeasons()` (háttér), `seasonAired()`, `NEXT_SEASON_STATUS`.
+  Megjelenés: `refreshReleases()` (háttér), `releaseState(t)` – `{ kind: 'soon', date | year }`
+  (a moziba sem került még, vagy csak digitálisan jön; dátum nélkül jövőbeli / hiányzó év),
+  `{ kind: 'cinema', digital }` (moziban, digitálisan még nem; a mozis bemutató után 120 napig,
+  ha nincs digitális dátum), `null` (megjelent / sorozat / megnézett); `formatReleaseDate()`
+  („okt. 15.”, más évben „2027. márc. 3.”), `releaseLabel(state)` → `{ word, when, sub }`
+  („Hamarosan” / „Moziban”, a dátum, „digitálisan: …”).
   Közös segédek: `externalLink()`, `formatDate()`, `todayDate()`, `DEFAULT_STATUS`,
   `DROPPED_STATUS` („Abbahagyva”, csak sorozatnál), `MAMA_OPTIONS`, `mamaLabel()`
 - `lib/server/auth.js` – `getUserFromRequest()`, `supabaseAsUser()` (a felhasználó nevében,
   RLS-sel), `unauthorized()` (csak route handlerben)
-- `lib/server/tmdb.js` – `tmdbFetch()`, `tmdbErrorResponse()`, `yearOf()`, `cached(kulcs, ms,
+- `lib/server/tmdb.js` – `tmdbFetch()`, `tmdbErrorResponse()`, `yearOf()`, `pickReleaseDates()`
+  (mozi: 3, ha nincs 2; digitális: 4; előbb HU, ha nincs US; országon belül a legkorábbi), `cached(kulcs, ms,
   betöltő)` (memóriában, a szerverpéldány élete alatt, legfeljebb 200 elem), `pickSeasons()`
   (a TMDB évadjai a „0. évad” – különkiadások – nélkül) (csak route handlerben)
 - `app/api/tmdb/search/route.js` – `GET ?q=` → `search/multi`, csak film/sorozat
@@ -295,6 +310,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   háttérkép vagy a cím már nincs a TMDB-n, csak megjelöli). A `Watchlist` betöltéskor hívja
   (`refreshBackdrops()`, legfeljebb 30 kör). Az új címek felvételkor kapják meg (a details
   route adja a `backdrop_path`-t és a `backdrop_checked_at`-et)
+- `app/api/tmdb/releases/route.js` – `POST`: a filmek megjelenési dátumai (`pickReleaseDates`)
+  40-esével, a felhasználó jogaival; esedékes: meg nem nézett, tavalyi / idei / jövőbeli (vagy
+  év nélküli) film, 3 napja nem néztük, és a digitális dátuma nem régebbi 30 napnál. A
+  `Watchlist` betöltéskor hívja (`refreshReleases()`, utána újra az értesítések). Az új filmek
+  felvételkor kapják meg (a details route `append_to_response=release_dates`)
 - `components/MoreMenu.js` – a fejléc „További műveletek” (⋮) menüje: kerek gomb (a harang
   mintájára, `aria-haspopup="menu"`), alatta jobbra igazított lista (`role="menu"`); minden pont
   ikonnal, címmel és rövid leírással (a korábbi súgók helyett; `aria-labelledby` /
@@ -335,13 +355,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   szinkron nincs (az IMDb-nek nincs API-ja, az oldal gépi olvasása tiltott).
 - `components/NotificationBell.js` + `lib/notifications.js` – harang a fejlécben: a nem olvasott
   értesítések száma borostyán jelvényben (`--accent-2`); kinyitva a legutóbbi 30 (új évad bejelentése / megjelenése,
-  borítóval); kinyitáskor mind olvasott (az adatbázisban is, `markNotificationsRead()`; a
+  film digitális megjelenése – „Digitálisan is megjelent – már letölthető”, borítóval); kinyitáskor mind olvasott (az adatbázisban is, `markNotificationsRead()`; a
   közben beérkező régi lekérdezés sem írja vissza – `readIds` a Watchlistben); elemre
   kattintva a sorozat szerkesztő ablaka; kívülre kattintás / Esc bezár. A lista a harang bal széléhez igazodik, ha ott
   kilógna, a jobbhoz (`lib/popupSide.js`, nyitáskor mérve – a ⋮ menü is így); telefonon teljes
   szélességű. A fejléc felugró listái (`z-index: 35`) a letapadó szűrősor (30) fölött vannak. `loadNotifications()`: előbb
-  `collect_season_notifications()` (RPC), aztán a lista; a Watchlist betöltéskor és az
-  évadfrissítés után hívja. A telepített app ikonján `navigator.setAppBadge()` mutatja a számot.
+  `collect_season_notifications()` és `collect_release_notifications()` (RPC, párhuzamosan),
+  aztán a lista; a Watchlist betöltéskor, az évadfrissítés és a megjelenésidátum-frissítés után hívja. A telepített app ikonján `navigator.setAppBadge()` mutatja a számot.
   Ha nő az olvasatlanok száma (betöltéskor is, ha van), a harang egyszer megrezzen (`.ringing`)
 - `components/BulkImport.js` + `lib/bulkImport.js` – „Tömeges import” (csak asztali nézetben,
   a ⋮ menüből: `ref.current.open()`): soronként egy cím (legfeljebb `MAX_LINES` = 150; a sor
@@ -382,7 +402,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `imdb_rating_updated_at` (`05_imdb_rating.sql`), `my_rating` (1–10), `notes`, `watched_at`,
   `seasons_checked_at` (mikor nézte az app a TMDB-n a sorozat évadait – `08_title_seasons.sql`),
   `backdrop_path` (a TMDB széles jelenetképe a szerkesztő ablakhoz), `backdrop_checked_at` (mikor
-  néztük meg – `11_backdrop.sql`),
+  néztük meg – `11_backdrop.sql`), filmnél `theatrical_release` (mozis bemutató),
+  `digital_release` (digitális, letölthető megjelenés), `release_checked_at` (mikor néztük a
+  TMDB-n) – `14_release_dates.sql`, NULL-t engedők,
   `created_at`, `updated_at` (trigger); egyedi: `(user_id, media_type, tmdb_id)`
 - `title_seasons (title_id FK → titles on delete cascade, season_number ≥ 1, user_id default
   auth.uid(), name, episode_count, air_date, status FK → statuses, is_downloaded, watched_at,
@@ -409,12 +431,15 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (átváltáskor vagy megnézettként felvéve), az `is_downloaded` hamis lesz; ha utána kézzel
   újra letöltöttnek jelölik, az megmarad. A felület is azonnal leveszi a pipát.
 - `notifications (id, user_id default auth.uid(), title_id FK → titles on delete cascade,
-  season_number, kind ('season_announced' | 'season_aired'), air_date, created_at, read_at)`,
-  egyedi `(title_id, season_number, kind)`, RLS – `10_notifications.sql`.
+  season_number, kind ('season_announced' | 'season_aired' | 'movie_digital'), air_date,
+  created_at, read_at)`, egyedi `(title_id, season_number, kind)`, RLS – `10_notifications.sql`.
   `title_seasons.aired_notified`: szóltunk-e már az évad megjelenéséről.
   `collect_season_notifications()` (a felhasználó jogaival): a még nem jelzett, már megjelent
   évadokról értesítést ír (abbahagyott sorozatról és már megnézett évadról nem), és jelzettnek
-  állítja őket
+  állítja őket. `collect_release_notifications()` (a felhasználó jogaival, `14_release_dates.sql`):
+  `movie_digital` (filmnél `season_number = 0`, `air_date` = a digitális dátum) a friss –
+  14 napon belüli – digitális megjelenésről, ha a film a felvételkor még nem jelent meg és nincs
+  megnézve; filmenként egyszer (az egyedi kulcs)
 - `backups (id, user_id default auth.uid(), kind ('weekly' | 'manual' | 'before_restore' |
   'imported'), created_at, title_count, data jsonb)` – `12_backups.sql`. A `data` a felhasználó
   sorai változatlanul (`to_jsonb`): `{ version: 1, franchises, titles, title_genres, genres,
@@ -533,6 +558,8 @@ automatikus heti mentés (2026-10-04): az adatbázisban 8 hétig (pg_cron), „M
 Felfedezés (magyar szinkronos közelítés), franchise-gyűjtemény a hiányzó részekkel.
 Franchise-filmek importja (franchise.xlsx): 194 cím, 34 franchise; hozzáadás dátuma = megjelenés.
 Norbi listája (norbert.tutor@gmail.com) 2026-10-02-án Excelből importálva: 512 cím.
+A még meg nem jelent filmek szaggatott kerettel és dátumos jelvénnyel, a harang szól a digitális
+megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -560,8 +587,9 @@ Megvalósításkor a pont mellé a TERV.md-be: „kész (commit)”, és ide az 
 **Kész (2026-10-04), Norbi döntéseivel:** 1 – törlés visszavonása (a szerkesztő ablakban marad
 a megerősítés), 4 – értékelés kérése (nem kikapcsolható), 7 – előzetes, 8 – Felfedezés (csak
 magyar szinkronos – közelítés, külön sorozat-sorral), 9 – franchise-gyűjtemény, 14 – üres
-állapotok, 15 – gyorsgombok a letapadt szűrősorban, 16 – évadok idővonala. Vár még: 2, 3, 5,
-6, 10–13, 17–21.
+állapotok, 15 – gyorsgombok a letapadt szűrősorban, 16 – évadok idővonala; 10 – a még meg nem
+jelent filmek (szaggatott keret + jelvény + harang; szűrőgomb Norbi kérésére nincs). Vár még: 2, 3, 5,
+6, 11–13, 17–21.
 
 ## Fejlesztői megjegyzés
 - Ha a terminál nem ismeri a `node`/`npm` parancsot, a VS Code-ot újra kell indítani

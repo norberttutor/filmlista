@@ -5,6 +5,7 @@ import {
   updateTitle,
   externalLink,
   formatDate,
+  releaseState,
   todayDate,
   DEFAULT_STATUS,
   DROPPED_STATUS,
@@ -14,6 +15,7 @@ import StarRating from '@/components/StarRating';
 import FranchiseSelect from '@/components/FranchiseSelect';
 import ImdbBadge from '@/components/ImdbBadge';
 import GenreList from '@/components/GenreList';
+import ReleaseBadge from '@/components/ReleaseBadge';
 import { hasSeasons, SeasonCell, SeasonDownloads } from '@/components/Seasons';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
 
@@ -93,6 +95,8 @@ function TitleRow({
   // a borító hangulatszíne: az első rámutatáskor / fókusznál számolódik, a sor halványan felveszi
   const [pointed, setPointed] = useState(false);
   const ambient = usePosterColor(t.poster_path, pointed);
+  // még meg nem jelent film: szaggatott keret a borító körül és dátumos jelvény
+  const release = releaseState(t);
 
   // Mentés azonnal: a sor rögtön az új értéket mutatja, hiba esetén visszaáll.
   async function save(changes) {
@@ -132,6 +136,7 @@ function TitleRow({
   return (
     <tr
       data-status={t.status}
+      data-release={release ? release.kind : undefined}
       onPointerEnter={() => setPointed(true)}
       onFocus={() => setPointed(true)}
       {...ambientProps(ambient)}
@@ -166,6 +171,7 @@ function TitleRow({
               {t.release_year && <span>{t.release_year}</span>}
               <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
               <ImdbBadge title={t} />
+              {release && <ReleaseBadge state={release} />}
             </p>
             <GenreList className="row-genres" genres={t.genres} />
             <p className="added">

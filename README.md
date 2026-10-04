@@ -11,7 +11,7 @@ A részletes leírás (felépítés, adatbázis, konvenciók): `CLAUDE.md`.
 ### 1. Adatbázis (Supabase)
 
 1. Supabase → **SQL Editor**: futtasd le a `supabase/` mappa fájljait sorrendben
-   (`01_schema.sql` … `13_franchise_collections.sql`).
+   (`01_schema.sql` … `14_release_dates.sql`).
 2. **Authentication → Users → Add user → Create new user**: e-mail-cím, jelszó, és pipáld be az
    **Auto Confirm User** opciót.
 3. Kapcsold ki az új regisztrációkat, hogy idegen ne hozhasson létre fiókot:

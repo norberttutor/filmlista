@@ -1,16 +1,19 @@
 import { useRef, useState } from 'react';
-import { externalLink, formatDate, mamaLabel, DEFAULT_STATUS } from '@/lib/titles';
+import { externalLink, formatDate, mamaLabel, releaseState, DEFAULT_STATUS } from '@/lib/titles';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
 import { StarsDisplay } from '@/components/StarRating';
 import ImdbBadge from '@/components/ImdbBadge';
 import GenreList from '@/components/GenreList';
 import { hasSeasons, seasonCounts, SeasonStrip } from '@/components/Seasons';
+import ReleaseBadge from '@/components/ReleaseBadge';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
 
 export default function PosterCard({ title: t, franchise, onEdit }) {
   const link = externalLink(t);
   const seasons = hasSeasons(t) ? seasonCounts(t) : null;
+  // még meg nem jelent film: szaggatott keret a borító körül és dátumos jelvény
+  const release = releaseState(t);
   // a borító hangulatszíne: az első rámutatáskor számolódik, rámutatva a borító ebben fénylik
   const [pointed, setPointed] = useState(false);
   const ambient = usePosterColor(t.poster_path, pointed);
@@ -21,6 +24,7 @@ export default function PosterCard({ title: t, franchise, onEdit }) {
     <article
       className="card"
       data-status={t.status}
+      data-release={release ? release.kind : undefined}
       onPointerEnter={() => setPointed(true)}
       {...ambientProps(ambient)}
     >
@@ -34,6 +38,7 @@ export default function PosterCard({ title: t, franchise, onEdit }) {
           <span className="poster-fallback">{t.title}</span>
         )}
         {t.is_downloaded && <span className="badge">Letöltve</span>}
+        {release && <ReleaseBadge state={release} />}
         {seasons ? <SeasonStrip title={t} /> : <span className="status-strip" aria-hidden="true" />}
       </div>
 

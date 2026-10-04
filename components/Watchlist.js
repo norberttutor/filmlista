@@ -20,6 +20,7 @@ import {
   refreshFranchiseLogos,
   refreshSeasons,
   refreshBackdrops,
+  refreshReleases,
   DEFAULT_STATUS,
   DROPPED_STATUS,
   MAMA_OPTIONS,
@@ -262,7 +263,9 @@ export default function Watchlist({ session }) {
         // sorozatok évadai a háttérben: a még évad nélküliek megkapják, a hetente
         // ellenőrzöttekhez az új (megjelent / bejelentett) évad felkerül
         // értesítések: rögtön, és az évadfrissítés után újra (az új évadokról is szóljon)
+        // (kilépés után már nem: a háttérfrissítések végén bejelentkezés nélkül futna)
         const reloadNotifications = () =>
+          !cancelled &&
           loadNotifications()
             .then(
               (ns) =>
@@ -282,6 +285,16 @@ export default function Watchlist({ session }) {
           setTitles((ts) => ts.map((t) => byId.get(t.id) ?? t));
         })
           .catch((err) => console.warn('Évadok frissítése sikertelen:', err.message))
+          .finally(reloadNotifications);
+
+        // filmek megjelenési dátumai a háttérben (a még meg nem jelent filmek jelvényéhez); ha
+        // közben valamelyik digitálisan megjelent, a harang is szól róla
+        refreshReleases((rows) => {
+          if (cancelled) return;
+          const byId = new Map(rows.map((r) => [r.id, r]));
+          setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
+        })
+          .catch((err) => console.warn('Megjelenési dátumok frissítése sikertelen:', err.message))
           .finally(reloadNotifications);
 
         // hiányzó franchise-logók (a franchise első filmjének címlogója) a háttérben

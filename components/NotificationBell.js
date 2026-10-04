@@ -7,16 +7,19 @@ import { article } from '@/components/Seasons';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w92';
 
-// "Megjelent az 5. évad" / "Bejelentették a 4. évadot – várható: 2026. 12. 01."
+// "Megjelent az 5. évad" / "Bejelentették a 4. évadot – várható: 2026. 12. 01." /
+// filmnél: "Digitálisan is megjelent – már letölthető"
 function describe(n) {
+  if (n.kind === 'movie_digital') return 'Digitálisan is megjelent – már letölthető';
   const nth = `${article(n.season_number)} ${n.season_number}.`;
   if (n.kind === 'season_aired') return `Megjelent ${nth} évad`;
   return `Bejelentették ${nth} évadot${n.air_date ? ` – várható: ${formatDate(n.air_date)}` : ''}`;
 }
 
 // Harang a fejlécben: a nem olvasott értesítések száma, kinyitva a legutóbbiak (új évad
-// bejelentése / megjelenése). Kinyitáskor mind olvasott lesz (az akkor újak kiemelve
-// maradnak, amíg nyitva van); egy értesítésre kattintva a sorozat szerkesztő ablaka nyílik.
+// bejelentése / megjelenése, film digitális megjelenése). Kinyitáskor mind olvasott lesz (az
+// akkor újak kiemelve maradnak, amíg nyitva van); egy értesítésre kattintva a cím szerkesztő
+// ablaka nyílik.
 // Kattintás kívül / Esc: bezár.
 export default function NotificationBell({ notifications, titles, onOpenTitle, onRead }) {
   const [open, setOpen] = useState(false);
@@ -113,8 +116,8 @@ export default function NotificationBell({ notifications, titles, onOpenTitle, o
           <p className="notif-head">Értesítések</p>
           {items.length === 0 ? (
             <p className="notif-empty">
-              Még nincs értesítés. Itt jelzem, ha egy sorozatodhoz új évadot jelentenek be, vagy
-              egy évad megjelenik.
+              Még nincs értesítés. Itt jelzem, ha egy sorozatodhoz új évadot jelentenek be, ha
+              egy évad megjelenik, vagy ha egy várt film digitálisan is elérhető lesz.
             </p>
           ) : (
             <ul className="notif-list">

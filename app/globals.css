@@ -1557,6 +1557,108 @@ body:has(> main.login) {
   background: var(--strip);
 }
 
+/* ---------- Még meg nem jelent film (releaseState): szaggatott keret + dátumos jelvény ---------- */
+.card[data-release] .poster {
+  outline: 2px dashed rgb(255 255 255 / 0.32);
+  outline-offset: 4px;
+}
+
+.titles-table tr[data-release] .thumb {
+  outline: 1.5px dashed rgb(255 255 255 / 0.36);
+  outline-offset: 3px;
+}
+
+.release-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.74rem;
+  font-weight: 650;
+  line-height: 1.5;
+  color: var(--text);
+  background: rgb(255 255 255 / 0.07);
+  border: 1px dashed rgb(255 255 255 / 0.32);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.release-badge svg {
+  flex: none;
+  margin-right: 0.3rem;
+}
+
+/* a kártyán a borító alján, a sötét képen is olvashatóan; a „digitálisan: …” külön sorban */
+.card .release-badge {
+  position: absolute;
+  left: 0.5rem;
+  bottom: 0.75rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  max-width: calc(100% - 1rem);
+  padding: 0.15rem 0.6rem;
+  background: rgb(13 17 23 / 0.82);
+  border-radius: 0.75rem;
+}
+
+.card .release-main,
+.card .release-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card .release-sub {
+  grid-column: 2;
+  font-size: 0.68rem;
+  font-weight: 550;
+  color: var(--muted);
+}
+
+.card .release-sub .release-sep {
+  display: none;
+}
+
+/* borító nélkül a helykitöltő cím a jelvény fölé kerül */
+.card[data-release] .poster-fallback {
+  padding-bottom: 2.6rem;
+}
+
+.card[data-release]:has(.release-sub) .poster-fallback {
+  padding-bottom: 3.4rem;
+}
+
+/* telefonon (3 kártya egy sorban) csak a dátum – vagy a „Moziban” / „Hamarosan” – fér el */
+@media (max-width: 640px) {
+  .card[data-release] .poster {
+    outline-width: 1.5px;
+    outline-offset: 2px;
+  }
+
+  .card .release-badge {
+    left: 0.35rem;
+    bottom: 0.6rem;
+    max-width: calc(100% - 0.7rem);
+    padding: 0.1rem 0.4rem;
+    font-size: 0.62rem;
+  }
+
+  .card .release-badge svg {
+    width: 10px;
+    height: 10px;
+    margin-right: 0.2rem;
+  }
+
+  .card .release-sub,
+  .card .has-when .release-word,
+  .card .has-when .release-when .release-sep {
+    display: none;
+  }
+
+  .card[data-release] .poster-fallback,
+  .card[data-release]:has(.release-sub) .poster-fallback {
+    padding-bottom: 2rem;
+  }
+}
+
 /* "Letöltve" jelvény kis türkiz letöltés-ikonnal; hajszálvékony világos szegély, hogy
    mozgalmas borítón is kiváljon */
 .badge {

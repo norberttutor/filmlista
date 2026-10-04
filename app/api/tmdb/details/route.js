@@ -1,5 +1,5 @@
 import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
-import { tmdbFetch, tmdbErrorResponse, yearOf, pickSeasons } from '@/lib/server/tmdb';
+import { tmdbFetch, tmdbErrorResponse, yearOf, pickSeasons, pickReleaseDates } from '@/lib/server/tmdb';
 import { omdbEnabled, fetchImdbRating } from '@/lib/server/omdb';
 
 // IMDb-értékelés az OMDb-ből; ha nem sikerül, a cím attól még felvehető,
@@ -42,7 +42,7 @@ export async function GET(request) {
   try {
     data = await tmdbFetch(`/${type}/${id}`, {
       language: 'hu-HU',
-      append_to_response: 'external_ids,translations',
+      append_to_response: type === 'movie' ? 'external_ids,translations,release_dates' : 'external_ids,translations',
     });
   } catch (err) {
     return tmdbErrorResponse(err);
@@ -68,5 +68,10 @@ export async function GET(request) {
     ...(await imdbFields(imdbId)),
     genres: (data.genres ?? []).map(({ id, name }) => ({ id, name })),
     ...(type === 'tv' && { seasons: pickSeasons(data) }),
+    // filmnél a mozis és a digitális megjelenés (a még meg nem jelent filmek jelvényéhez)
+    ...(type === 'movie' && {
+      ...pickReleaseDates(data.release_dates?.results),
+      release_checked_at: new Date().toISOString(),
+    }),
   });
 }
