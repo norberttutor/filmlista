@@ -19,6 +19,8 @@ import { usePosterColor, ambientProps } from '@/lib/posterColor';
 import { canMorph, MORPH_NAME } from '@/lib/viewTransition';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500'; // a nagy borító (asztalon)
+const BACKDROP_BASE = 'https://image.tmdb.org/t/p/'; // a háttérkép (telefonon w780, asztalon w1280)
+const PHONE_QUERY = '(max-width: 640px)';
 
 // Rádiógombok "chip" formában; a kiválasztottra újra kattintva visszaáll üresre.
 function ClearableChips({ name, options, value, onChange, className }) {
@@ -61,6 +63,7 @@ export default function TitleEditor({
 }) {
   const dialogRef = useRef(null);
   const headingRef = useRef(null);
+  const drag = useRef(null); // telefonon a lehúzás: { y, t, dy }
   const deleteButtonRef = useRef(null);
   const [form, setForm] = useState({
     status: t.status,
@@ -104,6 +107,36 @@ export default function TitleEditor({
       .finally(() => {
         morphTo.style.viewTransitionName = '';
       });
+  }
+
+  // telefonon az ablak alsó lap: a fogantyút lefelé húzva bezárul (elég messzire vagy gyorsan),
+  // különben visszaugrik
+  function dragStart(e) {
+    if (!window.matchMedia(PHONE_QUERY).matches) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    drag.current = { y: e.clientY, t: performance.now(), dy: 0 };
+    dialogRef.current.style.transition = 'none';
+  }
+
+  function dragMove(e) {
+    if (!drag.current) return;
+    drag.current.dy = Math.max(0, e.clientY - drag.current.y);
+    dialogRef.current.style.translate = `0 ${drag.current.dy}px`;
+  }
+
+  function dragEnd() {
+    if (!drag.current) return;
+    const { dy, t } = drag.current;
+    drag.current = null;
+    const dialog = dialogRef.current;
+    dialog.style.transition = '';
+    const fast = dy / (performance.now() - t) > 0.6; // px/ms
+    if (dy > 110 || (fast && dy > 30)) {
+      dialog.style.translate = '0 100%';
+      setTimeout(close, 180);
+    } else {
+      dialog.style.translate = '';
+    }
   }
 
   function setField(field, value) {
@@ -169,7 +202,7 @@ export default function TitleEditor({
   return (
     <dialog
       ref={dialogRef}
-      className="editor title-editor"
+      className={t.backdrop_path ? 'editor title-editor has-backdrop' : 'editor title-editor'}
       aria-labelledby="editor-title"
       onClose={onClose}
       onCancel={(e) => {
@@ -179,6 +212,26 @@ export default function TitleEditor({
       }}
       {...ambientProps(ambient)}
     >
+      {/* telefonon: fogantyú – lefelé húzva bezárja az ablakot (a Mégse / Esc ugyanaz) */}
+      <div
+        className="sheet-handle"
+        aria-hidden="true"
+        onPointerDown={dragStart}
+        onPointerMove={dragMove}
+        onPointerUp={dragEnd}
+        onPointerCancel={dragEnd}
+      />
+      {/* a film széles jelenetképe az ablak tetején (TMDB) */}
+      {t.backdrop_path && (
+        <div className="editor-backdrop" aria-hidden="true">
+          <img
+            src={BACKDROP_BASE + 'w1280' + t.backdrop_path}
+            srcSet={`${BACKDROP_BASE}w780${t.backdrop_path} 780w, ${BACKDROP_BASE}w1280${t.backdrop_path} 1280w`}
+            sizes="(max-width: 640px) 100vw, 60rem"
+            alt=""
+          />
+        </div>
+      )}
       <form onSubmit={handleSubmit}>
         {/* asztalon a borító nagyban, balra (görgetéskor a helyén marad); telefonon rejtve */}
         <div className="editor-poster" aria-hidden="true">

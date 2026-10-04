@@ -17,6 +17,7 @@ import {
   refreshImdbRatings,
   refreshFranchiseLogos,
   refreshSeasons,
+  refreshBackdrops,
   DEFAULT_STATUS,
   DROPPED_STATUS,
   MAMA_OPTIONS,
@@ -26,6 +27,7 @@ import FranchiseFilter from '@/components/FranchiseFilter';
 import NotificationBell from '@/components/NotificationBell';
 import BulkImport from '@/components/BulkImport';
 import ListSkeleton from '@/components/ListSkeleton';
+import StatsDialog from '@/components/StatsDialog';
 import { loadNotifications, markNotificationsRead } from '@/lib/notifications';
 import { downloadListCsv } from '@/lib/exportList';
 import { useMediaQuery } from '@/lib/useMediaQuery';
@@ -144,6 +146,7 @@ export default function Watchlist({ session }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [adding, setAdding] = useState(false);
+  const [showStats, setShowStats] = useState(false); // a statisztika ablak nyitva
   const [editing, setEditing] = useState(null); // a szerkesztett cím, vagy null
   // a borító, amelyről a szerkesztő nyílt: oda siklik vissza bezáráskor (nézetváltás)
   const editorFrom = useRef(null);
@@ -232,6 +235,13 @@ export default function Watchlist({ session }) {
           const byId = new Map(rows.map((r) => [r.id, r]));
           setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
         }).catch((err) => console.warn('IMDb-értékelések frissítése sikertelen:', err.message));
+
+        // a szerkesztő ablak háttérképei a háttérben (a még meg nem nézett címekhez)
+        refreshBackdrops((rows) => {
+          if (cancelled) return;
+          const byId = new Map(rows.map((r) => [r.id, r]));
+          setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
+        }).catch((err) => console.warn('Háttérképek lekérése sikertelen:', err.message));
 
         // sorozatok évadai a háttérben: a még évad nélküliek megkapják, a hetente
         // ellenőrzöttekhez az új (megjelent / bejelentett) évad felkerül
@@ -399,6 +409,9 @@ export default function Watchlist({ session }) {
   // a szűrősor eredeti helye: lapozáskor ide görget (a letapadt szűrősorhoz nem lehetne)
   const filtersAnchorRef = useRef(null);
   const [filtersStuck, setFiltersStuck] = useState(false);
+  // telefonon a lebegő "+" gomb lefelé görgetéskor elhúzódik, felfelé visszajön
+  const [fabHidden, setFabHidden] = useState(false);
+  const lastScrollY = useRef(0);
 
   // a szűrősor görgetéskor a lap tetejére tapad: letapadva üveghatású ([data-stuck]); a
   // magasságát (--filters-h) a táblázat ragadós fejléce kapja, hogy alatta tapadjon
@@ -409,7 +422,11 @@ export default function Watchlist({ session }) {
     let frame = 0;
     const check = () => {
       frame = 0;
-      setFiltersStuck(window.scrollY > 0 && el.getBoundingClientRect().top <= 0.5);
+      const y = window.scrollY;
+      setFiltersStuck(y > 0 && el.getBoundingClientRect().top <= 0.5);
+      if (y <= 240 || y < lastScrollY.current - 6) setFabHidden(false);
+      else if (y > lastScrollY.current + 6) setFabHidden(true);
+      lastScrollY.current = y;
     };
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(check);
@@ -427,6 +444,11 @@ export default function Watchlist({ session }) {
       cancelAnimationFrame(frame);
     };
   }, [listShown]);
+
+  function openAddFromFab() {
+    setAdding(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   function changePage(p) {
     setPageState({ key: filterKey, page: p });
@@ -586,6 +608,11 @@ export default function Watchlist({ session }) {
           <span className="muted small">{session.user.email}</span>
           {!loading && !loadError && (
             <ImdbRatingsImport titles={titles} onApplied={applyRatingsLocally} />
+          )}
+          {!loading && !loadError && (
+            <button type="button" className="subtle-link" onClick={() => setShowStats(true)}>
+              Statisztika
+            </button>
           )}
           {/* tömeges import és mentés: csak asztali nézetben */}
           {!loading && !loadError && isDesktop && (
@@ -925,6 +952,36 @@ export default function Watchlist({ session }) {
             />
           )}
         </>
+      )}
+
+      {showStats && (
+        <StatsDialog titles={titles} franchiseName={franchiseName} onClose={() => setShowStats(false)} />
+      )}
+
+      {/* telefonon lebegő "+" gomb a fejléc "Cím hozzáadása" gombja helyett (a CSS csak
+          640 px alatt mutatja); lefelé görgetéskor elhúzódik */}
+      {!loading && !loadError && (
+        <button
+          type="button"
+          className={fabHidden ? 'fab hidden' : 'fab'}
+          aria-label="Cím hozzáadása"
+          aria-expanded={adding}
+          aria-controls="add-panel"
+          onClick={openAddFromFab}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="26"
+            height="26"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
       )}
 
       {editing && (

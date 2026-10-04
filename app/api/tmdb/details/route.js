@@ -60,6 +60,10 @@ export async function GET(request) {
     release_year: yearOf(data.release_date ?? data.first_air_date),
     overview: pickOverview(data),
     poster_path: data.poster_path,
+    // a szerkesztő ablak háttérképe (a felvétellel együtt mentődik; "megnézve", hogy a háttérben
+    // ne kérdezzük újra)
+    backdrop_path: data.backdrop_path ?? null,
+    backdrop_checked_at: new Date().toISOString(),
     imdb_id: imdbId,
     ...(await imdbFields(imdbId)),
     genres: (data.genres ?? []).map(({ id, name }) => ({ id, name })),

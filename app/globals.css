@@ -3253,6 +3253,11 @@ body:has(.editor[open]) {
     border-radius: 20px;
   }
 
+  .tile {
+    corner-shape: squircle;
+    border-radius: 18px;
+  }
+
   /* mezők, lenyílók, címkék */
   select,
   input:not([type='checkbox']):not([type='radio']),
@@ -3469,6 +3474,401 @@ input[type='checkbox']:checked {
 .similar-sk .sk-card {
   flex: none;
   width: 6.75rem;
+}
+
+/* ---------- Szerkesztő ablak: háttérkép, alsó lap ---------- */
+/* a film széles jelenetképe az ablak tetején, alul a felület színébe olvad; asztalon a nagy
+   borító ráúszik a kép aljára (filmadatlap) */
+.editor-backdrop {
+  position: relative;
+  height: 15rem;
+  overflow: hidden;
+}
+
+.editor-backdrop img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+}
+
+.editor-backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgb(0 0 0 / 0.15) 0%,
+    transparent 35%,
+    color-mix(in oklab, var(--surface) 70%, transparent) 75%,
+    var(--surface) 100%
+  );
+}
+
+@media (min-width: 900px) {
+  .title-editor.has-backdrop .editor-poster {
+    margin-top: -9rem;
+    z-index: 1;
+    box-shadow:
+      inset 0 0 0 1px rgb(255 255 255 / 0.1),
+      0 22px 50px -12px rgb(0 0 0 / 0.85);
+  }
+
+  .title-editor.has-backdrop form {
+    padding-top: 1.25rem;
+  }
+}
+
+@media (max-width: 899px) {
+  .editor-backdrop {
+    height: 11rem;
+  }
+}
+
+/* a fogantyú csak telefonon (alsó lap) */
+.sheet-handle {
+  display: none;
+}
+
+/* telefonon alulról felcsúszó "alsó lap": teljes szélesség, felül kerek sarkok, fogantyú;
+   legfeljebb a képernyő 92%-a, belül görgethető; a fogantyút lefelé húzva bezárul */
+@media (max-width: 640px) {
+  .editor.title-editor {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92dvh;
+    margin: auto 0 0;
+    border-bottom: 0;
+    border-radius: 24px 24px 0 0;
+    corner-shape: round;
+  }
+
+  .editor.title-editor[open] {
+    transition: translate 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  @starting-style {
+    .editor.title-editor[open] {
+      opacity: 1;
+      translate: 0 100%;
+    }
+  }
+
+  .sheet-handle {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    z-index: 3;
+    display: grid;
+    place-items: center;
+    width: 5rem;
+    height: 1.75rem;
+    translate: -50% 0;
+    touch-action: none; /* a húzás ne görgessen */
+    cursor: grab;
+  }
+
+  .sheet-handle::before {
+    content: '';
+    width: 2.6rem;
+    height: 5px;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--muted) 60%, transparent);
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.25);
+  }
+
+  .title-editor:not(.has-backdrop) form {
+    padding-top: 1.9rem;
+  }
+}
+
+/* ---------- Lebegő "+" gomb (telefon) ---------- */
+/* telefonon a "Cím hozzáadása" kerek, teli türkiz gomb a jobb alsó sarokban (a fejléc gombja
+   helyett); lefelé görgetéskor elhúzódik, felfelé visszajön (a Watchlist jelzi: .hidden) */
+.fab {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  header.top .account > .primary {
+    display: none;
+  }
+
+  .fab {
+    position: fixed;
+    right: 1rem;
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    z-index: 40;
+    display: grid;
+    place-items: center;
+    width: 3.5rem;
+    aspect-ratio: 1;
+    padding: 0;
+    color: var(--accent-ink);
+    background: var(--accent);
+    border: 0;
+    border-radius: 50%;
+    box-shadow:
+      0 6px 16px -4px rgb(0 0 0 / 0.6),
+      inset 0 0 0 1px rgb(255 255 255 / 0.12),
+      0 0 24px -4px color-mix(in oklab, var(--accent) 60%, transparent);
+    transition: translate 0.2s ease-out, background-color 0.15s;
+  }
+
+  .fab:active {
+    background: var(--accent-press);
+  }
+
+  .fab.hidden {
+    translate: 0 calc(100% + 1.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* a lap alja ne kerüljön a gomb alá */
+  main {
+    padding-bottom: 5rem;
+  }
+}
+
+/* ---------- Statisztika ---------- */
+/* széles ablak különböző méretű csempékkel (bento); a színek az appéi: megnézve zöld, saját
+   értékelés borostyán, műfajok a műfajszínekkel */
+.editor.stats-dialog {
+  width: min(72rem, calc(100vw - 2rem));
+}
+
+.stats-dialog > div {
+  display: grid;
+  gap: 1.2rem;
+  padding: 1.6rem;
+}
+
+.stats-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem 1rem;
+}
+
+.stats-head h2 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.stats-head h2:focus {
+  outline: none;
+}
+
+.stats-head p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.stats-head .ghost {
+  margin-left: auto;
+}
+
+.bento {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.tile {
+  display: grid;
+  align-content: start;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 1.1rem 1.2rem;
+  background: color-mix(in oklab, var(--bg) 60%, var(--surface));
+  border: 1px solid var(--line-soft);
+  border-radius: 16px;
+}
+
+.tile h3 {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tile-2 {
+  grid-column: span 2;
+}
+
+.tile-3 {
+  grid-column: span 3;
+}
+
+.tile-4 {
+  grid-column: span 4;
+}
+
+.tile .big {
+  margin: 0;
+  font-size: 3.2rem;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.tile .big.watched {
+  color: var(--st-watched);
+}
+
+.tile .big.mine {
+  color: var(--accent-2);
+}
+
+.tile .sub {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.tile svg {
+  width: 100%;
+  height: auto;
+}
+
+.tile svg .month {
+  font-size: 11px;
+  fill: var(--muted);
+}
+
+.tile svg .value {
+  font-size: 12px;
+  font-weight: 650;
+  fill: var(--text);
+}
+
+.tile svg .bar {
+  fill: var(--st-watched);
+}
+
+.tile svg .bar.empty {
+  fill: var(--line);
+}
+
+.genre-band {
+  display: flex;
+  gap: 2px;
+  height: 0.9rem;
+  overflow: hidden;
+  border-radius: 999px;
+}
+
+.genre-band span {
+  background: var(--genre, var(--line));
+}
+
+.genre-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+
+.genre-legend b,
+.tile-bars b {
+  margin-left: 0.3rem;
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.rating-pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2.5rem;
+}
+
+.rating-pair p {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+}
+
+.backlog-posters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.backlog-posters img {
+  width: 2.6rem;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.tile-bars {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+
+.tile-bars li {
+  display: grid;
+  grid-template-columns: minmax(0, 7rem) 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.tile-bars li > span:first-child {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tile-bars .meter {
+  display: flex;
+  height: 0.5rem;
+  overflow: hidden;
+  background: var(--line-soft);
+  border-radius: 999px;
+}
+
+.tile-bars .meter i {
+  background: var(--accent);
+}
+
+.tile-bars.series .meter i {
+  background: var(--st-watched);
+}
+
+.tile-bars.series .meter i.watching {
+  background: var(--st-watching);
+}
+
+@media (max-width: 900px) {
+  .bento {
+    grid-template-columns: 1fr;
+  }
+
+  .tile-2,
+  .tile-3,
+  .tile-4 {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-dialog > div {
+    padding: 1.2rem;
+  }
 }
 
 /* ---------- Kevesebb mozgás ---------- */

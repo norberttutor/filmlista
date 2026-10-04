@@ -48,8 +48,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   minden középen: cím, alatta az űrlap (nagyobb kijelzőn kártyán, felülről halvány türkiz fény)
 - `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből; fejléc:
   „Megnézendő filmek és sorozatok”; mellette (jobbra) „Cím hozzáadása”, harang (`NotificationBell`),
-  e-mail, „IMDb értékelések”, asztali nézetben „Tömeges import” (`BulkImport`) és „Mentés
-  letöltése” (`downloadListCsv`), Kilépés; szűrősor
+  e-mail, „IMDb értékelések”, „Statisztika” (`StatsDialog`), asztali nézetben „Tömeges import”
+  (`BulkImport`) és „Mentés letöltése” (`downloadListCsv`), Kilépés. Telefonon (≤ 640 px) a
+  „Cím hozzáadása” helyett lebegő, kerek „+” gomb a jobb alsó sarokban (`.fab`; lefelé
+  görgetéskor elhúzódik, felfelé visszajön – ugyanaz a görgetésfigyelő, mint a szűrősoré;
+  kattintva megnyitja a keresőt és a lap tetejére görget); szűrősor
   balról: Típus lenyíló (Filmek / Sorozatok; kiválasztott franchise vagy keresés
   mellett plusz „Filmek és sorozatok” – `type: 'all'`, ami franchise választásakor
   automatikusan beáll, a franchise-szűrő megszüntetésekor vissza Filmek) – állapotgombok
@@ -119,6 +122,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `cancel` elkapva –, Mégse, Mentés) a `morphTo` borítóra vissza; törléskor nincs. A
   `showModal()` ezért `useLayoutEffect`-ben fut.
   Megnyitáskor a fókusz az ablak címén van (keret nélkül), nem a Franchise mezőn (Norbi kérése).
+  Ha van háttérképe (`backdrop_path`), az ablak tetején a film széles jelenetképe (`w1280`,
+  telefonon `w780`), alul a felületbe olvadva; asztalon a nagy borító ráúszik a kép aljára
+  (`.has-backdrop`). Telefonon (≤ 640 px) az ablak alsó lap: alulról felcsúszik, teljes
+  szélességű, felül fogantyú (`.sheet-handle`) – lefelé húzva (110 px vagy gyors mozdulat)
+  bezárul, különben visszaugrik.
   A borító hangulatszínét megnyitáskor kiszámolja (`usePosterColor`): az ablak a film színében
   dereng. A kiválasztott Mama borostyán (`.mama-chips`).
   Évados
@@ -211,6 +219,16 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   feltöltésnél a megjelentekről nem szól
 - `app/api/tmdb/similar/route.js` – `GET ?type=movie|tv&id=` → a TMDB ajánlásai (ha nincs, a
   hasonlók), csak borítóval, legfeljebb 12, a kereséssel azonos mezőnevekkel
+- `app/api/tmdb/backdrops/route.js` – `POST`: a még meg nem nézett címek (`backdrop_checked_at`
+  üres) háttérképét lekéri a TMDB-ről és elmenti (40-esével, a felhasználó jogaival; ha nincs
+  háttérkép vagy a cím már nincs a TMDB-n, csak megjelöli). A `Watchlist` betöltéskor hívja
+  (`refreshBackdrops()`, legfeljebb 30 kör). Az új címek felvételkor kapják meg (a details
+  route adja a `backdrop_path`-t és a `backdrop_checked_at`-et)
+- `components/StatsDialog.js` + `lib/stats.js` – „Statisztika” ablak (a fejléc gombja): csempék
+  a betöltött listából (`listStats()`, adatbázis-lekérdezés nélkül) – megnézve az utolsó 12
+  hónapban, havonta megnézett címek (saját SVG-oszlopdiagram, `watched_at`), műfajok (a
+  műfajszínekkel), saját és IMDb-átlag, letöltve de még nem látott (az abbahagyottak nélkül),
+  legtöbb cím franchise-onként, folyamatban lévő sorozatok évadhaladása; telefonon egy oszlop
 - `components/SimilarTitles.js` – „Hasonló címek” a szerkesztő ablak alján: lenyitó gomb (alapból
   nyitva; ha becsukja, a böngésző megjegyzi: `localStorage`, `filmlista-hasonlok`; nyitva tölt be;
   telefonon – ≤ 640 px – mindig csukva indul, Norbi kérése, és ott a nyitás / csukás nem
@@ -269,6 +287,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   null = nincs; `on delete set null`), `imdb_rating` (numeric 0–10), `imdb_votes`,
   `imdb_rating_updated_at` (`05_imdb_rating.sql`), `my_rating` (1–10), `notes`, `watched_at`,
   `seasons_checked_at` (mikor nézte az app a TMDB-n a sorozat évadait – `08_title_seasons.sql`),
+  `backdrop_path` (a TMDB széles jelenetképe a szerkesztő ablakhoz), `backdrop_checked_at` (mikor
+  néztük meg – `11_backdrop.sql`),
   `created_at`, `updated_at` (trigger); egyedi: `(user_id, media_type, tmdb_id)`
 - `title_seasons (title_id FK → titles on delete cascade, season_number ≥ 1, user_id default
   auth.uid(), name, episode_count, air_date, status FK → statuses, is_downloaded, watched_at,
@@ -382,6 +402,7 @@ app-ikon (filmcsapó) és manifest: Norbi asztali alkalmazásként a Chrome-ból
 (Electron-csomag helyett), megjelenés 2. kör – színek (2026-10-04): borostyán második
 kiemelőszín, OKLCH-színek + élénkebb neon P3 kijelzőn, műfajszínek, hangulatszín a borítóból,
 aurora a lap tetején; anyag és mélység: letapadó üveg szűrősor, filmszemcse, squircle sarkok;
+új felületek: háttérkép a szerkesztő ablakban, statisztika, telefonon alsó lap és lebegő „+”;
 mozgás: nézetváltás borító ↔ szerkesztő, beúszó kártyák, mikroanimációk
 (csillag, pipa, harang), csontváz-betöltés.
 Franchise-filmek importja (franchise.xlsx): 194 cím, 34 franchise; hozzáadás dátuma = megjelenés.
@@ -396,8 +417,9 @@ Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnéze
   körökre bontva, technikai jegyzetekkel: `munka/dizajn-2/TERV.md` (helyi mappa). A színes
   részből (1–7) kész: 1 (borostyán változat), 2, 3, 4, 6; Norbi nem kérte: 5 (színes
   IMDb-jelvény), 7 (választható színtéma). A 8–12-ből kész: 8, 9, 10; a 11-et (fénylő kártyaél) beépítés után
-  visszavonatta, a 12-t (3D billenés) nem kérte. A mozgásból (13–16) kész: mind a négy. Hátravan: 17–25 (betűk, háttérkép a
-  szerkesztőben, statisztika, telefonos alsó lap…). Előbb előtte–utána képek
+  visszavonatta, a 12-t (3D billenés) nem kérte. A mozgásból (13–16) kész: mind a négy. A 17–25-ből kész: 19
+  (háttérkép), 21 (statisztika), 24 (alsó lap), 25 (lebegő „+”); nem kérte: 17, 18, 20, 22, 23 – a
+  2. kör ezzel lezárult. Új dizájnötletnél is: előbb előtte–utána képek
   (`munka/dizajn-2/eszkozok/`), beépítés csak jóváhagyás után.
 - „Hol nézhető?” – a TMDB `watch/providers` adatai (Magyarország: Netflix, HBO Max, Disney+,
   SkyShowtime…) logóval a soron / kártyán, szűrő az előfizetett szolgáltatókra; a TMDB a
