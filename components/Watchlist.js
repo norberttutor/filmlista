@@ -53,6 +53,7 @@ const NO_FRANCHISE = 'none';
 // ennél szélesebb képernyőn választható a soros (táblázatos) nézet és a borítófal, alatta
 // mindig borítófal
 const DESKTOP_QUERY = '(min-width: 1400px)';
+const PHONE_QUERY = '(max-width: 640px)'; // telefonos nézet
 
 const PAGE_SIZE = 25; // ennyi cím egy oldalon (lista, telefon, keskenyebb rács)
 // asztali rácsban (≥ 1400 px): 1440p-n (2560 px) 11 kártya fér egy sorba → 2 teli sor, és a
@@ -191,6 +192,7 @@ export default function Watchlist({ session }) {
   // őket olvasatlannak
   const readIds = useRef(new Set());
   const isDesktop = useMediaQuery(DESKTOP_QUERY);
+  const isPhone = useMediaQuery(PHONE_QUERY);
   const [view, setView] = useState(storedView); // a Watchlist csak a böngészőben fut
 
   function changeView(next) {
@@ -728,19 +730,24 @@ export default function Watchlist({ session }) {
               <MoreMenu
                 items={[
                   {
-                    id: 'imdb',
-                    label: 'IMDb import',
-                    description: 'Az IMDb-értékeléseid vagy a figyelőlistád (Watchlist) CSV-exportjából: csillagok, új címek',
-                    icon: 'star',
-                    onSelect: () => imdbImportRef.current?.open(),
-                  },
-                  {
                     id: 'stats',
                     label: 'Statisztika',
                     description: 'Havonta megnézett címek, műfajok, átlagos értékelés',
                     icon: 'chart',
                     onSelect: () => setShowStats(true),
                   },
+                  // a CSV-fájl betöltése asztali / tableten végzett teendő: telefonon nincs (Norbi kérése)
+                  ...(isPhone
+                    ? []
+                    : [
+                        {
+                          id: 'imdb',
+                          label: 'IMDb import',
+                          description: 'Az IMDb-értékeléseid vagy a figyelőlistád (Watchlist) CSV-exportjából: csillagok, új címek',
+                          icon: 'star',
+                          onSelect: () => imdbImportRef.current?.open(),
+                        },
+                      ]),
                   ...(isDesktop
                     ? [
                         {

@@ -46,7 +46,7 @@ lehet létrehozni. A böngésző megjegyzi a belépést, nem kell minden alkalom
 ## 2. A lista: nézetek és lapozás
 
 A fejlécben: **Cím hozzáadása**, a **harang** (értesítések), az e-mail-címed, **Kilépés** és a
-**⋮ További műveletek** menü (IMDb import, Statisztika, Tömeges import, Mentés letöltése,
+**⋮ További műveletek** menü (Statisztika, IMDb import, Tömeges import, Mentés letöltése,
 Mentések).
 
 **Két nézet:**
@@ -305,7 +305,8 @@ kattintva vagy Esc-re bezárul.
 **IMDb-értékelés automatikusan:** minden címnél „IMDb 8,0” jelvény; az app kéthetente frissíti.
 Ezek szerint is rendezhetsz („Legjobb IMDb-értékelés”).
 
-**⋮ menü → IMDb import** – az IMDb két exportját fogadja, magától felismeri, melyiket adtad meg.
+**⋮ menü → IMDb import** (asztalon és tableten; telefonon nincs, mert a CSV-fájlt ott nem lehet
+kényelmesen kiválasztani) – az IMDb két exportját fogadja, magától felismeri, melyiket adtad meg.
 
 **Saját IMDb-csillagaid átvétele:**
 1. Az IMDb-n a saját értékeléseid oldalán (*Your Ratings*) töltsd le az exportot (CSV-fájl).
@@ -371,7 +372,7 @@ A felület telefonra (640 px alatt) külön igazodik:
   indul.
 - Az állapotszűrő lenyíló a gombsor helyett.
 - **Telefonon nincs:** lista nézet, Tömeges import, Mentés letöltése (ezek 1400 px-től
-  érhetők el).
+  érhetők el) és az IMDb import (tableten már megvan).
 
 ## 16. Billentyűzet, kényelmi apróságok
 
@@ -403,6 +404,7 @@ Minden fejlesztés után ide kerül egy sor (legújabb felül), és a fenti tém
 
 | Dátum | Mi változott |
 |---|---|
+| 2026. 10. 04. | Nagyobb szolgáltatói logók; a ⋮ menüben a Statisztika az első; telefonon nincs IMDb import ([12.](#12-imdb), [15.](#15-telefonon)). |
 | 2026. 10. 04. | „Hol nézhető?” az adatlapon: a magyar streamingszolgáltatók logója ([5.](#5-egy-cím-adatlapja-és-szerkesztése)); IMDb-figyelőlista importja – a menüpont neve „IMDb import” ([12.](#12-imdb)). |
 | 2026. 10. 04. | Asztali rácsban a lapozó és alatta a lábléc az ablak alján áll – minden oldalon ugyanott, felesleges görgetősáv nélkül ([2.](#2-a-lista-nézetek-és-lapozás)). |
 | 2026. 10. 04. | Asztali rácsban 22 cím egy oldalon (1440p-n 2 teli sor, tömörebb sorköz); nézetváltáskor a lap a látott címeknél marad ([2.](#2-a-lista-nézetek-és-lapozás)). |

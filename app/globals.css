@@ -3817,9 +3817,9 @@ body:has(.editor[open]) {
 
 .watch-providers img {
   display: block;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 10px;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 12px;
   box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1);
 }
 
@@ -4284,10 +4284,14 @@ body:has(.editor[open]) {
   .discover-item img,
   .discover-sk,
   .trailer,
-  .notif-thumb,
-  .watch-providers img {
+  .notif-thumb {
     corner-shape: squircle;
     border-radius: 13px;
+  }
+
+  .watch-providers img {
+    corner-shape: squircle;
+    border-radius: 16px;
   }
 
   .editor-poster {

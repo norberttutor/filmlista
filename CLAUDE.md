@@ -54,7 +54,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből; fejléc:
   „Megnézendő filmek és sorozatok”; mellette (jobbra) „Cím hozzáadása”, harang (`NotificationBell`),
   e-mail, Kilépés, a sor végén a „További műveletek” (⋮) menü (`MoreMenu`, Norbi kérése, mint a
-  Chrome-ban): „IMDb import”, „Statisztika” (`StatsDialog`), asztali nézetben „Tömeges
+  Chrome-ban): „Statisztika” (`StatsDialog`), „IMDb import” (telefonon – `PHONE_QUERY`, ≤ 640 px –
+  nincs, Norbi kérése), asztali nézetben „Tömeges
   import” (`BulkImport`) és „Mentés letöltése” (`downloadListCsv`), a végén „Mentések”
   (`BackupsDialog`, telefonon is). Telefonon (≤ 640 px) a
   „Cím hozzáadása” helyett lebegő, kerek „+” gomb a jobb alsó sarokban (`.fab`; lefelé
@@ -294,7 +295,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   csúszás a burkolón), keskenyebben a fejlécben az „Előzetes megnézése” fölött
   (`.watch-providers.inline`); kölcsönzés / vásárlás nincs; ha nincs szolgáltató, semmi nem
   látszik; a logók (w92) nem kattinthatók, a név a súgóban / alt-ban („… (ingyenes)”). Alattuk
-  kötelező „Forrás: JustWatch” (TMDB-feltétel)
+  kötelező „Forrás: JustWatch” (TMDB-feltétel). A logók 56 px-esek (3,5 rem, Norbi kérése)
 - `lib/supabase.js` – Supabase kliens
 - `lib/api.js` – `apiGet()`: saját `/api` route hívása `Authorization: Bearer` tokennel,
   hibánál a szerver magyar üzenetével dob
@@ -617,11 +618,9 @@ Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnéze
 ## Következő feladat
 **Norbi kérései (2026-10-04)** – a fejlesztési lista élén, ebben a sorrendben; a részletek
 (megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
-1. **22 – telefonon nincs „IMDb import”** a ⋮ menüben (csak ≤ 640 px-en tűnik el,
-   tableten és asztalon marad – Norbi döntése).
-2. **23 – „Franchise-ok” a ⋮ menüben**: ábécérend, logók, csempénként számok; a csempe a
+1. **23 – „Franchise-ok” a ⋮ menüben**: ábécérend, logók, csempénként számok; a csempe a
    meglévő gyűjtemény-ablakot nyitja (onnan szerkeszthető), „Szűrés erre”, átnevezés, törlés.
-3. **13 – Mama külön hozzáférése**, Norbi döntéseivel: **jelszavas fiók** (Norbi hozza létre a
+2. **13 – Mama külön hozzáférése**, Norbi döntéseivel: **jelszavas fiók** (Norbi hozza létre a
    Supabase-ben, Auto Confirm; a `list_viewers` köti Norbihoz); Mama belépés után a saját
    egyszerű oldalát látja: a megnézendő, nem letöltött, franchise nélküli filmek, de **a még
    meg nem jelentek nem**; „Érdekel” → Norbinál „Érdekli” + harang („Mamát érdekli”); „Nem
@@ -655,7 +654,7 @@ magyar szinkronos – közelítés, külön sorozat-sorral), 9 – franchise-gy�
 állapotok, 15 – gyorsgombok a letapadt szűrősorban, 16 – évadok idővonala; 10 – a még meg nem
 jelent filmek (szaggatott keret + jelvény + harang; szűrőgomb Norbi kérésére nincs); 24 –
 kikattintásra bezáruló adatlap; 20 – IMDb-figyelőlista importja; 21 – „Hol nézhető?” csak az
-adatlapon. Vár még: 2, 3, 5, 6, 11–13, 17–19, 22, 23.
+adatlapon; 22 – telefonon nincs „IMDb import”. Vár még: 2, 3, 5, 6, 11–13, 17–19, 23.
 A négy új kérés (13 átdolgozva, 22, 23, 24) a „Következő feladat”-ban.
 
 ## Fejlesztői megjegyzés

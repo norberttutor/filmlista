@@ -17,7 +17,7 @@ export default function WatchProviders({ providers, className }) {
           const label = p.free ? `${p.name} (ingyenes)` : p.name;
           return (
             <li key={p.id} title={label}>
-              <img src={LOGO_BASE + p.logo} alt={label} width="40" height="40" loading="lazy" />
+              <img src={LOGO_BASE + p.logo} alt={label} width="56" height="56" loading="lazy" />
             </li>
           );
         })}
