@@ -168,7 +168,8 @@ export default function TitleEditor({
     setForm((f) => ({
       ...f,
       status: code,
-      // megnézettre állításkor a mai nap az alapértelmezett
+      // megnézettre állításkor a mai nap (a felületen nem látszik, nem szerkeszthető – Norbi
+      // kérése; a Statisztika és a CSV-mentés használja)
       watched_at: code === 'watched' && !f.watched_at ? todayDate() : f.watched_at,
       // ...és a "Letöltve" törlődik (az adatbázis-trigger szabálya, itt azonnal látszik)
       is_downloaded: code === 'watched' && f.status !== 'watched' ? false : f.is_downloaded,
@@ -325,17 +326,6 @@ export default function TitleEditor({
                   onChange={changeStatus}
                 />
               </fieldset>
-
-              {form.status === 'watched' && (
-                <label className="field">
-                  Megnézve
-                  <input
-                    type="date"
-                    value={form.watched_at}
-                    onChange={(e) => setField('watched_at', e.target.value)}
-                  />
-                </label>
-              )}
 
               <label className="check">
                 <input

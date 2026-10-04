@@ -4,7 +4,8 @@ Megnézendő filmek és sorozatok személyes listája: borító, műfajok, álla
 évadok, saját és IMDb-értékelés, franchise-ok, értesítés az új évadokról.
 Next.js + Supabase, Vercelen futtatva: https://filmlista-six.vercel.app/
 
-A részletes leírás (felépítés, adatbázis, konvenciók): `CLAUDE.md`.
+A funkciók kezelési leírása: `FELHASZNALOI-LEIRAS.md`. A részletes műszaki leírás (felépítés,
+adatbázis, konvenciók): `CLAUDE.md`.
 
 ## Újratelepítés lépései
 

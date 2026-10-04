@@ -147,8 +147,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `--ambient` CSS-változó + `data-ambient` jelző; a CSS („Hangulatszín a borítóból” szakasz)
   csak ilyenkor színez: a szerkesztő ablak a borító mögül dereng (színezett keret, árnyék,
   háttér), a kártya rámutatva fénylik, a táblázat rámutatott sora halványan színeződik
-- `components/TitleEditor.js` – natív `<dialog>` (fejlécben a leírás): állapot, letöltve, megnézve dátuma
-  (`watched_at`, csak „Megnézve” állapotnál; átváltáskor a mai nap), értékelés 10 csillaggal
+- `components/TitleEditor.js` – natív `<dialog>` (fejlécben a leírás): állapot, letöltve (a megnézés
+  dátuma – `watched_at` – nem látszik és nem szerkeszthető, Norbi kérése, 2026-10-04: megnézettre
+  állításkor a háttérben a mai nap kerül be, a Statisztika és a CSV használja), értékelés 10 csillaggal
   (+ „Törlés” link), törlés megerősítéssel – Norbi kérésére itt marad –, utána a sávban 8 mp-ig
   „Visszavonás” (`onDelete` → `Watchlist.requestDelete`) (a mobilos borítófalon a borító vagy a
   ceruza nyitja). Az „Abbahagyva” állapot csak sorozatnál választható. Alul „Hasonló címek”
@@ -389,6 +390,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   GitHub-titkot is át kell írni. Az artifact a futás Summary oldalának alján van (a telefonos
   GitHub-alkalmazás nem mutatja)
 - `supabase/*.sql` – a már lefuttatott adatbázis-szkriptek (dokumentáció)
+- `FELHASZNALOI-LEIRAS.md` – felhasználói leírás Norbinak: minden funkció témák szerint
+  (1–17. szakasz), a végén Változásnapló. Kezelési leírás, nem kód: gombnevek, lépések, szabályok
 
 ## Adatbázis (már létezik, lásd `supabase/`)
 - `genres (id integer PK = TMDB műfaj ID, name)` – bejelentkezve olvasható/írható
@@ -526,6 +529,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   követő fénylő kártyaélt beépítés után visszavonatta.
 - Képekhez sima `<img>`, nem `next/image`.
 - Nincs middleware / proxy; az auth kliensoldali.
+- **Felhasználói leírás:** minden olyan fejlesztés után, ami a felületen látszik vagy a
+  működést változtatja, frissítsd a `FELHASZNALOI-LEIRAS.md`-t **ugyanabban a commitban**: a
+  témája szerinti szakaszt (ha nincs ilyen, új szakasz a tartalomjegyzékkel együtt), az
+  „Utolsó frissítés” dátumát, és a Változásnaplóba egy sort (legújabb felül). Norbi
+  szemszögéből, a felület pontos feliratainak idézésével; tervezett, még el nem készült
+  funkció nem kerül bele.
 
 ## Állapot
 Kész: adatbázis, projektváz, belépés, lista + szűrők, GitHub, Vercel deploy,
@@ -563,10 +572,25 @@ megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
-- Nincs kijelölve – Norbi választ a 3. tervkörből (lent).
+**Norbi kérései (2026-10-04)** – a fejlesztési lista élén, ebben a sorrendben; a részletek
+(megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
+1. **22 – telefonon nincs „IMDb értékelések”** a ⋮ menüben (csak ≤ 640 px-en tűnik el,
+   tableten és asztalon marad – Norbi döntése).
+2. **24 – asztalon kikattintásra bezárul az adatlap** (szerkesztő ablak), ha nincs mentetlen
+   módosítás; módosításnál nyitva marad („Mentetlen módosítás – Mentés vagy Mégse”). Az Esc
+   továbbra is mindig bezárja (Norbi döntése).
+3. **23 – „Franchise-ok” a ⋮ menüben**: ábécérend, logók, csempénként számok; a csempe a
+   meglévő gyűjtemény-ablakot nyitja (onnan szerkeszthető), „Szűrés erre”, átnevezés, törlés.
+4. **13 – Mama külön hozzáférése**, Norbi döntéseivel: **jelszavas fiók** (Norbi hozza létre a
+   Supabase-ben, Auto Confirm; a `list_viewers` köti Norbihoz); Mama belépés után a saját
+   egyszerű oldalát látja: a megnézendő, nem letöltött, franchise nélküli filmek, de **a még
+   meg nem jelentek nem**; „Érdekel” → Norbinál „Érdekli” + harang („Mamát érdekli”); „Nem
+   érdekel” → eltűnik Mamánál, **Norbinál „Nem érdekli”-ként tompán látszik** (új
+   `mama_status = 'declined'`, a Mama-szűrőben is). Előtte kell: Mama e-mail-címe és fiókja,
+   plusz egy második tesztfiók.
 
 ## Fejlesztési terv, 3. kör (2026-10-04)
-**`munka/terv-3/TERV.md`** (helyi mappa) – 21 javaslat funkcióra és dizájnra, látványtervvel
+**`munka/terv-3/TERV.md`** (helyi mappa) – 24 javaslat (a 22–24 Norbi kérései) funkcióra és dizájnra, látványtervvel
 (`munka/terv-3/kepek/`), mindegyiknél: mit lát Norbi, megvalósítás (fájlok, SQL, TMDB-hívások),
 teszt, méret, nyitott kérdések; közös alapok (értesítősáv, TMDB-részletek pótlása, mentésbe
 felvétel, teszt, dizájn) és „hogyan kezdj neki”. Előnézet (privát):
@@ -580,16 +604,18 @@ A korábbi ötletlista minden eleme benne van. Javasolt sorrend:
 4. Rendszerezés és gyorsaság: saját címkék, szinkron / felirat, gyorsműveletek a borítón,
    parancspaletta + billentyűparancsok.
 5. Figyelés: filmek megjelenése („Hamarosan”, harang), értesítés a telefonra (web push).
-6. Megosztás: Mama listája (titkos link, Mama maga jelöl).
+6. Megosztás: Mama listája (→ a „Következő feladat” 13-as pontja: jelszavas fiók).
 7. Dizájn-finomítások: évadok idővonala, csoportosítás hónapok szerint, évértékelő (decemberre).
 8. Később (Norbi kérésére): „Hol nézhető?”.
-Megvalósításkor a pont mellé a TERV.md-be: „kész (commit)”, és ide az Állapotba.
+Megvalósításkor a pont mellé a TERV.md-be: „kész (commit)”, ide az Állapotba, és a
+`FELHASZNALOI-LEIRAS.md`-be (téma + Változásnapló).
 **Kész (2026-10-04), Norbi döntéseivel:** 1 – törlés visszavonása (a szerkesztő ablakban marad
 a megerősítés), 4 – értékelés kérése (nem kikapcsolható), 7 – előzetes, 8 – Felfedezés (csak
 magyar szinkronos – közelítés, külön sorozat-sorral), 9 – franchise-gyűjtemény, 14 – üres
 állapotok, 15 – gyorsgombok a letapadt szűrősorban, 16 – évadok idővonala; 10 – a még meg nem
 jelent filmek (szaggatott keret + jelvény + harang; szűrőgomb Norbi kérésére nincs). Vár még: 2, 3, 5,
-6, 11–13, 17–21.
+6, 11–13, 17–24.
+A négy új kérés (13 átdolgozva, 22, 23, 24) a „Következő feladat”-ban.
 
 ## Fejlesztői megjegyzés
 - Ha a terminál nem ismeri a `node`/`npm` parancsot, a VS Code-ot újra kell indítani
