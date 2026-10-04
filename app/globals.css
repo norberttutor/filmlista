@@ -1925,19 +1925,21 @@ body:has(> main.login) {
 }
 
 /* borító | adatok | franchise – a leírás alattuk (keskenyebb soros nézet).
+   A borító 72 px széles (Norbi kérése): így ugyanolyan magas, mint mellette az öt sor adat,
+   a sor magassága alig nő.
    A franchise oszlop fix 11rem (176 px): Norbi leghosszabb franchise-neve is kifér a
    lenyílóval együtt (mérve: 128 px a név, ~165 px a lenyíló) */
 .row-title {
   --franchise-col: 11rem;
   display: grid;
-  grid-template-columns: 3.5rem minmax(0, 1fr) var(--franchise-col);
+  grid-template-columns: 4.5rem minmax(0, 1fr) var(--franchise-col);
   align-items: center;
   column-gap: 0.9rem;
 }
 
 .row-title .thumb {
   grid-row: span 2;
-  width: 3.5rem;
+  width: 4.5rem;
 }
 
 /* az utolsó sor nem lesz egyetlen árva szó */
@@ -1956,14 +1958,14 @@ body:has(> main.login) {
 }
 
 /* széles képernyőn (1440p-re optimalizálva): borító | adatok | franchise | leírás egymás
-   mellett. A cím oszlop fix 18rem (288 px): Norbi címeinek kb. 96%-a belefér (mérve: 95% ≤
-   273 px), a hosszabbak "…"-val. A franchise oszlop két oldalán ugyanakkora a rácsköz. A leírás
+   mellett. A cím oszlop fix 22.5rem (360 px): Norbi címeinek kb. 96%-a belefér (16 px-es
+   címmel mérve: 95% ≤ 273 px, a 20 px-es cím ennek 1,25-szöröse), a hosszabbak "…"-val. A franchise oszlop két oldalán ugyanakkora a rácsköz. A leírás
    minden maradék helyet megkap; a "Letöltve" oszlop felirata felé 120 px (--overview-gap-end).
    1900 px alatt a leírás túl keskeny lenne a franchise oszlop mellett, ott a cím alatt van. */
 @media (min-width: 1900px) {
   .row-title {
     --overview-gap-end: 7.5rem;
-    grid-template-columns: 3.5rem 18rem var(--franchise-col) minmax(0, 1fr);
+    grid-template-columns: 4.5rem 22.5rem var(--franchise-col) minmax(0, 1fr);
     column-gap: 1.25rem;
   }
 
@@ -1997,7 +1999,7 @@ body:has(> main.login) {
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
-  font-size: 1rem;
+  font-size: 1.25rem;
   font-weight: 650;
   line-height: 1.25;
   white-space: nowrap;
@@ -3543,7 +3545,7 @@ input[type='checkbox']:checked {
 
 .sk-row .sk-thumb {
   flex: none;
-  width: 4rem;
+  width: 4.5rem;
   aspect-ratio: 2 / 3;
 }
 

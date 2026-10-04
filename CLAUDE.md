@@ -149,13 +149,15 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (→ Megnézve, a visszavonás az Abbahagyva-t is visszaadja); a „Mégis folytatom” után az
   adatbázis az évadokból számol
 - `components/TitleTable.js` – asztali soros nézet (≥ 1400 px, `DESKTOP_QUERY` a
-  `Watchlist`-ben; `table-layout: fixed`, minden maradék hely a címoszlopé): balra borító (gomb:
+  `Watchlist`-ben; `table-layout: fixed`, minden maradék hely a címoszlopé): balra borító (72 px
+  széles – Norbi kérése, 2026-10-04: így olyan magas, mint mellette az adatok; gomb:
   rákattintva a szerkesztő ablak – részletek, hasonló címek; rámutatva türkiz keret) +
-  adatok (a cím mindig egy sorban, ha így sem fér ki „…” + tooltip; a műfajok külön sorban)
+  adatok (a cím 20 px-es, mindig egy sorban, ha így sem fér ki „…” + tooltip; a műfajok külön
+  sorban)
   + Franchise lenyíló saját, fix `11rem` (176 px) oszlopban, középre igazítva (Norbi
   leghosszabb franchise-neve is kifér); üresen átlátszó, de a helyét megtartja (így a sorok nem
   ugrálnak), rámutatáskor / billentyűzetes fókusznál látszik + TMDB leírás (`overview`;
-  ≥ 1900 px egymás mellett: borító | cím oszlop fix `18rem` (288 px, Norbi címeinek kb. 96%-a
+  ≥ 1900 px egymás mellett: borító | cím oszlop fix `22.5rem` (360 px, Norbi címeinek kb. 96%-a
   belefér, a hosszabbak „…”-val) | franchise | leírás, a franchise két oldalán egyforma
   rácsköz, a leírás minden sorban ugyanott kezdődik, minden maradék helyet megkap, a
   „Letöltve” felirat felé 120 px (`--overview-gap-end`), 4 sorban; 1440p-re (2560 px)
