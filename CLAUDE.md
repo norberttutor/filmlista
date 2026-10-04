@@ -302,7 +302,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   legfrissebb mentést egy JSON-ba, és 56 napra artifactként tárolja (utána a GitHub törli); ha
   nincs 8 napon belüli mentés, a futás hibával áll le (a GitHub e-mailt küld). Visszatöltés:
   `munka/e2e/mentes-feltoltes.mjs <fájl.json> <e-mail>` → „Feltöltött” mentés → a felületen
-  visszaállítható
+  visszaállítható. A titkot Norbi beállította, az első (kézi) futás 2026-10-04-én sikeres, az
+  artifact letölthető. A `backup_reader` jelszavának cseréje: `mentes-olvaso.mjs`, utána a
+  GitHub-titkot is át kell írni. Az artifact a futás Summary oldalának alján van (a telefonos
+  GitHub-alkalmazás nem mutatja)
 - `supabase/*.sql` – a már lefuttatott adatbázis-szkriptek (dokumentáció)
 
 ## Adatbázis (már létezik, lásd `supabase/`)
