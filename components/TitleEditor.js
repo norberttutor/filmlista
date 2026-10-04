@@ -1,10 +1,10 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { apiGet } from '@/lib/api';
 import { flushSync } from 'react-dom';
 import {
   updateTitle,
-  deleteTitle,
   todayDate,
   DEFAULT_STATUS,
   DROPPED_STATUS,
@@ -13,7 +13,7 @@ import {
 import StarRating from '@/components/StarRating';
 import FranchiseSelect from '@/components/FranchiseSelect';
 import ImdbBadge from '@/components/ImdbBadge';
-import { hasSeasons, SeasonList, useSeasonActions } from '@/components/Seasons';
+import { hasSeasons, SeasonList, SeasonTimeline, useSeasonActions } from '@/components/Seasons';
 import SimilarTitles from '@/components/SimilarTitles';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
 import { canMorph, MORPH_NAME } from '@/lib/viewTransition';
@@ -57,7 +57,7 @@ export default function TitleEditor({
   onAdded,
   onSaved,
   onChanged,
-  onDeleted,
+  onDelete,
   onClose,
   morphTo, // a borító, amelyről nyílt: bezáráskor oda siklik vissza (nézetváltás)
 }) {
@@ -80,6 +80,24 @@ export default function TitleEditor({
   const seasonActions = useSeasonActions(t, onChanged, setError);
   // a borító hangulatszíne: az ablak a film színében dereng (globals.css, "Hangulatszín")
   const ambient = usePosterColor(t.poster_path);
+  // előzetes a TMDB-ről (magyar, ha nincs: angol): megnyitáskor a háttérben kérdezzük le; a gomb
+  // csak akkor jelenik meg, ha van. A lejátszó csak kattintásra töltődik (YouTube, adatkímélő mód).
+  const [trailer, setTrailer] = useState(null);
+  const [playing, setPlaying] = useState(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    apiGet('/api/tmdb/videos', { type: t.media_type, id: t.tmdb_id }, { signal: controller.signal })
+      .then((data) => setTrailer(data.video))
+      .catch((err) => err.name !== 'AbortError' && console.warn('Előzetes:', err.message));
+    return () => controller.abort();
+  }, [t.media_type, t.tmdb_id]);
+
+  // az idővonal pöttyére kattintva a lista az évadhoz görget, és annak első gombja kapja a fókuszt
+  function pickSeason(n) {
+    const row = dialogRef.current?.querySelector(`.season-list li[data-season="${n}"]`);
+    row?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    row?.querySelector('input')?.focus({ preventScroll: true });
+  }
 
   // rajzolás előtt nyílik meg (a nézetváltás új képén már ott legyen az ablak)
   useLayoutEffect(() => {
@@ -186,17 +204,10 @@ export default function TitleEditor({
     }
   }
 
-  async function handleDelete() {
-    setBusy(true);
-    setError('');
-    try {
-      await deleteTitle(t.id);
-      onDeleted(t.id);
-      dialogRef.current.close(); // a cím eltűnik a listáról: nincs hova visszasiklani
-    } catch (err) {
-      setError(err.message);
-      setBusy(false);
-    }
+  // a megerősítés után a cím lekerül, a sávban 8 mp-ig visszavonható (a Watchlist törli)
+  function handleDelete() {
+    onDelete(t);
+    dialogRef.current.close(); // a cím eltűnik a listáról: nincs hova visszasiklani
   }
 
   return (
@@ -247,6 +258,30 @@ export default function TitleEditor({
               <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
               <ImdbBadge title={t} />
             </p>
+            {trailer && (
+              <button
+                type="button"
+                className="ghost trailer-btn"
+                aria-expanded={playing}
+                onClick={() => setPlaying((p) => !p)}
+              >
+                <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                  <path d={playing ? 'M6 6l12 12M18 6 6 18' : 'M8 5v14l11-7z'} fill={playing ? 'none' : 'currentColor'} stroke="currentColor" strokeWidth={playing ? 2.4 : 0} strokeLinecap="round" />
+                </svg>
+                {playing ? 'Előzetes bezárása' : 'Előzetes megnézése'}
+                {!playing && trailer.lang !== 'hu' && <span className="trailer-lang">angolul</span>}
+              </button>
+            )}
+            {playing && trailer && (
+              <div className="trailer">
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1&rel=0&hl=hu&cc_lang_pref=hu`}
+                  title={`Előzetes: ${t.title}`}
+                  allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                  allowFullScreen
+                />
+              </div>
+            )}
             {t.overview && <p className="editor-overview">{t.overview}</p>}
           </header>
 
@@ -267,6 +302,7 @@ export default function TitleEditor({
             <fieldset className="field">
               <legend>Évadok</legend>
               <p className="muted small season-hint">Az évadok változása azonnal mentődik.</p>
+              <SeasonTimeline title={t} onPick={pickSeason} />
               <SeasonList title={t} actions={seasonActions} />
             </fieldset>
           ) : (

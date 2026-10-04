@@ -1039,6 +1039,31 @@ body:has(> main.login) {
   gap: 0.9rem;
 }
 
+/* letapadt szűrősorban gyorsgombok: Cím hozzáadása (teli türkiz) és vissza a lap tetejére;
+   telefonon nincs (ott a lebegő „+”) */
+.stuck-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-left: 0.9rem;
+  border-left: 1px solid var(--line);
+}
+
+.stuck-tools button {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  border-radius: 50%;
+}
+
+@media (max-width: 640px) {
+  .stuck-tools {
+    display: none;
+  }
+}
+
 /* ↺ a szűrők alaphelyzetbe: kerek ikongomb. Ha van mit visszaállítani, türkiz körvonalas;
    alapállapotban halvány és nem kattintható (a súgója akkor is olvasható) */
 .filter-reset {
@@ -1333,6 +1358,48 @@ body:has(> main.login) {
   max-width: 40rem;
 }
 
+/* ---------- Üres állapot (üres lista, találat nélküli szűrés / keresés) ---------- */
+.empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+  padding: 4rem var(--gutter) 5rem;
+  text-align: center;
+}
+
+.empty-art {
+  width: 9.5rem;
+  height: auto;
+  margin-bottom: 0.4rem;
+  color: var(--accent);
+}
+
+/* a nagyító lencséje kitakarja a mögötte lévő filmkockát */
+.empty-art-lens {
+  fill: var(--bg);
+}
+
+.empty-state h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  text-wrap: balance;
+}
+
+.empty-state p {
+  margin: 0;
+  max-width: 34rem;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+
 /* ---------- Borítófal ---------- */
 .grid {
   list-style: none;
@@ -1357,49 +1424,49 @@ body:has(> main.login) {
 /* a megnézett (és az abbahagyott) címek háttérbe húzódnak: fekete-fehér, fakó borító,
    tompított, de olvasható (≥ 4,5:1) szövegek, halványabb vezérlők. Rámutatáskor, fókusznál
    (szerkesztés) és a törlés megerősítésekor minden teljes színű. */
-.titles-table tbody tr[data-status='watched']:not(:hover):not(:focus-within):not(:has(> td.cell-confirm)),
+.titles-table tbody tr[data-status='watched']:not(:hover):not(:focus-within),
 .card[data-status='watched']:not(:hover):not(:focus-within) {
   --strip: color-mix(in srgb, var(--st-watched) 55%, transparent);
 }
 
-.titles-table tbody tr[data-status='dropped']:not(:hover):not(:focus-within):not(:has(> td.cell-confirm)),
+.titles-table tbody tr[data-status='dropped']:not(:hover):not(:focus-within),
 .card[data-status='dropped']:not(:hover):not(:focus-within) {
   --strip: color-mix(in srgb, var(--st-dropped) 55%, transparent);
 }
 
-.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within):not(:has(> td.cell-confirm)) .thumb img,
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .thumb img,
 .card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .poster img {
   filter: grayscale(1) brightness(0.8);
   opacity: 0.55;
 }
 
-.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within):not(:has(> td.cell-confirm))
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within)
   :is(.row-name, .original, .meta, .row-genres, .added, .row-overview, .rating-number),
 .card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) :is(h3, .original, .meta, .status-name, .genres, .added, .mama-tag) {
   color: var(--watched-text);
 }
 
-.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within):not(:has(> td.cell-confirm)) .imdb b,
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .imdb b,
 .card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .imdb b {
   color: inherit;
 }
 
 /* a műfajok színes pöttye is szürke */
-.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within):not(:has(> td.cell-confirm)) .genre::before,
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .genre::before,
 .card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .genre::before {
   filter: grayscale(1);
   opacity: 0.55;
 }
 
-.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within):not(:has(> td.cell-confirm)) .franchise-select,
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .franchise-select,
 .card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .card-franchise {
   color: var(--watched-accent);
 }
 
 /* a vezérlők (pipa, lenyílók, csillagok, kuka) halványabbak */
-.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within):not(:has(> td.cell-confirm))
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within)
   > td:is(.col-check, .col-status, .col-mama, .col-actions),
-.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within):not(:has(> td.cell-confirm)) .stars,
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .stars,
 .card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .card-stars {
   opacity: 0.55;
 }
@@ -1832,11 +1899,6 @@ body:has(> main.login) {
   box-shadow: 0 0 8px color-mix(in srgb, var(--strip) 70%, transparent);
 }
 
-/* törlés megerősítése: a sor halvány piros árnyalatot kap */
-.titles-table tbody tr:has(> td.cell-confirm) > td {
-  background: color-mix(in oklab, var(--danger) 8%, transparent);
-}
-
 .titles-table .col-check {
   width: 5.5rem;
   text-align: center;
@@ -2155,14 +2217,6 @@ body:has(> main.login) {
   color: var(--accent-2);
 }
 
-.cell-confirm {
-  text-align: right;
-}
-
-.cell-confirm > * + * {
-  margin-left: 0.6rem;
-}
-
 .icon-btn {
   display: inline-grid;
   place-items: center;
@@ -2402,6 +2456,143 @@ button.season:hover {
   margin: -0.2rem 0 0.2rem;
 }
 
+/* évadok idővonala (szerkesztő ablak): évszámok, „ma” jelölő, évadonként egy pötty-gomb */
+.season-timeline {
+  padding: 0.75rem 1rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.02);
+}
+
+.tl-track {
+  position: relative;
+  height: 6.2rem;
+  margin: 0 0.9rem;
+}
+
+/* a vízszintes tengely */
+.tl-track::before {
+  content: '';
+  position: absolute;
+  left: -0.9rem;
+  right: -0.9rem;
+  top: 2.6rem;
+  height: 2px;
+  background: var(--line);
+}
+
+.tl-year {
+  position: absolute;
+  top: 3.5rem;
+  translate: -50% 0;
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.tl-year::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -0.95rem;
+  width: 1px;
+  height: 0.6rem;
+  background: var(--line);
+}
+
+/* „ma”: a tengelyen át lefelé futó szaggatott vonal, a felirat alul (az évszámok sora alatt), hogy
+   ne takarja a friss évad számát */
+.tl-today {
+  position: absolute;
+  top: 2.1rem;
+  bottom: 1.25rem;
+  width: 0;
+  border-left: 1.5px dashed rgb(255 255 255 / 0.45);
+}
+
+.tl-today span {
+  position: absolute;
+  bottom: -1.05rem;
+  translate: -50% 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.tl-dot {
+  position: absolute;
+  top: 2.6rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  padding: 0;
+  translate: -50% -50%;
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.tl-dot[data-status='watched'] {
+  background: var(--st-watched);
+  border-color: var(--st-watched);
+}
+
+.tl-dot[data-status='watching'] {
+  background: var(--st-watching);
+  border-color: var(--st-watching);
+}
+
+.tl-dot[data-upcoming] {
+  background: var(--surface);
+  border-style: dashed;
+}
+
+.tl-dot:hover {
+  scale: 1.18;
+}
+
+.tl-n {
+  position: absolute;
+  bottom: calc(100% + 0.3rem);
+  left: 50%;
+  translate: -50% 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.tl-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1rem;
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.tl-legend span::before {
+  content: '';
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-right: 0.35rem;
+  border: 1.5px solid var(--muted);
+  border-radius: 50%;
+  vertical-align: -1px;
+}
+
+.tl-legend [data-status='watched']::before {
+  background: var(--st-watched);
+  border-color: var(--st-watched);
+}
+
+.tl-legend [data-status='watching']::before {
+  background: var(--st-watching);
+  border-color: var(--st-watching);
+}
+
+.tl-legend [data-upcoming]::before {
+  border-style: dashed;
+}
+
 /* a Letöltve cellában sorozatnál a letöltött évadok, kis letöltés-ikonnal */
 .season-dl {
   display: inline-flex;
@@ -2502,6 +2693,376 @@ button.season:hover {
 
 .import-arrow b {
   color: var(--accent);
+}
+
+/* ---------- Értesítősáv (toast, lib/toast.js) ---------- */
+/* alul középen, telefonon a lebegő „+” fölött; a fogyó csík a hátralévő idő (rámutatáskor
+   megáll) */
+.toaster {
+  position: fixed;
+  left: 50%;
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  width: max-content;
+  max-width: calc(100vw - 2rem);
+  translate: -50% 0;
+  pointer-events: none;
+}
+
+.toast {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: min(26rem, 100%);
+  max-width: 100%;
+  padding: 0.65rem 0.6rem 0.65rem 1.1rem;
+  overflow: hidden;
+  color: var(--text);
+  background: var(--surface-raised);
+  border: 1px solid var(--edge);
+  border-radius: 18px;
+  box-shadow: var(--shadow-pop);
+  pointer-events: auto;
+  animation: toast-in 0.18s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+}
+
+.toast img {
+  flex: none;
+  width: 2.1rem;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.toast-text {
+  flex: 1;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.toast .ghost,
+.toast .stars {
+  flex: none;
+}
+
+.toast-close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 50%;
+}
+
+.toast-close:hover {
+  color: var(--text);
+  background: var(--hover-tint);
+}
+
+.toast-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--accent);
+  transform-origin: left;
+  animation: toast-bar linear forwards;
+}
+
+@keyframes toast-bar {
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .toaster {
+    bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .toast {
+    flex-wrap: wrap;
+    width: calc(100vw - 2rem);
+    min-width: 0;
+  }
+}
+
+/* ---------- Felfedezés (a „Cím hozzáadása” panelen, üres keresőnél) ---------- */
+.discover {
+  display: grid;
+  gap: 1.4rem;
+  margin-top: 0.2rem;
+}
+
+.discover-row h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.discover-sub {
+  margin: 0.1rem 0 0.7rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* vízszintesen görgethető borítósor */
+.discover-list {
+  display: flex;
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0 0 0.7rem;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+
+.discover-item {
+  flex: none;
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+  width: 8rem;
+  font-size: 0.85rem;
+  scroll-snap-align: start;
+}
+
+.discover-item img,
+.discover-sk {
+  flex: none;
+  width: 8rem;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 13px;
+  box-shadow: 0 6px 16px -6px rgb(0 0 0 / 0.6);
+}
+
+.discover-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  min-height: 2.5em; /* két sornyi hely: a gombok egy vonalban */
+  line-height: 1.25;
+}
+
+.discover-item .ghost {
+  justify-self: start;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.8rem;
+}
+
+.discover-item .on-list {
+  margin: 0;
+}
+
+/* ---------- Franchise-gyűjtemény (sáv a lista fölött, ablak) ---------- */
+.collection-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  margin: 0.9rem var(--gutter) 0;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgb(255 255 255 / 0.025);
+}
+
+.collection-logo {
+  width: auto;
+  max-width: 9rem;
+  height: 1.8rem;
+  object-fit: contain;
+}
+
+.collection-meter {
+  display: flex;
+  width: 10rem;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: rgb(255 255 255 / 0.1);
+}
+
+.collection-meter i {
+  display: block;
+  height: 100%;
+  background: var(--st-watched);
+}
+
+.collection-meter i.on-list {
+  background: var(--accent);
+}
+
+.collection-count {
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.collection-count b {
+  color: var(--text);
+}
+
+.collection-banner .ghost {
+  margin-left: auto;
+}
+
+.editor.collection-dialog {
+  width: min(62rem, calc(100vw - 2rem));
+  overflow-x: hidden;
+}
+
+/* fejléc a gyűjtemény széles képével, balról és alulról sötétedve */
+.collection-head {
+  position: relative;
+  display: grid;
+  gap: 0.35rem;
+  padding: 4.5rem 1.75rem 1.2rem;
+  background: center 25% / cover no-repeat;
+}
+
+.collection-head::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgb(10 13 18 / 0.9), rgb(10 13 18 / 0.35) 70%),
+    linear-gradient(transparent 40%, var(--surface));
+}
+
+.collection-head > * {
+  position: relative;
+  margin: 0;
+}
+
+.collection-head h2 {
+  font-size: 1.9rem;
+}
+
+.collection-head h2:focus {
+  outline: none;
+}
+
+.collection-sub {
+  color: var(--muted);
+}
+
+.collection-prog {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.collection-prog .collection-meter {
+  width: 14rem;
+}
+
+.collection-parts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+  gap: 1.1rem;
+  margin: 0;
+  padding: 1.1rem 1.75rem 0.4rem;
+  list-style: none;
+  counter-reset: part;
+}
+
+.collection-parts li {
+  display: grid;
+  align-content: start;
+  gap: 0.3rem;
+  font-size: 0.86rem;
+  counter-increment: part;
+}
+
+.collection-poster {
+  position: relative;
+}
+
+/* sorszám a borító sarkában: a megjelenési sorrend */
+.collection-poster::before {
+  content: counter(part) '.';
+  position: absolute;
+  top: 0.45rem;
+  left: 0.45rem;
+  z-index: 1;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 750;
+  border-radius: 7px;
+  background: rgb(8 11 16 / 0.72);
+}
+
+.collection-poster img,
+.collection-poster .poster-fallback {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 16px;
+  background: var(--placeholder-bg);
+}
+
+.collection-parts li[data-state='watched'] img {
+  filter: grayscale(1) brightness(0.78);
+}
+
+/* a listáról hiányzó rész: szaggatott keret, halványabb borító */
+.collection-parts li[data-state='missing'] .collection-poster {
+  outline: 2px dashed rgb(255 255 255 / 0.22);
+  outline-offset: 4px;
+  border-radius: 16px;
+}
+
+.collection-parts li[data-state='missing'] img {
+  opacity: 0.55;
+}
+
+.collection-parts .ghost {
+  justify-self: start;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.8rem;
+}
+
+.collection-state {
+  font-weight: 650;
+  color: var(--accent);
+}
+
+.collection-state.watched {
+  color: var(--st-watched);
+}
+
+/* a saját értékelés borostyán (saját jelölés) */
+.collection-state .mine {
+  color: var(--accent-2);
+}
+
+.collection-dialog .editor-actions {
+  margin: 0.9rem 1.75rem 1.4rem;
 }
 
 /* ---------- Mentések (ablak) ---------- */
@@ -3071,6 +3632,36 @@ body:has(.editor[open]) {
   text-wrap: pretty;
 }
 
+/* előzetes (TMDB → YouTube, adatkímélő mód): gomb a cím adatai alatt, kattintásra 16:9 lejátszó */
+.trailer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.6rem;
+}
+
+.trailer-lang {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.trailer {
+  margin-top: 0.75rem;
+  aspect-ratio: 16 / 9;
+  max-width: 100%;
+  overflow: hidden;
+  background: #000;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.7);
+}
+
+.trailer iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
 .field {
   display: grid;
   gap: 0.4rem;
@@ -3370,7 +3961,7 @@ body:has(.editor[open]) {
 
 /* táblázat: a rámutatott (fókuszban lévő) sor halványan a borító színét veszi fel; a törlés
    megerősítésének pirosa marad */
-.titles-table tbody tr[data-ambient]:is(:hover, :has(:focus-visible)):not(:has(> td.cell-confirm)) > td {
+.titles-table tbody tr[data-ambient]:is(:hover, :has(:focus-visible)) > td {
   background: color-mix(in oklab, var(--ambient) 7%, transparent);
 }
 
@@ -3395,6 +3986,9 @@ body:has(.editor[open]) {
   .thumb,
   .thumb::after,
   .similar-poster,
+  .discover-item img,
+  .discover-sk,
+  .trailer,
   .notif-thumb {
     corner-shape: squircle;
     border-radius: 13px;
@@ -3417,7 +4011,8 @@ body:has(.editor[open]) {
   .season-panel,
   .franchise-listbox,
   .add-panel,
-  .hint {
+  .hint,
+  .toast {
     corner-shape: squircle;
     border-radius: 20px;
   }
@@ -3436,7 +4031,9 @@ body:has(.editor[open]) {
   .season-count,
   .season-dropped,
   .bulk-cand,
-  .backup-list {
+  .season-timeline,
+  .backup-list,
+  .collection-banner {
     corner-shape: squircle;
     border-radius: 12px;
   }

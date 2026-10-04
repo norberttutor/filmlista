@@ -88,14 +88,35 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   Az állapotgombok darabszámai a többi szűrőt már figyelembe veszik.
   A most szerkesztett sor a szűrés változásáig a helyén marad (`kept`), akkor is, ha már nem
   illik a szűrőbe (pl. „Nem letöltött” nézetben letöltöttnek jelölve) – így visszavehető.
-  Üres találatnál „Szűrők törlése” (minden cím látszik) vagy keresésnél „Keresés törlése”.
+  Üres találatnál üres állapot (`EmptyState`: rajz, cím, magyarázat, gombok): keresésnél „Nincs
+  „…” a listádon” + „Keresés a TMDB-n: „…”” (a Cím hozzáadása panel kitöltve nyílik –
+  `openAdd(q)`, `TitleSearch initialQuery`) + „Keresés törlése” / „Szűrők törlése”; szűrésnél
+  „Szűrők törlése” + „Felfedezés”; üres listánál „Első cím hozzáadása” + Tömeges import (a
+  gombok neve szándékosan nem „Cím hozzáadása”: a fejléc gombjával ne ütközzön).
+  Franchise-ra szűrve a lista fölött a gyűjtemény sávja (`FranchiseCollection`).
+  Törlés visszavonással (`requestDelete(t)`): a cím azonnal lekerül, az értesítősávban 8 mp-ig
+  „Visszavonás”; az adatbázisból csak a sáv lejártakor vagy a × gombra törlődik (ha a lapot
+  közben bezárják, a cím megmarad). A táblázatból (sor vagy évadcella) Megnézve-re váltott,
+  még értékelés nélküli címnél „Megnézted: … Hogy tetszett?” sáv csillagsorral és „Később”
+  gombbal (`handleRowUpdated` → `askRating`; a sor kétszer jön – azonnal és mentve –, a
+  `titlesRef` miatt csak egyszer kérdez; a szerkesztő ablakból nem kérdez). Az `<Toaster />`
+  a `main` végén.
   Lapozás 25-ösével (`PAGE_SIZE`, `components/Pagination.js`), szűrés/rendezés/keresés
   váltásakor 1. oldal (akkor is, ha később ugyanaz a szűrés jön vissza); lapozáskor a szűrősor
   eredeti helyére görget (egy üres jelölő a szűrősor előtt – a letapadt sorhoz nem lehetne).
   A szűrősor görgetéskor a lap tetejére tapad (`position: sticky`); letapadva (`data-stuck`, a
   Watchlist egy görgetésfigyelője jelzi) áttetsző, elmosott üveg; a magasságát
   (`--filters-h`, ResizeObserver) a táblázat ragadós fejléce kapja, hogy alatta tapadjon;
-  telefonon kinyitva legfeljebb a képernyő 70%-a, belül görgethető
+  telefonon kinyitva legfeljebb a képernyő 70%-a, belül görgethető. Letapadva (csak asztalon,
+  ≥ 641 px) a ↺ után gyorsgombok (`.stuck-tools`): kerek türkiz „+” (Cím hozzáadása, a lap
+  tetejére görget) és „↑” (vissza a lap tetejére)
+- `components/Toaster.js` + `lib/toast.js` – értesítősáv („toast”): alul középen (telefonon a
+  lebegő „+” fölött), `aria-live="polite"`; `toast({ text, image, content, action: { label,
+  onClick }, hideClose, duration = 8000, onExpire })` → id, `dismissToast(id, how)`; az
+  `onExpire` lejáratkor és a × gombra fut (az action-re nem); legfeljebb 3 egyszerre (a
+  legrégebbi lejártként tűnik el); rámutatáskor / fókusznál megáll (a fogyó csík is)
+- `components/EmptyState.js` – üres állapot: kis vonalrajz (filmkocka + nagyító, türkiz), cím,
+  szöveg, a hívó gombjai
 - `components/PosterCard.js` – borító (`https://image.tmdb.org/t/p/w342` + `poster_path`),
   állapotcsík, „Letöltve” jelvény; a borítóra kattintva a szerkesztő ablak nyílik (mint a
   ceruzával – Norbi kérése), az IMDb- (vagy TMDB-, ha nincs IMDb ID) adatlapra csak a cím visz
@@ -120,8 +141,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   háttér), a kártya rámutatva fénylik, a táblázat rámutatott sora halványan színeződik
 - `components/TitleEditor.js` – natív `<dialog>` (fejlécben a leírás): állapot, letöltve, megnézve dátuma
   (`watched_at`, csak „Megnézve” állapotnál; átváltáskor a mai nap), értékelés 10 csillaggal
-  (+ „Törlés” link), törlés megerősítéssel (a mobilos borítófalon a borító vagy a ceruza nyitja).
-  Az „Abbahagyva” állapot csak sorozatnál választható. Alul „Hasonló címek” (`SimilarTitles`).
+  (+ „Törlés” link), törlés megerősítéssel – Norbi kérésére itt marad –, utána a sávban 8 mp-ig
+  „Visszavonás” (`onDelete` → `Watchlist.requestDelete`) (a mobilos borítófalon a borító vagy a
+  ceruza nyitja). Az „Abbahagyva” állapot csak sorozatnál választható. Alul „Hasonló címek”
+  (`SimilarTitles`). Előzetes: megnyitáskor a háttérben `/api/tmdb/videos`; ha van, a cím
+  adatai alatt „Előzetes megnézése” (angolnál „angolul” jelzés) → 16:9 YouTube-lejátszó
+  (`youtube-nocookie.com`, `.trailer`), „Előzetes bezárása”. Évados sorozatnál az Évadok
+  fölött az idővonal (`SeasonTimeline`; a pöttyre kattintva a lista az évadhoz görget).
   Asztalon (≥ 900 px) széles, kétoszlopos ablak: balra nagy borító (w500, görgetéskor a helyén
   marad; borító nélkül filmikon), jobbra az adatok; telefonon egy oszlop, nagy borító nélkül.
   Nézetváltás (asztalon, `lib/viewTransition.js`): a kattintott kártya / sor borítója átsiklik a
@@ -146,6 +172,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   jövőbeli / dátum nélküli – szaggatott, nem jelölhető; táblázatban kattintásra lépteti:
   üres → Folyamatban → Megnézve → üres), `SeasonList` (évadonként állapot + „Letöltve”,
   „Mind megnézve”, „Nem nézem tovább” / „Mégis folytatom” (ugyanaz a gomb vált feliratot),
+  `SeasonTimeline` (szerkesztő ablak, ≥ 2 évad: évadonként egy pötty-gomb a megjelenés napján
+  az állapot színével, bejelentett szaggatott, „ma” jelölő; a tengely legfeljebb egy évvel tart
+  a mán / az utolsó megjelent évadon túl – a dátum nélküli fél évvel utána, a távolabbi a
+  végén áll, a címkéjében a valódi dátum; 12 évnél hosszabb tengelyen minden 2. évszám),
   „+ Évad hozzáadása”, „Utolsó évad törlése” megerősítéssel – ha a TMDB-n is
   szerepel, a heti frissítés üresen visszahozza; abbahagyott sorozatnál a lista tetején lila
   sáv), `SeasonCell` (táblázat Állapot cellája: csík + „x/y évad”, ami lenyíló panelt nyit,
@@ -170,8 +200,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   optimalizálva; 1900 px alatt a franchise a cím adatai mellett, a leírás alattuk 2 sorban;
   teljes szöveg rámutatáskor),
   jobbra sorrendben Letöltve – Állapot – Mama (kitöltve borostyán: `.mama-set`) – Értékelés
-  (10 másfélszeres csillag középen, mellette „8/10”), a végén törlés megerősítéssel (a sor
-  halvány pirosat kap). A sor az első rámutatáskor / fókusznál kiszámolja a borító
+  (10 másfélszeres csillag középen, mellette „8/10”), a végén kuka: megerősítés nélkül
+  lekerül, 8 mp-ig visszavonható (`onDelete`). A sor az első rámutatáskor / fókusznál kiszámolja a borító
   hangulatszínét, és rámutatva halványan felveszi. Az üres
   Állapot / Mama lenyíló és a kuka csak a sorra mutatva (vagy fókusznál) látszik teljesen
   (`@media (hover: hover)`). Fejléc: kis, ritkított nagybetűs címkék; állapotcsík: lekerekített
@@ -195,7 +225,28 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `lib/useMediaQuery.js` – `useMediaQuery(query)` hook (`useSyncExternalStore`)
 - `components/SiteFooter.js` – kötelező TMDB forrásmegjelölés, ne töröld
 - `components/TitleSearch.js` – „Cím hozzáadása” panel: késleltetett (400 ms) TMDB keresés,
-  találati lista, „Hozzáadás a listához” gomb; a már listán lévőknél „✓ A listán”
+  találati lista, „Hozzáadás a listához” gomb; a már listán lévőknél „✓ A listán”;
+  `initialQuery` (kitöltve nyílik); üres keresőnél a felfedező sorok (`Discover`)
+- `components/Discover.js` + `app/api/tmdb/discover/route.js` – Felfedezés: „Most a
+  mozikban” (`cinema`), „Hamarosan a mozikban” (`upcoming`, dátummal), „Új digitálisan”
+  (`digital`), „Népszerű sorozatok” (`tv`), vízszintes borítósorok, „+ Hozzáadás” / „✓ A
+  listán”. Norbit csak a **magyar szinkronos** címek érdeklik; a TMDB ezt nem tárolja, ezért
+  közelítés: film = magyarországi megjelenés (`discover/movie`, `region=HU`,
+  `with_release_type` 2|3 vagy 4), sorozat = magyar előfizetéses streamingen elérhető
+  (`discover/tv`, `watch_region=HU`, `flatrate`, 90 napon belül futott rész); mindkettőnél
+  angol vagy magyar eredeti nyelv, van magyar leírás, és nincs dokumentum / valóságshow /
+  talkshow / hírek / szappanopera műfaj. A felület ezt egy mondatban jelzi. Listánként
+  legfeljebb 16, 5 oldalig, egy óráig gyorsítótárazva (`cached()`)
+- `components/FranchiseCollection.js` + `app/api/tmdb/collection/route.js` – franchise-ra
+  szűrve sáv a lista fölött (logó vagy név, mérő: megnézve zöld / listán türkiz, „x/y megnézve ·
+  n a listán · m hiányzik”, „Gyűjtemény” gomb), ablak: a TMDB-gyűjtemény összes része
+  megjelenési sorrendben (sorszám a borítón; megnézett szürke + saját értékelés borostyán,
+  listán lévő „A listán”, hiányzó szaggatott kerettel „+ Hozzáadás” → `addTitle` + a franchise
+  beállítása; „A hiányzó N felvétele” kettesével). A gyűjtemény: a franchise filmjei (legfeljebb
+  6) közt leggyakoribb `belongs_to_collection`, egy napig gyorsítótárazva; ha nincs, nincs sáv.
+  Adatbázis-oszlop nem kell hozzá
+- `app/api/tmdb/videos/route.js` – `GET ?type&id` → `{ video: { key, name, lang } | null }`:
+  YouTube, „Trailer” előbb, hivatalos előbb, legfrissebb; magyar nyelvű, ha nincs, angol
 - `lib/supabase.js` – Supabase kliens
 - `lib/api.js` – `apiGet()`: saját `/api` route hívása `Authorization: Bearer` tokennel,
   hibánál a szerver magyar üzenetével dob
@@ -213,7 +264,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `DROPPED_STATUS` („Abbahagyva”, csak sorozatnál), `MAMA_OPTIONS`, `mamaLabel()`
 - `lib/server/auth.js` – `getUserFromRequest()`, `supabaseAsUser()` (a felhasználó nevében,
   RLS-sel), `unauthorized()` (csak route handlerben)
-- `lib/server/tmdb.js` – `tmdbFetch()`, `tmdbErrorResponse()`, `yearOf()`, `pickSeasons()`
+- `lib/server/tmdb.js` – `tmdbFetch()`, `tmdbErrorResponse()`, `yearOf()`, `cached(kulcs, ms,
+  betöltő)` (memóriában, a szerverpéldány élete alatt, legfeljebb 200 elem), `pickSeasons()`
   (a TMDB évadjai a „0. évad” – különkiadások – nélkül) (csak route handlerben)
 - `app/api/tmdb/search/route.js` – `GET ?q=` → `search/multi`, csak film/sorozat
 - `app/api/tmdb/details/route.js` – `GET ?type=movie|tv&id=` → a `titles` oszlopainak
@@ -388,8 +440,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - A megnézett (`watched`) és az abbahagyott (`dropped`) címek háttérbe húzódnak (sor és kártya):
   fekete-fehér, fakó borító,
   tompított, de olvasható szöveg (`--watched-text`, ≥ 4,5:1), halványabb vezérlők, szürke
-  műfajpötty, tompa „Mama” felirat – nem az egész sor átlátszó. Rámutatáskor, fókusznál és a
-  törlés megerősítésekor minden teljes színű.
+  műfajpötty, tompa „Mama” felirat – nem az egész sor átlátszó. Rámutatáskor és fókusznál
+  minden teljes színű.
 - Design: sötét téma a `:root` változókkal; kiemelőszín (`--accent`) neon türkiz `#33e0ef`
   (nem sárga), a „Folyamatban” is ez (`--st-watching: var(--accent)`); állapotszínek
   `--st-<kód>` változókban (Abbahagyva: halvány lila `--st-dropped`).
@@ -417,7 +469,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   legyen éle és vízszintes görgetés); a nézetváltás borító ↔ szerkesztő (0,3 s); a borítófal
   kártyáinak beúszása (a görgetés vezérli: `animation-timeline: view()`); a csillagok
   pattanása (0,34 s, egymás után); a pipa bepattanása (átmenet, betöltéskor nem mozog); a harang
-  rezzenése (0,9 s, egyszer); a csontváz csillogása (1,4 s, ismétlődik). A `globals.css`
+  rezzenése (0,9 s, egyszer); a csontváz csillogása (1,4 s, ismétlődik); az értesítősáv
+  fogyó csíkja (a sáv ideje, 8 s, lineáris – a hátralévő időt mutatja). A `globals.css`
   végén egy közös `prefers-reduced-motion: reduce` szabály minden átmenetet és animációt
   kikapcsol (a nézetváltás álelemeit is; a nézetváltást a kód el sem indítja).
 - Hiányzó borító: a `.thumb:empty` / `.poster-fallback` filmikont kap (`--icon-film`).
@@ -460,29 +513,41 @@ aurora a lap tetején; anyag és mélység: letapadó üveg szűrősor, filmszem
 mozgás: nézetváltás borító ↔ szerkesztő, beúszó kártyák, mikroanimációk
 (csillag, pipa, harang), csontváz-betöltés; listanézetben nagyobb borító (72 px) és cím (20 px);
 automatikus heti mentés (2026-10-04): az adatbázisban 8 hétig (pg_cron), „Mentések” ablak
-(mentés most, visszaállítás), külső másolat a GitHubon (artifact, 56 nap).
+(mentés most, visszaállítás), külső másolat a GitHubon (artifact, 56 nap); a 3. tervkörből
+(2026-10-04): értesítősáv, törlés visszavonása, „Hogy tetszett?” megnézéskor, barátságos üres
+állapotok, gyorsgombok a letapadt szűrősorban, előzetes a szerkesztőben, évadok idővonala,
+Felfedezés (magyar szinkronos közelítés), franchise-gyűjtemény a hiányzó részekkel.
 Franchise-filmek importja (franchise.xlsx): 194 cím, 34 franchise; hozzáadás dátuma = megjelenés.
 Norbi listája (norbert.tutor@gmail.com) 2026-10-02-án Excelből importálva: 512 cím.
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
-- Nincs kijelölve – Norbi kéri a következőt (ötletek lent).
+- Nincs kijelölve – Norbi választ a 3. tervkörből (lent).
 
-## Fejlesztési ötletek (később)
-- „Hol nézhető?” – a TMDB `watch/providers` adatai (Magyarország: Netflix, HBO Max, Disney+,
-  SkyShowtime…) logóval a soron / kártyán, szűrő az előfizetett szolgáltatókra; a TMDB a
-  JustWatch megnevezését kéri. Norbi: egyelőre nem kell, a lista végére.
-- „Mit nézzek ma?” – véletlen ajánlás a jelenlegi szűrőből (pl. letöltött, még nem látott).
-- Előzetes (trailer) link a szerkesztő ablakban (TMDB `videos`).
-- Filmek megjelenésének figyelése – „Hamarosan” jelzés, és a harang szól, ha letölthető lett
-  (TMDB `release_dates`, digitális megjelenés).
-- Játékidő a soron (sorozatnál egy rész hossza) és szűrő rá (pl. 2 óránál rövidebb).
-- Értesítés a telefonra akkor is, ha az app nincs nyitva (web push, napi ellenőrzés).
-- Saját címkék (pl. „családi”, „karácsonyi”) szűrővel.
-- Mamának megosztható, csak olvasható lista titkos linkkel (gondos jogosultságkezeléssel).
-- Szinkron / felirat jelölése a letöltött címeknél.
-- Törlés visszavonása (megerősítés helyett pár másodpercig „Visszavonás”).
-- Billentyűparancsok asztalon (`/` keresés, `N` új cím, nyilak: lapozás).
+## Fejlesztési terv, 3. kör (2026-10-04)
+**`munka/terv-3/TERV.md`** (helyi mappa) – 21 javaslat funkcióra és dizájnra, látványtervvel
+(`munka/terv-3/kepek/`), mindegyiknél: mit lát Norbi, megvalósítás (fájlok, SQL, TMDB-hívások),
+teszt, méret, nyitott kérdések; közös alapok (értesítősáv, TMDB-részletek pótlása, mentésbe
+felvétel, teszt, dizájn) és „hogyan kezdj neki”. Előnézet (privát):
+https://claude.ai/artifact/XWwxnuv2juKRmSEJR3WLUa (helyben `munka/terv-3/tervek.html`).
+A korábbi ötletlista minden eleme benne van. Javasolt sorrend:
+1. Gyors kényelem: törlés visszavonása, értékelés kérése megnézéskor, gyorsgombok a letapadt
+   szűrősorban, barátságos üres állapotok.
+2. Mit nézzünk?: játékidő + szűrő, „Mit nézzek ma?”, előzetes (trailer).
+3. Bővítés: Felfedezés (népszerű / hamarosan / új digitálisan), franchise-gyűjtemény (a
+   hiányzó részek), IMDb-watchlist import.
+4. Rendszerezés és gyorsaság: saját címkék, szinkron / felirat, gyorsműveletek a borítón,
+   parancspaletta + billentyűparancsok.
+5. Figyelés: filmek megjelenése („Hamarosan”, harang), értesítés a telefonra (web push).
+6. Megosztás: Mama listája (titkos link, Mama maga jelöl).
+7. Dizájn-finomítások: évadok idővonala, csoportosítás hónapok szerint, évértékelő (decemberre).
+8. Később (Norbi kérésére): „Hol nézhető?”.
+Megvalósításkor a pont mellé a TERV.md-be: „kész (commit)”, és ide az Állapotba.
+**Kész (2026-10-04), Norbi döntéseivel:** 1 – törlés visszavonása (a szerkesztő ablakban marad
+a megerősítés), 4 – értékelés kérése (nem kikapcsolható), 7 – előzetes, 8 – Felfedezés (csak
+magyar szinkronos – közelítés, külön sorozat-sorral), 9 – franchise-gyűjtemény, 14 – üres
+állapotok, 15 – gyorsgombok a letapadt szűrősorban, 16 – évadok idővonala. Vár még: 2, 3, 5,
+6, 10–13, 17–21.
 
 ## Fejlesztői megjegyzés
 - Ha a terminál nem ismeri a `node`/`npm` parancsot, a VS Code-ot újra kell indítani

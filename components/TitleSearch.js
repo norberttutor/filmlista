@@ -3,13 +3,15 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { addTitle, titleKey } from '@/lib/titles';
+import Discover from '@/components/Discover';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w154';
 const MIN_LENGTH = 2;
 const DEBOUNCE_MS = 400;
 
-export default function TitleSearch({ existingKeys, onAdded, onClose }) {
-  const [query, setQuery] = useState('');
+// initialQuery: kitöltve nyílik (pl. az üres listakeresés „Keresés a TMDB-n” gombjáról)
+export default function TitleSearch({ existingKeys, onAdded, onClose, initialQuery = '' }) {
+  const [query, setQuery] = useState(initialQuery);
   // az utolsó befejezett keresés: melyik szövegre, mit kaptunk
   const [found, setFound] = useState({ q: '', results: [], error: '' });
   // találatonként: { busy } mentés közben, { error } ha nem sikerült
@@ -85,6 +87,9 @@ export default function TitleSearch({ existingKeys, onAdded, onClose }) {
           {found.error}
         </p>
       )}
+
+      {/* amíg nincs keresés: felfedező sorok (mozi, hamarosan, digitálisan új, sorozatok) */}
+      {q.length === 0 && <Discover existingKeys={existingKeys} rowState={rowState} onAdd={handleAdd} />}
 
       {q.length >= MIN_LENGTH && found.results.length > 0 && (
         <ul className="results">

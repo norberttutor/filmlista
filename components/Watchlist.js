@@ -11,6 +11,8 @@ import TitleEditor from '@/components/TitleEditor';
 import TitleTable from '@/components/TitleTable';
 import {
   titleKey,
+  updateTitle,
+  deleteTitle,
   createFranchise,
   deleteFranchise,
   renameFranchise,
@@ -24,18 +26,25 @@ import {
   mamaLabel,
 } from '@/lib/titles';
 import FranchiseFilter from '@/components/FranchiseFilter';
+import FranchiseCollection from '@/components/FranchiseCollection';
 import NotificationBell from '@/components/NotificationBell';
 import BulkImport from '@/components/BulkImport';
 import ListSkeleton from '@/components/ListSkeleton';
 import StatsDialog from '@/components/StatsDialog';
 import BackupsDialog from '@/components/BackupsDialog';
 import MoreMenu from '@/components/MoreMenu';
+import Toaster from '@/components/Toaster';
+import EmptyState from '@/components/EmptyState';
+import StarRating from '@/components/StarRating';
+import { toast, dismissToast } from '@/lib/toast';
 import { loadNotifications, markNotificationsRead } from '@/lib/notifications';
 import { downloadListCsv } from '@/lib/exportList';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 import { canMorph, MORPH_NAME } from '@/lib/viewTransition';
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
+
+const TOAST_THUMB = 'https://image.tmdb.org/t/p/w92';
 
 // franchise-szűrő: '' = összes, NO_FRANCHISE = franchise nélküliek, egyébként franchise id
 const NO_FRANCHISE = 'none';
@@ -148,6 +157,7 @@ export default function Watchlist({ session }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [adding, setAdding] = useState(false);
+  const [addQuery, setAddQuery] = useState(''); // a „Cím hozzáadása” panel kezdő keresése
   const [showStats, setShowStats] = useState(false); // a statisztika ablak nyitva
   const [showBackups, setShowBackups] = useState(false); // a mentések ablak nyitva
   // a ⋮ menüből nyíló importok (a saját ablakukat / fájlválasztójukat nyitják)
@@ -469,11 +479,6 @@ export default function Watchlist({ session }) {
     };
   }, [listShown]);
 
-  function openAddFromFab() {
-    setAdding(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
   function changePage(p) {
     setPageState({ key: filterKey, page: p });
     filtersAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -566,8 +571,72 @@ export default function Watchlist({ session }) {
     setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, my_rating: byId.get(t.id) } : t)));
   }
 
-  function removeTitle(id) {
-    setTitles((ts) => ts.filter((x) => x.id !== id));
+  // törlés visszavonással: a cím azonnal lekerül, az adatbázisból csak a sáv lejártakor (8 mp)
+  // vagy a × gombra törlődik; „Visszavonás”: vissza a listára. Ha a lapot közben bezárják, a cím
+  // megmarad (biztonságos hiba).
+  function requestDelete(t) {
+    setTitles((ts) => ts.filter((x) => x.id !== t.id));
+    const restore = () => setTitles((ts) => (ts.some((x) => x.id === t.id) ? ts : [t, ...ts]));
+    toast({
+      text: (
+        <>
+          „<b>{t.title}</b>” lekerült a listáról
+        </>
+      ),
+      action: { label: 'Visszavonás', onClick: restore },
+      onExpire: () =>
+        deleteTitle(t.id).catch((err) => {
+          restore();
+          toast({ text: `Nem sikerült törölni: „${t.title}”. ${err.message}` });
+        }),
+    });
+  }
+
+  // a táblázatban (sor vagy évadok) Megnézve-re váltott, még értékelés nélküli címnél
+  // megkérdezzük, hogy tetszett (a szerkesztő ablakban nem: ott a csillagsor kéznél van).
+  // A sor kétszer jön (azonnal, majd a mentett): a ref már az elsőt látja, így csak egyszer kérdez.
+  const titlesRef = useRef(titles);
+  useEffect(() => {
+    titlesRef.current = titles;
+  }, [titles]);
+
+  function handleRowUpdated(row) {
+    const before = titlesRef.current.find((x) => x.id === row.id);
+    if (before && before.status !== 'watched' && row.status === 'watched' && !row.my_rating) {
+      askRating(row);
+    }
+    titlesRef.current = titlesRef.current.map((x) => (x.id === row.id ? row : x));
+    replaceTitle(row);
+  }
+
+  function askRating(t) {
+    let id = 0;
+    const rate = async (n) => {
+      dismissToast(id);
+      try {
+        replaceTitle(await updateTitle(t.id, { my_rating: n }));
+      } catch (err) {
+        toast({ text: err.message });
+      }
+    };
+    id = toast({
+      image: t.poster_path ? TOAST_THUMB + t.poster_path : null,
+      text: (
+        <>
+          Megnézted: <b>{t.title}</b>. Hogy tetszett?
+        </>
+      ),
+      content: <StarRating name={`ask-${t.id}`} label={`Értékelés – ${t.title}`} value={null} onChange={rate} />,
+      action: { label: 'Később', onClick: () => {} },
+      hideClose: true,
+    });
+  }
+
+  // a „Cím hozzáadása” panel (opcionálisan kitöltött kereséssel), a lap tetején
+  function openAdd(q = '') {
+    setAddQuery(q);
+    setAdding(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   // a telefonos "Szűrők" gomb rövid összegzése, pl. "Filmek · Megnézendő · Nem letöltött ·
@@ -616,7 +685,7 @@ export default function Watchlist({ session }) {
               className="primary"
               aria-expanded={adding}
               aria-controls="add-panel"
-              onClick={() => setAdding((a) => !a)}
+              onClick={() => (adding ? setAdding(false) : openAdd())}
             >
               Cím hozzáadása
             </button>
@@ -705,6 +774,8 @@ export default function Watchlist({ session }) {
         <>
           {adding && (
             <TitleSearch
+              key={addQuery}
+              initialQuery={addQuery}
               existingKeys={existingKeys}
               onAdded={(row) => setTitles((ts) => [row, ...ts])}
               onClose={() => setAdding(false)}
@@ -873,6 +944,35 @@ export default function Watchlist({ session }) {
                   Filmek · Megnézendő · Nem letöltött · Összes műfaj · Franchise nélkül
                 </span>
               </span>
+
+              {/* letapadt szűrősorban (lejjebb görgetve) gyorsgombok: Cím hozzáadása, vissza a
+                  lap tetejére – csak asztalon (telefonon ott a lebegő „+”) */}
+              {filtersStuck && (
+                <span className="stuck-tools">
+                  <button
+                    type="button"
+                    className="primary"
+                    aria-label="Cím hozzáadása"
+                    title="Cím hozzáadása"
+                    onClick={() => openAdd()}
+                  >
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost"
+                    aria-label="Vissza a lap tetejére"
+                    title="Vissza a lap tetejére"
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  >
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M12 19V5M5 12l7-7 7 7" />
+                    </svg>
+                  </button>
+                </span>
+              )}
             </div>
 
             {/* jobb szélen: keresés a felvett címek között, mellette a rendezés */}
@@ -943,29 +1043,74 @@ export default function Watchlist({ session }) {
             </div>
           </section>
 
+          {/* franchise-ra szűrve: a TMDB-gyűjtemény sávja (hány részét láttad, a hiányzók felvétele) */}
+          {franchiseChosen && !searching && franchiseName.has(Number(franchise)) && (
+            <FranchiseCollection
+              key={franchise}
+              franchise={franchises.find((f) => String(f.id) === franchise)}
+              titles={titles}
+              onAdded={(row) => setTitles((ts) => [row, ...ts])}
+            />
+          )}
+
           {titles.length === 0 ? (
-            <p className="state">
-              A listád még üres. Keress rá egy filmre vagy sorozatra a „Cím hozzáadása”
-              gombbal.
-            </p>
+            <EmptyState
+              title="A listád még üres"
+              text="Keress rá egy filmre vagy sorozatra, vagy válassz a népszerűek közül."
+            >
+              <button type="button" className="primary" onClick={() => openAdd()}>
+                Első cím hozzáadása
+              </button>
+              {isDesktop && (
+                <button type="button" className="ghost" onClick={() => bulkImportRef.current?.open()}>
+                  Tömeges import
+                </button>
+              )}
+            </EmptyState>
           ) : ofType.length === 0 ? (
-            <p className="state">
-              Még nincs {type === 'tv' ? 'sorozat' : 'film'} a listádon. Váltsd át a típust,
-              vagy adj hozzá egyet a „Cím hozzáadása” gombbal.
-            </p>
-          ) : visible.length === 0 ? (
-            <p className="state">
-              {searching ? 'Nincs a keresésnek megfelelő cím.' : 'Nincs a szűrésnek megfelelő cím.'}{' '}
-              {searching && sameFilters(filters, SEARCH_FILTERS) ? (
-                <button type="button" className="link" onClick={() => changeQuery('')}>
+            <EmptyState
+              title={`Még nincs ${type === 'tv' ? 'sorozat' : 'film'} a listádon`}
+              text="Váltsd át a típust, vagy adj hozzá egyet."
+            >
+              <button type="button" className="primary" onClick={() => openAdd()}>
+                {type === 'tv' ? 'Sorozat' : 'Film'} hozzáadása
+              </button>
+              <button type="button" className="ghost" onClick={() => changeType(type === 'tv' ? 'movie' : 'tv')}>
+                {type === 'tv' ? 'Filmek' : 'Sorozatok'} mutatása
+              </button>
+            </EmptyState>
+          ) : visible.length === 0 && searching ? (
+            // a keresés a listán nem talált: egy kattintással a TMDB-n keres tovább
+            <EmptyState
+              title={`Nincs „${query.trim()}” a listádon`}
+              text={
+                sameFilters(filters, SEARCH_FILTERS)
+                  ? 'A címekben és az eredeti címekben kerestem, a szűrőktől függetlenül.'
+                  : `A címekben és az eredeti címekben kerestem, ezzel a szűréssel: ${filterSummary}.`
+              }
+            >
+              <button type="button" className="primary" onClick={() => openAdd(query.trim())}>
+                Keresés a TMDB-n: „{query.trim()}”
+              </button>
+              {sameFilters(filters, SEARCH_FILTERS) ? (
+                <button type="button" className="ghost" onClick={() => changeQuery('')}>
                   Keresés törlése
                 </button>
               ) : (
-                <button type="button" className="link" onClick={clearFilters}>
+                <button type="button" className="ghost" onClick={clearFilters}>
                   Szűrők törlése
                 </button>
               )}
-            </p>
+            </EmptyState>
+          ) : visible.length === 0 ? (
+            <EmptyState title="Nincs a szűrésnek megfelelő cím" text={`Szűrés: ${filterSummary}.`}>
+              <button type="button" className="primary" onClick={clearFilters}>
+                Szűrők törlése
+              </button>
+              <button type="button" className="ghost" onClick={() => openAdd()}>
+                Felfedezés
+              </button>
+            </EmptyState>
           ) : isDesktop && view === 'list' ? (
             <TitleTable
               titles={paged}
@@ -975,8 +1120,8 @@ export default function Watchlist({ session }) {
               onDeleteFranchise={handleDeleteFranchise}
               onRenameFranchise={handleRenameFranchise}
               onEdit={openEditor}
-              onUpdated={replaceTitle}
-              onDeleted={removeTitle}
+              onUpdated={handleRowUpdated}
+              onDelete={requestDelete}
             />
           ) : (
             <ul className="grid">
@@ -1025,7 +1170,7 @@ export default function Watchlist({ session }) {
           aria-label="Cím hozzáadása"
           aria-expanded={adding}
           aria-controls="add-panel"
-          onClick={openAddFromFab}
+          onClick={() => openAdd()}
         >
           <svg
             viewBox="0 0 24 24"
@@ -1054,11 +1199,13 @@ export default function Watchlist({ session }) {
           onAdded={(row) => setTitles((ts) => [row, ...ts])}
           onSaved={replaceTitle}
           onChanged={replaceTitle}
-          onDeleted={removeTitle}
+          onDelete={requestDelete}
           morphTo={editorFrom.current}
           onClose={() => setEditing(null)}
         />
       )}
+
+      <Toaster />
     </main>
   );
 }

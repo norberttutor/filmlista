@@ -231,6 +231,78 @@ const SEASON_CHOICES = [
 // Évadlista: évadonként állapot (a kiválasztottra újra kattintva üres) és "Letöltve";
 // alul "Mind megnézve", "Nem nézem tovább" / "Mégis folytatom", "+ Évad hozzáadása",
 // "Utolsó évad törlése" (megerősítéssel), visszavonás.
+// Évadok idővonala (szerkesztő ablak, legalább 2 évadnál): évadonként egy pötty a megjelenés
+// napján, az állapot színével; a bejelentett (jövőbeli vagy dátum nélküli) szaggatott. A tengely
+// legfeljebb egy évvel tart túl a mán / az utolsó megjelent évadon: a dátum nélküli fél évvel
+// utána, a távolabbi bejelentett a tengely végén áll (a címkéjében a valódi dátum). „Ma” jelölő.
+// A pötty gomb: onPick(évadszám) – a szerkesztő a listában az évadhoz görget.
+export function SeasonTimeline({ title, onPick }) {
+  const seasons = title.seasons ?? [];
+  if (seasons.length < 2) return null;
+  const today = todayDate();
+  const now = Date.parse(today);
+  const HALF_YEAR = 182 * 864e5;
+  const aired = seasons.filter((s) => seasonAired(s, today)).map((s) => Date.parse(s.air_date));
+  const latest = Math.max(now, ...aired);
+  const horizon = latest + 2 * HALF_YEAR;
+  const points = seasons.map((s) => ({
+    s,
+    t: s.air_date ? Math.min(Date.parse(s.air_date), horizon) : latest + HALF_YEAR,
+    upcoming: !seasonAired(s, today),
+  }));
+  const first = new Date(Math.min(...points.map((p) => p.t))).getUTCFullYear();
+  const last = new Date(Math.max(...points.map((p) => p.t))).getUTCFullYear() + 1;
+  const start = Date.UTC(first, 0, 1);
+  const end = Date.UTC(last, 0, 1);
+  const pct = (t) => ((t - start) / (end - start)) * 100;
+  const step = last - first > 12 ? 2 : 1; // sok évnél csak minden második évszám
+  const years = [];
+  for (let y = first; y <= last; y += step) years.push(y);
+
+  return (
+    <div className="season-timeline" role="group" aria-label="Évadok idővonala">
+      <div className="tl-track">
+        {years.map((y) => (
+          <span key={y} className="tl-year" style={{ left: `${pct(Date.UTC(y, 0, 1))}%` }}>
+            {y}
+          </span>
+        ))}
+        <span className="tl-today" style={{ left: `${pct(now)}%` }} aria-hidden="true">
+          <span>ma</span>
+        </span>
+        {points.map(({ s, t, upcoming }) => {
+          const n = s.season_number;
+          const when = s.air_date ? formatDate(s.air_date) : 'bejelentve, még nincs dátum';
+          const state = upcoming ? 'bejelentve' : STATUS_TEXT[s.status] ?? '';
+          return (
+            <button
+              key={n}
+              type="button"
+              className="tl-dot"
+              data-status={s.status}
+              data-upcoming={upcoming ? '' : undefined}
+              style={{ left: `${pct(t)}%` }}
+              aria-label={`${n}. évad, ${when}, ${state}`}
+              title={`${n}. évad · ${when}`}
+              onClick={() => onPick(n)}
+            >
+              <span className="tl-n" aria-hidden="true">
+                {n}.
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <p className="tl-legend" aria-hidden="true">
+        <span data-status="watched">megnézve</span>
+        <span data-status="watching">folyamatban</span>
+        <span data-status="to_watch">még nem láttad</span>
+        <span data-upcoming="">bejelentve</span>
+      </p>
+    </div>
+  );
+}
+
 export function SeasonList({ title, actions }) {
   const id = useId();
   const today = todayDate();
@@ -265,7 +337,7 @@ export function SeasonList({ title, actions }) {
           const n = s.season_number;
           const isAired = seasonAired(s, today);
           return (
-            <li key={n} data-upcoming={isAired ? undefined : ''}>
+            <li key={n} data-season={n} data-upcoming={isAired ? undefined : ''}>
               <span className="season-head">
                 <span className="season-title">{n}. évad</span>
                 <span className="season-info">{seasonInfo(s, isAired)}</span>
