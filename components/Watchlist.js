@@ -230,7 +230,7 @@ export default function Watchlist({ session }) {
           .select('*')
           .order('created_at', { ascending: false }),
         supabase.from('statuses').select('*').order('sort_order'),
-        supabase.from('franchises').select('id, name, logo_path'),
+        supabase.from('franchises').select('id, name, logo_path, tmdb_collection_ids'),
       ]);
       if (cancelled) return;
 
@@ -360,7 +360,7 @@ export default function Watchlist({ session }) {
   async function reloadAfterRestore() {
     const [titlesRes, franchisesRes] = await Promise.all([
       supabase.from('titles_with_genres').select('*').order('created_at', { ascending: false }),
-      supabase.from('franchises').select('id, name, logo_path'),
+      supabase.from('franchises').select('id, name, logo_path, tmdb_collection_ids'),
     ]);
     const error = titlesRes.error || franchisesRes.error;
     if (error) {
@@ -1043,13 +1043,14 @@ export default function Watchlist({ session }) {
             </div>
           </section>
 
-          {/* franchise-ra szűrve: a TMDB-gyűjtemény sávja (hány részét láttad, a hiányzók felvétele) */}
+          {/* franchise-ra szűrve: a gyűjtemény sávja (hány címét láttad; az ablakban a TMDB-gyűjtemények, a további címek, kézi hozzárendelés) */}
           {franchiseChosen && !searching && franchiseName.has(Number(franchise)) && (
             <FranchiseCollection
               key={franchise}
               franchise={franchises.find((f) => String(f.id) === franchise)}
               titles={titles}
               onAdded={(row) => setTitles((ts) => [row, ...ts])}
+              onFranchiseUpdated={(f) => setFranchises((fs) => fs.map((x) => (x.id === f.id ? { ...x, ...f } : x)))}
             />
           )}
 

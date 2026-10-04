@@ -237,14 +237,24 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   angol vagy magyar eredeti nyelv, van magyar leírás, és nincs dokumentum / valóságshow /
   talkshow / hírek / szappanopera műfaj. A felület ezt egy mondatban jelzi. Listánként
   legfeljebb 16, 5 oldalig, egy óráig gyorsítótárazva (`cached()`)
-- `components/FranchiseCollection.js` + `app/api/tmdb/collection/route.js` – franchise-ra
-  szűrve sáv a lista fölött (logó vagy név, mérő: megnézve zöld / listán türkiz, „x/y megnézve ·
-  n a listán · m hiányzik”, „Gyűjtemény” gomb), ablak: a TMDB-gyűjtemény összes része
-  megjelenési sorrendben (sorszám a borítón; megnézett szürke + saját értékelés borostyán,
-  listán lévő „A listán”, hiányzó szaggatott kerettel „+ Hozzáadás” → `addTitle` + a franchise
-  beállítása; „A hiányzó N felvétele” kettesével). A gyűjtemény: a franchise filmjei (legfeljebb
-  6) közt leggyakoribb `belongs_to_collection`, egy napig gyorsítótárazva; ha nincs, nincs sáv.
-  Adatbázis-oszlop nem kell hozzá
+- `components/FranchiseCollection.js` + `app/api/tmdb/collection/route.js` +
+  `app/api/tmdb/collection-search/route.js` – franchise-ra szűrve mindig sáv a lista fölött
+  (logó vagy név, mérő: megnézve zöld / listán türkiz, „x/y megnézve · n a listán · m
+  hiányzik”, gyűjtemény nélkül „· nincs hozzá TMDB-gyűjtemény”; „Gyűjtemény” gomb). Ablak,
+  gyűjteményenként egy szakasz: a franchise **összes** filmjének (legfeljebb 60) minden
+  `belongs_to_collection`-je, plusz a kézzel hozzárendeltek (`franchises.tmdb_collection_ids`,
+  „kézzel hozzárendelve · Eltávolítás”), a legkorábbi részük szerint sorban; a részek
+  megjelenési sorrendben (sorszám a borítón; megnézett / abbahagyott szürke + saját értékelés
+  borostyán, listán lévő „A listán”, hiányzó szaggatott kerettel „+ Hozzáadás” → `addTitle` +
+  a franchise beállítása; „A hiányzó N felvétele” kettesével). „A franchise-od további címei”
+  (gyűjtemény nélkül: „A franchise-od címei”): a gyűjteményekben nem szereplő saját címek
+  (sorozatok – a TMDB-gyűjteményekben sosem szerepelnek –, gyűjtemény nélküli filmek), sorszám
+  nélkül, megjelenés szerint. „+ TMDB-gyűjtemény hozzáadása”: késleltetett keresés
+  (`search/collection`; magyarul gyakran nincs találat, angolul igen – pl. „Star Wars”) →
+  „Hozzárendelés” (`setFranchiseCollections`). A számlálás a gyűjtemények részeinek
+  uniója + a további címek. Gyorsítótár: filmenként a gyűjtemény-azonosító és gyűjteményenként
+  a részek egy napig. (Az első változat franchise-onként csak egy gyűjteményt mutatott, és
+  Norbi 40 franchise-ából 15-nél kihagyott címeket – 2026-10-04.)
 - `app/api/tmdb/videos/route.js` – `GET ?type&id` → `{ video: { key, name, lang } | null }`:
   YouTube, „Trailer” előbb, hivatalos előbb, legfrissebb; magyar nyelvű, ha nincs, angol
 - `lib/supabase.js` – Supabase kliens
@@ -388,9 +398,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `titles_status_from_seasons`) a `dropped` kivételével mindig az évadokból számolt érték kerül
   be (a `status`, `is_downloaded`, `watched_at` is) – így a „Mégis folytatom” bármit küldhet.
   Közös számítás: `seasons_summary(title_id)` – `09_dropped.sql`.
-- `franchises (id, user_id default auth.uid(), name, created_at, logo_path, logo_checked_at)` –
-  felhasználónkénti saját lista, a felületen bővíthető; egyedi: `(user_id, lower(name))` –
-  `04_franchises.sql`; logó: `07_franchise_logo.sql`
+- `franchises (id, user_id default auth.uid(), name, created_at, logo_path, logo_checked_at,
+  tmdb_collection_ids integer[] default '{}')` – felhasználónkénti saját lista, a felületen
+  bővíthető; egyedi: `(user_id, lower(name))` – `04_franchises.sql`; logó:
+  `07_franchise_logo.sql`; kézzel hozzárendelt TMDB-gyűjtemények: `13_franchise_collections.sql`
+  (szándékosan NULL is lehet – az app üresnek veszi –, mert az oszlop előtti mentések
+  visszaállításakor NULL kerül bele). **Általános szabály:** mentett táblába új oszlop csak
+  NULL-t engedő (vagy a visszaállítás tölti ki), különben a régi mentések nem állíthatók vissza
 - Trigger (`06_watched_clears_downloaded.sql`): amikor egy cím „Megnézve” állapotba kerül
   (átváltáskor vagy megnézettként felvéve), az `is_downloaded` hamis lesz; ha utána kézzel
   újra letöltöttnek jelölik, az megmarad. A felület is azonnal leveszi a pipát.

@@ -2,37 +2,70 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
-import { addTitle, updateTitle } from '@/lib/titles';
+import { addTitle, setFranchiseCollections, updateTitle } from '@/lib/titles';
 
 const IMG = 'https://image.tmdb.org/t/p/';
+const byYear = (a, b) => (a.release_year ?? 9999) - (b.release_year ?? 9999);
 
-// Franchise-ra szűrve a lista fölött sáv: a franchise TMDB-gyűjteménye (a filmjei alapján,
-// /api/tmdb/collection), hány részét láttad / van a listán; a „Gyűjtemény” ablakban az összes
-// rész megjelenési sorrendben, a hiányzók egy kattintással felvehetők (a franchise is beállítódik).
-// Ha a franchise filmjei nem tartoznak TMDB-gyűjteménybe, nem jelenik meg semmi.
-export default function FranchiseCollection({ franchise, titles, onAdded }) {
-  const movies = titles.filter((t) => t.franchise_id === franchise.id && t.media_type === 'movie');
-  const ids = movies.map((t) => t.tmdb_id).sort((a, b) => a - b).join(',');
-  const [collection, setCollection] = useState(null);
+// Franchise-ra szűrve a lista fölött sáv: hány címét láttad / van a listán. A „Gyűjtemény”
+// ablakban (gyűjteményenként egy szakasz):
+// - a franchise filmjeinek összes TMDB-gyűjteménye (pl. Alien, Ragadozó, AVP, Prometheus) és a
+//   kézzel hozzárendeltek (franchises.tmdb_collection_ids) – a részek megjelenési sorrendben, a
+//   hiányzók egy kattintással felvehetők (a franchise is beállítódik);
+// - „A franchise-od további címei”: a gyűjteményekben nem szereplő saját címek (sorozatok,
+//   gyűjtemény nélküli filmek);
+// - „+ TMDB-gyűjtemény hozzáadása”: keresés a TMDB gyűjteményei között (pl. Star Wars).
+// A sáv akkor is megjelenik, ha nincs TMDB-gyűjtemény (a saját címekkel).
+export default function FranchiseCollection({ franchise, titles, onAdded, onFranchiseUpdated }) {
+  const own = titles.filter((t) => t.franchise_id === franchise.id);
+  const movieIds = own
+    .filter((t) => t.media_type === 'movie')
+    .map((t) => t.tmdb_id)
+    .sort((a, b) => a - b)
+    .join(',');
+  const manual = franchise.tmdb_collection_ids ?? [];
+  const extra = manual.join(',');
+  const needsFetch = Boolean(movieIds || extra);
+  const [collections, setCollections] = useState(needsFetch ? null : []); // null: betöltés alatt
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (!ids) return;
+    if (!movieIds && !extra) {
+      setCollections([]);
+      return;
+    }
     const controller = new AbortController();
-    apiGet('/api/tmdb/collection', { movies: ids }, { signal: controller.signal })
-      .then((data) => setCollection(data.collection))
-      .catch((err) => err.name !== 'AbortError' && console.warn('Gyűjtemény:', err.message));
+    apiGet('/api/tmdb/collection', { movies: movieIds, extra }, { signal: controller.signal })
+      .then((data) => setCollections(data.collections))
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
+        console.warn('Gyűjtemény:', err.message);
+        setCollections([]);
+      });
     return () => controller.abort();
-  }, [ids]);
+  }, [movieIds, extra]);
 
-  if (!collection || !ids) return null;
+  if (collections === null) return null;
 
-  // a részek a listán: tmdb_id → cím (bármelyik franchise-ban)
+  // a részek a listán: tmdb_id → cím (bármelyik franchise-ban vagy anélkül)
   const byTmdb = new Map(titles.filter((t) => t.media_type === 'movie').map((t) => [t.tmdb_id, t]));
-  const parts = collection.parts.map((p) => ({ ...p, own: byTmdb.get(p.tmdb_id) ?? null }));
-  const total = parts.length;
-  const watched = parts.filter((p) => p.own?.status === 'watched').length;
-  const onList = parts.filter((p) => p.own).length;
+  const sections = collections.map((c) => ({
+    ...c,
+    manual: manual.includes(c.id),
+    parts: c.parts.map((p) => ({ ...p, own: byTmdb.get(p.tmdb_id) ?? null })),
+  }));
+  const inCollections = new Set(sections.flatMap((s) => s.parts.map((p) => p.tmdb_id)));
+  const extras = own
+    .filter((t) => !(t.media_type === 'movie' && inCollections.has(t.tmdb_id)))
+    .sort(byYear);
+
+  // számlálás: a gyűjtemények részei (egy film csak egyszer) + a további címek
+  const parts = [...new Map(sections.flatMap((s) => s.parts).map((p) => [p.tmdb_id, p])).values()];
+  const total = parts.length + extras.length;
+  const watched =
+    parts.filter((p) => p.own?.status === 'watched').length + extras.filter((t) => t.status === 'watched').length;
+  const onList = parts.filter((p) => p.own).length + extras.length;
+  const counts = { total, watched, onList };
 
   return (
     <>
@@ -44,12 +77,14 @@ export default function FranchiseCollection({ franchise, titles, onAdded }) {
         ) : (
           <b>{franchise.name}</b>
         )}
-        <Meter total={total} watched={watched} onList={onList} />
+        <Meter {...counts} />
         <span className="collection-count">
           <b>
             {watched}/{total}
           </b>{' '}
-          megnézve · {onList} a listán{onList < total && ` · ${total - onList} hiányzik`}
+          megnézve · {onList} a listán
+          {onList < total && ` · ${total - onList} hiányzik`}
+          {sections.length === 0 && ' · nincs hozzá TMDB-gyűjtemény'}
         </span>
         <button type="button" className="ghost" onClick={() => setOpen(true)}>
           Gyűjtemény
@@ -58,10 +93,12 @@ export default function FranchiseCollection({ franchise, titles, onAdded }) {
       {open && (
         <CollectionDialog
           franchise={franchise}
-          collection={collection}
-          parts={parts}
-          counts={{ total, watched, onList }}
+          sections={sections}
+          extras={extras}
+          counts={counts}
+          manual={manual}
           onAdded={onAdded}
+          onFranchiseUpdated={onFranchiseUpdated}
           onClose={() => setOpen(false)}
         />
       )}
@@ -72,17 +109,30 @@ export default function FranchiseCollection({ franchise, titles, onAdded }) {
 function Meter({ total, watched, onList }) {
   return (
     <span className="collection-meter" aria-hidden="true">
-      <i style={{ width: `${(watched / total) * 100}%` }} />
-      <i className="on-list" style={{ width: `${((onList - watched) / total) * 100}%` }} />
+      <i style={{ width: `${total ? (watched / total) * 100 : 0}%` }} />
+      <i className="on-list" style={{ width: `${total ? ((onList - watched) / total) * 100 : 0}%` }} />
     </span>
   );
 }
 
-function CollectionDialog({ franchise, collection, parts, counts, onAdded, onClose }) {
+function Poster({ path }) {
+  return path ? (
+    <img src={`${IMG}w185${path}`} alt="" loading="lazy" crossOrigin="anonymous" />
+  ) : (
+    <span className="poster-fallback" />
+  );
+}
+
+function CollectionDialog({ franchise, sections, extras, counts, manual, onAdded, onFranchiseUpdated, onClose }) {
   const dialogRef = useRef(null);
   const headingRef = useRef(null);
   const [state, setState] = useState({}); // tmdb_id → { busy } | { error }
-  const missing = parts.filter((p) => !p.own);
+  const [error, setError] = useState('');
+  const [searching, setSearching] = useState(false); // a „+ TMDB-gyűjtemény” kereső nyitva
+  const missing = [
+    ...new Map(sections.flatMap((s) => s.parts.filter((p) => !p.own)).map((p) => [p.tmdb_id, p])).values(),
+  ];
+  const backdrop = sections.find((s) => s.backdrop_path)?.backdrop_path;
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
@@ -108,6 +158,15 @@ function CollectionDialog({ franchise, collection, parts, counts, onAdded, onClo
     }
   }
 
+  async function changeManual(ids) {
+    setError('');
+    try {
+      onFranchiseUpdated(await setFranchiseCollections(franchise.id, ids));
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   const busyAny = Object.values(state).some((s) => s.busy);
 
   return (
@@ -119,13 +178,17 @@ function CollectionDialog({ franchise, collection, parts, counts, onAdded, onClo
     >
       <div
         className="collection-head"
-        style={collection.backdrop_path ? { backgroundImage: `url(${IMG}w1280${collection.backdrop_path})` } : undefined}
+        style={backdrop ? { backgroundImage: `url(${IMG}w1280${backdrop})` } : undefined}
       >
         <h2 id="collection-title" ref={headingRef} tabIndex={-1}>
           {franchise.name}
         </h2>
         <p className="collection-sub">
-          A teljes gyűjtemény a TMDB-ről, megjelenési sorrendben · {counts.total} film
+          {sections.length
+            ? `${sections.length} TMDB-gyűjtemény, a részek megjelenési sorrendben`
+            : 'Nincs hozzá TMDB-gyűjtemény – lent kézzel hozzárendelhetsz egyet'}
+          {' · '}
+          {counts.total} cím
         </p>
         <p className="collection-prog">
           <Meter {...counts} />
@@ -138,42 +201,102 @@ function CollectionDialog({ franchise, collection, parts, counts, onAdded, onClo
           </span>
         </p>
       </div>
-      <ol className="collection-parts">
-        {parts.map((p) => {
-          const s = state[p.tmdb_id] ?? {};
-          const status = p.own ? p.own.status : 'missing';
-          return (
-            <li key={p.tmdb_id} data-state={status}>
-              <div className="collection-poster">
-                {p.poster_path ? (
-                  <img src={`${IMG}w185${p.poster_path}`} alt="" loading="lazy" crossOrigin="anonymous" />
-                ) : (
-                  <span className="poster-fallback" />
-                )}
-                {p.own?.is_downloaded && <span className="badge">Letöltve</span>}
-              </div>
-              <b>{p.title}</b>
-              <span className="muted small">{p.release_year ?? 'Bejelentve'}</span>
-              {!p.own ? (
-                <button type="button" className="ghost" disabled={s.busy} onClick={() => add(p)}>
-                  {s.busy ? 'Hozzáadás…' : '+ Hozzáadás'}
+
+      {sections.map((s) => (
+        <section key={s.id} className="collection-section" aria-labelledby={`collection-${s.id}`}>
+          <div className="collection-section-head">
+            <h3 id={`collection-${s.id}`}>{s.name}</h3>
+            {s.manual && (
+              <>
+                <span className="muted small">kézzel hozzárendelve</span>
+                <button
+                  type="button"
+                  className="link small"
+                  onClick={() => changeManual(manual.filter((id) => id !== s.id))}
+                >
+                  Eltávolítás
                 </button>
-              ) : status === 'watched' ? (
-                <span className="collection-state watched">
-                  ✓ Megnézve{p.own.my_rating && <span className="mine"> · {p.own.my_rating}/10</span>}
+              </>
+            )}
+          </div>
+          <ol className="collection-parts">
+            {s.parts.map((p) => {
+              const st = state[p.tmdb_id] ?? {};
+              const status = p.own ? p.own.status : 'missing';
+              return (
+                <li key={p.tmdb_id} data-state={status}>
+                  <div className="collection-poster">
+                    <Poster path={p.poster_path} />
+                    {p.own?.is_downloaded && <span className="badge">Letöltve</span>}
+                  </div>
+                  <b>{p.title}</b>
+                  <span className="muted small">{p.release_year ?? 'Bejelentve'}</span>
+                  {!p.own ? (
+                    <button type="button" className="ghost" disabled={st.busy} onClick={() => add(p)}>
+                      {st.busy ? 'Hozzáadás…' : '+ Hozzáadás'}
+                    </button>
+                  ) : (
+                    <OwnState t={p.own} />
+                  )}
+                  {st.error && (
+                    <p className="error small" role="alert">
+                      {st.error}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      ))}
+
+      {extras.length > 0 && (
+        <section className="collection-section" aria-labelledby="collection-extras">
+          <div className="collection-section-head">
+            <h3 id="collection-extras">
+              {sections.length ? 'A franchise-od további címei' : 'A franchise-od címei'}
+            </h3>
+            <span className="muted small">
+              {sections.length ? 'a listádon, de egyik fenti gyűjteménynek sem része' : 'a listádon, megjelenés szerint'}
+            </span>
+          </div>
+          <ol className="collection-parts extras">
+            {extras.map((t) => (
+              <li key={t.id} data-state={t.status}>
+                <div className="collection-poster">
+                  <Poster path={t.poster_path} />
+                  {t.is_downloaded && <span className="badge">Letöltve</span>}
+                </div>
+                <b>{t.title}</b>
+                <span className="muted small">
+                  {t.release_year ?? '–'} · {t.media_type === 'tv' ? 'Sorozat' : 'Film'}
                 </span>
-              ) : (
-                <span className="collection-state">A listán</span>
-              )}
-              {s.error && (
-                <p className="error small" role="alert">
-                  {s.error}
-                </p>
-              )}
-            </li>
-          );
-        })}
-      </ol>
+                <OwnState t={t} />
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
+      <section className="collection-section collection-manual">
+        {searching ? (
+          <CollectionSearch
+            assigned={new Set([...manual, ...sections.map((s) => s.id)])}
+            onPick={(c) => changeManual([...manual, c.id])}
+            onClose={() => setSearching(false)}
+          />
+        ) : (
+          <button type="button" className="ghost" onClick={() => setSearching(true)}>
+            + TMDB-gyűjtemény hozzáadása
+          </button>
+        )}
+        {error && (
+          <p className="error small" role="alert">
+            {error}
+          </p>
+        )}
+      </section>
+
       <div className="editor-actions">
         {missing.length > 1 && (
           <button type="button" className="ghost" disabled={busyAny} onClick={addMissing}>
@@ -186,5 +309,85 @@ function CollectionDialog({ franchise, collection, parts, counts, onAdded, onClo
         </button>
       </div>
     </dialog>
+  );
+}
+
+// a listán lévő cím állapota: megnézve (saját értékelés borostyánnal) vagy „A listán”
+function OwnState({ t }) {
+  return t.status === 'watched' ? (
+    <span className="collection-state watched">
+      ✓ Megnézve{t.my_rating && <span className="mine"> · {t.my_rating}/10</span>}
+    </span>
+  ) : (
+    <span className={t.status === 'dropped' ? 'collection-state dropped' : 'collection-state'}>
+      {t.status === 'dropped' ? 'Abbahagyva' : 'A listán'}
+    </span>
+  );
+}
+
+// TMDB-gyűjtemény keresése és hozzárendelése (késleltetett keresés, mint a Cím hozzáadása)
+function CollectionSearch({ assigned, onPick, onClose }) {
+  const [query, setQuery] = useState('');
+  const [found, setFound] = useState({ q: '', results: [], error: '' });
+  const q = query.trim();
+
+  useEffect(() => {
+    if (q.length < 2) return;
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      apiGet('/api/tmdb/collection-search', { q }, { signal: controller.signal })
+        .then((data) => setFound({ q, results: data.results, error: '' }))
+        .catch((err) => err.name !== 'AbortError' && setFound({ q, results: [], error: err.message }));
+    }, 400);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [q]);
+
+  const done = q.length >= 2 && found.q === q;
+  return (
+    <div className="collection-search">
+      <div className="collection-search-row">
+        <label className="search-field">
+          TMDB-gyűjtemény keresése (angol címmel is, pl. „Star Wars”)
+          <input type="search" autoFocus autoComplete="off" value={query} onChange={(e) => setQuery(e.target.value)} />
+        </label>
+        <button type="button" className="ghost" onClick={onClose}>
+          Mégse
+        </button>
+      </div>
+      <p className="search-status" aria-live="polite">
+        {q.length >= 2 && !done
+          ? 'Keresés…'
+          : done && !found.error
+            ? found.results.length
+              ? `${found.results.length} gyűjtemény`
+              : `Nincs ilyen gyűjtemény: „${q}”. Próbáld angolul.`
+            : ''}
+      </p>
+      {done && found.error && (
+        <p className="error small" role="alert">
+          {found.error}
+        </p>
+      )}
+      {done && found.results.length > 0 && (
+        <ul className="collection-results">
+          {found.results.map((c) => (
+            <li key={c.id}>
+              <span className="thumb">{c.poster_path && <img src={`${IMG}w92${c.poster_path}`} alt="" loading="lazy" />}</span>
+              <b>{c.name}</b>
+              {assigned.has(c.id) ? (
+                <span className="on-list">✓ Hozzárendelve</span>
+              ) : (
+                <button type="button" className="ghost" onClick={() => onPick(c)}>
+                  Hozzárendelés
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

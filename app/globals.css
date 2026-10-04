@@ -2985,7 +2985,7 @@ button.season:hover {
   grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
   gap: 1.1rem;
   margin: 0;
-  padding: 1.1rem 1.75rem 0.4rem;
+  padding: 0.7rem 0 0.2rem;
   list-style: none;
   counter-reset: part;
 }
@@ -3026,7 +3026,7 @@ button.season:hover {
   background: var(--placeholder-bg);
 }
 
-.collection-parts li[data-state='watched'] img {
+.collection-parts li:is([data-state='watched'], [data-state='dropped']) img {
   filter: grayscale(1) brightness(0.78);
 }
 
@@ -3056,6 +3056,10 @@ button.season:hover {
   color: var(--st-watched);
 }
 
+.collection-state.dropped {
+  color: var(--st-dropped);
+}
+
 /* a saját értékelés borostyán (saját jelölés) */
 .collection-state .mine {
   color: var(--accent-2);
@@ -3063,6 +3067,67 @@ button.season:hover {
 
 .collection-dialog .editor-actions {
   margin: 0.9rem 1.75rem 1.4rem;
+}
+
+/* gyűjteményenként egy szakasz; a kézzel hozzárendeltnél „Eltávolítás” */
+.collection-section {
+  margin-top: 1.1rem;
+  padding: 0 1.75rem;
+}
+
+.collection-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 0.7rem;
+}
+
+.collection-section-head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+/* a további címeknél nincs sorszám (nem egy filmsorozat részei) */
+.collection-parts.extras .collection-poster::before {
+  content: none;
+}
+
+/* TMDB-gyűjtemény keresése és hozzárendelése */
+.collection-search-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
+
+.collection-search-row .search-field {
+  flex: 1 1 18rem;
+}
+
+.collection-results {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.collection-results li {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.collection-results .thumb {
+  width: 2.4rem;
+}
+
+.collection-results b {
+  flex: 1;
+}
+
+.collection-results .on-list {
+  margin: 0;
 }
 
 /* ---------- Mentések (ablak) ---------- */
