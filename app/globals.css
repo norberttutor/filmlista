@@ -3596,15 +3596,22 @@ button.season:hover {
   padding-bottom: 1.5rem;
 }
 
-/* asztali rácsban a lapozó az ablak aljára rögzül (Norbi kérése: minden oldalon pontosan ugyanott,
-   a kártyák magasságától függetlenül), üveghatással, mint a letapadt szűrősor; a lap alján
-   ennyi hely marad, hogy a lábléc és az utolsó sor kigörgethető legyen alóla */
+/* asztali rácsban a lapozó görgetés közben az ablak aljához tapad, a lap végén a lábléc fölött
+   áll meg (Norbi kérése). Hogy minden oldalon ugyanott legyen (rövid oldalon se ugorjon a
+   kártyák után), a main legalább ablakmagasságú, és a lapozó az aljára kerül (margin-top:
+   auto) – így a természetes helye sosem az ablak alja fölött van. Üveghatás, mint a letapadt
+   szűrősoron. */
+main:has(> .pagination.docked) {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
 .pagination.docked {
-  position: fixed;
-  left: 0;
-  right: 0;
+  position: sticky;
   bottom: 0;
   z-index: 25;
+  margin-top: auto;
   padding: 0.65rem var(--gutter);
   background-color: color-mix(in oklab, var(--bg) 68%, transparent);
   -webkit-backdrop-filter: blur(18px) saturate(1.5);
@@ -3613,11 +3620,7 @@ button.season:hover {
   box-shadow: 0 -12px 28px -16px rgb(0 0 0 / 0.75);
 }
 
-body:has(.pagination.docked) {
-  padding-bottom: 4rem;
-}
-
-/* az értesítősáv a rögzített lapozó fölött */
+/* az értesítősáv a lapozó fölött */
 body:has(.pagination.docked) .toaster {
   bottom: 5rem;
 }

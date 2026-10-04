@@ -104,9 +104,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   a `main` végén.
   Lapozás 25-ösével (`PAGE_SIZE`, `components/Pagination.js`); asztali rácsban (≥ 1400 px)
   22-esével (`GRID_PAGE_SIZE`, Norbi kérése, 2026-10-04: 1440p-n 11 oszlop × 2 teli sor), és
-  ott a lapozó az ablak aljára rögzül (`docked` → `.pagination.docked`, `position: fixed`, üveg,
-  mint a letapadt szűrősor; `body` alul 4 rem hely, az értesítősáv fölötte) – minden oldalon
-  ugyanott, a kártyák magasságától függetlenül (a sima sticky ugrált volna); a
+  ott a lapozó görgetés közben az ablak aljához tapad, a lap végén a lábléc fölött áll meg
+  (`docked` → `.pagination.docked`: `position: sticky; bottom: 0`, üveg, mint a letapadt
+  szűrősor; a `main` ilyenkor flex oszlop `min-height: 100dvh`-val, a lapozó `margin-top: auto` –
+  így a természetes helye sosem az ablak alja fölött van, minden oldalon ugyanott áll, a kártyák
+  magasságától függetlenül; az értesítősáv fölötte); a
   lapozás az oldal első címének helyét jegyzi (`pageState.first`), így nézetváltáskor az az
   oldal jön, amelyiken az addig látott első cím van; szűrés/rendezés/keresés
   váltásakor 1. oldal (akkor is, ha később ugyanaz a szűrés jön vissza); lapozáskor a szűrősor
