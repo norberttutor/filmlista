@@ -13,13 +13,14 @@ function pageNumbers(page, pageCount) {
 }
 
 // Lapozó: ‹ Előző  1 … 4 5 6 … 21  Következő ›  –  „76–100. / 512 cím”
-export default function Pagination({ page, pageCount, total, pageSize, onChange }) {
+// docked: az ablak aljára rögzítve (asztali rácsban – minden oldalon ugyanott, Norbi kérése)
+export default function Pagination({ page, pageCount, total, pageSize, onChange, docked = false }) {
   if (pageCount <= 1) return null;
   const from = (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
 
   return (
-    <nav className="pagination" aria-label="Lapozás">
+    <nav className={docked ? 'pagination docked' : 'pagination'} aria-label="Lapozás">
       <button
         type="button"
         className="ghost"

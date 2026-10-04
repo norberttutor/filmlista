@@ -1164,6 +1164,7 @@ export default function Watchlist({ session }) {
               total={visible.length}
               pageSize={pageSize}
               onChange={changePage}
+              docked={isDesktop && view === 'grid'}
             />
           )}
         </>
