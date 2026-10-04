@@ -154,8 +154,16 @@ sarkában lévő ceruzával. Asztalon a borító „átsiklik” az ablak nagy b
 - Az ablak a borító színében dereng.
 
 **Mentés és bezárás:** **Mentés** (a módosítások mentése), **Mégse** vagy **Esc** (bezárás
-mentés nélkül). Telefonon az ablak alulról felcsúszó lap – a tetején lévő fogantyút lefelé
-húzva bezárul.
+mentés nélkül – az Esc akkor is bezárja, ha módosítottál valamit).
+- **Asztalon az ablakon kívülre kattintva** is bezárul. Ha van **mentetlen módosítás**
+  (pl. átállítottad a csillagokat), nyitva marad: a gombok előtt megjelenik a „Mentetlen
+  módosítás – Mentés vagy Mégse” felirat, és a Mentés gomb felvillan. Ha a módosítást
+  visszacsinálod, a kikattintás újra bezárja.
+- Nem zárul be akkor sem, ha épp a törlést erősítenéd meg, vagy a Franchise mezőben új nevet
+  gépelsz; és akkor sem, ha szöveget jelölsz ki, és az egér az ablakon kívül ér véget.
+- Az évadok változása azonnal mentődik, az nem számít mentetlen módosításnak.
+- Telefonon az ablak alulról felcsúszó lap – a tetején lévő fogantyút lefelé húzva bezárul
+  (a háttérre koppintás itt nem zár).
 
 **Törlés az adatlapról:** „Törlés” → megerősítés → a cím lekerül, és alul 8 másodpercig
 **Visszavonás** gomb látszik.
@@ -372,6 +380,7 @@ Minden fejlesztés után ide kerül egy sor (legújabb felül), és a fenti tém
 
 | Dátum | Mi változott |
 |---|---|
+| 2026. 10. 04. | Asztalon az adatlap kikattintásra bezárul; mentetlen módosításnál nyitva marad és figyelmeztet ([5.](#5-egy-cím-adatlapja-és-szerkesztése)). |
 | 2026. 10. 04. | Az adatlapról lekerült a „Megnézve” dátummező; a megnézés napját az app a háttérben jegyzi meg ([6.](#6-állapotok-letöltve-értékelések)). |
 | 2026. 10. 04. | A felhasználói leírás elkészült (a 2026. 10. 04-ig kész funkciókkal). |
 | 2026. 10. 04. | Még meg nem jelent filmek: szaggatott keret, dátumos jelvény, harang a digitális megjelenésről ([8.](#8-még-meg-nem-jelent-filmek)). |

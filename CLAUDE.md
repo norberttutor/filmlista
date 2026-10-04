@@ -163,6 +163,14 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   nagy borító helyére (a `Watchlist` `openEditor(t, forrásElem)` indítja), bezáráskor (Esc –
   `cancel` elkapva –, Mégse, Mentés) a `morphTo` borítóra vissza; törléskor nincs. A
   `showModal()` ezért `useLayoutEffect`-ben fut.
+  Kikattintás (Norbi kérése, 2026-10-04): asztalon (≥ 641 px) a háttérre kattintva bezárul
+  (`isOutside`: a cél maga a `dialog`, a pont a téglalapján kívül; a `pointerdown` is kívül –
+  a kifelé húzott kijelölés nem zár), kivéve, ha mentetlen módosítás van (`dirty`: a Mentés
+  által küldött mezők eltérnek a megnyitáskoritól – `initial`; az évadok nem számítanak):
+  ilyenkor `.unsaved-hint` („Mentetlen módosítás – Mentés vagy Mégse”, `role="status"`, mindig a
+  lapon) és a „Mentés” türkiz gyűrűt kap (`.attention`, 450 ms). Nem zár akkor sem, ha a törlés
+  megerősítése nyitva van, vagy a FranchiseSelect új név / átnevezés módban van
+  (`.franchise-new`). Telefonon (alsó lap) nem zár; az Esc mindig zár.
   Megnyitáskor a fókusz az ablak címén van (keret nélkül), nem a Franchise mezőn (Norbi kérése).
   Ha van háttérképe (`backdrop_path`), az ablak tetején a film széles jelenetképe (`w1280`,
   telefonon `w780`), alul a felületbe olvadva; asztalon a nagy borító ráúszik a kép aljára
@@ -568,7 +576,8 @@ Felfedezés (magyar szinkronos közelítés), franchise-gyűjtemény a hiányzó
 Franchise-filmek importja (franchise.xlsx): 194 cím, 34 franchise; hozzáadás dátuma = megjelenés.
 Norbi listája (norbert.tutor@gmail.com) 2026-10-02-án Excelből importálva: 512 cím.
 A még meg nem jelent filmek szaggatott kerettel és dátumos jelvénnyel, a harang szól a digitális
-megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül).
+megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül). Asztalon az adatlap
+kikattintásra bezárul, ha nincs mentetlen módosítás (terv-3 24-es pontja, 2026-10-04).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -576,12 +585,9 @@ Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnéze
 (megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
 1. **22 – telefonon nincs „IMDb értékelések”** a ⋮ menüben (csak ≤ 640 px-en tűnik el,
    tableten és asztalon marad – Norbi döntése).
-2. **24 – asztalon kikattintásra bezárul az adatlap** (szerkesztő ablak), ha nincs mentetlen
-   módosítás; módosításnál nyitva marad („Mentetlen módosítás – Mentés vagy Mégse”). Az Esc
-   továbbra is mindig bezárja (Norbi döntése).
-3. **23 – „Franchise-ok” a ⋮ menüben**: ábécérend, logók, csempénként számok; a csempe a
+2. **23 – „Franchise-ok” a ⋮ menüben**: ábécérend, logók, csempénként számok; a csempe a
    meglévő gyűjtemény-ablakot nyitja (onnan szerkeszthető), „Szűrés erre”, átnevezés, törlés.
-4. **13 – Mama külön hozzáférése**, Norbi döntéseivel: **jelszavas fiók** (Norbi hozza létre a
+3. **13 – Mama külön hozzáférése**, Norbi döntéseivel: **jelszavas fiók** (Norbi hozza létre a
    Supabase-ben, Auto Confirm; a `list_viewers` köti Norbihoz); Mama belépés után a saját
    egyszerű oldalát látja: a megnézendő, nem letöltött, franchise nélküli filmek, de **a még
    meg nem jelentek nem**; „Érdekel” → Norbinál „Érdekli” + harang („Mamát érdekli”); „Nem
@@ -613,8 +619,9 @@ Megvalósításkor a pont mellé a TERV.md-be: „kész (commit)”, ide az Áll
 a megerősítés), 4 – értékelés kérése (nem kikapcsolható), 7 – előzetes, 8 – Felfedezés (csak
 magyar szinkronos – közelítés, külön sorozat-sorral), 9 – franchise-gyűjtemény, 14 – üres
 állapotok, 15 – gyorsgombok a letapadt szűrősorban, 16 – évadok idővonala; 10 – a még meg nem
-jelent filmek (szaggatott keret + jelvény + harang; szűrőgomb Norbi kérésére nincs). Vár még: 2, 3, 5,
-6, 11–13, 17–24.
+jelent filmek (szaggatott keret + jelvény + harang; szűrőgomb Norbi kérésére nincs); 24 –
+kikattintásra bezáruló adatlap. Vár még: 2, 3, 5,
+6, 11–13, 17–23.
 A négy új kérés (13 átdolgozva, 22, 23, 24) a „Következő feladat”-ban.
 
 ## Fejlesztői megjegyzés

@@ -3912,6 +3912,21 @@ body:has(.editor[open]) {
   flex: 1;
 }
 
+/* kikattintás mentetlen módosítással (TitleEditor): felirat a gombok előtt, a "Mentés" egy
+   pillanatra türkiz gyűrűt kap */
+.unsaved-hint {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.editor-actions .primary {
+  transition: background-color 0.15s, box-shadow 0.15s;
+}
+
+.editor-actions .primary.attention {
+  box-shadow: 0 0 0 5px var(--accent-line);
+}
+
 .confirm-text {
   font-weight: 600;
 }

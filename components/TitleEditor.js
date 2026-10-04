@@ -45,7 +45,8 @@ function ClearableChips({ name, options, value, onChange, className }) {
 }
 
 // Felugró ablak egy cím saját adatainak szerkesztésére és törlésére.
-// A natív <dialog> elemet használja: Esc-re bezárul, a fókusz az ablakban marad.
+// A natív <dialog> elemet használja: Esc-re bezárul, a fókusz az ablakban marad; asztalon a
+// háttérre kattintva is bezárul, ha nincs mentetlen módosítás.
 // Sorozatnál az állapot és a "Letöltve" helyett az évadlista látszik; az évadok változása
 // azonnal mentődik (onChanged), a többi mező a "Mentés" gombbal.
 export default function TitleEditor({
@@ -67,18 +68,34 @@ export default function TitleEditor({
   const headingRef = useRef(null);
   const drag = useRef(null); // telefonon a lehúzás: { y, t, dy }
   const deleteButtonRef = useRef(null);
-  const [form, setForm] = useState({
+  // a megnyitáskori értékek (ehhez képest van-e mentetlen módosítás)
+  const [initial] = useState(() => ({
     status: t.status,
     is_downloaded: t.is_downloaded,
     mama_status: t.mama_status ?? null,
     franchise_id: t.franchise_id ?? null,
     my_rating: t.my_rating ?? null,
     watched_at: t.watched_at ?? '',
-  });
+  }));
+  const [form, setForm] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const seasonal = hasSeasons(t);
+  // mentetlen módosítás: amit a "Mentés" küldene, eltér a megnyitáskoritól (az évadok azonnal
+  // mentődnek, azok nem számítanak; a dátum csak megnézett címnél kerül mentésre)
+  const dirty =
+    form.mama_status !== initial.mama_status ||
+    form.franchise_id !== initial.franchise_id ||
+    form.my_rating !== initial.my_rating ||
+    (!seasonal &&
+      (form.status !== initial.status ||
+        form.is_downloaded !== initial.is_downloaded ||
+        (form.status === 'watched' && form.watched_at !== initial.watched_at)));
+  // kikattintás mentetlen módosítással: figyelmeztetés a gombok mellett, a "Mentés" felvillan
+  const [nudged, setNudged] = useState(false);
+  const [attention, setAttention] = useState(false);
+  const pressedOutside = useRef(false);
   const seasonActions = useSeasonActions(t, onChanged, setError);
   // a borító hangulatszíne: az ablak a film színében dereng (globals.css, "Hangulatszín")
   const ambient = usePosterColor(t.poster_path);
@@ -127,6 +144,36 @@ export default function TitleEditor({
       .finally(() => {
         morphTo.style.viewTransitionName = '';
       });
+  }
+
+  // Asztalon az ablakon kívülre (a sötét háttérre) kattintva bezárul – Norbi kérése –, kivéve,
+  // ha van mentetlen módosítás: akkor figyelmeztet. Nyitva marad akkor is, ha épp a törlést
+  // erősítenéd meg, vagy a Franchise mezőben új nevet / átnevezést gépelsz. A lenyomásnak is
+  // kívül kell lennie: a szöveg kijelölése közben kicsúszó egér nem zár be. Telefonon (alsó lap)
+  // a lehúzás zár. Az Esc továbbra is mindig bezárja (onCancel).
+  function isOutside(e) {
+    const dialog = dialogRef.current;
+    if (e.target !== dialog) return false; // a háttérre kattintás célja maga a <dialog>
+    const r = dialog.getBoundingClientRect();
+    return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+  }
+
+  function handlePointerDown(e) {
+    pressedOutside.current = isOutside(e);
+  }
+
+  function handleClick(e) {
+    if (!pressedOutside.current || !isOutside(e)) return;
+    pressedOutside.current = false;
+    if (busy || window.matchMedia(PHONE_QUERY).matches) return;
+    if (confirmingDelete || dialogRef.current.querySelector('.franchise-new')) return;
+    if (dirty) {
+      setNudged(true);
+      setAttention(true);
+      setTimeout(() => setAttention(false), 450);
+      return;
+    }
+    close();
   }
 
   // telefonon az ablak alsó lap: a fogantyút lefelé húzva bezárul (elég messzire vagy gyorsan),
@@ -224,6 +271,8 @@ export default function TitleEditor({
         e.preventDefault();
         close();
       }}
+      onPointerDown={handlePointerDown}
+      onClick={handleClick}
       {...ambientProps(ambient)}
     >
       {/* telefonon: fogantyú – lefelé húzva bezárja az ablakot (a Mégse / Esc ugyanaz) */}
@@ -407,10 +456,14 @@ export default function TitleEditor({
                   Törlés a listáról
                 </button>
                 <span className="spacer" />
+                {/* mindig a lapon van (üresen is), hogy a felolvasó bemondja, amikor megtelik */}
+                <span className="unsaved-hint" role="status">
+                  {nudged && dirty ? 'Mentetlen módosítás – Mentés vagy Mégse' : ''}
+                </span>
                 <button type="button" className="ghost" onClick={close}>
                   Mégse
                 </button>
-                <button type="submit" className="primary" disabled={busy}>
+                <button type="submit" className={attention ? 'primary attention' : 'primary'} disabled={busy}>
                   {busy ? 'Mentés…' : 'Mentés'}
                 </button>
               </>
