@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useImperativeHandle, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { addTitle } from '@/lib/titles';
 import { MAX_LINES, matchEntry, parseLines } from '@/lib/bulkImport';
@@ -54,7 +54,8 @@ function Candidate({ c, name, checked, onPick }) {
 // "Tömeges import" (asztali nézetben): soronként beillesztett címek keresése a TMDB-n, a
 // biztos találatok előre kijelölve, a bizonytalanoknál Norbi választ, a listán lévők
 // kimaradnak; utána egyenként felveszi őket (mint a "Hozzáadás a listához").
-export default function BulkImport({ existingKeys, onAdded }) {
+// A fejléc ⋮ menüjéből nyílik: ref.current.open()
+export default function BulkImport({ existingKeys, onAdded, ref }) {
   const dialogRef = useRef(null);
   const [text, setText] = useState('');
   const [phase, setPhase] = useState('input'); // input | searching | review | adding | done
@@ -69,6 +70,7 @@ export default function BulkImport({ existingKeys, onAdded }) {
     setResult(null);
     dialogRef.current.showModal();
   }
+  useImperativeHandle(ref, () => ({ open: openDialog }));
 
   async function search() {
     const entries = parseLines(text);
@@ -139,22 +141,6 @@ export default function BulkImport({ existingKeys, onAdded }) {
 
   return (
     <>
-      <span className="has-hint">
-        <button
-          type="button"
-          className="subtle-link"
-          aria-describedby="bulk-hint"
-          onClick={openDialog}
-        >
-          Tömeges import
-        </button>
-        <span id="bulk-hint" role="tooltip" className="hint">
-          Sok cím felvétele egyszerre: soronként egy cím, évszámmal pontosabb (pl. „Dűne
-          2021”). A biztos találatok előre ki vannak jelölve, a bizonytalanoknál te választasz,
-          a listán lévők kimaradnak.
-        </span>
-      </span>
-
       <dialog
         ref={dialogRef}
         className="editor import-dialog bulk-dialog"

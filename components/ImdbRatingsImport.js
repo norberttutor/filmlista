@@ -1,16 +1,17 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useImperativeHandle, useRef, useState } from 'react';
 import { parseImdbRatings, planRatingImport } from '@/lib/imdbImport';
 import { applyMyRatings } from '@/lib/titles';
 
 const stars = (n) => (n == null ? '–' : `${n}`);
 
-// Visszafogott "IMDb értékelések" gomb (rámutatva súgóval): az IMDb exportált CSV-jéből a
-// listán lévő címek saját csillagát frissíti (előtte összefoglalót mutat). A fájl nem kerül
-// fel sehova.
-export default function ImdbRatingsImport({ titles, onApplied }) {
+// "IMDb értékelések" (a fejléc ⋮ menüjéből: ref.current.open() – fájlválasztó): az IMDb
+// exportált CSV-jéből a listán lévő címek saját csillagát frissíti (előtte összefoglalót
+// mutat). A fájl nem kerül fel sehova.
+export default function ImdbRatingsImport({ titles, onApplied, ref }) {
   const inputRef = useRef(null);
+  useImperativeHandle(ref, () => ({ open: () => inputRef.current.click() }), []);
   const dialogRef = useRef(null);
   const [view, setView] = useState(null); // { plan } | { error } | { done }
   const [busy, setBusy] = useState(false);
@@ -47,21 +48,6 @@ export default function ImdbRatingsImport({ titles, onApplied }) {
 
   return (
     <>
-      <span className="has-hint">
-        <button
-          type="button"
-          className="subtle-link"
-          aria-describedby="imdb-hint"
-          onClick={() => inputRef.current.click()}
-        >
-          IMDb értékelések
-        </button>
-        <span id="imdb-hint" role="tooltip" className="hint">
-          A saját IMDb-csillagaidat tölti át a listádra. Válaszd ki az IMDb „Your Ratings”
-          oldalán exportált CSV-fájlt: előbb összefoglalót mutat, és csak a listádon már
-          szereplő címek csillagai változnak.
-        </span>
-      </span>
       <input
         ref={inputRef}
         type="file"

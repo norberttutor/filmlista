@@ -28,6 +28,7 @@ import NotificationBell from '@/components/NotificationBell';
 import BulkImport from '@/components/BulkImport';
 import ListSkeleton from '@/components/ListSkeleton';
 import StatsDialog from '@/components/StatsDialog';
+import MoreMenu from '@/components/MoreMenu';
 import { loadNotifications, markNotificationsRead } from '@/lib/notifications';
 import { downloadListCsv } from '@/lib/exportList';
 import { useMediaQuery } from '@/lib/useMediaQuery';
@@ -147,6 +148,9 @@ export default function Watchlist({ session }) {
   const [loadError, setLoadError] = useState('');
   const [adding, setAdding] = useState(false);
   const [showStats, setShowStats] = useState(false); // a statisztika ablak nyitva
+  // a ⋮ menüből nyíló importok (a saját ablakukat / fájlválasztójukat nyitják)
+  const imdbImportRef = useRef(null);
+  const bulkImportRef = useRef(null);
   const [editing, setEditing] = useState(null); // a szerkesztett cím, vagy null
   // a borító, amelyről a szerkesztő nyílt: oda siklik vissza bezáráskor (nézetváltás)
   const editorFrom = useRef(null);
@@ -606,40 +610,59 @@ export default function Watchlist({ session }) {
             />
           )}
           <span className="muted small">{session.user.email}</span>
-          {!loading && !loadError && (
-            <ImdbRatingsImport titles={titles} onApplied={applyRatingsLocally} />
-          )}
-          {!loading && !loadError && (
-            <button type="button" className="subtle-link" onClick={() => setShowStats(true)}>
-              Statisztika
-            </button>
-          )}
-          {/* tömeges import és mentés: csak asztali nézetben */}
-          {!loading && !loadError && isDesktop && (
-            <>
-              <BulkImport
-                existingKeys={existingKeys}
-                onAdded={(row) => setTitles((ts) => [row, ...ts])}
-              />
-              <span className="has-hint">
-                <button
-                  type="button"
-                  className="subtle-link"
-                  aria-describedby="export-hint"
-                  onClick={() => downloadListCsv(titles, franchiseName)}
-                >
-                  Mentés letöltése
-                </button>
-                <span id="export-hint" role="tooltip" className="hint">
-                  A teljes listát ({titles.length} cím) CSV-fájlba menti: Excelben megnyitható,
-                  biztonsági mentésnek is jó.
-                </span>
-              </span>
-            </>
-          )}
           <button type="button" className="ghost" onClick={() => supabase.auth.signOut()}>
             Kilépés
           </button>
+          {/* a ritkábban használt műveletek a ⋮ menüben (mint a Chrome-ban); a tömeges import és
+              a mentés csak asztali nézetben */}
+          {!loading && !loadError && (
+            <>
+              <MoreMenu
+                items={[
+                  {
+                    id: 'imdb',
+                    label: 'IMDb értékelések',
+                    description: 'A saját IMDb-csillagaid áttöltése (az IMDb „Your Ratings” CSV-exportjából)',
+                    icon: 'star',
+                    onSelect: () => imdbImportRef.current?.open(),
+                  },
+                  {
+                    id: 'stats',
+                    label: 'Statisztika',
+                    description: 'Havonta megnézett címek, műfajok, átlagos értékelés',
+                    icon: 'chart',
+                    onSelect: () => setShowStats(true),
+                  },
+                  ...(isDesktop
+                    ? [
+                        {
+                          id: 'bulk',
+                          label: 'Tömeges import',
+                          description: 'Sok cím felvétele egyszerre, soronként egy címmel',
+                          icon: 'list',
+                          onSelect: () => bulkImportRef.current?.open(),
+                        },
+                        {
+                          id: 'export',
+                          label: 'Mentés letöltése',
+                          description: `A teljes lista (${titles.length} cím) CSV-fájlba – Excelben megnyitható`,
+                          icon: 'download',
+                          onSelect: () => downloadListCsv(titles, franchiseName),
+                        },
+                      ]
+                    : []),
+                ]}
+              />
+              <ImdbRatingsImport ref={imdbImportRef} titles={titles} onApplied={applyRatingsLocally} />
+              {isDesktop && (
+                <BulkImport
+                  ref={bulkImportRef}
+                  existingKeys={existingKeys}
+                  onAdded={(row) => setTitles((ts) => [row, ...ts])}
+                />
+              )}
+            </>
+          )}
         </div>
       </header>
 

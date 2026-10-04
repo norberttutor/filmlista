@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { popupSide } from '@/lib/popupSide';
 import { formatDate } from '@/lib/titles';
 import { article } from '@/components/Seasons';
 
@@ -19,6 +20,7 @@ function describe(n) {
 // Kattintás kívül / Esc: bezár.
 export default function NotificationBell({ notifications, titles, onOpenTitle, onRead }) {
   const [open, setOpen] = useState(false);
+  const [side, setSide] = useState('left'); // a lista a harang melyik széléhez igazodik
   const [fresh, setFresh] = useState(() => new Set()); // a kinyitáskor még olvasatlanok
   const panelId = useId();
   const rootRef = useRef(null);
@@ -51,6 +53,7 @@ export default function NotificationBell({ notifications, titles, onOpenTitle, o
       return;
     }
     setFresh(new Set(items.filter((n) => !n.read_at).map((n) => n.id)));
+    setSide(popupSide(buttonRef.current, 400, 'left'));
     setOpen(true);
     if (unread > 0) onRead();
   }
@@ -103,7 +106,7 @@ export default function NotificationBell({ notifications, titles, onOpenTitle, o
       {open && (
         <div
           id={panelId}
-          className="notif-panel"
+          className={side === 'right' ? 'notif-panel to-right' : 'notif-panel'}
           role="region"
           aria-label="Értesítések"
         >

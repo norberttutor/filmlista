@@ -48,8 +48,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   minden középen: cím, alatta az űrlap (nagyobb kijelzőn kártyán, felülről halvány türkiz fény)
 - `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből; fejléc:
   „Megnézendő filmek és sorozatok”; mellette (jobbra) „Cím hozzáadása”, harang (`NotificationBell`),
-  e-mail, „IMDb értékelések”, „Statisztika” (`StatsDialog`), asztali nézetben „Tömeges import”
-  (`BulkImport`) és „Mentés letöltése” (`downloadListCsv`), Kilépés. Telefonon (≤ 640 px) a
+  e-mail, Kilépés, a sor végén a „További műveletek” (⋮) menü (`MoreMenu`, Norbi kérése, mint a
+  Chrome-ban): „IMDb értékelések”, „Statisztika” (`StatsDialog`), asztali nézetben „Tömeges
+  import” (`BulkImport`) és „Mentés letöltése” (`downloadListCsv`). Telefonon (≤ 640 px) a
   „Cím hozzáadása” helyett lebegő, kerek „+” gomb a jobb alsó sarokban (`.fab`; lefelé
   görgetéskor elhúzódik, felfelé visszajön – ugyanaz a görgetésfigyelő, mint a szűrősoré;
   kattintva megnyitja a keresőt és a lap tetejére görget); szűrősor
@@ -224,7 +225,14 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   háttérkép vagy a cím már nincs a TMDB-n, csak megjelöli). A `Watchlist` betöltéskor hívja
   (`refreshBackdrops()`, legfeljebb 30 kör). Az új címek felvételkor kapják meg (a details
   route adja a `backdrop_path`-t és a `backdrop_checked_at`-et)
-- `components/StatsDialog.js` + `lib/stats.js` – „Statisztika” ablak (a fejléc gombja): csempék
+- `components/MoreMenu.js` – a fejléc „További műveletek” (⋮) menüje: kerek gomb (a harang
+  mintájára, `aria-haspopup="menu"`), alatta jobbra igazított lista (`role="menu"`); minden pont
+  ikonnal, címmel és rövid leírással (a korábbi súgók helyett; `aria-labelledby` /
+  `aria-describedby`). Kattintással vagy Enter / Szóköz / nyilakkal nyílik, a menüben nyilak,
+  Home / End, Esc (a fókusz vissza a gombra), Tab és kívülre kattintás bezárja. Választáskor a
+  fókusz a gombra kerül (a megnyíló ablak bezárásakor oda tér vissza). A pontok:
+  `{ id, label, description, icon, onSelect }` (ikonok: star, chart, list, download)
+- `components/StatsDialog.js` + `lib/stats.js` – „Statisztika” ablak (a ⋮ menüből): csempék
   a betöltött listából (`listStats()`, adatbázis-lekérdezés nélkül) – megnézve az utolsó 12
   hónapban, havonta megnézett címek (saját SVG-oszlopdiagram, `watched_at`), műfajok (a
   műfajszínekkel), saját és IMDb-átlag, letöltve de még nem látott (az abbahagyottak nélkül),
@@ -248,9 +256,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `app/api/franchises/logos/route.js` – `POST`: a logó nélküli franchise-oknál a franchise első
   (legkorábbi) filmjének TMDB-címlogóját menti (`pickLogo()`: legfeljebb 6:1 arány, angol);
   ha nincs logó, 7 napig nem próbálja újra. A `Watchlist` betöltéskor hívja
-- `components/ImdbRatingsImport.js` + `lib/imdbImport.js` – visszafogott „IMDb értékelések”
-  gomb a Kilépés mellett, rámutatva súgóval (`.has-hint` + `.hint`, `aria-describedby`):
-  az IMDb értékelés-exportjából (CSV: `Const`, `Your Rating`)
+- `components/ImdbRatingsImport.js` + `lib/imdbImport.js` – „IMDb értékelések” a ⋮ menüből
+  (`ref.current.open()` → rejtett fájlválasztó; a komponens csak a fájlmezőt és az ablakot
+  rajzolja): az IMDb értékelés-exportjából (CSV: `Const`, `Your Rating`)
   a böngészőben IMDb ID alapján párosít, összefoglalót mutat, majd `applyMyRatings()`
   (csillagértékenként egy update). Norbi döntései: csak a listán lévő címek, az IMDb csillaga
   felülírja a sajátot, az állapot nem változik, új cím nem kerül fel. Teljesen automatikus
@@ -259,13 +267,14 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   értesítések száma borostyán jelvényben (`--accent-2`); kinyitva a legutóbbi 30 (új évad bejelentése / megjelenése,
   borítóval); kinyitáskor mind olvasott (az adatbázisban is, `markNotificationsRead()`; a
   közben beérkező régi lekérdezés sem írja vissza – `readIds` a Watchlistben); elemre
-  kattintva a sorozat szerkesztő ablaka; kívülre kattintás / Esc bezár. A lista a harang bal
-  széléhez igazodik, telefonon teljes szélességű. `loadNotifications()`: előbb
+  kattintva a sorozat szerkesztő ablaka; kívülre kattintás / Esc bezár. A lista a harang bal széléhez igazodik, ha ott
+  kilógna, a jobbhoz (`lib/popupSide.js`, nyitáskor mérve – a ⋮ menü is így); telefonon teljes
+  szélességű. A fejléc felugró listái (`z-index: 35`) a letapadó szűrősor (30) fölött vannak. `loadNotifications()`: előbb
   `collect_season_notifications()` (RPC), aztán a lista; a Watchlist betöltéskor és az
   évadfrissítés után hívja. A telepített app ikonján `navigator.setAppBadge()` mutatja a számot.
   Ha nő az olvasatlanok száma (betöltéskor is, ha van), a harang egyszer megrezzen (`.ringing`)
 - `components/BulkImport.js` + `lib/bulkImport.js` – „Tömeges import” (csak asztali nézetben,
-  az „IMDb értékelések” mellett, súgóval): soronként egy cím (legfeljebb `MAX_LINES` = 150; a sor
+  a ⋮ menüből: `ref.current.open()`): soronként egy cím (legfeljebb `MAX_LINES` = 150; a sor
   végi évszám 1900–idén+5 szűr, pl. „Dűne 2021”; az ismétlődő sorok egyszer), TMDB-keresés
   3-asával; `matchEntry()`: biztos = egyetlen pontos (ékezet / írásjel nélküli) cím- vagy
   eredeticím-egyezés (évszámmal az évnek is egyeznie kell) – előre kijelölve; bizonytalan →

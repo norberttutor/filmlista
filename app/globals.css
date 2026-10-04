@@ -410,6 +410,116 @@ body:has(> main.login) {
   gap: 0.75rem;
 }
 
+/* ---------- További műveletek (⋮ menü a fejlécben) ---------- */
+/* mint a Chrome menüje: kerek ⋮ gomb (a harang mintájára), alatta jobbra igazított lista;
+   minden pont ikonnal, címmel és egy rövid leírással (a korábbi súgók helyett) */
+.more {
+  position: relative;
+}
+
+.more-btn {
+  display: grid;
+  place-items: center;
+  width: 2.45rem;
+  height: 2.45rem;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.more-btn:hover,
+.more-btn[aria-expanded='true'] {
+  color: var(--text);
+  border-color: var(--muted);
+  background-color: var(--hover-tint);
+}
+
+.more-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 35; /* a letapadó szűrősor (30) fölött */
+  display: grid;
+  gap: 2px;
+  width: min(21rem, calc(100vw - 2rem));
+  padding: 0.4rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  box-shadow: var(--shadow-pop);
+}
+
+/* ha a gomb jobb széléhez igazítva kilógna, a bal széléhez (MoreMenu: popupSide) */
+.more-menu.to-left {
+  right: auto;
+  left: 0;
+}
+
+/* telefonon: a képernyő teljes szélességén, közvetlenül a gomb alatt (mint a harangé) */
+@media (max-width: 640px) {
+  .more-menu,
+  .more-menu.to-left {
+    position: fixed;
+    top: auto;
+    right: var(--gutter);
+    left: var(--gutter);
+    width: auto;
+    margin-top: 0.5rem;
+  }
+}
+
+.more-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  color: var(--text);
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+}
+
+.more-item svg {
+  margin-top: 0.1rem;
+  color: var(--muted);
+}
+
+.more-item:hover,
+.more-item:focus-visible {
+  background-color: var(--hover-tint);
+  outline: none;
+}
+
+.more-item:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+
+.more-item:hover svg,
+.more-item:focus-visible svg {
+  color: var(--accent);
+}
+
+.more-text {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.more-label {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.more-desc {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
 /* ---------- Értesítések (harang a fejlécben) ---------- */
 .notif {
   position: relative;
@@ -463,7 +573,7 @@ body:has(> main.login) {
    igazítva: a harang után a fejléc eszközei állnak, így jobbra mindig van hely */
 .notif-panel {
   position: absolute;
-  z-index: 30;
+  z-index: 35; /* a letapadó szűrősor (30) fölött */
   top: calc(100% + 0.5rem);
   left: 0;
   width: min(25rem, calc(100vw - 2 * var(--gutter)));
@@ -472,6 +582,13 @@ body:has(> main.login) {
   border: 1px solid var(--edge);
   border-radius: 10px;
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), var(--shadow-pop);
+}
+
+/* ha a harang bal széléhez igazítva kilógna (a fejléc a szélességtől függően átrendeződik), a
+   jobb széléhez igazodik (NotificationBell: popupSide) */
+.notif-panel.to-right {
+  right: 0;
+  left: auto;
 }
 
 /* telefonon a harang a sor elején is lehet: a lista a képernyő teljes szélességét kapja,
@@ -3245,6 +3362,7 @@ body:has(.editor[open]) {
   }
 
   .notif-panel,
+  .more-menu,
   .season-panel,
   .franchise-listbox,
   .add-panel,
