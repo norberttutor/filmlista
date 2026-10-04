@@ -703,23 +703,6 @@ body:has(> main.login) {
   color: var(--muted);
 }
 
-/* visszafogott szöveges gomb (pl. "IMDb értékelések") */
-.subtle-link {
-  padding: 0;
-  font-size: 0.8rem;
-  color: var(--muted);
-  background: none;
-  border: 0;
-  text-decoration: underline;
-  text-decoration-color: var(--line);
-  text-underline-offset: 3px;
-}
-
-.subtle-link:hover {
-  color: var(--text);
-  text-decoration-color: currentColor;
-}
-
 /* súgó buborék egy gomb alatt: egérrel rámutatva, vagy billentyűzetes fókusznál látszik;
    helyet nem foglal */
 .has-hint {

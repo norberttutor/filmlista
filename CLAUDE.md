@@ -385,8 +385,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   „squircle” sarkok (`corner-shape: squircle`, `@supports` mögött – Chrome / Edge 139+, máshol
   kerek): borító 22 px, kis borító 13 px, szerkesztő ablak 32 px, panelek 20 px, mezők 12 px;
   új lekerekített elemnél ide is kell (és a `::before` / `::after` keretnek is).
-- A 2026-10-03-i megjelenés-frissítés javaslatai és mérései: `munka/dizajn/` (helyi mappa, lásd
-  `munka/README.md`); a 10-es javaslat (álló betűs eredeti cím) Norbi kérésére kimaradt.
+- Új dizájnötletnél: előbb előtte–utána képek (`munka/dizajn-2/eszkozok/`: pillanatkép,
+  előnézet, kontrasztmérés), beépítés csak Norbi jóváhagyása után.
+- A két megjelenési kör (2026-10-03–04) lezárult. Amit Norbi nem kért (magadtól ne
+  javasold újra): álló betűs eredeti cím, színskálás IMDb-jelvény, választható színtéma / OLED
+  fekete, 3D billenés a borítókon, plakátszerű tipográfia, számláló a fejlécben, „Ma este”
+  kiemelt sáv, haladásgyűrű a sorozatoknál, egyedi helykitöltő a hiányzó borítóhoz; a kurzort
+  követő fénylő kártyaélt beépítés után visszavonatta.
 - Képekhez sima `<img>`, nem `next/image`.
 - Nincs middleware / proxy; az auth kliensoldali.
 
@@ -396,7 +401,7 @@ TMDB kereső és hozzáadás (az `/api/tmdb/*` route-ok token nélkül 401-et ad
 hozzáadás dátuma a kártyán, cím szerkesztése és törlése (`TitleEditor`),
 asztali soros nézet soron belüli szerkesztéssel (`TitleTable`), csillagos értékelés,
 „Mama” jelző, rendezés (hozzáadás, értékelés, megjelenés éve), letisztított szűrősor,
-franchise-ok (beállítás + szűrő + törlés; átnevezés még nincs a felületen), neon türkiz színvilág,
+franchise-ok (beállítás + szűrő + törlés), neon türkiz színvilág,
 TMDB leírás a cím mellett, IMDb-értékelés (OMDb) + rendezés szerinte, lapozás,
 saját IMDb-értékelések betöltése CSV-ből, franchise-logók a szűrőben,
 megjelenés-frissítés (18 javaslat, 2026-10-03), keresés a listán, középre zárt belépés,
@@ -422,19 +427,10 @@ Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnéze
 - Nincs kijelölve – Norbi kéri a következőt (ötletek lent).
 
 ## Fejlesztési ötletek (később)
-- **Megjelenés, 2. kör (terv, 2026-10-03):** 25 dizájnjavaslat 2026-os trendek szerint,
-  körökre bontva, technikai jegyzetekkel: `munka/dizajn-2/TERV.md` (helyi mappa). A színes
-  részből (1–7) kész: 1 (borostyán változat), 2, 3, 4, 6; Norbi nem kérte: 5 (színes
-  IMDb-jelvény), 7 (választható színtéma). A 8–12-ből kész: 8, 9, 10; a 11-et (fénylő kártyaél) beépítés után
-  visszavonatta, a 12-t (3D billenés) nem kérte. A mozgásból (13–16) kész: mind a négy. A 17–25-ből kész: 19
-  (háttérkép), 21 (statisztika), 24 (alsó lap), 25 (lebegő „+”); nem kérte: 17, 18, 20, 22, 23 – a
-  2. kör ezzel lezárult. Új dizájnötletnél is: előbb előtte–utána képek
-  (`munka/dizajn-2/eszkozok/`), beépítés csak jóváhagyás után.
 - „Hol nézhető?” – a TMDB `watch/providers` adatai (Magyarország: Netflix, HBO Max, Disney+,
   SkyShowtime…) logóval a soron / kártyán, szűrő az előfizetett szolgáltatókra; a TMDB a
   JustWatch megnevezését kéri. Norbi: egyelőre nem kell, a lista végére.
 - „Mit nézzek ma?” – véletlen ajánlás a jelenlegi szűrőből (pl. letöltött, még nem látott).
-- Statisztika – havonta megnézett címek, kedvenc műfajok, átlagos értékelés (`watched_at`).
 - Előzetes (trailer) link a szerkesztő ablakban (TMDB `videos`).
 - Filmek megjelenésének figyelése – „Hamarosan” jelzés, és a harang szól, ha letölthető lett
   (TMDB `release_dates`, digitális megjelenés).
