@@ -3996,11 +3996,17 @@ body:has(.editor[open]) {
   text-decoration-color: currentColor;
 }
 
-/* asztali szélességen (rácsos nézet) nagyobb kártyák */
+/* asztali szélességen (rácsos nézet) nagyobb kártyák; tömör sorköz és margó, hogy a 22 cím
+   (1440p-n 2 sor) alatt a lapozó lehetőleg görgetés nélkül látsszon (Norbi kérése) */
 @media (min-width: 1400px) {
   .grid {
     grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
-    gap: 2.5rem 1.5rem;
+    gap: 1.5rem;
+    padding-top: 1rem;
+  }
+
+  .grid:has(+ .pagination) {
+    padding-bottom: 0.5rem;
   }
 }
 

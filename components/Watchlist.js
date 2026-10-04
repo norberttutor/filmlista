@@ -54,7 +54,10 @@ const NO_FRANCHISE = 'none';
 // mindig borítófal
 const DESKTOP_QUERY = '(min-width: 1400px)';
 
-const PAGE_SIZE = 25; // ennyi cím egy oldalon
+const PAGE_SIZE = 25; // ennyi cím egy oldalon (lista, telefon, keskenyebb rács)
+// asztali rácsban (≥ 1400 px): 1440p-n (2560 px) 11 kártya fér egy sorba → 2 teli sor, és a
+// lapozó görgetés nélkül is látszik (Norbi kérése)
+const GRID_PAGE_SIZE = 22;
 
 // asztali szélességen választható nézet: 'list' (táblázat) vagy 'grid' (borítófal); a böngésző
 // megjegyzi (ha a tárhely nem érhető el, marad a lista)
@@ -445,13 +448,16 @@ export default function Watchlist({ session }) {
     return [...matching, ...stayed].sort(compare);
   }, [beforeStatus, ofType, keptIds, status, sort]);
 
-  // lapozás
-  const [pageState, setPageState] = useState({ key: filterKey, page: 1 });
+  // lapozás: az oldal első címének helyét jegyezzük meg (first), így nézetváltáskor (más
+  // oldalméret) az az oldal jön, amelyiken az addig látott első cím van
+  const pageSize = isDesktop && view === 'grid' ? GRID_PAGE_SIZE : PAGE_SIZE;
+  const [pageState, setPageState] = useState({ key: filterKey, first: 0 });
   // szűrés- / rendezésváltáskor 1. oldal (akkor is, ha később ugyanez a szűrés jön vissza)
-  if (pageState.key !== filterKey) setPageState({ key: filterKey, page: 1 });
-  const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
-  const page = Math.min(pageState.key === filterKey ? pageState.page : 1, pageCount);
-  const paged = visible.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  if (pageState.key !== filterKey) setPageState({ key: filterKey, first: 0 });
+  const pageCount = Math.max(1, Math.ceil(visible.length / pageSize));
+  const first = pageState.key === filterKey ? pageState.first : 0;
+  const page = Math.min(Math.floor(first / pageSize) + 1, pageCount);
+  const paged = visible.slice((page - 1) * pageSize, page * pageSize);
   const filtersRef = useRef(null);
   // a szűrősor eredeti helye: lapozáskor ide görget (a letapadt szűrősorhoz nem lehetne)
   const filtersAnchorRef = useRef(null);
@@ -493,7 +499,7 @@ export default function Watchlist({ session }) {
   }, [listShown]);
 
   function changePage(p) {
-    setPageState({ key: filterKey, page: p });
+    setPageState({ key: filterKey, first: (p - 1) * pageSize });
     filtersAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -1156,7 +1162,7 @@ export default function Watchlist({ session }) {
               page={page}
               pageCount={pageCount}
               total={visible.length}
-              pageSize={PAGE_SIZE}
+              pageSize={pageSize}
               onChange={changePage}
             />
           )}

@@ -84,7 +84,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   ikongomb, lista (táblázat, `TitleTable`) | rács (borítófal) – `aria-pressed`, `title`; a
   választást a böngésző megjegyzi (`localStorage`, `filmlista-nezet`), alapból lista;
   1400 px alatt mindig borítófal. Borítófal: telefonon (≤ 640 px) 3 kártya egy sorban (kisebb
-  betűk és csillagok, a „Letöltve” jelvény csak ikon), asztali rácsban `minmax(185px)` kártyák.
+  betűk és csillagok, a „Letöltve” jelvény csak ikon), asztali rácsban `minmax(185px)` kártyák, tömör
+  sorközzel (1,5 rem) és margóval, hogy 1440p-n a 22 cím alatt a lapozó lehetőleg görgetés nélkül
+  látsszon (mérés: `munka/dizajn-2/eszkozok/racs-meres.mjs`; seed2-vel 1325 px – a telepített
+  app ablakában kifér, böngészőfülben ~25 px hiányozhat a leghosszabb címeknél).
   Az állapotgombok darabszámai a többi szűrőt már figyelembe veszik.
   A most szerkesztett sor a szűrés változásáig a helyén marad (`kept`), akkor is, ha már nem
   illik a szűrőbe (pl. „Nem letöltött” nézetben letöltöttnek jelölve) – így visszavehető.
@@ -101,7 +104,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   gombbal (`handleRowUpdated` → `askRating`; a sor kétszer jön – azonnal és mentve –, a
   `titlesRef` miatt csak egyszer kérdez; a szerkesztő ablakból nem kérdez). Az `<Toaster />`
   a `main` végén.
-  Lapozás 25-ösével (`PAGE_SIZE`, `components/Pagination.js`), szűrés/rendezés/keresés
+  Lapozás 25-ösével (`PAGE_SIZE`, `components/Pagination.js`); asztali rácsban (≥ 1400 px)
+  22-esével (`GRID_PAGE_SIZE`, Norbi kérése, 2026-10-04: 1440p-n 11 oszlop × 2 teli sor, a
+  lapozó görgetés nélkül is látszik); a
+  lapozás az oldal első címének helyét jegyzi (`pageState.first`), így nézetváltáskor az az
+  oldal jön, amelyiken az addig látott első cím van; szűrés/rendezés/keresés
   váltásakor 1. oldal (akkor is, ha később ugyanaz a szűrés jön vissza); lapozáskor a szűrősor
   eredeti helyére görget (egy üres jelölő a szűrősor előtt – a letapadt sorhoz nem lehetne).
   A szűrősor görgetéskor a lap tetejére tapad (`position: sticky`); letapadva (`data-stuck`, a
