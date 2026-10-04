@@ -104,11 +104,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   a `main` végén.
   Lapozás 25-ösével (`PAGE_SIZE`, `components/Pagination.js`); asztali rácsban (≥ 1400 px)
   22-esével (`GRID_PAGE_SIZE`, Norbi kérése, 2026-10-04: 1440p-n 11 oszlop × 2 teli sor), és
-  ott a lapozó görgetés közben az ablak aljához tapad, a lap végén a lábléc fölött áll meg
-  (`docked` → `.pagination.docked`: `position: sticky; bottom: 0`, üveg, mint a letapadt
-  szűrősor; a `main` ilyenkor flex oszlop `min-height: 100dvh`-val, a lapozó `margin-top: auto` –
-  így a természetes helye sosem az ablak alja fölött van, minden oldalon ugyanott áll, a kártyák
-  magasságától függetlenül; az értesítősáv fölötte); a
+  ott a lapozó és alatta a lábléc az ablak alján áll (`docked` → `.pagination.docked`; a lábléc
+  ilyenkor kompakt, `--docked-footer-h` = 2,75 rem magas, `sticky; bottom: 0`, a lapozó `sticky;
+  bottom: var(--docked-footer-h)`, mindkettő üveg, mint a letapadt szűrősor; a `main` flex oszlop –
+  a body flex oszlopában `flex: 1` –, a lapozó `margin-top: auto`): minden oldalon ugyanott, a
+  lábléc mindig látszik, görgetősáv csak ha a kártyák nem férnek ki (a korábbi `min-height:
+  100dvh` feleslegesen görgetett); az értesítősáv fölöttük; a
   lapozás az oldal első címének helyét jegyzi (`pageState.first`), így nézetváltáskor az az
   oldal jön, amelyiken az addig látott első cím van; szűrés/rendezés/keresés
   váltásakor 1. oldal (akkor is, ha később ugyanaz a szűrés jön vissza); lapozáskor a szűrősor

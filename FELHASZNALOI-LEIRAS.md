@@ -59,9 +59,9 @@ Mentések).
   választást.
 
 **Lapozás:** lista nézetben és telefonon 25 cím oldalanként, asztali rácsban 22 (1440p-n
-soronként 11 kártya, így 2 teli sor). Asztali rácsban a lapozó **az ablak alján** áll
-(áttetsző sávban): minden oldalon pontosan ugyanott, görgetés nélkül elérhető; a lap végére
-görgetve a lábléc (forrásmegjelölés) fölött áll meg. Lista és rács között váltva az az oldal jön, amelyiken
+soronként 11 kártya, így 2 teli sor). Asztali rácsban a lapozó és alatta a lábléc
+(forrásmegjelölés) **az ablak alján** áll, áttetsző sávban: a lapozó minden oldalon pontosan
+ugyanott van, görgetés nélkül elérhető; görgetni csak akkor kell, ha a kártyák nem férnek ki. Lista és rács között váltva az az oldal jön, amelyiken
 az addig látott első cím van. Szűrés, rendezés vagy keresés változásakor az 1. oldalra ugrik;
 lapozáskor a lista tetejére görget.
 
@@ -384,7 +384,7 @@ Minden fejlesztés után ide kerül egy sor (legújabb felül), és a fenti tém
 
 | Dátum | Mi változott |
 |---|---|
-| 2026. 10. 04. | Asztali rácsban a lapozó az ablak alján áll – minden oldalon ugyanott –, a lap végén a lábléc fölött ([2.](#2-a-lista-nézetek-és-lapozás)). |
+| 2026. 10. 04. | Asztali rácsban a lapozó és alatta a lábléc az ablak alján áll – minden oldalon ugyanott, felesleges görgetősáv nélkül ([2.](#2-a-lista-nézetek-és-lapozás)). |
 | 2026. 10. 04. | Asztali rácsban 22 cím egy oldalon (1440p-n 2 teli sor, tömörebb sorköz); nézetváltáskor a lap a látott címeknél marad ([2.](#2-a-lista-nézetek-és-lapozás)). |
 | 2026. 10. 04. | Asztalon az adatlap kikattintásra bezárul; mentetlen módosításnál nyitva marad és figyelmeztet ([5.](#5-egy-cím-adatlapja-és-szerkesztése)). |
 | 2026. 10. 04. | Az adatlapról lekerült a „Megnézve” dátummező; a megnézés napját az app a háttérben jegyzi meg ([6.](#6-állapotok-letöltve-értékelések)). |
