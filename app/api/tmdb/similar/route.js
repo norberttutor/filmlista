@@ -26,7 +26,8 @@ export async function GET(request) {
       data = await tmdbFetch(`/${type}/${id}/similar`, { language: 'hu-HU' });
     }
   } catch (err) {
-    return tmdbErrorResponse(err);
+    if (err.status !== 404) return tmdbErrorResponse(err);
+    data = { results: [] }; // a cím már nincs meg a TMDB-n: nincs ajánlás (nem hiba)
   }
 
   // a "similar" válaszban nincs media_type: ugyanaz, mint a kiinduló címé

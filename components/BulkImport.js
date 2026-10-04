@@ -3,7 +3,7 @@
 import { useImperativeHandle, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { addTitle } from '@/lib/titles';
-import { MAX_LINES, matchEntry, parseLines } from '@/lib/bulkImport';
+import { MAX_LINES, matchEntry, parseLines, mapLimit } from '@/lib/bulkImport';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w92';
 const PARALLEL = 3; // egyszerre ennyi TMDB-kérés
@@ -15,22 +15,6 @@ const TAGS = {
   none: 'Nincs találat',
   error: 'Hiba',
 };
-
-// items feldolgozása legfeljebb `limit` párhuzamos kéréssel; onProgress(kész darab)
-async function mapLimit(items, limit, fn, onProgress) {
-  const results = new Array(items.length);
-  let next = 0;
-  let done = 0;
-  async function worker() {
-    while (next < items.length) {
-      const i = next++;
-      results[i] = await fn(items[i], i);
-      onProgress(++done);
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
-  return results;
-}
 
 function Candidate({ c, name, checked, onPick }) {
   return (

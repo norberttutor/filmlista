@@ -35,7 +35,7 @@ export async function GET(request) {
       if (v) return Response.json({ video: { key: v.key, name: v.name, lang: v.iso_639_1 } });
     }
   } catch (err) {
-    return tmdbErrorResponse(err);
+    if (err.status !== 404) return tmdbErrorResponse(err); // a TMDB-n már nincs meg: nincs előzetes
   }
   return Response.json({ video: null });
 }

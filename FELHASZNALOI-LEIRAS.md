@@ -46,7 +46,7 @@ lehet létrehozni. A böngésző megjegyzi a belépést, nem kell minden alkalom
 ## 2. A lista: nézetek és lapozás
 
 A fejlécben: **Cím hozzáadása**, a **harang** (értesítések), az e-mail-címed, **Kilépés** és a
-**⋮ További műveletek** menü (IMDb értékelések, Statisztika, Tömeges import, Mentés letöltése,
+**⋮ További műveletek** menü (IMDb import, Statisztika, Tömeges import, Mentés letöltése,
 Mentések).
 
 **Két nézet:**
@@ -147,6 +147,11 @@ sarkában lévő ceruzával. Asztalon a borító „átsiklik” az ablak nagy b
 **Mit látsz az adatlapon:**
 - felül a film széles jelenetképe (ha van), asztalon (900 px fölött) balra nagy borító;
 - cím, év, típus, IMDb-érték, a még meg nem jelent filmeknél dátumos jelvény;
+- **Hol nézhető?** – a magyarországi streamingszolgáltatók logója, ahol a cím előfizetéssel
+  (Netflix, HBO Max, Disney Plus, SkyShowtime…) vagy ingyenesen nézhető; asztalon a nagy borító
+  alatt, keskenyebben az „Előzetes megnézése” fölött. A logóra mutatva a szolgáltató neve.
+  Kölcsönzés / vásárlás nem szerepel, és ha sehol nem nézhető, a blokk nem jelenik meg. Az
+  adatok forrása a JustWatch (a TMDB-n keresztül, naponta frissülnek);
 - **Előzetes megnézése** (ha van; angol előzetesnél „angolul” jelzés) – az ablakban játssza le,
   „Előzetes bezárása”;
 - a TMDB leírása;
@@ -300,15 +305,28 @@ kattintva vagy Esc-re bezárul.
 **IMDb-értékelés automatikusan:** minden címnél „IMDb 8,0” jelvény; az app kéthetente frissíti.
 Ezek szerint is rendezhetsz („Legjobb IMDb-értékelés”).
 
-**Saját IMDb-csillagaid átvétele** (⋮ menü → **IMDb értékelések**):
+**⋮ menü → IMDb import** – az IMDb két exportját fogadja, magától felismeri, melyiket adtad meg.
+
+**Saját IMDb-csillagaid átvétele:**
 1. Az IMDb-n a saját értékeléseid oldalán (*Your Ratings*) töltsd le az exportot (CSV-fájl).
-2. Az appban: ⋮ → IMDb értékelések → válaszd ki a fájlt.
+2. Az appban: ⋮ → IMDb import → válaszd ki a fájlt.
 3. Összefoglaló: hány értékelés van a fájlban, ebből mi változik a listádon.
 4. **Értékelések beírása.**
 
 Szabályok: csak a listán már szereplő címek (IMDb-azonosító alapján), az IMDb-csillag felülírja
-a sajátot, az állapot nem változik, új cím nem kerül fel. Teljesen automatikus szinkron nincs (az
-IMDb-nek nincs erre nyilvános felülete).
+a sajátot, az állapot nem változik, új cím nem kerül fel.
+
+**Az IMDb-figyelőlistád (Watchlist) átvétele:**
+1. Az IMDb-n a figyelőlistád oldalán töltsd le az exportot (CSV-fájl).
+2. Az appban: ⋮ → IMDb import → válaszd ki a fájlt.
+3. Az app megmutatja, hány cím van a fájlban, ebből mennyi van már a listádon, és mennyi új; az
+   újakat a TMDB-n megkeresi (ez címenként egy pillanat).
+4. Az új címek listája borítóval, magyar címmel, évvel, típussal – alapból mind kipipálva; amelyiket
+   nem kéred, vedd ki a pipát. Amit a TMDB-n nem talált, az alul fel van sorolva.
+5. **„N cím felvétele”** – Megnézendőként kerülnek a listára.
+
+Az epizódok, játékok, podcastok kimaradnak. Teljesen automatikus szinkron nincs (az IMDb-nek nincs
+erre nyilvános felülete).
 
 ## 13. Statisztika
 
@@ -372,6 +390,7 @@ A felület telefonra (640 px alatt) külön igazodik:
   évadok, megjelenési dátumok, előzetesek, ajánlások, franchise-logók és -gyűjtemények. A lap
   alján a kötelező forrásmegjelölés.
 - **OMDb** – az IMDb-értékelések (ha nem elérhető, az app értékelés nélkül is működik).
+- **JustWatch** (a TMDB-n keresztül) – a „Hol nézhető?” szolgáltatói adatai.
 - **A magyar szinkron** a TMDB-n nem szerepel, ezért a Felfedezés csak közelítés (lásd
   [4.](#4-címek-felvétele)).
 - A listád a Supabase adatbázisban van; csak a saját fiókoddal látható.
@@ -384,6 +403,7 @@ Minden fejlesztés után ide kerül egy sor (legújabb felül), és a fenti tém
 
 | Dátum | Mi változott |
 |---|---|
+| 2026. 10. 04. | „Hol nézhető?” az adatlapon: a magyar streamingszolgáltatók logója ([5.](#5-egy-cím-adatlapja-és-szerkesztése)); IMDb-figyelőlista importja – a menüpont neve „IMDb import” ([12.](#12-imdb)). |
 | 2026. 10. 04. | Asztali rácsban a lapozó és alatta a lábléc az ablak alján áll – minden oldalon ugyanott, felesleges görgetősáv nélkül ([2.](#2-a-lista-nézetek-és-lapozás)). |
 | 2026. 10. 04. | Asztali rácsban 22 cím egy oldalon (1440p-n 2 teli sor, tömörebb sorköz); nézetváltáskor a lap a látott címeknél marad ([2.](#2-a-lista-nézetek-és-lapozás)). |
 | 2026. 10. 04. | Asztalon az adatlap kikattintásra bezárul; mentetlen módosításnál nyitva marad és figyelmeztet ([5.](#5-egy-cím-adatlapja-és-szerkesztése)). |

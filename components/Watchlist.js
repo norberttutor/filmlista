@@ -729,8 +729,8 @@ export default function Watchlist({ session }) {
                 items={[
                   {
                     id: 'imdb',
-                    label: 'IMDb értékelések',
-                    description: 'A saját IMDb-csillagaid áttöltése (az IMDb „Your Ratings” CSV-exportjából)',
+                    label: 'IMDb import',
+                    description: 'Az IMDb-értékeléseid vagy a figyelőlistád (Watchlist) CSV-exportjából: csillagok, új címek',
                     icon: 'star',
                     onSelect: () => imdbImportRef.current?.open(),
                   },
@@ -768,7 +768,12 @@ export default function Watchlist({ session }) {
                   },
                 ]}
               />
-              <ImdbRatingsImport ref={imdbImportRef} titles={titles} onApplied={applyRatingsLocally} />
+              <ImdbRatingsImport
+                ref={imdbImportRef}
+                titles={titles}
+                onApplied={applyRatingsLocally}
+                onAdded={(row) => setTitles((ts) => [row, ...ts])}
+              />
               {isDesktop && (
                 <BulkImport
                   ref={bulkImportRef}

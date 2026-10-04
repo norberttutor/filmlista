@@ -54,7 +54,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből; fejléc:
   „Megnézendő filmek és sorozatok”; mellette (jobbra) „Cím hozzáadása”, harang (`NotificationBell`),
   e-mail, Kilépés, a sor végén a „További műveletek” (⋮) menü (`MoreMenu`, Norbi kérése, mint a
-  Chrome-ban): „IMDb értékelések”, „Statisztika” (`StatsDialog`), asztali nézetben „Tömeges
+  Chrome-ban): „IMDb import”, „Statisztika” (`StatsDialog`), asztali nézetben „Tömeges
   import” (`BulkImport`) és „Mentés letöltése” (`downloadListCsv`), a végén „Mentések”
   (`BackupsDialog`, telefonon is). Telefonon (≤ 640 px) a
   „Cím hozzáadása” helyett lebegő, kerek „+” gomb a jobb alsó sarokban (`.fab`; lefelé
@@ -283,7 +283,18 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   a részek egy napig. (Az első változat franchise-onként csak egy gyűjteményt mutatott, és
   Norbi 40 franchise-ából 15-nél kihagyott címeket – 2026-10-04.)
 - `app/api/tmdb/videos/route.js` – `GET ?type&id` → `{ video: { key, name, lang } | null }`:
-  YouTube, „Trailer” előbb, hivatalos előbb, legfrissebb; magyar nyelvű, ha nincs, angol
+  YouTube, „Trailer” előbb, hivatalos előbb, legfrissebb; magyar nyelvű, ha nincs, angol (ha a
+  cím már nincs a TMDB-n: `null`; a similar route is üres listát ad ilyenkor)
+- `components/WatchProviders.js` + `app/api/tmdb/providers/route.js` – „Hol nézhető?” az
+  adatlapon (terv-3 21-es pont, 2026-10-04): `GET ?type&id` → `{ providers: [{ id, name, logo,
+  free }] }` (`pickProviders()`: a TMDB `watch/providers` magyarországi `flatrate` +
+  `free` + `ads` szolgáltatói, a TMDB sorrendjében; egy napig gyorsítótárazva; ha a cím nincs
+  a TMDB-n: üres). Norbi döntései: csak az adatlapon; asztalon (≥ 900 px) a nagy borító alatt
+  (`.editor-side` burkoló: a borító + `.watch-providers.side`; a ragadás és a háttérképre
+  csúszás a burkolón), keskenyebben a fejlécben az „Előzetes megnézése” fölött
+  (`.watch-providers.inline`); kölcsönzés / vásárlás nincs; ha nincs szolgáltató, semmi nem
+  látszik; a logók (w92) nem kattinthatók, a név a súgóban / alt-ban („… (ingyenes)”). Alattuk
+  kötelező „Forrás: JustWatch” (TMDB-feltétel)
 - `lib/supabase.js` – Supabase kliens
 - `lib/api.js` – `apiGet()`: saját `/api` route hívása `Authorization: Bearer` tokennel,
   hibánál a szerver magyar üzenetével dob
@@ -365,13 +376,24 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `app/api/franchises/logos/route.js` – `POST`: a logó nélküli franchise-oknál a franchise első
   (legkorábbi) filmjének TMDB-címlogóját menti (`pickLogo()`: legfeljebb 6:1 arány, angol);
   ha nincs logó, 7 napig nem próbálja újra. A `Watchlist` betöltéskor hívja
-- `components/ImdbRatingsImport.js` + `lib/imdbImport.js` – „IMDb értékelések” a ⋮ menüből
+- `components/ImdbRatingsImport.js` + `lib/imdbImport.js` – „IMDb import” a ⋮ menüből
   (`ref.current.open()` → rejtett fájlválasztó; a komponens csak a fájlmezőt és az ablakot
-  rajzolja): az IMDb értékelés-exportjából (CSV: `Const`, `Your Rating`)
-  a böngészőben IMDb ID alapján párosít, összefoglalót mutat, majd `applyMyRatings()`
-  (csillagértékenként egy update). Norbi döntései: csak a listán lévő címek, az IMDb csillaga
-  felülírja a sajátot, az állapot nem változik, új cím nem kerül fel. Teljesen automatikus
-  szinkron nincs (az IMDb-nek nincs API-ja, az oldal gépi olvasása tiltott).
+  rajzolja). `parseImdbExport()` felismeri a két IMDb-exportot:
+  - **értékelések** (CSV: `Const`, `Your Rating`): a böngészőben IMDb ID alapján párosít,
+    összefoglalót mutat, majd `applyMyRatings()` (csillagértékenként egy update). Norbi
+    döntései: csak a listán lévő címek, az IMDb csillaga felülírja a sajátot, az állapot nem
+    változik, új cím nem kerül fel;
+  - **figyelőlista / watchlist** (a `Position` oszlopról ismeri fel; epizód, játék, podcast,
+    klip kimarad; ismétlődés egyszer): `planWatchlistImport()` – a listán (IMDb ID-vel) lévők
+    kimaradnak, a többit 3-asával a `/api/tmdb/find`-dal keresi (a TMDB-azonosító szerint már
+    listán lévők is kimaradnak), kipipálható lista (borító, magyar cím, év, típus, eredeti cím;
+    alapból mind kipipálva), a TMDB-n nem találtak felsorolva → „N cím felvétele” (`addTitle()`
+    2-esével, Megnézendő; a sikertelenek hibaüzenettel). Terv-3 20-as pont, 2026-10-04.
+  Teljesen automatikus szinkron nincs (az IMDb-nek nincs API-ja, az oldal gépi olvasása tiltott).
+  A párhuzamos feldolgozás (`mapLimit`) a `lib/bulkImport.js`-ben (a tömeges import is ezt használja).
+- `app/api/tmdb/find/route.js` – `GET ?imdb=tt…` → `{ result: { media_type, tmdb_id, title,
+  original_title, release_year, poster_path } | null }` (TMDB `find`, magyar cím; egy napig
+  gyorsítótárazva)
 - `components/NotificationBell.js` + `lib/notifications.js` – harang a fejlécben: a nem olvasott
   értesítések száma borostyán jelvényben (`--accent-2`); kinyitva a legutóbbi 30 (új évad bejelentése / megjelenése,
   film digitális megjelenése – „Digitálisan is megjelent – már letölthető”, borítóval); kinyitáskor mind olvasott (az adatbázisban is, `markNotificationsRead()`; a
@@ -562,7 +584,7 @@ asztali soros nézet soron belüli szerkesztéssel (`TitleTable`), csillagos ér
 „Mama” jelző, rendezés (hozzáadás, értékelés, megjelenés éve), letisztított szűrősor,
 franchise-ok (beállítás + szűrő + törlés), neon türkiz színvilág,
 TMDB leírás a cím mellett, IMDb-értékelés (OMDb) + rendezés szerinte, lapozás,
-saját IMDb-értékelések betöltése CSV-ből, franchise-logók a szűrőben,
+saját IMDb-értékelések és az IMDb-figyelőlista betöltése CSV-ből, franchise-logók a szűrőben,
 megjelenés-frissítés (18 javaslat, 2026-10-03), keresés a listán, középre zárt belépés,
 évadok a sorozatoknál (évadonkénti állapot és letöltve, a sorozat állapota ebből számolódik,
 új évadok hetente a TMDB-ről; epizódszintű követés Norbi kérésére nem kell),
@@ -587,13 +609,15 @@ Franchise-filmek importja (franchise.xlsx): 194 cím, 34 franchise; hozzáadás 
 Norbi listája (norbert.tutor@gmail.com) 2026-10-02-án Excelből importálva: 512 cím.
 A még meg nem jelent filmek szaggatott kerettel és dátumos jelvénnyel, a harang szól a digitális
 megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül). Asztalon az adatlap
-kikattintásra bezárul, ha nincs mentetlen módosítás (terv-3 24-es pontja, 2026-10-04).
+kikattintásra bezárul, ha nincs mentetlen módosítás (terv-3 24-es pontja, 2026-10-04). „Hol
+nézhető?” az adatlapon (magyar streamingszolgáltatók logóval, terv-3 21), IMDb-figyelőlista
+importja (terv-3 20).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
 **Norbi kérései (2026-10-04)** – a fejlesztési lista élén, ebben a sorrendben; a részletek
 (megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
-1. **22 – telefonon nincs „IMDb értékelések”** a ⋮ menüben (csak ≤ 640 px-en tűnik el,
+1. **22 – telefonon nincs „IMDb import”** a ⋮ menüben (csak ≤ 640 px-en tűnik el,
    tableten és asztalon marad – Norbi döntése).
 2. **23 – „Franchise-ok” a ⋮ menüben**: ábécérend, logók, csempénként számok; a csempe a
    meglévő gyűjtemény-ablakot nyitja (onnan szerkeszthető), „Szűrés erre”, átnevezés, törlés.
@@ -630,8 +654,8 @@ a megerősítés), 4 – értékelés kérése (nem kikapcsolható), 7 – előz
 magyar szinkronos – közelítés, külön sorozat-sorral), 9 – franchise-gyűjtemény, 14 – üres
 állapotok, 15 – gyorsgombok a letapadt szűrősorban, 16 – évadok idővonala; 10 – a még meg nem
 jelent filmek (szaggatott keret + jelvény + harang; szűrőgomb Norbi kérésére nincs); 24 –
-kikattintásra bezáruló adatlap. Vár még: 2, 3, 5,
-6, 11–13, 17–23.
+kikattintásra bezáruló adatlap; 20 – IMDb-figyelőlista importja; 21 – „Hol nézhető?” csak az
+adatlapon. Vár még: 2, 3, 5, 6, 11–13, 17–19, 22, 23.
 A négy új kérés (13 átdolgozva, 22, 23, 24) a „Következő feladat”-ban.
 
 ## Fejlesztői megjegyzés

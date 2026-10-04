@@ -15,6 +15,7 @@ import StarRating from '@/components/StarRating';
 import FranchiseSelect from '@/components/FranchiseSelect';
 import ImdbBadge from '@/components/ImdbBadge';
 import ReleaseBadge from '@/components/ReleaseBadge';
+import WatchProviders from '@/components/WatchProviders';
 import { hasSeasons, SeasonList, SeasonTimeline, useSeasonActions } from '@/components/Seasons';
 import SimilarTitles from '@/components/SimilarTitles';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
@@ -108,6 +109,16 @@ export default function TitleEditor({
     apiGet('/api/tmdb/videos', { type: t.media_type, id: t.tmdb_id }, { signal: controller.signal })
       .then((data) => setTrailer(data.video))
       .catch((err) => err.name !== 'AbortError' && console.warn('Előzetes:', err.message));
+    return () => controller.abort();
+  }, [t.media_type, t.tmdb_id]);
+  // „Hol nézhető?”: a magyarországi streamingszolgáltatók, szintén a háttérben (ha nincs, vagy
+  // nem sikerül, a blokk nem jelenik meg)
+  const [providers, setProviders] = useState(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    apiGet('/api/tmdb/providers', { type: t.media_type, id: t.tmdb_id }, { signal: controller.signal })
+      .then((data) => setProviders(data.providers))
+      .catch((err) => err.name !== 'AbortError' && console.warn('Hol nézhető:', err.message));
     return () => controller.abort();
   }, [t.media_type, t.tmdb_id]);
 
@@ -296,9 +307,13 @@ export default function TitleEditor({
         </div>
       )}
       <form onSubmit={handleSubmit}>
-        {/* asztalon a borító nagyban, balra (görgetéskor a helyén marad); telefonon rejtve */}
-        <div className="editor-poster" aria-hidden="true">
-          {t.poster_path && <img src={POSTER_BASE + t.poster_path} alt="" />}
+        {/* asztalon a borító nagyban, balra (görgetéskor a helyén marad), alatta a „Hol
+            nézhető?”; keskenyebben (< 900 px) rejtve */}
+        <div className="editor-side">
+          <div className="editor-poster" aria-hidden="true">
+            {t.poster_path && <img src={POSTER_BASE + t.poster_path} alt="" />}
+          </div>
+          <WatchProviders providers={providers} className="side" />
         </div>
         <div className="editor-main">
           <header>
@@ -311,6 +326,8 @@ export default function TitleEditor({
               <ImdbBadge title={t} />
               <ReleaseBadge state={releaseState(t)} />
             </p>
+            {/* keskenyebben (< 900 px, nincs nagy borító) itt, az előzetes fölött */}
+            <WatchProviders providers={providers} className="inline" />
             {trailer && (
               <button
                 type="button"
