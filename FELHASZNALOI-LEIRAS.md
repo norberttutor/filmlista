@@ -445,6 +445,7 @@ Minden fejlesztés után ide kerül egy sor (legújabb felül), és a fenti tém
 
 | Dátum | Mi változott |
 |---|---|
+| 2026. 10. 05. | A lábléc jobb alsó sarkában „sponsored by ADERTIS” felirat; az ADERTIS-ra kattintva a www.adertis.hu nyílik meg új lapon. |
 | 2026. 10. 05. | Tömörebb adatlap: felül a Franchise és a Saját értékelés egymás mellett, alattuk egy keretes sávban az Állapot, a Letöltve és a Mama; a mezők címkéi kis nagybetűk – asztalon feleannyi helyet foglal ([5.](#5-egy-cím-adatlapja-és-szerkesztése)). |
 | 2026. 10. 05. | Gyorsabb újranyitás: a TMDB-ről jövő adatokat (Hol nézhető?, előzetes, hasonló címek, gyűjtemény) a böngésző egy napig, a cím adatait és a Felfedezést egy óráig, a keresési találatokat 10 percig megjegyzi – ugyanaz az adatlap újranyitva azonnal kész. A saját listád adatai mindig frissek. Kevesebb háttérkérés betöltéskor. |
 | 2026. 10. 05. | Simább adatlap-megnyitás: a háttérben érkező adatok (a borító színe, Hol nézhető?, előzetes, hasonló címek) megvárják, hogy a borító átsiklása véget érjen; nyitott ablaknál az aurora áll – terhelt gépen (pl. videó mellett) kevésbé szaggat. |

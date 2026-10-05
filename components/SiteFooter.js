@@ -13,6 +13,13 @@ export default function SiteFooter() {
         </a>
         .
       </p>
+      {/* jobbra lent (Norbi kérése, 2026-10-05) */}
+      <span className="sponsor">
+        sponsored by{' '}
+        <a href="https://www.adertis.hu" target="_blank" rel="noopener noreferrer">
+          ADERTIS
+        </a>
+      </span>
     </footer>
   );
 }

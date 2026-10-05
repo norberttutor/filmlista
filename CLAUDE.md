@@ -288,7 +288,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   gyűjtemény-ablak alatt nem), `CollectionDialog` (rész felvétele közben és nyitott
   TMDB-gyűjtemény-keresőnél nem), `BackupsDialog` (mentés / visszaállítás közben és nyitott
   megerősítésnél nem). Az importablakok (Tömeges import, IMDb import) nem (Norbi döntése)
-- `components/SiteFooter.js` – kötelező TMDB forrásmegjelölés, ne töröld
+- `components/SiteFooter.js` – kötelező TMDB forrásmegjelölés, ne töröld; jobbra lent „sponsored by
+  ADERTIS” (az ADERTIS link: https://www.adertis.hu, új lapon – Norbi kérése, 2026-10-05; külön
+  `span.sponsor`, nem `p` – a teszt egy bekezdést vár a láblécben)
 - `components/TitleSearch.js` – „Cím hozzáadása” panel: késleltetett (400 ms) TMDB keresés,
   találati lista, „Hozzáadás a listához” gomb; a már listán lévőknél „✓ A listán”;
   `initialQuery` (kitöltve nyílik); üres keresőnél a felfedező sorok (`Discover`); a találat

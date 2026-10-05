@@ -4455,6 +4455,10 @@ body:has(.editor[open]) {
 
 /* ---------- Lábléc ---------- */
 .site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.4rem 1.5rem;
   padding: 1.25rem var(--gutter) 2rem;
   border-top: 1px solid var(--line);
   font-size: 0.675rem; /* ~10,8 px */
@@ -4463,7 +4467,15 @@ body:has(.editor[open]) {
 
 /* nincs szélességkorlát: asztali gépen egy sorba fér, keskeny képernyőn tördel */
 .site-footer p {
+  flex: 1 1 auto;
+  min-width: 0;
   margin: 0;
+}
+
+/* „sponsored by ADERTIS” jobbra lent (keskeny képernyőn a forrásmegjelölés alatt, jobbra) */
+.site-footer .sponsor {
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 /* a forrásmegjelölés linkjei visszafogottak: halvány aláhúzás, rámutatva türkiz */
