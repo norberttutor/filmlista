@@ -265,7 +265,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   listanézetben 6 sor, egyébként 12 kártya körvonala, csillogó áthúzással; felolvasónak „Lista
   betöltése…”); a `SimilarTitles` betöltése is borító-körvonalakkal (`.similar-sk`)
 - `lib/viewTransition.js` – `canMorph(elem)` (támogatott böngésző, ≥ 900 px, nincs „kevesebb
-  mozgás”, az elem a lapon van) és `MORPH_NAME` (`editor-poster`)
+  mozgás”, az elem a lapon van) és `MORPH_NAME` (`editor-poster`); `trackTransition(t)` (a
+  `Watchlist.openEditor` hívja) és `afterTransition()` – a megnyitás közben érkező, nem sürgős
+  frissítések (hangulatszín: `usePosterColor` – a vászonra rajzolás is –, „Hol nézhető?”,
+  előzetes, hasonló címek, előnézeti adatok) megvárják a 0,3 s-os mozgás végét: terhelt gépen
+  (Norbi: videó mellett, 2026-10-05) ezek egy-egy hosszú képkockát okoztak a mozgás közepén. Új,
+  a szerkesztő megnyitásakor érkező állapotfrissítésnél is ezt használd
 - `lib/useMediaQuery.js` – `useMediaQuery(query)` hook (`useSyncExternalStore`)
 - `lib/useBackdropClose.js` – `useBackdropClose(dialogRef, { onClose, canClose, onBlocked })` →
   `{ onPointerDown, onClick }` a `<dialog>`-ra: kikattintásra (a háttérre) bezár, telefonon
@@ -604,7 +609,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - Mozgás: legfeljebb ~0,2 s-os átmenetek. Kivételek („Mozgás” szakasz a `globals.css`-ben):
   az aurora (a lap tetején három elmosott fényfolt – türkiz, lila, borostyán – 36 s-os lassú
   lebegéssel, `body::before`; a belépési oldalon nincs, kétoldalt 4% hely + maszk, hogy ne
-  legyen éle és vízszintes görgetés); a nézetváltás borító ↔ szerkesztő (0,3 s); a borítófal
+  legyen éle és vízszintes görgetés; nyitott ablaknál áll – az elmosott háttér mögött úgysem
+  látszik, és így az elmosást nem kell képkockánként újraszámolni); a nézetváltás borító ↔ szerkesztő (0,3 s); a borítófal
   kártyáinak beúszása (a görgetés vezérli: `animation-timeline: view()`); a csillagok
   pattanása (0,34 s, egymás után); a pipa bepattanása (átmenet, betöltéskor nem mozog); a harang
   rezzenése (0,9 s, egyszer); a csontváz csillogása (1,4 s, ismétlődik); az értesítősáv

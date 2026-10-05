@@ -42,7 +42,7 @@ import { toast, dismissToast } from '@/lib/toast';
 import { loadNotifications, markNotificationsRead } from '@/lib/notifications';
 import { downloadListCsv } from '@/lib/exportList';
 import { useMediaQuery } from '@/lib/useMediaQuery';
-import { canMorph, MORPH_NAME } from '@/lib/viewTransition';
+import { canMorph, MORPH_NAME, trackTransition } from '@/lib/viewTransition';
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 
@@ -190,7 +190,7 @@ export default function Watchlist({ session }) {
       fromEl.style.viewTransitionName = '';
       flushSync(() => setEditing(t));
     });
-    transition.finished.catch(() => {});
+    trackTransition(transition); // a szerkesztő nem sürgős frissítései megvárják a végét
   }
   const [notifications, setNotifications] = useState([]); // új évadokról, legutóbbi 30
   // itt már olvasottnak jelöltek: egy közben beérkező (korábban indult) lekérdezés se írja vissza

@@ -115,6 +115,12 @@ body:has(main.login)::before {
   content: none;
 }
 
+/* nyitott ablaknál az aurora áll: az elmosott, sötét háttér mögött úgysem látszik a mozgása, és
+   így a háttér elmosását nem kell minden képkockán újraszámolni (videó mellett ez számít) */
+body:has(dialog[open])::before {
+  animation-play-state: paused;
+}
+
 /* finom filmszemcse: leheletnyi, álló zajtextúra a háttéren, a tartalom mögött (a borítókra
    és a szövegre nem kerül) – a sima sötét felület "vásznasabb"; nem mozog */
 body::after {

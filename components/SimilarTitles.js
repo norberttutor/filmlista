@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { addTitle, titleKey } from '@/lib/titles';
+import { afterTransition } from '@/lib/viewTransition';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w154';
 // alapból nyitva; ha becsukja, a böngésző megjegyzi (ha nem tudja, nyitva marad). Telefonon
@@ -46,7 +47,10 @@ export default function SimilarTitles({ title, existingKeys, onAdded, onPreview 
       { type: title.media_type, id: title.tmdb_id },
       { signal: controller.signal }
     )
-      .then(({ results }) => {
+      // a megnyitás mozgása alatt nem rajzolunk újra (afterTransition)
+      .then(({ results }) => afterTransition().then(() => results))
+      .then((results) => {
+        if (controller.signal.aborted) return;
         fetched.current = true;
         setLoad({ status: 'done', results, error: '' });
       })

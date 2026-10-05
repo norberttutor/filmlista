@@ -20,7 +20,7 @@ import WatchProviders from '@/components/WatchProviders';
 import { hasSeasons, SeasonList, SeasonTimeline, useSeasonActions } from '@/components/Seasons';
 import SimilarTitles from '@/components/SimilarTitles';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
-import { canMorph, MORPH_NAME } from '@/lib/viewTransition';
+import { canMorph, MORPH_NAME, afterTransition } from '@/lib/viewTransition';
 import { useBackdropClose } from '@/lib/useBackdropClose';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500'; // a nagy borító (asztalon)
@@ -266,7 +266,7 @@ function TitlePage({
     if (!preview) return;
     const controller = new AbortController();
     apiGet('/api/tmdb/details', { type: media_type, id: tmdb_id }, { signal: controller.signal })
-      .then(setDetails)
+      .then((data) => afterTransition().then(() => !controller.signal.aborted && setDetails(data)))
       .catch((err) => err.name !== 'AbortError' && setDetailsError(err.message));
     return () => controller.abort();
   }, [preview, media_type, tmdb_id]);
@@ -304,12 +304,13 @@ function TitlePage({
   const seasonActions = useSeasonActions(t, onChanged, setError);
   // előzetes a TMDB-ről (magyar, ha nincs: angol): megnyitáskor a háttérben kérdezzük le; a gomb
   // csak akkor jelenik meg, ha van. A lejátszó csak kattintásra töltődik (YouTube, adatkímélő mód).
+  // A háttérben érkező adatok a megnyitás mozgásának végét megvárják (afterTransition).
   const [trailer, setTrailer] = useState(null);
   const [playing, setPlaying] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
     apiGet('/api/tmdb/videos', { type: t.media_type, id: t.tmdb_id }, { signal: controller.signal })
-      .then((data) => setTrailer(data.video))
+      .then((data) => afterTransition().then(() => !controller.signal.aborted && setTrailer(data.video)))
       .catch((err) => err.name !== 'AbortError' && console.warn('Előzetes:', err.message));
     return () => controller.abort();
   }, [t.media_type, t.tmdb_id]);
@@ -325,7 +326,7 @@ function TitlePage({
   useEffect(() => {
     const controller = new AbortController();
     apiGet('/api/tmdb/providers', { type: t.media_type, id: t.tmdb_id }, { signal: controller.signal })
-      .then((data) => setProviders(data.providers))
+      .then((data) => afterTransition().then(() => !controller.signal.aborted && setProviders(data.providers)))
       .catch((err) => err.name !== 'AbortError' && console.warn('Hol nézhető:', err.message));
     return () => controller.abort();
   }, [t.media_type, t.tmdb_id]);
@@ -440,6 +441,7 @@ function TitlePage({
             srcSet={`${BACKDROP_BASE}w780${t.backdrop_path} 780w, ${BACKDROP_BASE}w1280${t.backdrop_path} 1280w`}
             sizes="(max-width: 640px) 100vw, 60rem"
             alt=""
+            decoding="async"
           />
         </div>
       )}
@@ -448,7 +450,7 @@ function TitlePage({
             nézhető?”; keskenyebben (< 900 px) rejtve */}
         <div className="editor-side">
           <div className="editor-poster" aria-hidden="true">
-            {t.poster_path && <img src={POSTER_BASE + t.poster_path} alt="" />}
+            {t.poster_path && <img src={POSTER_BASE + t.poster_path} alt="" decoding="async" />}
           </div>
           <WatchProviders providers={providers} className="side" />
         </div>
