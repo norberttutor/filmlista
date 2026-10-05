@@ -285,7 +285,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/Discover.js` + `app/api/tmdb/discover/route.js` – Felfedezés: „Most a
   mozikban” (`cinema`), „Hamarosan a mozikban” (`upcoming`, dátummal), „Új digitálisan”
   (`digital`), „Népszerű sorozatok” (`tv`), vízszintes borítósorok, „+ Hozzáadás” / „✓ A
-  listán”. Norbit csak a **magyar szinkronos** címek érdeklik; a TMDB ezt nem tárolja, ezért
+  listán” (a `.discover` oszlopa `minmax(0, 1fr)`: a sorok a helyükön görögnek – enélkül a
+  rács a 16 borító szélességére nőtt, és telefonon az egész lap kicsinyedett, 2026-10-05). A
+  borítók türkiz kerete rámutatásra csak `@media (hover: hover)` alatt (telefonon az érintés
+  után ne ragadjon be), fókusznál mindig. Norbit csak a **magyar szinkronos** címek érdeklik; a TMDB ezt nem tárolja, ezért
   közelítés: film = magyarországi megjelenés (`discover/movie`, `region=HU`,
   `with_release_type` 2|3 vagy 4), sorozat = magyar előfizetéses streamingen elérhető
   (`discover/tv`, `watch_region=HU`, `flatrate`, 90 napon belül futott rész); mindkettőnél

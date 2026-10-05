@@ -906,8 +906,11 @@ body:has(> main.login) {
   text-decoration-color: currentColor;
 }
 
-.result .thumb-btn:hover::after {
-  box-shadow: inset 0 0 0 2px var(--accent);
+/* rámutatva csak egérrel (telefonon az érintés után ne ragadjon be a keret) */
+@media (hover: hover) {
+  .result .thumb-btn:hover::after {
+    box-shadow: inset 0 0 0 2px var(--accent);
+  }
 }
 
 /* "Hozzáadás a listához": halvány türkiz, rámutatva telik ki – így 18–20 találatnál sem
@@ -2929,8 +2932,12 @@ button.season:hover {
 }
 
 /* ---------- Felfedezés (a „Cím hozzáadása” panelen, üres keresőnél) ---------- */
+/* az oszlop a panel szélességű (minmax(0, …)): a borítósorok a saját helyükön görögnek, nem
+   tolják szélesebbre a lapot (különben telefonon az egész oldal kicsinyedik, és a róla nyitott
+   adatlap is kilóg) */
 .discover {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.4rem;
   margin-top: 0.2rem;
 }
@@ -2993,10 +3000,18 @@ button.season:hover {
   transition: box-shadow 0.15s;
 }
 
-.discover-poster:is(:hover, :focus-visible) img {
+.discover-poster:focus-visible img {
   box-shadow:
     0 0 0 2px var(--accent),
     0 6px 16px -6px rgb(0 0 0 / 0.6);
+}
+
+@media (hover: hover) {
+  .discover-poster:hover img {
+    box-shadow:
+      0 0 0 2px var(--accent),
+      0 6px 16px -6px rgb(0 0 0 / 0.6);
+  }
 }
 
 .discover-poster:focus-visible {
@@ -3580,8 +3595,14 @@ button.season:hover {
   transition: box-shadow 0.15s;
 }
 
-.similar-poster:is(:hover, :focus-visible)::after {
+.similar-poster:focus-visible::after {
   box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+@media (hover: hover) {
+  .similar-poster:hover::after {
+    box-shadow: inset 0 0 0 2px var(--accent);
+  }
 }
 
 .similar-poster:focus-visible {

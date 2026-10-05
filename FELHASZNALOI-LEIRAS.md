@@ -443,6 +443,7 @@ Minden fejlesztés után ide kerül egy sor (legújabb felül), és a fenti tém
 
 | Dátum | Mi változott |
 |---|---|
+| 2026. 10. 05. | Javítás: a Felfedezés borítósorai nem tolják szélesebbre az oldalt – telefonon nem kicsinyedik az oldal, és a Felfedezésből nyitott adatlap is kifér; asztalon nincs felesleges vízszintes görgetősáv ([4.](#4-címek-felvétele)). |
 | 2026. 10. 05. | Adatlap a listára vétel előtt: a Cím hozzáadása találatainak és a Felfedezés borítójára kattintva a cím adatlapja „Hozzáadás a listához” gombbal – felvétel után helyben a rendes adatlap; a Hasonló címek borítója ugyanabban az ablakban nyitja a hasonló címet, „Vissza” gombbal ([4.](#4-címek-felvétele), [5.](#5-egy-cím-adatlapja-és-szerkesztése)). |
 | 2026. 10. 05. | Az új franchise logója rögtön megérkezik, amint az első címe bekerül – nem csak a következő betöltéskor ([9.](#9-franchise-ok-és-gyűjtemények)). |
 | 2026. 10. 05. | Kikattintásra bezárul a Statisztika, a Franchise-ok, a gyűjtemény és a Mentések ablak is ([16.](#16-billentyűzet-kényelmi-apróságok)). |
