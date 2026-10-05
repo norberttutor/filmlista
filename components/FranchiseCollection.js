@@ -7,46 +7,32 @@ import { addTitle, setFranchiseCollections, updateTitle } from '@/lib/titles';
 const IMG = 'https://image.tmdb.org/t/p/';
 const byYear = (a, b) => (a.release_year ?? 9999) - (b.release_year ?? 9999);
 
-// Franchise-ra szűrve a lista fölött sáv: hány címét láttad / van a listán. A „Gyűjtemény”
-// ablakban (gyűjteményenként egy szakasz):
-// - a franchise filmjeinek összes TMDB-gyűjteménye (pl. Alien, Ragadozó, AVP, Prometheus) és a
-//   kézzel hozzárendeltek (franchises.tmdb_collection_ids) – a részek megjelenési sorrendben, a
-//   hiányzók egy kattintással felvehetők (a franchise is beállítódik);
-// - „A franchise-od további címei”: a gyűjteményekben nem szereplő saját címek (sorozatok,
-//   gyűjtemény nélküli filmek);
-// - „+ TMDB-gyűjtemény hozzáadása”: keresés a TMDB gyűjteményei között (pl. Star Wars).
-// A sáv akkor is megjelenik, ha nincs TMDB-gyűjtemény (a saját címekkel).
-export default function FranchiseCollection({ franchise, titles, onAdded, onFranchiseUpdated }) {
-  const own = titles.filter((t) => t.franchise_id === franchise.id);
-  const movieIds = own
-    .filter((t) => t.media_type === 'movie')
+// A gyűjtemény-lekérés paraméterei: a franchise filmjei (TMDB-azonosító) és a kézzel
+// hozzárendelt TMDB-gyűjtemények. A kulcs a lekérések gyorsítótárazásához (Franchise-ok ablak).
+export function collectionParams(franchise, titles) {
+  const movies = titles
+    .filter((t) => t.franchise_id === franchise.id && t.media_type === 'movie')
     .map((t) => t.tmdb_id)
     .sort((a, b) => a - b)
     .join(',');
+  return { movies, extra: (franchise.tmdb_collection_ids ?? []).join(',') };
+}
+
+export const paramsKey = (p) => `${p.movies}|${p.extra}`;
+
+// A franchise TMDB-gyűjteményei a részekkel (/api/tmdb/collection); film és kézi gyűjtemény
+// nélkül nincs mit lekérni.
+export async function fetchCollections(params, signal) {
+  if (!params.movies && !params.extra) return [];
+  const data = await apiGet('/api/tmdb/collection', params, { signal });
+  return data.collections;
+}
+
+// A gyűjtemények + a saját címek összesítése: szakaszok (a részeknél a listán lévő cím),
+// a gyűjteményekben nem szereplő saját címek (extras), számok, hiányzók.
+export function summarizeCollection(franchise, titles, collections) {
   const manual = franchise.tmdb_collection_ids ?? [];
-  const extra = manual.join(',');
-  const needsFetch = Boolean(movieIds || extra);
-  const [collections, setCollections] = useState(needsFetch ? null : []); // null: betöltés alatt
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (!movieIds && !extra) {
-      setCollections([]);
-      return;
-    }
-    const controller = new AbortController();
-    apiGet('/api/tmdb/collection', { movies: movieIds, extra }, { signal: controller.signal })
-      .then((data) => setCollections(data.collections))
-      .catch((err) => {
-        if (err.name === 'AbortError') return;
-        console.warn('Gyűjtemény:', err.message);
-        setCollections([]);
-      });
-    return () => controller.abort();
-  }, [movieIds, extra]);
-
-  if (collections === null) return null;
-
+  const own = titles.filter((t) => t.franchise_id === franchise.id);
   // a részek a listán: tmdb_id → cím (bármelyik franchise-ban vagy anélkül)
   const byTmdb = new Map(titles.filter((t) => t.media_type === 'movie').map((t) => [t.tmdb_id, t]));
   const sections = collections.map((c) => ({
@@ -58,14 +44,51 @@ export default function FranchiseCollection({ franchise, titles, onAdded, onFran
   const extras = own
     .filter((t) => !(t.media_type === 'movie' && inCollections.has(t.tmdb_id)))
     .sort(byYear);
-
   // számlálás: a gyűjtemények részei (egy film csak egyszer) + a további címek
   const parts = [...new Map(sections.flatMap((s) => s.parts).map((p) => [p.tmdb_id, p])).values()];
   const total = parts.length + extras.length;
   const watched =
     parts.filter((p) => p.own?.status === 'watched').length + extras.filter((t) => t.status === 'watched').length;
   const onList = parts.filter((p) => p.own).length + extras.length;
-  const counts = { total, watched, onList };
+  return { sections, extras, manual, counts: { total, watched, onList, missing: total - onList } };
+}
+
+// Franchise-ra szűrve a lista fölött sáv: hány címét láttad / van a listán. A „Gyűjtemény”
+// ablakban (gyűjteményenként egy szakasz):
+// - a franchise filmjeinek összes TMDB-gyűjteménye (pl. Alien, Ragadozó, AVP, Prometheus) és a
+//   kézzel hozzárendeltek (franchises.tmdb_collection_ids) – a részek megjelenési sorrendben, a
+//   hiányzók egy kattintással felvehetők (a franchise is beállítódik);
+// - „A franchise-od további címei”: a gyűjteményekben nem szereplő saját címek (sorozatok,
+//   gyűjtemény nélküli filmek);
+// - „+ TMDB-gyűjtemény hozzáadása”: keresés a TMDB gyűjteményei között (pl. Star Wars).
+// A sáv akkor is megjelenik, ha nincs TMDB-gyűjtemény (a saját címekkel).
+export default function FranchiseCollection({ franchise, titles, onAdded, onFranchiseUpdated }) {
+  const params = collectionParams(franchise, titles);
+  const { movies, extra } = params;
+  const needsFetch = Boolean(movies || extra);
+  const [collections, setCollections] = useState(needsFetch ? null : []); // null: betöltés alatt
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!movies && !extra) {
+      setCollections([]);
+      return;
+    }
+    const controller = new AbortController();
+    fetchCollections({ movies, extra }, controller.signal)
+      .then(setCollections)
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
+        console.warn('Gyűjtemény:', err.message);
+        setCollections([]);
+      });
+    return () => controller.abort();
+  }, [movies, extra]);
+
+  if (collections === null) return null;
+
+  const { sections, extras, manual, counts } = summarizeCollection(franchise, titles, collections);
+  const { total, watched, onList } = counts;
 
   return (
     <>
@@ -77,7 +100,7 @@ export default function FranchiseCollection({ franchise, titles, onAdded, onFran
         ) : (
           <b>{franchise.name}</b>
         )}
-        <Meter {...counts} />
+        <CollectionMeter {...counts} />
         <span className="collection-count">
           <b>
             {watched}/{total}
@@ -106,7 +129,8 @@ export default function FranchiseCollection({ franchise, titles, onAdded, onFran
   );
 }
 
-function Meter({ total, watched, onList }) {
+// megnézve (zöld) / a listán (türkiz) arány – a sávon, a gyűjtemény-ablakban és a Franchise-ok csempéin
+export function CollectionMeter({ total, watched, onList }) {
   return (
     <span className="collection-meter" aria-hidden="true">
       <i style={{ width: `${total ? (watched / total) * 100 : 0}%` }} />
@@ -123,7 +147,7 @@ function Poster({ path }) {
   );
 }
 
-function CollectionDialog({ franchise, sections, extras, counts, manual, onAdded, onFranchiseUpdated, onClose }) {
+export function CollectionDialog({ franchise, sections, extras, counts, manual, onAdded, onFranchiseUpdated, onClose }) {
   const dialogRef = useRef(null);
   const headingRef = useRef(null);
   const [state, setState] = useState({}); // tmdb_id → { busy } | { error }
@@ -191,7 +215,7 @@ function CollectionDialog({ franchise, sections, extras, counts, manual, onAdded
           {counts.total} cím
         </p>
         <p className="collection-prog">
-          <Meter {...counts} />
+          <CollectionMeter {...counts} />
           <span>
             <b>
               {counts.watched}/{counts.total}

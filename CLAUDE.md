@@ -54,7 +54,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből; fejléc:
   „Megnézendő filmek és sorozatok”; mellette (jobbra) „Cím hozzáadása”, harang (`NotificationBell`),
   e-mail, Kilépés, a sor végén a „További műveletek” (⋮) menü (`MoreMenu`, Norbi kérése, mint a
-  Chrome-ban): „Statisztika” (`StatsDialog`), „IMDb import” (telefonon – `PHONE_QUERY`, ≤ 640 px –
+  Chrome-ban): „Statisztika” (`StatsDialog`), „Franchise-ok” (`FranchisesDialog`, telefonon is), „IMDb import” (telefonon – `PHONE_QUERY`, ≤ 640 px –
   nincs, Norbi kérése), asztali nézetben „Tömeges
   import” (`BulkImport`) és „Mentés letöltése” (`downloadListCsv`), a végén „Mentések”
   (`BackupsDialog`, telefonon is). Telefonon (≤ 640 px) a
@@ -265,6 +265,21 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   angol vagy magyar eredeti nyelv, van magyar leírás, és nincs dokumentum / valóságshow /
   talkshow / hírek / szappanopera műfaj. A felület ezt egy mondatban jelzi. Listánként
   legfeljebb 16, 5 oldalig, egy óráig gyorsítótárazva (`cached()`)
+- `components/FranchisesDialog.js` – „Franchise-ok” ablak a ⋮ menüből (terv-3 23-as pont,
+  2026-10-05, Norbi döntéseivel): az összes franchise **ábécérendben, névelő nélkül** („A” / „Az” /
+  „The” nem számít, a név kiírva változatlan), csempénként (asztalon 4, 900 px alatt 3, telefonon 2
+  oszlop): logó sötét alapon (`FranchiseLogo`; ha nincs, a név), név, mérő, „x/y megnézve · n a
+  listán · m hiányzik” – a TMDB-gyűjteményekkel együtt (a `FranchiseCollection` közös
+  függvényeivel; 3-asával töltve, franchise-onként a lekérés kulcsával – `paramsKey` –
+  megjegyezve, ha a címek / kézi gyűjtemények változnak, újra; betöltés alatt „· …”, `aria-busy`),
+  „· nincs TMDB-gyűjtemény”, üresen „Még nincs címe”. A csempére kattintva a gyűjtemény-ablak
+  (`CollectionDialog`, a Franchise-ok ablakon belül nyílik); a csempe alatt „Szűrés erre” (üres
+  franchise-nál tiltva; `Watchlist.showFranchise`: a keresés törlődik, minden más szűrő elenged –
+  `SEARCH_FILTERS` + a franchise –, az ablak bezárul), „Átnevezés” (helyben, Enter / Esc – az Esc
+  a mezőben csak a szerkesztést zárja), „Törlés” (megerősítéssel; a címek maradnak). Felül kereső
+  (ékezet nélkül is), alul „+ Új franchise” (létrehozás után a gyűjtemény-ablaka nyílik). A
+  külső ablak `onClose`-a csak a saját eseményére zár (`e.target === e.currentTarget`): a
+  belső `<dialog>` „close” eseményét a React a külső kezelőnek is továbbítja
 - `components/FranchiseCollection.js` + `app/api/tmdb/collection/route.js` +
   `app/api/tmdb/collection-search/route.js` – franchise-ra szűrve mindig sáv a lista fölött
   (logó vagy név, mérő: megnézve zöld / listán türkiz, „x/y megnézve · n a listán · m
@@ -282,7 +297,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   „Hozzárendelés” (`setFranchiseCollections`). A számlálás a gyűjtemények részeinek
   uniója + a további címek. Gyorsítótár: filmenként a gyűjtemény-azonosító és gyűjteményenként
   a részek egy napig. (Az első változat franchise-onként csak egy gyűjteményt mutatott, és
-  Norbi 40 franchise-ából 15-nél kihagyott címeket – 2026-10-04.)
+  Norbi 40 franchise-ából 15-nél kihagyott címeket – 2026-10-04.) Közös exportok (a Franchise-ok
+  ablak is használja): `collectionParams()`, `paramsKey()`, `fetchCollections()`,
+  `summarizeCollection()` (szakaszok, további címek, számok + `missing`), `CollectionMeter`,
+  `CollectionDialog`
 - `app/api/tmdb/videos/route.js` – `GET ?type&id` → `{ video: { key, name, lang } | null }`:
   YouTube, „Trailer” előbb, hivatalos előbb, legfrissebb; magyar nyelvű, ha nincs, angol (ha a
   cím már nincs a TMDB-n: `null`; a similar route is üres listát ad ilyenkor)
@@ -352,7 +370,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `aria-describedby`). Kattintással vagy Enter / Szóköz / nyilakkal nyílik, a menüben nyilak,
   Home / End, Esc (a fókusz vissza a gombra), Tab és kívülre kattintás bezárja. Választáskor a
   fókusz a gombra kerül (a megnyíló ablak bezárásakor oda tér vissza). A pontok:
-  `{ id, label, description, icon, onSelect }` (ikonok: star, chart, list, download, history)
+  `{ id, label, description, icon, onSelect }` (ikonok: star, chart, list, download, history, stack)
 - `components/StatsDialog.js` + `lib/stats.js` – „Statisztika” ablak (a ⋮ menüből): csempék
   a betöltött listából (`listStats()`, adatbázis-lekérdezés nélkül) – megnézve az utolsó 12
   hónapban, havonta megnézett címek (saját SVG-oszlopdiagram, `watched_at`), műfajok (a
@@ -612,40 +630,36 @@ A még meg nem jelent filmek szaggatott kerettel és dátumos jelvénnyel, a har
 megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül). Asztalon az adatlap
 kikattintásra bezárul, ha nincs mentetlen módosítás (terv-3 24-es pontja, 2026-10-04). „Hol
 nézhető?” az adatlapon (magyar streamingszolgáltatók logóval, terv-3 21), IMDb-figyelőlista
-importja (terv-3 20).
+importja (terv-3 20), „Franchise-ok” ablak a ⋮ menüben (terv-3 23, 2026-10-05).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
 **Norbi kérései (2026-10-04)** – a fejlesztési lista élén, ebben a sorrendben; a részletek
 (megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
-1. **23 – „Franchise-ok” a ⋮ menüben**: ábécérend, logók, csempénként számok; a csempe a
-   meglévő gyűjtemény-ablakot nyitja (onnan szerkeszthető), „Szűrés erre”, átnevezés, törlés.
-2. **13 – Mama külön hozzáférése**, Norbi döntéseivel: **jelszavas fiók** (Norbi hozza létre a
+1. **25 – admin jogosultság** (csak Norbi fiókja): csak admin látja a ⋮ menü **Mentések**
+   pontját és a **Mama** paramétert mindenhol (szűrő, oszlop, szerkesztő, kártya, CSV); javaslat:
+   `app_metadata.role = 'admin'` (SQL-lel, a tokenben), `is_admin()` – a mentés-függvények
+   adatbázisszinten is csak adminnak. A tesztfiók is admin (Norbi döntése, a teszt miatt).
+2. **27 – jelszó módosítása**: bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”: jelenlegi +
+   új kétszer; előbb ellenőrző belépés, utána `updateUser`) és „Elfelejtettem a jelszavam” a
+   belépési oldalon (`resetPasswordForEmail` → levél → `PASSWORD_RECOVERY` → új jelszó). Norbi
+   teendője: Supabase URL Configuration + magyar levélsablonok.
+3. **13 – Mama külön hozzáférése**, Norbi döntéseivel: **jelszavas fiók** (Norbi hozza létre a
    Supabase-ben, Auto Confirm; a `list_viewers` köti Norbihoz); Mama belépés után a saját
    egyszerű oldalát látja: a megnézendő, nem letöltött, franchise nélküli filmek, de **a még
    meg nem jelentek nem**; „Érdekel” → Norbinál „Érdekli” + harang („Mamát érdekli”); „Nem
    érdekel” → eltűnik Mamánál, **Norbinál „Nem érdekli”-ként tompán látszik** (új
    `mama_status = 'declined'`, a Mama-szűrőben is). Előtte kell: Mama e-mail-címe és fiókja,
    plusz egy második tesztfiók.
+4. **26 – regisztráció**: a belépési oldalon „Regisztráció” (`signUp`, megerősítő levél); az új
+   fiók nem admin. **Nyitott:** bárki regisztrálhasson, vagy meghívókóddal / admin-jóváhagyással
+   (javaslat: az utóbbi – az OMDb napi 1000 kérése közös).
 
 ## Fejlesztési terv, 3. kör (2026-10-04)
-**`munka/terv-3/TERV.md`** (helyi mappa) – 24 javaslat (a 22–24 Norbi kérései) funkcióra és dizájnra, látványtervvel
-(`munka/terv-3/kepek/`), mindegyiknél: mit lát Norbi, megvalósítás (fájlok, SQL, TMDB-hívások),
-teszt, méret, nyitott kérdések; közös alapok (értesítősáv, TMDB-részletek pótlása, mentésbe
-felvétel, teszt, dizájn) és „hogyan kezdj neki”. Előnézet (privát):
+**`munka/terv-3/TERV.md`** (helyi mappa) – a hátralévő pontok (a „Következő feladat” pontjai)
+részletes leírása: mit lát Norbi, megvalósítás (fájlok, SQL, TMDB-hívások), teszt, méret; közös
+alapok és „hogyan kezdj neki”. Előnézet a kör eredeti 21 javaslatáról (privát):
 https://claude.ai/artifact/XWwxnuv2juKRmSEJR3WLUa (helyben `munka/terv-3/tervek.html`).
-A korábbi ötletlista minden eleme benne van. Javasolt sorrend:
-1. Gyors kényelem: törlés visszavonása, értékelés kérése megnézéskor, gyorsgombok a letapadt
-   szűrősorban, barátságos üres állapotok.
-2. Mit nézzünk?: játékidő + szűrő, „Mit nézzek ma?”, előzetes (trailer).
-3. Bővítés: Felfedezés (népszerű / hamarosan / új digitálisan), franchise-gyűjtemény (a
-   hiányzó részek), IMDb-watchlist import.
-4. Rendszerezés és gyorsaság: saját címkék, szinkron / felirat, gyorsműveletek a borítón,
-   parancspaletta + billentyűparancsok.
-5. Figyelés: filmek megjelenése („Hamarosan”, harang), értesítés a telefonra (web push).
-6. Megosztás: Mama listája (→ a „Következő feladat” 13-as pontja: jelszavas fiók).
-7. Dizájn-finomítások: évadok idővonala, csoportosítás hónapok szerint, évértékelő (decemberre).
-8. Később (Norbi kérésére): „Hol nézhető?”.
 Megvalósításkor a pont mellé a TERV.md-be: „kész (commit)”, ide az Állapotba, és a
 `FELHASZNALOI-LEIRAS.md`-be (téma + Változásnapló).
 **Kész (2026-10-04), Norbi döntéseivel:** 1 – törlés visszavonása (a szerkesztő ablakban marad
@@ -654,8 +668,9 @@ magyar szinkronos – közelítés, külön sorozat-sorral), 9 – franchise-gy�
 állapotok, 15 – gyorsgombok a letapadt szűrősorban, 16 – évadok idővonala; 10 – a még meg nem
 jelent filmek (szaggatott keret + jelvény + harang; szűrőgomb Norbi kérésére nincs); 24 –
 kikattintásra bezáruló adatlap; 20 – IMDb-figyelőlista importja; 21 – „Hol nézhető?” csak az
-adatlapon; 22 – telefonon nincs „IMDb import”. Vár még: 2, 3, 5, 6, 11–13, 17–19, 23.
-A négy új kérés (13 átdolgozva, 22, 23, 24) a „Következő feladat”-ban.
+adatlapon; 22 – telefonon nincs „IMDb import”; 23 – „Franchise-ok” ablak (2026-10-05). Vár még:
+25, 27, 13, 26 („Következő feladat”).
+**Elvetve (Norbi kérésére, 2026-10-04) – nem kell, magadtól ne javasold újra:** 2 – gyorsműveletek a borítón, 3 – parancspaletta (Ctrl+K) és billentyűparancsok, 5 – „Mit nézzek ma?”, 6 – játékidő a soron és szűrő rá, 11 – saját címkék, 12 – szinkron / felirat jelölése, 17 – csoportosítás hónapok szerint, 18 – évértékelő, 19 – értesítés a telefonra (web push).
 
 ## Fejlesztői megjegyzés
 - Ha a terminál nem ismeri a `node`/`npm` parancsot, a VS Code-ot újra kell indítani

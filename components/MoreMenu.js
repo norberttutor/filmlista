@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { popupSide } from '@/lib/popupSide';
 
 // A menüpontok ikonjai (vonalas, mint a többi ikon)
@@ -11,6 +11,8 @@ const ICONS = {
   download: <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />,
   // óra visszafelé mutató nyíllal (mentések, visszaállítás)
   history: <path d="M3.5 12a8.5 8.5 0 1 0 2.5-6M3 3.5V8h4.5M12 7.5V12l3 2" />,
+  // egymásra tett lapok (franchise-ok: filmsorozatok gyűjteménye)
+  stack: <path d="M12 3l9 4.5-9 4.5-9-4.5zM3 12l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5" />,
 };
 
 // "További műveletek" (⋮) gomb a fejlécben, mint a Chrome menüje: kattintásra vagy
@@ -23,7 +25,14 @@ export default function MoreMenu({ items }) {
   const rootRef = useRef(null);
   const buttonRef = useRef(null);
   const itemRefs = useRef([]);
+  const firstRef = useRef(0); // nyitáskor ez a pont kapja a fókuszt
   const menuId = useId();
+
+  // a lista kirajzolása után rögtön az első (vagy az utolsó) pont kapja a fókuszt – nem egy
+  // képkockával később, különben egy gyors Esc még a gombra érkezne
+  useLayoutEffect(() => {
+    if (open) focusItem(firstRef.current);
+  }, [open]);
 
   // kívülre kattintva bezárul
   useEffect(() => {
@@ -42,9 +51,8 @@ export default function MoreMenu({ items }) {
 
   function openMenu(first = 0) {
     setSide(popupSide(buttonRef.current, 336, 'right'));
+    firstRef.current = first;
     setOpen(true);
-    // a lista a következő rajzolásra jelenik meg
-    requestAnimationFrame(() => focusItem(first));
   }
 
   function close(returnFocus = true) {
@@ -59,6 +67,9 @@ export default function MoreMenu({ items }) {
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       openMenu(items.length - 1);
+    } else if (e.key === 'Escape' && open) {
+      e.preventDefault();
+      close();
     }
   }
 

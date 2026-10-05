@@ -34,6 +34,7 @@ import ListSkeleton from '@/components/ListSkeleton';
 import StatsDialog from '@/components/StatsDialog';
 import BackupsDialog from '@/components/BackupsDialog';
 import MoreMenu from '@/components/MoreMenu';
+import FranchisesDialog from '@/components/FranchisesDialog';
 import Toaster from '@/components/Toaster';
 import EmptyState from '@/components/EmptyState';
 import StarRating from '@/components/StarRating';
@@ -164,6 +165,7 @@ export default function Watchlist({ session }) {
   const [adding, setAdding] = useState(false);
   const [addQuery, setAddQuery] = useState(''); // a „Cím hozzáadása” panel kezdő keresése
   const [showStats, setShowStats] = useState(false); // a statisztika ablak nyitva
+  const [showFranchises, setShowFranchises] = useState(false); // a Franchise-ok ablak nyitva
   const [showBackups, setShowBackups] = useState(false); // a mentések ablak nyitva
   // a ⋮ menüből nyíló importok (a saját ablakukat / fájlválasztójukat nyitják)
   const imdbImportRef = useRef(null);
@@ -555,6 +557,16 @@ export default function Watchlist({ session }) {
     }
   }
 
+  // a Franchise-ok ablakból („Szűrés erre”): a lista ennek a franchise-nak minden címét mutatja
+  // (a többi szűrő elenged, a keresés törlődik), a lista elejére görget
+  function showFranchise(id) {
+    setQuery('');
+    setBeforeSearch(null);
+    applyFilters({ ...SEARCH_FILTERS, franchise: String(id) });
+    setShowFranchises(false);
+    filtersAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   async function handleCreateFranchise(name) {
     const created = await createFranchise(name);
     setFranchises((fs) => [...fs, created].sort(byName));
@@ -735,6 +747,13 @@ export default function Watchlist({ session }) {
                     description: 'Havonta megnézett címek, műfajok, átlagos értékelés',
                     icon: 'chart',
                     onSelect: () => setShowStats(true),
+                  },
+                  {
+                    id: 'franchises',
+                    label: 'Franchise-ok',
+                    description: 'Az összes franchise logóval, ábécérendben; gyűjtemény, szűrés, átnevezés',
+                    icon: 'stack',
+                    onSelect: () => setShowFranchises(true),
                   },
                   // a CSV-fájl betöltése asztali / tableten végzett teendő: telefonon nincs (Norbi kérése)
                   ...(isPhone
@@ -1182,6 +1201,19 @@ export default function Watchlist({ session }) {
         </>
       )}
 
+      {showFranchises && (
+        <FranchisesDialog
+          franchises={franchises}
+          titles={titles}
+          onCreate={handleCreateFranchise}
+          onRename={handleRenameFranchise}
+          onDelete={handleDeleteFranchise}
+          onShow={showFranchise}
+          onAdded={(row) => setTitles((ts) => [row, ...ts])}
+          onFranchiseUpdated={(f) => setFranchises((fs) => fs.map((x) => (x.id === f.id ? { ...x, ...f } : x)))}
+          onClose={() => setShowFranchises(false)}
+        />
+      )}
       {showStats && (
         <StatsDialog titles={titles} franchiseName={franchiseName} onClose={() => setShowStats(false)} />
       )}

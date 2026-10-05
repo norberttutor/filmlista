@@ -3,7 +3,7 @@
 Az app minden funkciója témák szerint: mit tud, hol találod, hogyan használd.
 Minden új fejlesztés után bővül; a legutóbbi változások a végén, a **Változásnaplóban**.
 
-Utolsó frissítés: 2026. 10. 04. · Élő oldal: https://filmlista-six.vercel.app/
+Utolsó frissítés: 2026. 10. 05. · Élő oldal: https://filmlista-six.vercel.app/
 
 > Tipp: VS Code-ban a **Ctrl+Shift+V** formázott előnézetben nyitja meg ezt a leírást.
 
@@ -46,7 +46,7 @@ lehet létrehozni. A böngésző megjegyzi a belépést, nem kell minden alkalom
 ## 2. A lista: nézetek és lapozás
 
 A fejlécben: **Cím hozzáadása**, a **harang** (értesítések), az e-mail-címed, **Kilépés** és a
-**⋮ További műveletek** menü (Statisztika, IMDb import, Tömeges import, Mentés letöltése,
+**⋮ További műveletek** menü (Statisztika, Franchise-ok, IMDb import, Tömeges import, Mentés letöltése,
 Mentések).
 
 **Két nézet:**
@@ -258,6 +258,24 @@ A listán lévő, még meg nem jelent filmek **szaggatott kerettel** válnak el 
 
 ## 9. Franchise-ok és gyűjtemények
 
+**Franchise-ok áttekintése** (⋮ menü → **Franchise-ok**, telefonon is): az összes franchise-od
+egy ablakban, **ábécérendben** (a névelő – „A”, „Az”, „The” – nem számít: „A majmok bolygója” az
+M-nél van). Csempénként:
+- a franchise **logója** (ha nincs, a neve), alatta a név és egy mérő (megnézve zöld, a listán
+  türkiz);
+- a számok: „3/7 megnézve · 5 a listán · 2 hiányzik” – a hiányzókat a TMDB-gyűjteményekből
+  számolja (első megnyitáskor pár másodperc alatt töltődnek be, addig „…”); gyűjtemény nélkül
+  „nincs TMDB-gyűjtemény”, üres franchise-nál „Még nincs címe”;
+- **a csempére kattintva** a franchise gyűjtemény-ablaka nyílik (lásd lent) – bezárva visszakerülsz
+  a Franchise-ok ablakba;
+- **Szűrés erre** – bezárja az ablakot, és a listán ennek a franchise-nak **minden** címe látszik
+  (a többi szűrő elenged, a megnézettek is);
+- **Átnevezés** (helyben; Enter: mentés, Esc: mégse) és **Törlés** (megerősítéssel – a címek a
+  listán maradnak, csak a franchise-jelölésük kerül le).
+
+Felül **kereső** (ékezet nélkül is talál), alul **„+ Új franchise”**: a név megadása után a
+gyűjtemény-ablaka nyílik, ahol hozzárendelhetsz egy TMDB-gyűjteményt, és felveheted a részeit.
+
 **Franchise beállítása:** az adatlapon a Franchise mezőben, vagy a listasorban a franchise
 lenyílóban. Lehetőségek:
 - a meglévő franchise-aid;
@@ -404,6 +422,7 @@ Minden fejlesztés után ide kerül egy sor (legújabb felül), és a fenti tém
 
 | Dátum | Mi változott |
 |---|---|
+| 2026. 10. 05. | „Franchise-ok” ablak a ⋮ menüben: ábécérend, logók, számok a hiányzókkal, gyűjtemény, szűrés, átnevezés, törlés, új franchise ([9.](#9-franchise-ok-és-gyűjtemények)). |
 | 2026. 10. 04. | Nagyobb szolgáltatói logók; a ⋮ menüben a Statisztika az első; telefonon nincs IMDb import ([12.](#12-imdb), [15.](#15-telefonon)). |
 | 2026. 10. 04. | „Hol nézhető?” az adatlapon: a magyar streamingszolgáltatók logója ([5.](#5-egy-cím-adatlapja-és-szerkesztése)); IMDb-figyelőlista importja – a menüpont neve „IMDb import” ([12.](#12-imdb)). |
 | 2026. 10. 04. | Asztali rácsban a lapozó és alatta a lábléc az ablak alján áll – minden oldalon ugyanott, felesleges görgetősáv nélkül ([2.](#2-a-lista-nézetek-és-lapozás)). |

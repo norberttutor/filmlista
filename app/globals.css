@@ -3015,6 +3015,147 @@ button.season:hover {
   background: var(--accent);
 }
 
+/* ---------- Franchise-ok ablak (FranchisesDialog, a ⋮ menüből) ---------- */
+/* csempék ábécérendben: logó sötét alapon, név, mérő, számok; alatta a műveletek */
+.franchises-search {
+  width: min(24rem, 100%);
+}
+
+.fr-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 900px) {
+  .fr-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .fr-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+}
+
+.fr-tile {
+  display: grid;
+  align-content: start;
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 0.7rem;
+  background: color-mix(in oklab, var(--bg) 60%, var(--surface));
+  border: 1px solid var(--line-soft);
+  border-radius: 16px;
+}
+
+.fr-main {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.fr-main:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.fr-logo {
+  display: grid;
+  place-items: center;
+  height: 5rem;
+  padding: 0.6rem;
+  background: rgb(0 0 0 / 0.28);
+  border-radius: 12px;
+  transition: background-color 0.15s;
+}
+
+.fr-main:hover .fr-logo {
+  background: rgb(255 255 255 / 0.06);
+}
+
+.fr-logo .franchise-logo {
+  max-width: 85%;
+  max-height: 3.2rem;
+}
+
+.fr-logo b {
+  font-size: 1.05rem;
+  text-align: center;
+}
+
+.fr-name {
+  overflow: hidden;
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fr-main .collection-meter {
+  width: 100%;
+}
+
+.fr-count {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.fr-count b {
+  color: var(--text);
+}
+
+.fr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.8rem;
+  font-size: 0.8rem;
+}
+
+.fr-actions .danger-link {
+  padding: 0;
+}
+
+.fr-actions button:disabled {
+  opacity: 0.4;
+  cursor: default;
+  text-decoration: none;
+}
+
+.fr-edit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.fr-edit input {
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+.fr-confirm .confirm-text {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+}
+
+.fr-create .fr-edit {
+  max-width: 32rem;
+}
+
 .collection-count {
   font-size: 0.9rem;
   color: var(--muted);
@@ -4317,9 +4458,15 @@ body:has(.editor[open]) {
     border-radius: 20px;
   }
 
-  .tile {
+  .tile,
+  .fr-tile {
     corner-shape: squircle;
     border-radius: 18px;
+  }
+
+  .fr-logo {
+    corner-shape: squircle;
+    border-radius: 13px;
   }
 
   /* mezők, lenyílók, címkék */
