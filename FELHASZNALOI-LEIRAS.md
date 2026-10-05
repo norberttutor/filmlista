@@ -165,7 +165,9 @@ nem listán lévő címek adatlapja a Cím hozzáadása találataiból és a Fel
 - **Előzetes megnézése** (ha van; angol előzetesnél „angolul” jelzés) – az ablakban játssza le,
   „Előzetes bezárása”;
 - a TMDB leírása;
-- **Franchise**, **Állapot**, **Letöltve**, **Mama**, **Saját értékelés** (10 csillag);
+- felül egymás mellett a **Franchise** és a **Saját értékelés** (10 csillag), alattuk egy keretes
+  sávban az **Állapot**, a **Letöltve** és a **Mama** (telefonon a sávban fent az Állapot, alatta a
+  Letöltve és a Mama; a Franchise és a csillagok egymás alatt);
 - sorozatnál az állapot helyett az **évadok** (lásd [7.](#7-sorozatok-és-évadok));
 - alul **Hasonló címek**: a TMDB ajánlásai vízszintes sorban, „+ Hozzáadás” / „✓ A listán”. A
   **borítóra** kattintva a hasonló cím adatlapja nyílik **ugyanebben az ablakban** (a még nem
@@ -443,6 +445,7 @@ Minden fejlesztés után ide kerül egy sor (legújabb felül), és a fenti tém
 
 | Dátum | Mi változott |
 |---|---|
+| 2026. 10. 05. | Tömörebb adatlap: felül a Franchise és a Saját értékelés egymás mellett, alattuk egy keretes sávban az Állapot, a Letöltve és a Mama; a mezők címkéi kis nagybetűk – asztalon feleannyi helyet foglal ([5.](#5-egy-cím-adatlapja-és-szerkesztése)). |
 | 2026. 10. 05. | Gyorsabb újranyitás: a TMDB-ről jövő adatokat (Hol nézhető?, előzetes, hasonló címek, gyűjtemény) a böngésző egy napig, a cím adatait és a Felfedezést egy óráig, a keresési találatokat 10 percig megjegyzi – ugyanaz az adatlap újranyitva azonnal kész. A saját listád adatai mindig frissek. Kevesebb háttérkérés betöltéskor. |
 | 2026. 10. 05. | Simább adatlap-megnyitás: a háttérben érkező adatok (a borító színe, Hol nézhető?, előzetes, hasonló címek) megvárják, hogy a borító átsiklása véget érjen; nyitott ablaknál az aurora áll – terhelt gépen (pl. videó mellett) kevésbé szaggat. |
 | 2026. 10. 05. | Javítás: a Felfedezés borítósorai nem tolják szélesebbre az oldalt – telefonon nem kicsinyedik az oldal, és a Felfedezésből nyitott adatlap is kifér; asztalon nincs felesleges vízszintes görgetősáv ([4.](#4-címek-felvétele)). |

@@ -205,6 +205,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (`.has-backdrop`). Telefonon (≤ 640 px) az ablak alsó lap: alulról felcsúszik, teljes
   szélességű, felül fogantyú (`.sheet-handle`) – lefelé húzva (110 px vagy gyors mozdulat)
   bezárul, különben visszaugrik.
+  **Tömör elrendezés** (terv-3 30, B – „vezérlősáv”, Norbi választása, 2026-10-05): fölül a
+  Franchise és a Saját értékelés egymás mellett (`.editor-pair`), alatta keretes sáv
+  (`.editor-controls`): Állapot | Letöltve | Mama, elválasztóvonalakkal (évados sorozatnál az
+  Évadok a sáv fölött, a sávban csak a Mama); a mezők címkéi kis, ritkított nagybetűk; telefonon
+  a pár egymás alatt, a sávban fent az Állapot, alatta a Letöltve és a Mama. Asztalon a
+  vezérlőblokk 341 → 168 px (látványtervek: `munka/terv-3/terv-30/`).
   A borító hangulatszínét megnyitáskor kiszámolja (`usePosterColor`): az ablak a film színében
   dereng. A kiválasztott Mama borostyán (`.mama-chips`).
   Évados
@@ -718,13 +724,11 @@ tokenellenőrzés (csak Norbi döntésével), a kinézeti kör bővítése (K3).
    fiók nem admin. **Nyitott:** bárki regisztrálhasson, vagy meghívókóddal / admin-jóváhagyással
    (javaslat: az utóbbi – az OMDb napi 1000 kérése közös).
 **Norbi kérései (2026-10-05)** – utánuk, a TERV.md-ben részletezve (nyitott kérdésekkel):
-5. **30 – tömörebb adatlap** (Állapot, Letöltve, Mama kevesebb függőleges helyen, asztalon egymás
-   mellett): **előbb 2–3 dizájnváltozat képekkel**, Norbi választ.
-6. **28 – lejátszási lista**: saját nézési sorrend (film, sorozat vagy évad elemekkel, húzással
+5. **28 – lejátszási lista**: saját nézési sorrend (film, sorozat vagy évad elemekkel, húzással
    átrendezve, „Következik” jelölés); új táblák (`playlists`, `playlist_items`) a mentésbe is.
-7. **29 – Marvel franchise betöltése és nézési sorrendje** a 28-asra építve (tömeges import
+6. **29 – Marvel franchise betöltése és nézési sorrendje** a 28-asra építve (tömeges import
    franchise-választóval, sorrend szövegből „Loki 1. évad” formában vagy Excelből).
-8. **33 – képes felhasználói leírás**: a `FELHASZNALOI-LEIRAS.md` kiegészítése képernyőképekkel
+7. **33 – képes felhasználói leírás**: a `FELHASZNALOI-LEIRAS.md` kiegészítése képernyőképekkel
    (tesztfiók + próbalista, maszkolt e-mail, számozott jelölők), egy újrageneráló szkripttel
    (`munka/terv-3/leiras-kepek.mjs` → `docs/kepek/`); utána szabály: a változott felület képe is frissül.
 
@@ -744,7 +748,8 @@ kikattintásra bezáruló adatlap; 20 – IMDb-figyelőlista importja; 21 – �
 adatlapon; 22 – telefonon nincs „IMDb import”; 23 – „Franchise-ok” ablak (2026-10-05); 32 – kikattintás a Statisztika, Franchise-ok, gyűjtemény és
 Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a találatokból, a
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05). Vár még:
-34 (szükséges), 25, 27, 13, 26, 30, 28, 29, 33 („Következő feladat”).
+34 (szükséges, 2. rész: E2, E3, K3), 25, 27, 13, 26, 28, 29, 33 („Következő feladat”); 30 – tömörebb adatlap kész
+(B – vezérlősáv, 2026-10-05).
 **Elvetve (Norbi kérésére, 2026-10-04) – nem kell, magadtól ne javasold újra:** 2 – gyorsműveletek a borítón, 3 – parancspaletta (Ctrl+K) és billentyűparancsok, 5 – „Mit nézzek ma?”, 6 – játékidő a soron és szűrő rá, 11 – saját címkék, 12 – szinkron / felirat jelölése, 17 – csoportosítás hónapok szerint, 18 – évértékelő, 19 – értesítés a telefonra (web push).
 
 ## Fejlesztői megjegyzés

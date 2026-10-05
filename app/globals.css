@@ -4252,6 +4252,80 @@ body:has(.editor[open]) {
   margin-bottom: 0.4rem;
 }
 
+/* tömör adatlap (terv-3 30, B – „vezérlősáv”, Norbi választása, 2026-10-05): fölül a Franchise
+   és a Saját értékelés egymás mellett (.editor-pair), alatta keretes sáv: Állapot | Letöltve | Mama
+   (.editor-controls; sorozatnál csak a Mama); a mezők címkéi kis, ritkított nagybetűk. Telefonon
+   a pár egymás alá kerül, a sávban fent az Állapot, alatta a Letöltve és a Mama. */
+.title-editor .field > legend,
+.title-editor .field > span:first-child {
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.editor-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.editor-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  background: color-mix(in oklab, var(--bg) 55%, var(--surface));
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.editor-controls > * {
+  padding: 0.7rem 1rem 0.8rem;
+}
+
+.editor-controls > * + * {
+  border-left: 1px solid var(--line);
+}
+
+/* úsztatva a felirat a sáv belső margóján belül marad (a fieldset „igazi” legendje a keretre ülne) */
+.editor-controls .field > legend {
+  float: left;
+  width: 100%;
+  margin-bottom: 0.35rem;
+}
+
+.editor-controls > .check {
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .editor-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .editor-controls > * {
+    padding: 0.55rem 0.7rem 0.65rem;
+  }
+
+  .editor-controls > :first-child:not(:only-child) {
+    flex-basis: 100%;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .editor-controls > .check {
+    border-left: 0;
+  }
+}
+
+@supports (corner-shape: squircle) {
+  .editor-controls {
+    corner-shape: squircle;
+    border-radius: 20px;
+  }
+}
+
 /* rádiógombok "chip" formában (állapot, értékelés) */
 .segmented {
   display: flex;

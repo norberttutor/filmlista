@@ -538,89 +538,96 @@ function TitlePage({
             </div>
           ) : (
             <>
-              <div className="field">
-                <span aria-hidden="true">Franchise</span>
-                <FranchiseSelect
-                  label="Franchise"
-                  value={form.franchise_id}
-                  franchises={franchises}
-                  onChange={(id) => setField('franchise_id', id)}
-                  onCreate={onCreateFranchise}
-                  onDelete={onDeleteFranchise}
-                  onRename={onRenameFranchise}
-                />
+              {/* tömör elrendezés (terv-3 30, B – „vezérlősáv”, Norbi választása, 2026-10-05): fölül
+                  a Franchise és a Saját értékelés egymás mellett, alatta keretes sáv: Állapot |
+                  Letöltve | Mama; sorozatnál az Évadok a sáv fölött, a sávban csak a Mama */}
+              <div className="editor-pair">
+                <div className="field">
+                  <span aria-hidden="true">Franchise</span>
+                  <FranchiseSelect
+                    label="Franchise"
+                    value={form.franchise_id}
+                    franchises={franchises}
+                    onChange={(id) => setField('franchise_id', id)}
+                    onCreate={onCreateFranchise}
+                    onDelete={onDeleteFranchise}
+                    onRename={onRenameFranchise}
+                  />
+                </div>
+                <div className="field">
+                  <span>Saját értékelés</span>
+                  <div className="rating-field">
+                    <StarRating
+                      name="editor-rating"
+                      label="Saját értékelés"
+                      value={form.my_rating}
+                      onChange={(n) => setField('my_rating', n)}
+                    />
+                    <span className="rating-number">
+                      {form.my_rating ? `${form.my_rating}/10` : 'Nincs'}
+                    </span>
+                    {form.my_rating && (
+                      <button
+                        type="button"
+                        className="link small"
+                        onClick={() => setField('my_rating', null)}
+                      >
+                        Törlés
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
 
-              {seasonal ? (
+              {seasonal && (
                 <fieldset className="field">
                   <legend>Évadok</legend>
                   <p className="muted small season-hint">Az évadok változása azonnal mentődik.</p>
                   <SeasonTimeline title={t} onPick={pickSeason} />
                   <SeasonList title={t} actions={seasonActions} />
                 </fieldset>
-              ) : (
-                <>
-                  <fieldset className="field">
-                    <legend>Állapot</legend>
-                    {/* az (üres) alapállapotnak nincs gombja: egyik sincs kiválasztva; az
-                        "Abbahagyva" csak sorozatnál */}
-                    <ClearableChips
-                      name="status"
-                      options={statuses.filter(
-                        (s) =>
-                          s.code !== DEFAULT_STATUS &&
-                          (s.code !== DROPPED_STATUS || t.media_type === 'tv' || t.status === s.code)
-                      )}
-                      value={form.status}
-                      onChange={changeStatus}
-                    />
-                  </fieldset>
-
-                  <label className="check">
-                    <input
-                      type="checkbox"
-                      checked={form.is_downloaded}
-                      onChange={(e) => setField('is_downloaded', e.target.checked)}
-                    />
-                    Letöltve
-                  </label>
-                </>
               )}
 
-              <fieldset className="field">
-                <legend>Mama</legend>
-                {/* saját jelölés: kiválasztva a második kiemelőszínnel (borostyán) */}
-                <ClearableChips
-                  name="mama_status"
-                  className="mama-chips"
-                  options={MAMA_OPTIONS}
-                  value={form.mama_status}
-                  onChange={(code) => setField('mama_status', code)}
-                />
-              </fieldset>
+              <div className="editor-controls">
+                {!seasonal && (
+                  <>
+                    <fieldset className="field">
+                      <legend>Állapot</legend>
+                      {/* az (üres) alapállapotnak nincs gombja: egyik sincs kiválasztva; az
+                          "Abbahagyva" csak sorozatnál */}
+                      <ClearableChips
+                        name="status"
+                        options={statuses.filter(
+                          (s) =>
+                            s.code !== DEFAULT_STATUS &&
+                            (s.code !== DROPPED_STATUS || t.media_type === 'tv' || t.status === s.code)
+                        )}
+                        value={form.status}
+                        onChange={changeStatus}
+                      />
+                    </fieldset>
 
-              <div className="field">
-                <span>Saját értékelés</span>
-                <div className="rating-field">
-                  <StarRating
-                    name="editor-rating"
-                    label="Saját értékelés"
-                    value={form.my_rating}
-                    onChange={(n) => setField('my_rating', n)}
+                    <label className="check">
+                      <input
+                        type="checkbox"
+                        checked={form.is_downloaded}
+                        onChange={(e) => setField('is_downloaded', e.target.checked)}
+                      />
+                      Letöltve
+                    </label>
+                  </>
+                )}
+                <fieldset className="field">
+                  <legend>Mama</legend>
+                  {/* saját jelölés: kiválasztva a második kiemelőszínnel (borostyán) */}
+                  <ClearableChips
+                    name="mama_status"
+                    className="mama-chips"
+                    options={MAMA_OPTIONS}
+                    value={form.mama_status}
+                    onChange={(code) => setField('mama_status', code)}
                   />
-                  <span className="rating-number">
-                    {form.my_rating ? `${form.my_rating}/10` : 'Nincs'}
-                  </span>
-                  {form.my_rating && (
-                    <button
-                      type="button"
-                      className="link small"
-                      onClick={() => setField('my_rating', null)}
-                    >
-                      Törlés
-                    </button>
-                  )}
-                </div>
+                </fieldset>
               </div>
             </>
           )}
