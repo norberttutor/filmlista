@@ -24,9 +24,11 @@ function storedOpen() {
 
 // "Hasonló címek" a szerkesztő ablakban: a TMDB ajánlásai borítóval, vízszintesen görgetve;
 // mindegyik egy kattintással felvehető a listára (mint a "Cím hozzáadása" panelen), a már
-// listán lévőknél "✓ A listán". Nyitva tölt be; ha becsukja, azt a böngésző megjegyzi
-// (telefonon mindig csukva indul).
-export default function SimilarTitles({ title, existingKeys, onAdded }) {
+// listán lévőknél "✓ A listán". A borítóra kattintva a cím adatlapja nyílik az ablakon belül
+// (onPreview; a listán lévőé szerkeszthető), a címre kattintva a TMDB-oldala (Norbi döntése,
+// 2026-10-05). Nyitva tölt be; ha becsukja, azt a böngésző megjegyzi (telefonon mindig csukva
+// indul).
+export default function SimilarTitles({ title, existingKeys, onAdded, onPreview }) {
   const bodyId = useId();
   const [open, setOpen] = useState(storedOpen);
   const [load, setLoad] = useState({ status: 'idle', results: [], error: '' });
@@ -127,18 +129,24 @@ export default function SimilarTitles({ title, existingKeys, onAdded }) {
                 const onList = existingKeys.has(key);
                 return (
                   <li key={key} className="similar-item">
-                    <a
+                    <button
+                      type="button"
                       className="similar-poster"
+                      aria-label={`${r.title} adatlapja`}
+                      onClick={() => onPreview(r)}
+                    >
+                      <img src={POSTER_BASE + r.poster_path} alt="" loading="lazy" />
+                    </button>
+                    <a
+                      className="similar-title"
                       href={`https://www.themoviedb.org/${r.media_type}/${r.tmdb_id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label={`${r.title} adatlapja: TMDB`}
+                      title={r.title}
+                      aria-label={`${r.title} megnyitása: TMDB`}
                     >
-                      <img src={POSTER_BASE + r.poster_path} alt="" loading="lazy" />
-                    </a>
-                    <span className="similar-title" title={r.title}>
                       {r.title}
-                    </span>
+                    </a>
                     <span className="similar-meta">
                       {[r.release_year, r.media_type === 'tv' ? 'Sorozat' : 'Film']
                         .filter(Boolean)

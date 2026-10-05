@@ -16,8 +16,9 @@ const SECTIONS = [
 
 const shortDate = (iso) => new Date(iso).toLocaleDateString('hu-HU', { month: 'short', day: 'numeric' });
 
-// existingKeys: a listán lévők; rowState / onAdd: a kereső panel felvétele (ugyanaz, mint a találatoknál)
-export default function Discover({ existingKeys, rowState, onAdd }) {
+// existingKeys: a listán lévők; rowState / onAdd: a kereső panel felvétele (ugyanaz, mint a
+// találatoknál); onPreview(cím, borítóElem): a borítóra kattintva a cím adatlapja (előnézet)
+export default function Discover({ existingKeys, rowState, onAdd, onPreview }) {
   const [lists, setLists] = useState({}); // list → { results } | { error }
 
   useEffect(() => {
@@ -62,8 +63,15 @@ export default function Discover({ existingKeys, rowState, onAdd }) {
                   const state = rowState[key] ?? {};
                   return (
                     <li key={key} className="discover-item">
-                      {/* CORS-szal: a w185-ös borítót a hangulatszín is vászonra rajzolja */}
-                      <img src={POSTER_BASE + r.poster_path} alt="" loading="lazy" crossOrigin="anonymous" />
+                      <button
+                        type="button"
+                        className="discover-poster"
+                        aria-label={`${r.title} adatlapja`}
+                        onClick={(e) => onPreview(r, e.currentTarget)}
+                      >
+                        {/* CORS-szal: a w185-ös borítót a hangulatszín is vászonra rajzolja */}
+                        <img src={POSTER_BASE + r.poster_path} alt="" loading="lazy" crossOrigin="anonymous" />
+                      </button>
                       <b className="discover-title" id={id}>
                         {r.title}
                       </b>

@@ -172,7 +172,8 @@ export default function Watchlist({ session }) {
   // a ⋮ menüből nyíló importok (a saját ablakukat / fájlválasztójukat nyitják)
   const imdbImportRef = useRef(null);
   const bulkImportRef = useRef(null);
-  const [editing, setEditing] = useState(null); // a szerkesztett cím, vagy null
+  // a szerkesztő ablakban megnyitott cím (a lista sora, vagy egy TMDB-találat előnézete), vagy null
+  const [editing, setEditing] = useState(null);
   // a borító, amelyről a szerkesztő nyílt: oda siklik vissza bezáráskor (nézetváltás)
   const editorFrom = useRef(null);
 
@@ -609,7 +610,6 @@ export default function Watchlist({ session }) {
   // szűrés változásáig a helyén marad
   function replaceTitle(row) {
     setTitles((ts) => ts.map((x) => (x.id === row.id ? row : x)));
-    setEditing((e) => (e && e.id === row.id ? row : e));
     setKept((k) => ({
       key: filterKey,
       ids: k.key === filterKey ? [...new Set([...k.ids, row.id])] : [row.id],
@@ -846,6 +846,7 @@ export default function Watchlist({ session }) {
               initialQuery={addQuery}
               existingKeys={existingKeys}
               onAdded={(row) => setTitles((ts) => [row, ...ts])}
+              onPreview={openEditor}
               onClose={() => setAdding(false)}
             />
           )}
@@ -1273,6 +1274,7 @@ export default function Watchlist({ session }) {
       {editing && (
         <TitleEditor
           title={editing}
+          titles={titles}
           statuses={statuses}
           franchises={franchises}
           onCreateFranchise={handleCreateFranchise}

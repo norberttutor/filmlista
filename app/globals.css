@@ -888,6 +888,28 @@ body:has(> main.login) {
   text-wrap: balance;
 }
 
+/* a borító és a cím az adatlapot nyitja (előnézet): a cím halvány aláhúzással, mint a kártyán */
+.title-btn {
+  padding: 0;
+  font-weight: inherit;
+  color: inherit;
+  text-align: left;
+  text-wrap: inherit;
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  text-underline-offset: 0.15em;
+}
+
+.title-btn:hover {
+  text-decoration-color: currentColor;
+}
+
+.result .thumb-btn:hover::after {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
 /* "Hozzáadás a listához": halvány türkiz, rámutatva telik ki – így 18–20 találatnál sem
    20 egyforma, teli türkiz gomb vonja el a figyelmet a borítókról (a keret belső árnyék,
    a méret nem változik) */
@@ -2956,6 +2978,31 @@ button.season:hover {
   box-shadow: 0 6px 16px -6px rgb(0 0 0 / 0.6);
 }
 
+/* a borító az adatlapot nyitja (előnézet): rámutatva / fókusznál türkiz gyűrű */
+.discover-poster {
+  display: block;
+  width: fit-content;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 13px;
+}
+
+.discover-poster img {
+  display: block;
+  transition: box-shadow 0.15s;
+}
+
+.discover-poster:is(:hover, :focus-visible) img {
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 6px 16px -6px rgb(0 0 0 / 0.6);
+}
+
+.discover-poster:focus-visible {
+  outline: none;
+}
+
 .discover-title {
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -3504,7 +3551,11 @@ button.season:hover {
 }
 
 .similar-poster {
+  position: relative;
   display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
   aspect-ratio: 2 / 3;
   overflow: hidden;
   border-radius: 6px;
@@ -3519,8 +3570,29 @@ button.season:hover {
   object-fit: cover;
 }
 
-/* a cím legfeljebb két sorban, a teljes rámutatva */
+/* a borító az adatlapot nyitja (az ablakon belül): rámutatva / fókusznál türkiz gyűrű */
+.similar-poster::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  transition: box-shadow 0.15s;
+}
+
+.similar-poster:is(:hover, :focus-visible)::after {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.similar-poster:focus-visible {
+  outline: none;
+}
+
+/* a cím (a TMDB-oldalra visz) legfeljebb két sorban, a teljes rámutatva; halvány aláhúzás */
 .similar-title {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 30%, transparent);
   display: -webkit-box;
   overflow: hidden;
   font-size: 0.8rem;
@@ -3528,6 +3600,10 @@ button.season:hover {
   line-height: 1.25;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+}
+
+.similar-title:hover {
+  text-decoration-color: currentColor;
 }
 
 .similar-meta {
@@ -4047,6 +4123,62 @@ body:has(.editor[open]) {
   text-wrap: pretty;
 }
 
+/* előnézeti adatlap (még nem listán lévő cím, TitleEditor): a szerkesztő mezők helyett egy gomb;
+   „Vissza” a Hasonló címek borítójáról nyílt lapon; felvétel után megerősítés a cím alatt */
+.editor-page[hidden] {
+  display: none;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 100%;
+  margin: 0 0 0.5rem;
+  padding: 0.2rem 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.back-link:hover {
+  color: var(--accent);
+}
+
+.back-link svg {
+  flex: none;
+}
+
+.preview-add {
+  display: grid;
+  justify-items: start;
+  gap: 0.5rem;
+}
+
+.preview-add p {
+  margin: 0;
+}
+
+.added-note {
+  width: fit-content;
+  margin: 0.6rem 0 0;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.85rem;
+  color: var(--st-watched);
+  background: color-mix(in srgb, var(--st-watched) 14%, transparent);
+  border-radius: 999px;
+}
+
+.editor-overview-sk {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+
 /* előzetes (TMDB → YouTube, adatkímélő mód): gomb a cím adatai alatt, kattintásra 16:9 lejátszó */
 .trailer-btn {
   display: inline-flex;
@@ -4422,6 +4554,8 @@ body:has(.editor[open]) {
   .thumb,
   .thumb::after,
   .similar-poster,
+  .similar-poster::after,
+  .discover-poster,
   .discover-item img,
   .discover-sk,
   .trailer,
@@ -4499,7 +4633,7 @@ body:has(.editor[open]) {
 /* nézetváltás: kattintáskor a kártya / sor borítója átsiklik a szerkesztő ablak nagy
    borítójának helyére, bezáráskor vissza (asztalon, ≥ 900 px; View Transitions). A forrás
    borító csak a váltás idejére kapja ugyanezt a nevet. ~0,3 s – a 0,2 s-os szabály kivétele. */
-.title-editor .editor-poster {
+.title-editor .editor-page:not([hidden]) .editor-poster {
   view-transition-name: editor-poster;
 }
 
@@ -4721,18 +4855,18 @@ input[type='checkbox']:checked {
 }
 
 @media (min-width: 900px) {
-  .title-editor.has-backdrop .editor-side {
+  .editor-page.has-backdrop .editor-side {
     margin-top: -9rem;
     z-index: 1;
   }
 
-  .title-editor.has-backdrop .editor-poster {
+  .editor-page.has-backdrop .editor-poster {
     box-shadow:
       inset 0 0 0 1px rgb(255 255 255 / 0.1),
       0 22px 50px -12px rgb(0 0 0 / 0.85);
   }
 
-  .title-editor.has-backdrop form {
+  .editor-page.has-backdrop form {
     padding-top: 1.25rem;
   }
 }
@@ -4795,7 +4929,7 @@ input[type='checkbox']:checked {
     box-shadow: 0 0 0 1px rgb(0 0 0 / 0.25);
   }
 
-  .title-editor:not(.has-backdrop) form {
+  .editor-page:not(.has-backdrop) form {
     padding-top: 1.9rem;
   }
 }

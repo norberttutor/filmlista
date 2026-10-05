@@ -158,7 +158,23 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `--ambient` CSS-változó + `data-ambient` jelző; a CSS („Hangulatszín a borítóból” szakasz)
   csak ilyenkor színez: a szerkesztő ablak a borító mögül dereng (színezett keret, árnyék,
   háttér), a kártya rámutatva fénylik, a táblázat rámutatott sora halványan színeződik
-- `components/TitleEditor.js` – natív `<dialog>` (fejlécben a leírás): állapot, letöltve (a megnézés
+- `components/TitleEditor.js` – natív `<dialog>` (fejlécben a leírás). **Adatlapok egymás mögött**
+  (terv-3 31-es pont, 2026-10-05): az ablak (`TitleEditor`) lapokat tart (`stack`: `{ id, rowId, item,
+  added }`), mindig az utolsó látszik, a többi rejtve megmarad (`.editor-page[hidden]`, a görgetési
+  helyével); a lap sora a `titles` propból jön (a listáról nyitottnál `rowId` szerint, különben
+  TMDB-azonosító szerint) – ha nincs a listán, a lap **előnézet** (`TitlePage`, `preview`): a
+  `/api/tmdb/details` adataival, a szerkesztő mezők, a Mentés és a Törlés helyett „Hozzáadás a
+  listához” (`addTitle(item, details)` – nem kérdez újra) és „Bezárás”; felvétel után a lap új
+  kulccsal rendes adatlappá válik („✓ Felkerült a listádra”, `.added-note`; Norbi döntése: nem
+  zárul be). Előnézet nyílik a Cím hozzáadása találatának borítójáról / címéről és a Felfedezés
+  borítójáról (`onPreview` → `Watchlist.openEditor`), valamint a Hasonló címek borítójáról az
+  ablakon belül (új lap, a cím fölött „‹ Vissza: …”, `.back-link`); a franchise-gyűjteményből és
+  az importokból nem (Norbi döntése). Mentetlen módosítással a lap nem hagyható el (a hasonló cím
+  és a Vissza is figyelmeztet, mint a kikattintás – az elöl lévő lap `apiRef`-en adja a
+  `canLeave` / `nudge` függvényt); a Mentés / Mégse / Esc / kikattintás az egész ablakot zárja; a
+  nézetváltás csak az első lapról siklik vissza; a háttérképes elrendezés jele (`.has-backdrop`)
+  a lapon van, nem a `dialog`-on; a cím `id="editor-title"`-je csak a látható lapé; a rejtett
+  lapon nem szól az előzetes. A listán lévő cím lapja: állapot, letöltve (a megnézés
   dátuma – `watched_at` – nem látszik és nem szerkeszthető, Norbi kérése, 2026-10-04: megnézettre
   állításkor a háttérben a mai nap kerül be, a Statisztika és a CSV használja), értékelés 10 csillaggal
   (+ „Törlés” link), törlés megerősítéssel – Norbi kérésére itt marad –, utána a sávban 8 mp-ig
@@ -263,7 +279,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/SiteFooter.js` – kötelező TMDB forrásmegjelölés, ne töröld
 - `components/TitleSearch.js` – „Cím hozzáadása” panel: késleltetett (400 ms) TMDB keresés,
   találati lista, „Hozzáadás a listához” gomb; a már listán lévőknél „✓ A listán”;
-  `initialQuery` (kitöltve nyílik); üres keresőnél a felfedező sorok (`Discover`)
+  `initialQuery` (kitöltve nyílik); üres keresőnél a felfedező sorok (`Discover`); a találat
+  borítója (`.thumb-btn`, egérrel) és címe (`.title-btn`) az adatlapot nyitja (`onPreview`,
+  előnézet – a listán lévőé szerkeszthető), a Felfedezésben a borító (`.discover-poster`)
 - `components/Discover.js` + `app/api/tmdb/discover/route.js` – Felfedezés: „Most a
   mozikban” (`cinema`), „Hamarosan a mozikban” (`upcoming`, dátummal), „Új digitálisan”
   (`digital`), „Népszerű sorozatok” (`tv`), vízszintes borítósorok, „+ Hozzáadás” / „✓ A
@@ -336,6 +354,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `restoreSeasons()` (visszavonás), `setSeasonDownloaded()`, `addSeason()` (kézi, mai dátummal),
   `removeLastSeason()`,
   `refreshSeasons()` (háttér), `seasonAired()`, `NEXT_SEASON_STATUS`.
+  Az `addTitle(item, details)` második paramétere a már lekérdezett `/api/tmdb/details` válasz
+  (az előnézeti adatlapé), ha van.
   Megjelenés: `refreshReleases()` (háttér), `releaseState(t)` – `{ kind: 'soon', date | year }`
   (a moziba sem került még, vagy csak digitálisan jön; dátum nélkül jövőbeli / hiányzó év),
   `{ kind: 'cinema', digital }` (moziban, digitálisan még nem; a mozis bemutató után 120 napig,
@@ -389,7 +409,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   nyitva; ha becsukja, a böngésző megjegyzi: `localStorage`, `filmlista-hasonlok`; nyitva tölt be;
   telefonon – ≤ 640 px – mindig csukva indul, Norbi kérése, és ott a nyitás / csukás nem
   jegyződik meg),
-  vízszintesen görgethető borítósor (évszám, típus; a borító a TMDB-adatlapra visz), „+ Hozzáadás”
+  vízszintesen görgethető borítósor (évszám, típus; a borító gomb az ablakon belül a cím adatlapját
+  nyitja – `onPreview`, előnézet vagy a listán lévőé –, a cím link a TMDB-oldalra), „+ Hozzáadás”
   (`addTitle()`), a listán lévőknél „✓ A listán”
 - `app/api/imdb/refresh/route.js` – `POST`: a hiányzó vagy 14 napnál régebbi IMDb-értékeléseket
   frissíti (25-ösével, a felhasználó jogosultságaival); a `Watchlist` betöltéskor hívja
@@ -649,7 +670,9 @@ A még meg nem jelent filmek szaggatott kerettel és dátumos jelvénnyel, a har
 megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül). Asztalon az adatlap
 kikattintásra bezárul, ha nincs mentetlen módosítás (terv-3 24-es pontja, 2026-10-04). „Hol
 nézhető?” az adatlapon (magyar streamingszolgáltatók logóval, terv-3 21), IMDb-figyelőlista
-importja (terv-3 20), „Franchise-ok” ablak a ⋮ menüben (terv-3 23, 2026-10-05), kikattintásra záródó ablakok (terv-3 32).
+importja (terv-3 20), „Franchise-ok” ablak a ⋮ menüben (terv-3 23, 2026-10-05), kikattintásra záródó ablakok (terv-3 32),
+adatlap a listára vétel előtt – előnézet a találatokból, a Felfedezésből és a Hasonló címekből,
+„Vissza” gombbal (terv-3 31, 2026-10-05).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -674,15 +697,15 @@ Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnéze
    fiók nem admin. **Nyitott:** bárki regisztrálhasson, vagy meghívókóddal / admin-jóváhagyással
    (javaslat: az utóbbi – az OMDb napi 1000 kérése közös).
 **Norbi kérései (2026-10-05)** – utánuk, a TERV.md-ben részletezve (nyitott kérdésekkel):
-5. **31 – adatlap a listára vétel előtt**: a keresés / Felfedezés / Hasonló címek borítójára
-   kattintva a `TitleEditor` előnézet módban (`/api/tmdb/details`), a szerkesztő mezők helyett
-   egy „Hozzáadás a listához” gomb.
-6. **30 – tömörebb adatlap** (Állapot, Letöltve, Mama kevesebb függőleges helyen, asztalon egymás
+5. **30 – tömörebb adatlap** (Állapot, Letöltve, Mama kevesebb függőleges helyen, asztalon egymás
    mellett): **előbb 2–3 dizájnváltozat képekkel**, Norbi választ.
-7. **28 – lejátszási lista**: saját nézési sorrend (film, sorozat vagy évad elemekkel, húzással
+6. **28 – lejátszási lista**: saját nézési sorrend (film, sorozat vagy évad elemekkel, húzással
    átrendezve, „Következik” jelölés); új táblák (`playlists`, `playlist_items`) a mentésbe is.
-8. **29 – Marvel franchise betöltése és nézési sorrendje** a 28-asra építve (tömeges import
+7. **29 – Marvel franchise betöltése és nézési sorrendje** a 28-asra építve (tömeges import
    franchise-választóval, sorrend szövegből „Loki 1. évad” formában vagy Excelből).
+8. **33 – képes felhasználói leírás**: a `FELHASZNALOI-LEIRAS.md` kiegészítése képernyőképekkel
+   (tesztfiók + próbalista, maszkolt e-mail, számozott jelölők), egy újrageneráló szkripttel
+   (`munka/terv-3/leiras-kepek.mjs` → `docs/kepek/`); utána szabály: a változott felület képe is frissül.
 
 ## Fejlesztési terv, 3. kör (2026-10-04)
 **`munka/terv-3/TERV.md`** (helyi mappa) – a hátralévő pontok (a „Következő feladat” pontjai)
@@ -698,8 +721,9 @@ magyar szinkronos – közelítés, külön sorozat-sorral), 9 – franchise-gy�
 jelent filmek (szaggatott keret + jelvény + harang; szűrőgomb Norbi kérésére nincs); 24 –
 kikattintásra bezáruló adatlap; 20 – IMDb-figyelőlista importja; 21 – „Hol nézhető?” csak az
 adatlapon; 22 – telefonon nincs „IMDb import”; 23 – „Franchise-ok” ablak (2026-10-05); 32 – kikattintás a Statisztika, Franchise-ok, gyűjtemény és
-Mentések ablakon is (2026-10-05). Vár még:
-25, 27, 13, 26, 31, 30, 28, 29 („Következő feladat”).
+Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a találatokból, a
+Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05). Vár még:
+25, 27, 13, 26, 30, 28, 29, 33 („Következő feladat”).
 **Elvetve (Norbi kérésére, 2026-10-04) – nem kell, magadtól ne javasold újra:** 2 – gyorsműveletek a borítón, 3 – parancspaletta (Ctrl+K) és billentyűparancsok, 5 – „Mit nézzek ma?”, 6 – játékidő a soron és szűrő rá, 11 – saját címkék, 12 – szinkron / felirat jelölése, 17 – csoportosítás hónapok szerint, 18 – évértékelő, 19 – értesítés a telefonra (web push).
 
 ## Fejlesztői megjegyzés

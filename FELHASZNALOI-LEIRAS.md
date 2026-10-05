@@ -115,18 +115,26 @@ keresésnél „Keresés a TMDB-n: „…”” (a Cím hozzáadása panel a be�
 **Cím hozzáadása panel** (fejléc gomb; telefonon a jobb alsó sarokban lévő kerek **+**):
 - Kezdd el gépelni a címet (pl. „Dűne”) – rövid szünet után megjelennek a TMDB találatai
   borítóval, évvel, típussal. **Hozzáadás a listához**; a már listán lévőknél „✓ A listán”.
+- **Megnézném előbb:** a találat **borítójára vagy címére** kattintva megnyílik a cím
+  **adatlapja** úgy, ahogy a listán lévőké – háttérkép, nagy borító, év, IMDb-érték, „Hol
+  nézhető?”, előzetes, leírás, Hasonló címek –, de **listára vétel nélkül**. Az állapot, a
+  franchise és a csillagok helyett egyetlen gomb van: **Hozzáadás a listához**. Rákattintva a
+  cím felkerül, és az ablak nyitva marad: helyben a rendes adatlapra vált („✓ Felkerült a
+  listádra”), ahol rögtön beállíthatod az állapotát, értékelését. Ha nem kell, **Bezárás** /
+  Esc / kikattintás. A már listán lévő találat borítója a szerkeszthető adatlapját nyitja.
 - Felvételkor a cím megkapja: magyar címet és leírást (ha nincs magyar, angolt), műfajokat,
   borítót, háttérképet, IMDb-értékelést, sorozatnál az évadokat, filmnél a megjelenési
   dátumokat.
 
 **Felfedezés** (a panelben, amíg a keresőmező üres): négy vízszintes borítósor – *Most a
 mozikban*, *Hamarosan a mozikban* (dátummal), *Új digitálisan*, *Népszerű sorozatok* – egy
-kattintással („+ Hozzáadás”) a listára. Csak a valószínűleg **magyar szinkronos** címek:
+kattintással („+ Hozzáadás”) a listára; a **borítóra** kattintva előbb az adatlapja (mint a
+találatoknál). Csak a valószínűleg **magyar szinkronos** címek:
 Magyarországon megjelent (sorozatnál magyar streamingen elérhető), angol vagy magyar nyelvű,
 magyar leírással; dokumentum-, valóság- és talkshow nélkül.
 
 **Hasonló címek** – minden adatlap alján (lásd [5.](#5-egy-cím-adatlapja-és-szerkesztése)),
-„+ Hozzáadás” gombbal.
+„+ Hozzáadás” gombbal; a borítójukra kattintva az adatlapjuk ugyanabban az ablakban.
 
 **Tömeges import** (⋮ menü, csak széles képernyőn):
 1. Soronként egy cím, legfeljebb 150. A sor végére írt évszám pontosít (pl. „Dűne 2021” vagy
@@ -142,7 +150,9 @@ magyar leírással; dokumentum-, valóság- és talkshow nélkül.
 ## 5. Egy cím adatlapja és szerkesztése
 
 **Megnyitás:** a borítóra kattintva (kártyán és listasorban is), vagy a kártya bal felső
-sarkában lévő ceruzával. Asztalon a borító „átsiklik” az ablak nagy borítójának helyére.
+sarkában lévő ceruzával. Asztalon a borító „átsiklik” az ablak nagy borítójának helyére. A még
+nem listán lévő címek adatlapja a Cím hozzáadása találataiból és a Felfedezésből nyílik (lásd
+[4.](#4-címek-felvétele)).
 
 **Mit látsz az adatlapon:**
 - felül a film széles jelenetképe (ha van), asztalon (900 px fölött) balra nagy borító;
@@ -157,9 +167,13 @@ sarkában lévő ceruzával. Asztalon a borító „átsiklik” az ablak nagy b
 - a TMDB leírása;
 - **Franchise**, **Állapot**, **Letöltve**, **Mama**, **Saját értékelés** (10 csillag);
 - sorozatnál az állapot helyett az **évadok** (lásd [7.](#7-sorozatok-és-évadok));
-- alul **Hasonló címek**: a TMDB ajánlásai vízszintes sorban (borítóra kattintva a TMDB-
-  adatlap), „+ Hozzáadás” / „✓ A listán”. Becsukható; a böngésző megjegyzi (telefonon mindig
-  csukva indul).
+- alul **Hasonló címek**: a TMDB ajánlásai vízszintes sorban, „+ Hozzáadás” / „✓ A listán”. A
+  **borítóra** kattintva a hasonló cím adatlapja nyílik **ugyanebben az ablakban** (a még nem
+  listán lévőé előnézetként, „Hozzáadás a listához” gombbal); a cím fölötti **„‹ Vissza: …”**
+  az előző címre lép vissza – akár több lépésen át. A hasonló cím **nevére** kattintva a
+  TMDB-oldala nyílik új lapon. Ha az adatlapon mentetlen módosítás van, a hasonló címre
+  kattintva nem lép tovább (megjelenik a „Mentetlen módosítás – Mentés vagy Mégse” felirat).
+  Becsukható; a böngésző megjegyzi (telefonon mindig csukva indul).
 - Az ablak a borító színében dereng.
 
 **Mentés és bezárás:** **Mentés** (a módosítások mentése), **Mégse** vagy **Esc** (bezárás
@@ -429,6 +443,7 @@ Minden fejlesztés után ide kerül egy sor (legújabb felül), és a fenti tém
 
 | Dátum | Mi változott |
 |---|---|
+| 2026. 10. 05. | Adatlap a listára vétel előtt: a Cím hozzáadása találatainak és a Felfedezés borítójára kattintva a cím adatlapja „Hozzáadás a listához” gombbal – felvétel után helyben a rendes adatlap; a Hasonló címek borítója ugyanabban az ablakban nyitja a hasonló címet, „Vissza” gombbal ([4.](#4-címek-felvétele), [5.](#5-egy-cím-adatlapja-és-szerkesztése)). |
 | 2026. 10. 05. | Az új franchise logója rögtön megérkezik, amint az első címe bekerül – nem csak a következő betöltéskor ([9.](#9-franchise-ok-és-gyűjtemények)). |
 | 2026. 10. 05. | Kikattintásra bezárul a Statisztika, a Franchise-ok, a gyűjtemény és a Mentések ablak is ([16.](#16-billentyűzet-kényelmi-apróságok)). |
 | 2026. 10. 05. | „Franchise-ok” ablak a ⋮ menüben: ábécérend, logók, számok a hiányzókkal, gyűjtemény, szűrés, átnevezés, törlés, új franchise ([9.](#9-franchise-ok-és-gyűjtemények)). |

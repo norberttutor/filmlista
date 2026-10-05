@@ -9,8 +9,10 @@ const THUMB_BASE = 'https://image.tmdb.org/t/p/w154';
 const MIN_LENGTH = 2;
 const DEBOUNCE_MS = 400;
 
-// initialQuery: kitöltve nyílik (pl. az üres listakeresés „Keresés a TMDB-n” gombjáról)
-export default function TitleSearch({ existingKeys, onAdded, onClose, initialQuery = '' }) {
+// initialQuery: kitöltve nyílik (pl. az üres listakeresés „Keresés a TMDB-n” gombjáról);
+// onPreview(találat, borítóElem): a borítóra / címre kattintva a cím adatlapja (előnézet, a
+// listán lévőé szerkeszthető) – a találatoknál és a Felfedezésben is
+export default function TitleSearch({ existingKeys, onAdded, onPreview, onClose, initialQuery = '' }) {
   const [query, setQuery] = useState(initialQuery);
   // az utolsó befejezett keresés: melyik szövegre, mit kaptunk
   const [found, setFound] = useState({ q: '', results: [], error: '' });
@@ -89,7 +91,9 @@ export default function TitleSearch({ existingKeys, onAdded, onClose, initialQue
       )}
 
       {/* amíg nincs keresés: felfedező sorok (mozi, hamarosan, digitálisan új, sorozatok) */}
-      {q.length === 0 && <Discover existingKeys={existingKeys} rowState={rowState} onAdd={handleAdd} />}
+      {q.length === 0 && (
+        <Discover existingKeys={existingKeys} rowState={rowState} onAdd={handleAdd} onPreview={onPreview} />
+      )}
 
       {q.length >= MIN_LENGTH && found.results.length > 0 && (
         <ul className="results">
@@ -99,12 +103,25 @@ export default function TitleSearch({ existingKeys, onAdded, onClose, initialQue
             const titleId = `result-${r.media_type}-${r.tmdb_id}`;
             return (
               <li key={key} className="result">
-                <div className="thumb">
+                {/* a borító egérrel kattintható; billentyűzettel / felolvasóval a cím gombja */}
+                <button
+                  type="button"
+                  className="thumb thumb-btn"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                  onClick={(e) => onPreview(r, e.currentTarget)}
+                >
                   {r.poster_path && <img src={THUMB_BASE + r.poster_path} alt="" loading="lazy" />}
-                </div>
+                </button>
                 <div className="result-text">
                   <p className="result-title" id={titleId}>
-                    {r.title}
+                    <button
+                      type="button"
+                      className="title-btn"
+                      onClick={(e) => onPreview(r, e.currentTarget.closest('.result').querySelector('.thumb'))}
+                    >
+                      {r.title}
+                    </button>
                   </p>
                   {r.original_title && r.original_title !== r.title && (
                     <p className="original">{r.original_title}</p>
