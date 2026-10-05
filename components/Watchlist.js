@@ -272,7 +272,10 @@ export default function Watchlist({ session }) {
 
         // sorozatok évadai a háttérben: a még évad nélküliek megkapják, a hetente
         // ellenőrzöttekhez az új (megjelent / bejelentett) évad felkerül
-        // értesítések: rögtön, és az évadfrissítés után újra (az új évadokról is szóljon)
+        // értesítések: rögtön, és az évad- / megjelenésfrissítés után újra, ha az változtatott
+        // valamit (az új évadokról, digitális megjelenésről is szóljon; ha nem változott semmi,
+        // az újratöltés ugyanazt adná – 3 adatbázis-kérés megspórolva). Hibánál is újratölt
+        // (egy korábbi adag addig már frissülhetett).
         // (kilépés után már nem: a háttérfrissítések végén bejelentkezés nélkül futna)
         const reloadNotifications = () =>
           !cancelled &&
@@ -293,9 +296,13 @@ export default function Watchlist({ session }) {
           if (cancelled) return;
           const byId = new Map(rows.map((r) => [r.id, r]));
           setTitles((ts) => ts.map((t) => byId.get(t.id) ?? t));
-        })
-          .catch((err) => console.warn('Évadok frissítése sikertelen:', err.message))
-          .finally(reloadNotifications);
+        }).then(
+          (count) => count > 0 && reloadNotifications(),
+          (err) => {
+            console.warn('Évadok frissítése sikertelen:', err.message);
+            reloadNotifications();
+          }
+        );
 
         // filmek megjelenési dátumai a háttérben (a még meg nem jelent filmek jelvényéhez); ha
         // közben valamelyik digitálisan megjelent, a harang is szól róla
@@ -303,9 +310,13 @@ export default function Watchlist({ session }) {
           if (cancelled) return;
           const byId = new Map(rows.map((r) => [r.id, r]));
           setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
-        })
-          .catch((err) => console.warn('Megjelenési dátumok frissítése sikertelen:', err.message))
-          .finally(reloadNotifications);
+        }).then(
+          (count) => count > 0 && reloadNotifications(),
+          (err) => {
+            console.warn('Megjelenési dátumok frissítése sikertelen:', err.message);
+            reloadNotifications();
+          }
+        );
       }
       setLoading(false);
     }

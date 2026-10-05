@@ -1,5 +1,7 @@
 import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
-import { tmdbFetch, tmdbErrorResponse } from '@/lib/server/tmdb';
+import { tmdbFetch, tmdbErrorResponse, cached, cachedResponse, DAY_S } from '@/lib/server/tmdb';
+
+const DAY = DAY_S * 1000;
 
 // a legjobb előzetes: YouTube-on, előbb a hivatalos, előbb a „Trailer” (aztán „Teaser”), a legfrissebb
 function pickTrailer(videos) {
@@ -29,13 +31,20 @@ export async function GET(request) {
   }
 
   try {
-    for (const language of ['hu-HU', 'en-US']) {
-      const data = await tmdbFetch(`/${type}/${id}/videos`, { language });
-      const v = pickTrailer(data.results ?? []);
-      if (v) return Response.json({ video: { key: v.key, name: v.name, lang: v.iso_639_1 } });
-    }
+    const video = await cached(`videos:${type}:${id}`, DAY, async () => {
+      try {
+        for (const language of ['hu-HU', 'en-US']) {
+          const data = await tmdbFetch(`/${type}/${id}/videos`, { language });
+          const v = pickTrailer(data.results ?? []);
+          if (v) return { key: v.key, name: v.name, lang: v.iso_639_1 };
+        }
+      } catch (err) {
+        if (err.status !== 404) throw err; // a TMDB-n már nincs meg: nincs előzetes
+      }
+      return null;
+    });
+    return cachedResponse({ video }, DAY_S);
   } catch (err) {
-    if (err.status !== 404) return tmdbErrorResponse(err); // a TMDB-n már nincs meg: nincs előzetes
+    return tmdbErrorResponse(err);
   }
-  return Response.json({ video: null });
 }

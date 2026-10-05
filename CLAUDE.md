@@ -150,9 +150,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   műfaj szürke; a kulcs a TMDB magyar műfajneve); felolvasónak vesszővel elválasztva (`sr-only`).
   A kártyán és a táblázat sorában; megnézett / abbahagyott címnél a pötty szürke
 - `lib/posterColor.js` – hangulatszín a borítóból: `usePosterColor(poster_path, enabled)` a kis
-  (w185) borítót vászonra rajzolja (a TMDB képszervere CORS-t enged, de csak CORS-os kérésre: a
-  w185-ös borítót ezért máshol ne töltsd be `crossOrigin` nélkül – a gyorsítótárból engedély
-  nélküli választ kapna, ahogy a harang w92-es képeinél történt), a legjellemzőbb élénk
+  (w92, saját gyorsítótár-kulccsal: `?szin`) borítót vászonra rajzolja (a TMDB képszervere CORS-t
+  enged, de csak CORS-os kérésre: ha ugyanaz a kép CORS nélkül is a böngésző gyorsítótárában
+  lenne – mint a harang w92-es képei –, a vászon tiltást kapna; a külön kulcs ezt kizárja.
+  Korábban w185 volt, ~15 KB helyett most ~5 KB, terv-3 34, 2026-10-05), a legjellemzőbb élénk
   színt adja OKLCH-ban, rögzített világossággal (0,72) és telítettséggel (0,04–0,13) – így a
   szövegek olvashatósága nem változik; borítónként egyszer számol (`Map`). `ambientProps(szín)`:
   `--ambient` CSS-változó + `data-ambient` jelző; a CSS („Hangulatszín a borítóból” szakasz)
@@ -374,9 +375,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `DROPPED_STATUS` („Abbahagyva”, csak sorozatnál), `MAMA_OPTIONS`, `mamaLabel()`
 - `lib/server/auth.js` – `getUserFromRequest()`, `supabaseAsUser()` (a felhasználó nevében,
   RLS-sel), `unauthorized()` (csak route handlerben)
-- `lib/server/tmdb.js` – `tmdbFetch()`, `tmdbErrorResponse()`, `yearOf()`, `pickReleaseDates()`
+- `lib/server/tmdb.js` – `cachedResponse(body, másodperc)` (`Cache-Control: private, max-age` –
+  a böngésző tárolja a nyilvános TMDB-adatot adó GET-válaszokat; terv-3 34, 2026-10-05: providers,
+  videos, similar, collection, find 1 nap – `DAY_S`; discover, details 1 óra – `HOUR_S`; search 10
+  perc; hibaválasz soha), `tmdbFetch()`, `tmdbErrorResponse()`, `yearOf()`, `pickReleaseDates()`
   (mozi: 3, ha nincs 2; digitális: 4; előbb HU, ha nincs US; országon belül a legkorábbi), `cached(kulcs, ms,
-  betöltő)` (memóriában, a szerverpéldány élete alatt, legfeljebb 200 elem), `pickSeasons()`
+  betöltő)` (memóriában, a szerverpéldány élete alatt, legfeljebb 500 elem; a hibát nem tárolja;
+  a videos és a similar 1 napig, a details TMDB-része és az OMDb-érték – `omdb:` kulcs – 1 óráig), `pickSeasons()`
   (a TMDB évadjai a „0. évad” – különkiadások – nélkül) (csak route handlerben)
 - `app/api/tmdb/search/route.js` – `GET ?q=` → `search/multi`, csak film/sorozat
 - `app/api/tmdb/details/route.js` – `GET ?type=movie|tv&id=` → a `titles` oszlopainak
@@ -463,7 +468,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   kilógna, a jobbhoz (`lib/popupSide.js`, nyitáskor mérve – a ⋮ menü is így); telefonon teljes
   szélességű. A fejléc felugró listái (`z-index: 35`) a letapadó szűrősor (30) fölött vannak. `loadNotifications()`: előbb
   `collect_season_notifications()` és `collect_release_notifications()` (RPC, párhuzamosan),
-  aztán a lista; a Watchlist betöltéskor, az évadfrissítés és a megjelenésidátum-frissítés után hívja. A telepített app ikonján `navigator.setAppBadge()` mutatja a számot.
+  aztán a lista; a Watchlist betöltéskor, valamint az évadfrissítés és a megjelenésidátum-frissítés
+  után hívja – utóbbiakat csak, ha frissült sor (a `refreshSeasons` / `refreshReleases` a
+  frissített sorok számát adja; hibánál is újratölt; terv-3 34, E1). A telepített app ikonján `navigator.setAppBadge()` mutatja a számot.
   Ha nő az olvasatlanok száma (betöltéskor is, ha van), a harang egyszer megrezzen (`.ringing`)
 - `components/BulkImport.js` + `lib/bulkImport.js` – „Tömeges import” (csak asztali nézetben,
   a ⋮ menüből: `ref.current.open()`): soronként egy cím (legfeljebb `MAX_LINES` = 150; a sor
@@ -685,7 +692,12 @@ adatlap a listára vétel előtt – előnézet a találatokból, a Felfedezésb
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
-**Norbi kérései (2026-10-04)** – a fejlesztési lista élén, ebben a sorrendben; a részletek
+**Szükséges (Norbi kérése, 2026-10-05) – mindenek előtt:** **34 – erőforrás-optimalizálás
+funkcióváltozás nélkül + kinézeti hibák**: a vizsgálat a `munka/optimalizalas/VIZSGALAT.md`-ben.
+Kész (2026-10-05): E4 + E5 gyorsítótár, E1 értesítések, E6 kisebb kép. Hátravan: E2
+háttérfrissítések kihagyása (közös „esedékes-e” feltételek a route-okkal), E3 helyi
+tokenellenőrzés (csak Norbi döntésével), a kinézeti kör bővítése (K3).
+**Norbi kérései (2026-10-04)** – utána, ebben a sorrendben; a részletek
 (megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
 1. **25 – admin jogosultság** (csak Norbi fiókja): csak admin látja a ⋮ menü **Mentések**
    pontját és a **Mama** paramétert mindenhol (szűrő, oszlop, szerkesztő, kártya, CSV); javaslat:
@@ -732,7 +744,7 @@ kikattintásra bezáruló adatlap; 20 – IMDb-figyelőlista importja; 21 – �
 adatlapon; 22 – telefonon nincs „IMDb import”; 23 – „Franchise-ok” ablak (2026-10-05); 32 – kikattintás a Statisztika, Franchise-ok, gyűjtemény és
 Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a találatokból, a
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05). Vár még:
-25, 27, 13, 26, 30, 28, 29, 33 („Következő feladat”).
+34 (szükséges), 25, 27, 13, 26, 30, 28, 29, 33 („Következő feladat”).
 **Elvetve (Norbi kérésére, 2026-10-04) – nem kell, magadtól ne javasold újra:** 2 – gyorsműveletek a borítón, 3 – parancspaletta (Ctrl+K) és billentyűparancsok, 5 – „Mit nézzek ma?”, 6 – játékidő a soron és szűrő rá, 11 – saját címkék, 12 – szinkron / felirat jelölése, 17 – csoportosítás hónapok szerint, 18 – évértékelő, 19 – értesítés a telefonra (web push).
 
 ## Fejlesztői megjegyzés

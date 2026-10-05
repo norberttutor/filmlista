@@ -1,5 +1,5 @@
 import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
-import { cached, tmdbFetch, tmdbErrorResponse, yearOf } from '@/lib/server/tmdb';
+import { cached, tmdbFetch, tmdbErrorResponse, yearOf, cachedResponse, HOUR_S } from '@/lib/server/tmdb';
 
 const LIMIT = 16; // ennyi cím egy sorban
 const HOUR = 60 * 60 * 1000;
@@ -102,7 +102,7 @@ export async function GET(request) {
   }
   try {
     const results = await cached(`discover:${name}:${day(0)}`, HOUR, () => loadList(name));
-    return Response.json({ results });
+    return cachedResponse({ results }, HOUR_S);
   } catch (err) {
     return tmdbErrorResponse(err);
   }

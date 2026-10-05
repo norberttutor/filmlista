@@ -69,7 +69,7 @@ export default function Discover({ existingKeys, rowState, onAdd, onPreview }) {
                         aria-label={`${r.title} adatlapja`}
                         onClick={(e) => onPreview(r, e.currentTarget)}
                       >
-                        {/* CORS-szal: a w185-ös borítót a hangulatszín is vászonra rajzolja */}
+                        {/* CORS-szal (a vászonra rajzolhatóság miatt; a hangulatszín ma már külön, kisebb képből számol) */}
                         <img src={POSTER_BASE + r.poster_path} alt="" loading="lazy" crossOrigin="anonymous" />
                       </button>
                       <b className="discover-title" id={id}>

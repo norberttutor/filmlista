@@ -1,5 +1,5 @@
 import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
-import { tmdbFetch, tmdbErrorResponse, yearOf } from '@/lib/server/tmdb';
+import { tmdbFetch, tmdbErrorResponse, yearOf, cachedResponse } from '@/lib/server/tmdb';
 
 // GET /api/tmdb/search?q=dűne
 // Filmek és sorozatok keresése; a válasz mezőnevei a titles tábla oszlopai.
@@ -32,5 +32,5 @@ export async function GET(request) {
       poster_path: r.poster_path,
     }));
 
-  return Response.json({ results });
+  return cachedResponse({ results }, 10 * 60); // 10 perc
 }

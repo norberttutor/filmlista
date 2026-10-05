@@ -1,5 +1,5 @@
 import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
-import { tmdbFetch, tmdbErrorResponse, cached, pickProviders } from '@/lib/server/tmdb';
+import { tmdbFetch, tmdbErrorResponse, cached, pickProviders, cachedResponse, DAY_S } from '@/lib/server/tmdb';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -30,7 +30,7 @@ export async function GET(request) {
         throw err;
       }
     });
-    return Response.json({ providers });
+    return cachedResponse({ providers }, DAY_S);
   } catch (err) {
     return tmdbErrorResponse(err);
   }

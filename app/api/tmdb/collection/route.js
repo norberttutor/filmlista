@@ -1,5 +1,5 @@
 import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
-import { cached, tmdbFetch, tmdbErrorResponse, yearOf } from '@/lib/server/tmdb';
+import { cached, tmdbFetch, tmdbErrorResponse, yearOf, cachedResponse, DAY_S } from '@/lib/server/tmdb';
 
 const DAY = 24 * 60 * 60 * 1000;
 const MAX_MOVIES = 60; // ennyi filmnél nézzük meg, melyik TMDB-gyűjteménybe tartozik
@@ -69,7 +69,7 @@ export async function GET(request) {
     const collections = (await Promise.all(unique.map((id) => loadCollection(id).catch(() => null))))
       .filter((c) => c && c.parts.length > 0)
       .sort((a, b) => (a.parts[0].release_date || '9999').localeCompare(b.parts[0].release_date || '9999'));
-    return Response.json({ collections });
+    return cachedResponse({ collections }, DAY_S);
   } catch (err) {
     return tmdbErrorResponse(err);
   }

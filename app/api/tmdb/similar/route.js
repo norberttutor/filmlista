@@ -1,5 +1,5 @@
 import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
-import { tmdbFetch, tmdbErrorResponse, yearOf } from '@/lib/server/tmdb';
+import { tmdbFetch, tmdbErrorResponse, yearOf, cached, cachedResponse, DAY_S } from '@/lib/server/tmdb';
 
 const LIMIT = 12; // ennyi ajánlás a szerkesztő ablakban
 
@@ -19,6 +19,15 @@ export async function GET(request) {
     );
   }
 
+  try {
+    const results = await cached(`similar:${type}:${id}`, DAY_S * 1000, () => loadSimilar(type, id));
+    return cachedResponse({ results }, DAY_S);
+  } catch (err) {
+    return tmdbErrorResponse(err);
+  }
+}
+
+async function loadSimilar(type, id) {
   let data;
   try {
     data = await tmdbFetch(`/${type}/${id}/recommendations`, { language: 'hu-HU' });
@@ -26,12 +35,12 @@ export async function GET(request) {
       data = await tmdbFetch(`/${type}/${id}/similar`, { language: 'hu-HU' });
     }
   } catch (err) {
-    if (err.status !== 404) return tmdbErrorResponse(err);
+    if (err.status !== 404) throw err;
     data = { results: [] }; // a cím már nincs meg a TMDB-n: nincs ajánlás (nem hiba)
   }
 
   // a "similar" válaszban nincs media_type: ugyanaz, mint a kiinduló címé
-  const results = (data.results ?? [])
+  return (data.results ?? [])
     .map((r) => ({ ...r, media_type: r.media_type ?? type }))
     .filter(
       (r) =>
@@ -49,6 +58,4 @@ export async function GET(request) {
       release_year: yearOf(r.release_date ?? r.first_air_date),
       poster_path: r.poster_path,
     }));
-
-  return Response.json({ results });
 }
