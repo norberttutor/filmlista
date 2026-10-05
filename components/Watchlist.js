@@ -161,6 +161,8 @@ export default function Watchlist({ session }) {
   const [statuses, setStatuses] = useState([]);
   const [franchises, setFranchises] = useState([]);
   const [loading, setLoading] = useState(true);
+  // a franchise-logó keresése ezeknél már elindult ebben a munkamenetben
+  const logoTried = useRef(new Set());
   const [loadError, setLoadError] = useState('');
   const [adding, setAdding] = useState(false);
   const [addQuery, setAddQuery] = useState(''); // a „Cím hozzáadása” panel kezdő keresése
@@ -303,19 +305,6 @@ export default function Watchlist({ session }) {
         })
           .catch((err) => console.warn('Megjelenési dátumok frissítése sikertelen:', err.message))
           .finally(reloadNotifications);
-
-        // hiányzó franchise-logók (a franchise első filmjének címlogója) a háttérben
-        if (franchisesRes.data.some((f) => !f.logo_path)) {
-          refreshFranchiseLogos()
-            .then((rows) => {
-              if (cancelled || rows.length === 0) return;
-              const byId = new Map(rows.map((r) => [r.id, r.logo_path]));
-              setFranchises((fs) =>
-                fs.map((f) => (byId.has(f.id) ? { ...f, logo_path: byId.get(f.id) } : f))
-              );
-            })
-            .catch((err) => console.warn('Franchise-logók lekérése sikertelen:', err.message));
-        }
       }
       setLoading(false);
     }
@@ -451,6 +440,35 @@ export default function Watchlist({ session }) {
     const stayed = ofType.filter((t) => keptIds.has(t.id) && !ids.has(t.id));
     return [...matching, ...stayed].sort(compare);
   }, [beforeStatus, ofType, keptIds, status, sort]);
+
+  // hiányzó franchise-logók (a franchise első filmjének címlogója) a háttérben: betöltéskor, és
+  // rögtön, amikor egy logó nélküli franchise-hoz az első cím bekerül (gyűjtemény, adatlap, sor,
+  // tömeges import) – nem csak a következő betöltéskor. Kis várakozással, hogy az egymás után
+  // felvett címek egy kérésbe essenek; franchise-onként munkamenetenként egyszer (ha a TMDB-n nincs
+  // logó, a szerver 7 napig nem próbálja újra).
+  const logoDue = loading
+    ? ''
+    : (() => {
+        const used = new Set(titles.map((t) => t.franchise_id).filter(Boolean));
+        return franchises
+          .filter((f) => !f.logo_path && used.has(f.id) && !logoTried.current.has(f.id))
+          .map((f) => f.id)
+          .join(',');
+      })();
+  useEffect(() => {
+    if (!logoDue) return;
+    const timer = setTimeout(() => {
+      for (const id of logoDue.split(',')) logoTried.current.add(Number(id));
+      refreshFranchiseLogos()
+        .then((rows) => {
+          if (rows.length === 0) return;
+          const byId = new Map(rows.map((r) => [r.id, r.logo_path]));
+          setFranchises((fs) => fs.map((f) => (byId.has(f.id) ? { ...f, logo_path: byId.get(f.id) } : f)));
+        })
+        .catch((err) => console.warn('Franchise-logók lekérése sikertelen:', err.message));
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [logoDue]);
 
   // lapozás: az oldal első címének helyét jegyezzük meg (first), így nézetváltáskor (más
   // oldalméret) az az oldal jön, amelyiken az addig látott első cím van

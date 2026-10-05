@@ -284,7 +284,9 @@ lenyílóban. Lehetőségek:
 - **„× „Név” törlése…”** – megerősítés után minden címről lekerül.
 
 **Franchise-szűrő** logókkal: a logót az app magától keresi a franchise első filmjéhez (a sötét
-logók fehérre színezve). Franchise-ra szűrve a típus „Filmek és sorozatok” lesz.
+logók fehérre színezve) – egy új franchise-nál rögtön, amint az első címe bekerül (pár másodperc,
+újratöltés nélkül). Ha a TMDB-n nincs a filmhez logó, a név látszik, és az app egy hét múlva
+próbálja újra. Franchise-ra szűrve a típus „Filmek és sorozatok” lesz.
 
 **Gyűjtemény sáv:** franchise-ra szűrve a lista fölött: logó, mérő (megnézve zöld, listán
 türkiz) és „x/y megnézve · n a listán · m hiányzik”. A **Gyűjtemény** gomb ablakot nyit:
@@ -427,6 +429,7 @@ Minden fejlesztés után ide kerül egy sor (legújabb felül), és a fenti tém
 
 | Dátum | Mi változott |
 |---|---|
+| 2026. 10. 05. | Az új franchise logója rögtön megérkezik, amint az első címe bekerül – nem csak a következő betöltéskor ([9.](#9-franchise-ok-és-gyűjtemények)). |
 | 2026. 10. 05. | Kikattintásra bezárul a Statisztika, a Franchise-ok, a gyűjtemény és a Mentések ablak is ([16.](#16-billentyűzet-kényelmi-apróságok)). |
 | 2026. 10. 05. | „Franchise-ok” ablak a ⋮ menüben: ábécérend, logók, számok a hiányzókkal, gyűjtemény, szűrés, átnevezés, törlés, új franchise ([9.](#9-franchise-ok-és-gyűjtemények)). |
 | 2026. 10. 04. | Nagyobb szolgáltatói logók; a ⋮ menüben a Statisztika az első; telefonon nincs IMDb import ([12.](#12-imdb), [15.](#15-telefonon)). |

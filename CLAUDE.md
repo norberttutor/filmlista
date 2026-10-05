@@ -403,7 +403,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   képszervere CORS-t enged), 0,5 alatt fehérre színezi (`.franchise-logo.dark`)
 - `app/api/franchises/logos/route.js` – `POST`: a logó nélküli franchise-oknál a franchise első
   (legkorábbi) filmjének TMDB-címlogóját menti (`pickLogo()`: legfeljebb 6:1 arány, angol);
-  ha nincs logó, 7 napig nem próbálja újra. A `Watchlist` betöltéskor hívja
+  ha nincs logó, 7 napig nem próbálja újra. A `Watchlist` hívja (`logoDue` effekt, 1,5 mp
+  várakozással): betöltéskor, és rögtön, amikor egy logó nélküli franchise-hoz az első cím bekerül
+  (gyűjtemény, adatlap, sor, tömeges import) – franchise-onként munkamenetenként egyszer
+  (`logoTried`); üres franchise-nál nincs mit keresni (Norbi kérése, 2026-10-05: a Rocky logója csak
+  a következő betöltéskor jött le)
 - `components/ImdbRatingsImport.js` + `lib/imdbImport.js` – „IMDb import” a ⋮ menüből
   (`ref.current.open()` → rejtett fájlválasztó; a komponens csak a fájlmezőt és az ablakot
   rajzolja). `parseImdbExport()` felismeri a két IMDb-exportot:
