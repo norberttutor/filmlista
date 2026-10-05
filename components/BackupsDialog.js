@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { BACKUP_KINDS, createBackup, listBackups, restoreBackup } from '@/lib/backups';
+import { useBackdropClose } from '@/lib/useBackdropClose';
 
 const formatWhen = (iso) =>
   new Date(iso).toLocaleString('hu-HU', {
@@ -23,6 +24,11 @@ export default function BackupsDialog({ titleCount, onRestored, onClose }) {
   const [busy, setBusy] = useState(null); // 'backup' | 'restore'
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
+  // asztalon kikattintásra bezárul – mentés / visszaállítás közben és nyitott megerősítésnél nem
+  const backdrop = useBackdropClose(dialogRef, {
+    onClose: () => dialogRef.current.close(),
+    canClose: () => !busy && confirmId == null,
+  });
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
@@ -76,7 +82,7 @@ export default function BackupsDialog({ titleCount, onRestored, onClose }) {
   }
 
   return (
-    <dialog ref={dialogRef} className="editor backups-dialog" aria-labelledby="backups-title" onClose={onClose}>
+    <dialog ref={dialogRef} className="editor backups-dialog" aria-labelledby="backups-title" onClose={onClose} {...backdrop}>
       <div className="import-body">
         <h2 id="backups-title" ref={headingRef} tabIndex={-1}>
           Mentések

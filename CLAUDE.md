@@ -174,7 +174,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   nagy borító helyére (a `Watchlist` `openEditor(t, forrásElem)` indítja), bezáráskor (Esc –
   `cancel` elkapva –, Mégse, Mentés) a `morphTo` borítóra vissza; törléskor nincs. A
   `showModal()` ezért `useLayoutEffect`-ben fut.
-  Kikattintás (Norbi kérése, 2026-10-04): asztalon (≥ 641 px) a háttérre kattintva bezárul
+  Kikattintás (Norbi kérése, 2026-10-04; `useBackdropClose`): asztalon (≥ 641 px) a háttérre kattintva bezárul
   (`isOutside`: a cél maga a `dialog`, a pont a téglalapján kívül; a `pointerdown` is kívül –
   a kifelé húzott kijelölés nem zár), kivéve, ha mentetlen módosítás van (`dirty`: a Mentés
   által küldött mezők eltérnek a megnyitáskoritól – `initial`; az évadok nem számítanak):
@@ -251,6 +251,15 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `lib/viewTransition.js` – `canMorph(elem)` (támogatott böngésző, ≥ 900 px, nincs „kevesebb
   mozgás”, az elem a lapon van) és `MORPH_NAME` (`editor-poster`)
 - `lib/useMediaQuery.js` – `useMediaQuery(query)` hook (`useSyncExternalStore`)
+- `lib/useBackdropClose.js` – `useBackdropClose(dialogRef, { onClose, canClose, onBlocked })` →
+  `{ onPointerDown, onClick }` a `<dialog>`-ra: kikattintásra (a háttérre) bezár, telefonon
+  (≤ 640 px) nem; a lenyomásnak is kívül kell lennie (a kifelé húzott kijelölés nem zár); a
+  beágyazott ablak kattintása a külsőnek nem számít kívülnek. Használja (terv-3 24 és 32, Norbi
+  kérése): `TitleEditor` (mentetlen módosításnál `onBlocked` → figyelmeztetés), `StatsDialog`
+  (mindig), `FranchisesDialog` (átnevezés / törlés-megerősítés / új név gépelése és nyitott
+  gyűjtemény-ablak alatt nem), `CollectionDialog` (rész felvétele közben és nyitott
+  TMDB-gyűjtemény-keresőnél nem), `BackupsDialog` (mentés / visszaállítás közben és nyitott
+  megerősítésnél nem). Az importablakok (Tömeges import, IMDb import) nem (Norbi döntése)
 - `components/SiteFooter.js` – kötelező TMDB forrásmegjelölés, ne töröld
 - `components/TitleSearch.js` – „Cím hozzáadása” panel: késleltetett (400 ms) TMDB keresés,
   találati lista, „Hozzáadás a listához” gomb; a már listán lévőknél „✓ A listán”;
@@ -586,6 +595,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   fekete, 3D billenés a borítókon, plakátszerű tipográfia, számláló a fejlécben, „Ma este”
   kiemelt sáv, haladásgyűrű a sorozatoknál, egyedi helykitöltő a hiányzó borítóhoz; a kurzort
   követő fénylő kártyaélt beépítés után visszavonatta.
+- **Új ablak (`<dialog>`) esetén mindig vizsgáld a kikattintásos bezárást** (Norbi kérése,
+  2026-10-05): kell-e, és mikor ne zárjon (bevitel / szerkesztés / megerősítés / folyamatban lévő
+  művelet közben) – `lib/useBackdropClose.js` (`canClose`); ha egy ablak szándékosan nem zár
+  kikattintásra (pl. importablak beírt szöveggel), írd oda megjegyzésben és a CLAUDE.md-be. Ha az
+  ablak egy másik `<dialog>`-on belül nyílik a React-fában, a külső `onClose` csak a sajátjára
+  zárjon (`e.target === e.currentTarget`), mert a React a belső „close” eseményét is továbbítja.
 - Képekhez sima `<img>`, nem `next/image`.
 - Nincs middleware / proxy; az auth kliensoldali.
 - **Felhasználói leírás:** minden olyan fejlesztés után, ami a felületen látszik vagy a
@@ -630,7 +645,7 @@ A még meg nem jelent filmek szaggatott kerettel és dátumos jelvénnyel, a har
 megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül). Asztalon az adatlap
 kikattintásra bezárul, ha nincs mentetlen módosítás (terv-3 24-es pontja, 2026-10-04). „Hol
 nézhető?” az adatlapon (magyar streamingszolgáltatók logóval, terv-3 21), IMDb-figyelőlista
-importja (terv-3 20), „Franchise-ok” ablak a ⋮ menüben (terv-3 23, 2026-10-05).
+importja (terv-3 20), „Franchise-ok” ablak a ⋮ menüben (terv-3 23, 2026-10-05), kikattintásra záródó ablakok (terv-3 32).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -654,6 +669,16 @@ Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnéze
 4. **26 – regisztráció**: a belépési oldalon „Regisztráció” (`signUp`, megerősítő levél); az új
    fiók nem admin. **Nyitott:** bárki regisztrálhasson, vagy meghívókóddal / admin-jóváhagyással
    (javaslat: az utóbbi – az OMDb napi 1000 kérése közös).
+**Norbi kérései (2026-10-05)** – utánuk, a TERV.md-ben részletezve (nyitott kérdésekkel):
+5. **31 – adatlap a listára vétel előtt**: a keresés / Felfedezés / Hasonló címek borítójára
+   kattintva a `TitleEditor` előnézet módban (`/api/tmdb/details`), a szerkesztő mezők helyett
+   egy „Hozzáadás a listához” gomb.
+6. **30 – tömörebb adatlap** (Állapot, Letöltve, Mama kevesebb függőleges helyen, asztalon egymás
+   mellett): **előbb 2–3 dizájnváltozat képekkel**, Norbi választ.
+7. **28 – lejátszási lista**: saját nézési sorrend (film, sorozat vagy évad elemekkel, húzással
+   átrendezve, „Következik” jelölés); új táblák (`playlists`, `playlist_items`) a mentésbe is.
+8. **29 – Marvel franchise betöltése és nézési sorrendje** a 28-asra építve (tömeges import
+   franchise-választóval, sorrend szövegből „Loki 1. évad” formában vagy Excelből).
 
 ## Fejlesztési terv, 3. kör (2026-10-04)
 **`munka/terv-3/TERV.md`** (helyi mappa) – a hátralévő pontok (a „Következő feladat” pontjai)
@@ -668,8 +693,9 @@ magyar szinkronos – közelítés, külön sorozat-sorral), 9 – franchise-gy�
 állapotok, 15 – gyorsgombok a letapadt szűrősorban, 16 – évadok idővonala; 10 – a még meg nem
 jelent filmek (szaggatott keret + jelvény + harang; szűrőgomb Norbi kérésére nincs); 24 –
 kikattintásra bezáruló adatlap; 20 – IMDb-figyelőlista importja; 21 – „Hol nézhető?” csak az
-adatlapon; 22 – telefonon nincs „IMDb import”; 23 – „Franchise-ok” ablak (2026-10-05). Vár még:
-25, 27, 13, 26 („Következő feladat”).
+adatlapon; 22 – telefonon nincs „IMDb import”; 23 – „Franchise-ok” ablak (2026-10-05); 32 – kikattintás a Statisztika, Franchise-ok, gyűjtemény és
+Mentések ablakon is (2026-10-05). Vár még:
+25, 27, 13, 26, 31, 30, 28, 29 („Következő feladat”).
 **Elvetve (Norbi kérésére, 2026-10-04) – nem kell, magadtól ne javasold újra:** 2 – gyorsműveletek a borítón, 3 – parancspaletta (Ctrl+K) és billentyűparancsok, 5 – „Mit nézzek ma?”, 6 – játékidő a soron és szűrő rá, 11 – saját címkék, 12 – szinkron / felirat jelölése, 17 – csoportosítás hónapok szerint, 18 – évértékelő, 19 – értesítés a telefonra (web push).
 
 ## Fejlesztői megjegyzés

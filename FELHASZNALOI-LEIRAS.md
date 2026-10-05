@@ -395,6 +395,11 @@ A felület telefonra (640 px alatt) külön igazodik:
 ## 16. Billentyűzet, kényelmi apróságok
 
 - **Esc** bezárja az adatlapot, a menüket és a felugró paneleket.
+- **Kikattintás:** asztalon (és tableten) az ablak mellé, a sötét háttérre kattintva bezárul az
+  adatlap, a Statisztika, a Franchise-ok, a gyűjtemény-ablak és a Mentések ablak. Nem zárul be,
+  amíg valamit szerkesztesz vagy megerősítesz benne (pl. átnevezés, visszaállítás megerősítése,
+  mentés folyamatban), az adatlap pedig mentetlen módosításnál figyelmeztet. Telefonon a
+  Bezárás / Esc / lehúzás zár. Az importablakok (Tömeges import, IMDb import) csak gombbal zárnak.
 - A **⋮ menüben** és a **franchise-szűrőben** nyilakkal, Home / End-del lehet lépkedni, Enter
   választ.
 - A **csillagok** nyilakkal is állíthatók.
@@ -422,6 +427,7 @@ Minden fejlesztés után ide kerül egy sor (legújabb felül), és a fenti tém
 
 | Dátum | Mi változott |
 |---|---|
+| 2026. 10. 05. | Kikattintásra bezárul a Statisztika, a Franchise-ok, a gyűjtemény és a Mentések ablak is ([16.](#16-billentyűzet-kényelmi-apróságok)). |
 | 2026. 10. 05. | „Franchise-ok” ablak a ⋮ menüben: ábécérend, logók, számok a hiányzókkal, gyűjtemény, szűrés, átnevezés, törlés, új franchise ([9.](#9-franchise-ok-és-gyűjtemények)). |
 | 2026. 10. 04. | Nagyobb szolgáltatói logók; a ⋮ menüben a Statisztika az első; telefonon nincs IMDb import ([12.](#12-imdb), [15.](#15-telefonon)). |
 | 2026. 10. 04. | „Hol nézhető?” az adatlapon: a magyar streamingszolgáltatók logója ([5.](#5-egy-cím-adatlapja-és-szerkesztése)); IMDb-figyelőlista importja – a menüpont neve „IMDb import” ([12.](#12-imdb)). |

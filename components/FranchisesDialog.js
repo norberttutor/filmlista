@@ -11,6 +11,7 @@ import {
   summarizeCollection,
 } from '@/components/FranchiseCollection';
 import { mapLimit } from '@/lib/bulkImport';
+import { useBackdropClose } from '@/lib/useBackdropClose';
 
 // kis- és nagybetű, ékezet nélkül (a kereséshez)
 const fold = (s) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
@@ -42,6 +43,12 @@ export default function FranchisesDialog({
   const [openId, setOpenId] = useState(null); // a gyűjtemény-ablak ehhez a franchise-hoz
   const [edit, setEdit] = useState(null); // { id, mode: 'rename' | 'delete', name, error, busy }
   const [creating, setCreating] = useState(null); // { name, error, busy }
+  // asztalon kikattintásra bezárul – szerkesztés közben (átnevezés, törlés megerősítése, új név) nem,
+  // hogy a beírt szöveg ne vesszen el; a nyitott gyűjtemény-ablakot a saját kikattintása zárja
+  const backdrop = useBackdropClose(dialogRef, {
+    onClose: () => dialogRef.current.close(),
+    canClose: () => !edit && !creating && openId == null,
+  });
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
@@ -149,6 +156,7 @@ export default function FranchisesDialog({
       aria-labelledby="franchises-title"
       // a benne nyíló gyűjtemény-ablak „close” eseményét a React ide is továbbítja: csak a sajátjára zárunk
       onClose={(e) => e.target === e.currentTarget && onClose()}
+      {...backdrop}
     >
       <div>
         <header className="stats-head">

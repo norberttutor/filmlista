@@ -20,6 +20,7 @@ import { hasSeasons, SeasonList, SeasonTimeline, useSeasonActions } from '@/comp
 import SimilarTitles from '@/components/SimilarTitles';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
 import { canMorph, MORPH_NAME } from '@/lib/viewTransition';
+import { useBackdropClose } from '@/lib/useBackdropClose';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500'; // a nagy borító (asztalon)
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/'; // a háttérkép (telefonon w780, asztalon w1280)
@@ -96,7 +97,6 @@ export default function TitleEditor({
   // kikattintás mentetlen módosítással: figyelmeztetés a gombok mellett, a "Mentés" felvillan
   const [nudged, setNudged] = useState(false);
   const [attention, setAttention] = useState(false);
-  const pressedOutside = useRef(false);
   const seasonActions = useSeasonActions(t, onChanged, setError);
   // a borító hangulatszíne: az ablak a film színében dereng (globals.css, "Hangulatszín")
   const ambient = usePosterColor(t.poster_path);
@@ -159,33 +159,20 @@ export default function TitleEditor({
 
   // Asztalon az ablakon kívülre (a sötét háttérre) kattintva bezárul – Norbi kérése –, kivéve,
   // ha van mentetlen módosítás: akkor figyelmeztet. Nyitva marad akkor is, ha épp a törlést
-  // erősítenéd meg, vagy a Franchise mezőben új nevet / átnevezést gépelsz. A lenyomásnak is
-  // kívül kell lennie: a szöveg kijelölése közben kicsúszó egér nem zár be. Telefonon (alsó lap)
-  // a lehúzás zár. Az Esc továbbra is mindig bezárja (onCancel).
-  function isOutside(e) {
-    const dialog = dialogRef.current;
-    if (e.target !== dialog) return false; // a háttérre kattintás célja maga a <dialog>
-    const r = dialog.getBoundingClientRect();
-    return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
-  }
-
-  function handlePointerDown(e) {
-    pressedOutside.current = isOutside(e);
-  }
-
-  function handleClick(e) {
-    if (!pressedOutside.current || !isOutside(e)) return;
-    pressedOutside.current = false;
-    if (busy || window.matchMedia(PHONE_QUERY).matches) return;
-    if (confirmingDelete || dialogRef.current.querySelector('.franchise-new')) return;
-    if (dirty) {
+  // erősítenéd meg, vagy a Franchise mezőben új nevet / átnevezést gépelsz (lib/useBackdropClose:
+  // a kifelé húzott kijelölés sem zár, telefonon – alsó lap – a lehúzás zár). Az Esc továbbra is
+  // mindig bezárja (onCancel).
+  const editingElsewhere = () => busy || confirmingDelete || Boolean(dialogRef.current?.querySelector('.franchise-new'));
+  const backdrop = useBackdropClose(dialogRef, {
+    onClose: close,
+    canClose: () => !editingElsewhere() && !dirty,
+    onBlocked: () => {
+      if (editingElsewhere()) return;
       setNudged(true);
       setAttention(true);
       setTimeout(() => setAttention(false), 450);
-      return;
-    }
-    close();
-  }
+    },
+  });
 
   // telefonon az ablak alsó lap: a fogantyút lefelé húzva bezárul (elég messzire vagy gyorsan),
   // különben visszaugrik
@@ -282,8 +269,7 @@ export default function TitleEditor({
         e.preventDefault();
         close();
       }}
-      onPointerDown={handlePointerDown}
-      onClick={handleClick}
+      {...backdrop}
       {...ambientProps(ambient)}
     >
       {/* telefonon: fogantyú – lefelé húzva bezárja az ablakot (a Mégse / Esc ugyanaz) */}

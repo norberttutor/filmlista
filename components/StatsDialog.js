@@ -3,6 +3,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { listStats, formatDecimal } from '@/lib/stats';
 import { genreColor } from '@/lib/genreColors';
+import { useBackdropClose } from '@/lib/useBackdropClose';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w154';
 const TOP_GENRES = 7;
@@ -44,6 +45,8 @@ export default function StatsDialog({ titles, franchiseName, onClose }) {
   const dialogRef = useRef(null);
   const headingRef = useRef(null);
   const s = useMemo(() => listStats(titles, franchiseName), [titles, franchiseName]);
+  // asztalon kikattintásra bezárul (nincs benne bevitel, mindig zárhat)
+  const backdrop = useBackdropClose(dialogRef, { onClose: () => dialogRef.current.close() });
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
@@ -57,7 +60,7 @@ export default function StatsDialog({ titles, franchiseName, onClose }) {
   const diff = s.ratings.mine != null && s.ratings.imdb != null ? s.ratings.mine - s.ratings.imdb : null;
 
   return (
-    <dialog ref={dialogRef} className="editor stats-dialog" aria-labelledby="stats-title" onClose={onClose}>
+    <dialog ref={dialogRef} className="editor stats-dialog" aria-labelledby="stats-title" onClose={onClose} {...backdrop}>
       <div>
         <header className="stats-head">
           <h2 id="stats-title" ref={headingRef} tabIndex={-1}>

@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { addTitle, setFranchiseCollections, updateTitle } from '@/lib/titles';
+import { useBackdropClose } from '@/lib/useBackdropClose';
 
 const IMG = 'https://image.tmdb.org/t/p/';
 const byYear = (a, b) => (a.release_year ?? 9999) - (b.release_year ?? 9999);
@@ -192,6 +193,11 @@ export function CollectionDialog({ franchise, sections, extras, counts, manual, 
   }
 
   const busyAny = Object.values(state).some((s) => s.busy);
+  // asztalon kikattintásra bezárul – felvétel közben és nyitott TMDB-gyűjtemény-keresőnél nem
+  const outsideClose = useBackdropClose(dialogRef, {
+    onClose: () => dialogRef.current.close(),
+    canClose: () => !busyAny && !searching,
+  });
 
   return (
     <dialog
@@ -199,6 +205,7 @@ export function CollectionDialog({ franchise, sections, extras, counts, manual, 
       className="editor collection-dialog"
       aria-labelledby="collection-title"
       onClose={onClose}
+      {...outsideClose}
     >
       <div
         className="collection-head"
