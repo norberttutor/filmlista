@@ -289,8 +289,8 @@ A listán lévő, még meg nem jelent filmek **szaggatott kerettel** válnak el 
 **Franchise-ok áttekintése** (⋮ menü → **Franchise-ok**, telefonon is): az összes franchise-od
 egy ablakban, **ábécérendben** (a névelő – „A”, „Az”, „The” – nem számít: „A majmok bolygója” az
 M-nél van). Csempénként:
-- a franchise **logója** (ha nincs, a neve), alatta a név és egy mérő (megnézve zöld, a listán
-  türkiz);
+- a franchise **logója** (ha nincs, a neve), alatta a név és egy mérő: a listádon lévő címeiből
+  mennyit láttál már (zöld; a még hiányzó részek nem számítanak bele);
 - a számok: „3/7 megnézve · 5 a listán · 2 hiányzik” – a hiányzókat a TMDB-gyűjteményekből
   számolja (első megnyitáskor pár másodperc alatt töltődnek be, addig „…”); gyűjtemény nélkül
   „nincs TMDB-gyűjtemény”, üres franchise-nál „Még nincs címe”;
@@ -316,8 +316,8 @@ logók fehérre színezve) – egy új franchise-nál rögtön, amint az első c
 újratöltés nélkül). Ha a TMDB-n nincs a filmhez logó, a név látszik, és az app egy hét múlva
 próbálja újra. Franchise-ra szűrve a típus „Filmek és sorozatok” lesz.
 
-**Gyűjtemény sáv:** franchise-ra szűrve a lista fölött: logó, mérő (megnézve zöld, listán
-türkiz) és „x/y megnézve · n a listán · m hiányzik”. A **Gyűjtemény** gomb ablakot nyit:
+**Gyűjtemény sáv:** franchise-ra szűrve a lista fölött: logó, mérő (a listádon lévő címekből a
+megnézettek aránya, zölden) és „x/y megnézve · n a listán · m hiányzik”. A **Gyűjtemény** gomb ablakot nyit:
 - szakaszonként a franchise filmjeinek **minden TMDB-gyűjteménye**, a részek megjelenési
   sorrendben, sorszámmal; a megnézettek szürkék a saját értékeléssel, a listán lévők „A
   listán”, a **hiányzók szaggatott kerettel „+ Hozzáadás”** gombbal (a franchise-t is
@@ -489,7 +489,7 @@ Minden fejlesztés után ide kerül egy sor (legújabb felül), és a fenti tém
 
 | Dátum | Mi változott |
 |---|---|
-| 2026. 10. 06. | Javítás: a franchise-ok mérője (a Franchise-ok ablak csempéin, a lista fölötti sávban és a gyűjtemény-ablakban) pontosan mutatja az arányt – eddig a jobb szélén mindig maradt egy keskeny szürkés rész, így teljesen megnézett franchise-nál sem telt meg. |
+| 2026. 10. 06. | A franchise-ok mérője (a Franchise-ok ablak csempéin, a lista fölötti sávban és a gyűjtemény-ablakban): a listádon lévő címekből a megnézettek aránya, zölden – a még hiányzó részek nem számítanak bele, így ha mindet láttad, ami a listádon van, a sáv megtelik. (Eddig a jobb szélén mindig maradt egy keskeny szürkés rész.) |
 | 2026. 10. 06. | Gyorsabb és takarékosabb működés: a háttérfrissítések (IMDb, háttérkép, évadok, megjelenési dátumok) csak akkor indulnak, ha van mit frissíteni; az adatlap gyorsabban nyílik (a bejelentkezés ellenőrzése helyben történik – emiatt egy másik eszközön kijelentkezve az ottani munkamenet legfeljebb egy óráig még működik). Javítás: 1000 cím fölött is a teljes lista betöltődik; rácsnézetben a nagyon hosszú, szóköz nélküli cím nem lóg rá a szomszéd kártyára. |
 | 2026. 10. 06. | „Nem érdekel”: a Felfedezés és a Hasonló címek borítóin **×** – a cím többé nem ajánlott (visszavonható; a Felfedezés alján „Elrejtett ajánlások” → „Mégis érdekel”). Megnézettre állításkor egy zöld vonal fut végig a címen („kihúzás”) ([4.](#4-címek-felvétele), [6.](#6-állapotok-letöltve-értékelések)). |
 | 2026. 10. 06. | Nézési sorrend a franchise-okban: a gyűjtemény-ablak új **Nézési sorrend** fülén a franchise filmjei és a sorozatok évadjai saját sorrendbe állíthatók (húzással vagy ↑ / ↓), kipipálhatók, a megnézett kihúzva a helyén marad, a következő kiemelve. Ha van saját sorrend, a listán a franchise kiválasztásakor a rendezés magától **Nézési sorrend** lesz, a sorozatok évadonként külön sorban ([9.](#9-franchise-ok-és-gyűjtemények)). |

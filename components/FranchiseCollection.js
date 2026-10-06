@@ -135,12 +135,13 @@ export default function FranchiseCollection({ franchise, titles, orders, onAdded
   );
 }
 
-// megnézve (zöld) / a listán (türkiz) arány – a sávon, a gyűjtemény-ablakban és a Franchise-ok csempéin
-export function CollectionMeter({ total, watched, onList }) {
+// a listán lévő (felvett) címekből mennyi a megnézett: zöld, a többi a sáv szürkéje – a sávon, a
+// gyűjtemény-ablakban és a Franchise-ok csempéin. A hiányzó TMDB-részek nem számítanak, türkiz
+// nincs (Norbi döntése, 2026-10-06)
+export function CollectionMeter({ watched, onList }) {
   return (
     <span className="collection-meter" aria-hidden="true">
-      <i style={{ width: `${total ? (watched / total) * 100 : 0}%` }} />
-      <i className="listed" style={{ width: `${total ? ((onList - watched) / total) * 100 : 0}%` }} />
+      <i style={{ width: `${onList ? (watched / onList) * 100 : 0}%` }} />
     </span>
   );
 }

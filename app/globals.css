@@ -3183,17 +3183,13 @@ button.season:hover {
   background: rgb(255 255 255 / 0.1);
 }
 
-/* a szakaszok szélessége pontosan az arány (nem zsugorodnak; saját osztály – a közös .on-list
-   címke margója 2026-10-06-ig 0%-nál is ~19 px-et foglalt, így teli mérő sem telt meg) */
+/* zöld: a listán lévők közül a megnézettek aránya (Norbi döntése, 2026-10-06: türkiz nincs, a
+   hiányzó részek nem számítanak); a szélesség pontosan az arány (nem zsugorodik) */
 .collection-meter i {
   display: block;
   flex: none;
   height: 100%;
   background: var(--st-watched);
-}
-
-.collection-meter i.listed {
-  background: var(--accent);
 }
 
 /* ---------- Franchise-ok ablak (FranchisesDialog, a ⋮ menüből) ---------- */

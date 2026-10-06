@@ -337,7 +337,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   belső `<dialog>` „close” eseményét a React a külső kezelőnek is továbbítja
 - `components/FranchiseCollection.js` + `app/api/tmdb/collection/route.js` +
   `app/api/tmdb/collection-search/route.js` – franchise-ra szűrve mindig sáv a lista fölött
-  (logó vagy név, mérő: megnézve zöld / listán türkiz, „x/y megnézve · n a listán · m
+  (logó vagy név, mérő: a listán lévők közül a megnézettek aránya zölden, a többi szürke – a hiányzó
+  részek nem számítanak, türkiz nincs; Norbi döntése, 2026-10-06 –, „x/y megnézve · n a listán · m
   hiányzik”, gyűjtemény nélkül „· nincs hozzá TMDB-gyűjtemény”; „Gyűjtemény” gomb). Ablak,
   gyűjteményenként egy szakasz: a franchise **összes** filmjének (legfeljebb 60) minden
   `belongs_to_collection`-je, plusz a kézzel hozzárendeltek (`franchises.tmdb_collection_ids`,
@@ -354,9 +355,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   a részek egy napig. (Az első változat franchise-onként csak egy gyűjteményt mutatott, és
   Norbi 40 franchise-ából 15-nél kihagyott címeket – 2026-10-04.) Közös exportok (a Franchise-ok
   ablak is használja): `collectionParams()`, `paramsKey()`, `fetchCollections()`,
-  `summarizeCollection()` (szakaszok, további címek, számok + `missing`), `CollectionMeter` (a
-  szakaszai `flex: none` és saját `.listed` osztály – a közös `.on-list` címke margója 2026-10-06-ig
-  0%-nál is ~19 px-et foglalt, teli mérő sem telt meg),
+  `summarizeCollection()` (szakaszok, további címek, számok + `missing`), `CollectionMeter` (egy zöld
+  szakasz: megnézve / listán; `flex: none`. 2026-10-06-ig a második, „listán” szakasz a közös
+  `.on-list` címke stílusát örökölte – a margója miatt nem látszott, és teli mérő sem telt meg),
   `CollectionDialog`. A gyűjtemény-ablak két fülön (terv-3 28, Norbi döntése; `role="tablist"`,
   nyilakkal is; a panelek rejtve megmaradnak): „Gyűjtemény” (a fenti) és „Nézési sorrend”
   (`WatchOrder`); sorrend-szerkesztés közben kikattintásra nem zár, az Esc csak a szerkesztést zárja
