@@ -337,6 +337,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   belső `<dialog>` „close” eseményét a React a külső kezelőnek is továbbítja
 - `components/FranchiseCollection.js` + `app/api/tmdb/collection/route.js` +
   `app/api/tmdb/collection-search/route.js` – franchise-ra szűrve mindig sáv a lista fölött
+  (háttérképpel – terv-3 45, 2026-10-06: a franchise legjobb IMDb-értékelésű, háttérképes címének
+  jelenetképe, ha nincs, a TMDB-gyűjteményé; elmosva, sötét áttűnéssel, nagyobb logóval – `data-backdrop`,
+  `--banner-img`)
   (logó vagy név, mérő: a listán lévők közül a megnézettek aránya zölden, a többi szürke – a hiányzó
   részek nem számítanak, türkiz nincs; Norbi döntése, 2026-10-06 –, „x/y megnézve · n a listán · m
   hiányzik”, gyűjtemény nélkül „· nincs hozzá TMDB-gyűjtemény”; „Gyűjtemény” gomb). Ablak,
@@ -844,11 +847,9 @@ látványterv képekkel**, beépítés Norbi elfogadása után:
    ikonra: „Cím hozzáadása”, „Franchise-ok”, „Statisztika”.
 13. **44 – offline indulás** (~2–3 óra): service worker + a legutóbbi lista helyben tárolva –
    azonnal megnyílik, net nélkül csak olvasható, utána frissül.
-14. **45 – franchise-fejléc háttérképpel** (~0,5 óra terv + ~1 óra): franchise-ra szűrve a sáv a
-   gyűjtemény elmosott jelenetképével és a logóval.
-15. **46 – kiemelt sáv a Felfedezés tetején** (~0,5 óra terv + ~1,5 óra): a mozis újdonságok közül
+14. **46 – kiemelt sáv a Felfedezés tetején** (~0,5 óra terv + ~1,5 óra): a mozis újdonságok közül
    5–6 nagy, széles képes kiemelés leírással, „Adatlap” / „+ Hozzáadás”, lapozható.
-16. **47 – dinamikus szín a franchise-csempéken** (~0,5 óra terv + ~45 perc): a Franchise-ok ablak
+15. **47 – dinamikus szín a franchise-csempéken** (~0,5 óra terv + ~45 perc): a Franchise-ok ablak
    csempéi a logó / gyűjteménykép hangulatszínét kapják (mint az adatlap a borítóból).
 (A 39-es – „Nem érdekel” – és a 40-es – kihúzás – kész, 2026-10-06; a 37-es „Neked ajánlott”
 sorában is legyen ×.)
@@ -871,7 +872,7 @@ Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a ta
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
 nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
 29 – Marvel betöltve a sorrenddel (szkripttel, 2026-10-06); 39 – „Nem érdekel” az ajánlásokon, 40 –
-kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 25, 27, 13, 26, 33, 35, 36, 37, 38 (alacsony prioritás), 41–47 („Következő feladat”); 30 – tömörebb adatlap kész
+kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 25, 27, 13, 26, 33, 35, 36, 37, 38 (alacsony prioritás), 41–44, 46, 47 („Következő feladat”); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
 (B – vezérlősáv, 2026-10-05).
 **Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
 appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,

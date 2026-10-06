@@ -316,7 +316,8 @@ logók fehérre színezve) – egy új franchise-nál rögtön, amint az első c
 újratöltés nélkül). Ha a TMDB-n nincs a filmhez logó, a név látszik, és az app egy hét múlva
 próbálja újra. Franchise-ra szűrve a típus „Filmek és sorozatok” lesz.
 
-**Gyűjtemény sáv:** franchise-ra szűrve a lista fölött: logó, mérő (a listádon lévő címekből a
+**Gyűjtemény sáv:** franchise-ra szűrve a lista fölött, a franchise legjobb értékelésű címének
+(ha annak nincs, a gyűjteménynek) elmosott jelenetképével a háttérben: logó, mérő (a listádon lévő címekből a
 megnézettek aránya, zölden) és „x/y megnézve · n a listán · m hiányzik”. A **Gyűjtemény** gomb ablakot nyit:
 - szakaszonként a franchise filmjeinek **minden TMDB-gyűjteménye**, a részek megjelenési
   sorrendben, sorszámmal; a megnézettek szürkék a saját értékeléssel, a listán lévők „A
@@ -489,6 +490,7 @@ Minden fejlesztés után ide kerül egy sor (legújabb felül), és a fenti tém
 
 | Dátum | Mi változott |
 |---|---|
+| 2026. 10. 06. | Franchise-ra szűrve a lista fölötti sáv a franchise legjobb értékelésű címének elmosott jelenetképét kapja háttérnek, nagyobb logóval ([9.](#9-franchise-ok-és-gyűjtemények)). |
 | 2026. 10. 06. | A franchise-ok mérője (a Franchise-ok ablak csempéin, a lista fölötti sávban és a gyűjtemény-ablakban): a listádon lévő címekből a megnézettek aránya, zölden – a még hiányzó részek nem számítanak bele, így ha mindet láttad, ami a listádon van, a sáv megtelik. (Eddig a jobb szélén mindig maradt egy keskeny szürkés rész.) |
 | 2026. 10. 06. | Gyorsabb és takarékosabb működés: a háttérfrissítések (IMDb, háttérkép, évadok, megjelenési dátumok) csak akkor indulnak, ha van mit frissíteni; az adatlap gyorsabban nyílik (a bejelentkezés ellenőrzése helyben történik – emiatt egy másik eszközön kijelentkezve az ottani munkamenet legfeljebb egy óráig még működik). Javítás: 1000 cím fölött is a teljes lista betöltődik; rácsnézetben a nagyon hosszú, szóköz nélküli cím nem lóg rá a szomszéd kártyára. |
 | 2026. 10. 06. | „Nem érdekel”: a Felfedezés és a Hasonló címek borítóin **×** – a cím többé nem ajánlott (visszavonható; a Felfedezés alján „Elrejtett ajánlások” → „Mégis érdekel”). Megnézettre állításkor egy zöld vonal fut végig a címen („kihúzás”) ([4.](#4-címek-felvétele), [6.](#6-állapotok-letöltve-értékelések)). |
