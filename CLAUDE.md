@@ -386,6 +386,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   szerint” + „Kész” törli a saját sorrendet (`clearOrder` – a rendezés is eltűnik), „Mégse” / Esc
   elveti. `loadOrders()` a Watchlist betöltésekor (hibánál a lista attól még működik),
   `franchisesWithOrder()` – melyik franchise-nak van ma is érvényes sorrendje
+- `components/TopCast.js` + `app/api/tmdb/credits/route.js` – szereplők az adatlapon (terv-3 38,
+  2026-10-06, Norbi választása: „A” látványterv – `munka/terv-3/terv-38/`): a top cast első 3 tagja
+  (`pickCast()`: filmnél a credits, sorozatnál az aggregate_credits sorrendje; rendező nincs; egy
+  napig gyorsítótárazva; a TitleEditor egyszer kéri le, `afterTransition` után). Asztalon (≥ 900 px)
+  a bal oszlopban a „Hol nézhető?” alatt (`.cast.side`: kerek fotó, név, szerep), keskenyebben a
+  leírás alatt egy sor („Szereplők: …”, `.cast-line`). A név a színész TMDB-oldalára visz, új lapon
 - `app/api/tmdb/videos/route.js` – `GET ?type&id` → `{ video: { key, name, lang } | null }`:
   YouTube, „Trailer” előbb, hivatalos előbb, legfrissebb; magyar nyelvű, ha nincs, angol (ha a
   cím már nincs a TMDB-n: `null`; a similar route is üres listát ad ilyenkor)
@@ -837,21 +843,19 @@ doksival együtt; ha egy pont tartalma változik, frissítsd): a pontok mellett 
    szól; kattintva előnézet).
 8. **37 – „Neked ajánlott” sor a Felfedezésben** (~1–1,5 óra) (a 8+ saját értékelések TMDB-ajánlásaiból, a
    listán lévők nélkül).
-9. **38 – ALACSONY PRIORITÁS: szereplők és rendező az adatlapon** (~0,5 óra látványterv + ~2–2,5 óra) (személyre kattintva a filmjei az
-   ablakon belül) – **előbb látványtervek**, Norbi választ.
-**Norbi kérései (2026-10-06, javaslatokból)** – a 38-as után; a kinézeti pontoknál (45–47) **előbb
+**Norbi kérései (2026-10-06, javaslatokból)** – a 37-es után; a kinézeti pontoknál (45–47) **előbb
 látványterv képekkel**, beépítés Norbi elfogadása után:
-10. **41 – megosztható nézési sorrend** (~3 óra): egy franchise nézési sorrendjéhez csak olvasható
+9. **41 – megosztható nézési sorrend** (~3 óra): egy franchise nézési sorrendjéhez csak olvasható
    nyilvános link (belépés nélkül, borítókkal, a megnézett állapot nélkül); visszavonható.
-11. **42 – ízlésprofil a Statisztikában** (~1,5 óra): két csempe – hol tér el a saját értékelésed
+10. **42 – ízlésprofil a Statisztikában** (~1,5 óra): két csempe – hol tér el a saját értékelésed
    leginkább az IMDb-től (műfajonként), és a kedvenc műfajok a saját csillagok alapján.
-12. **43 – gyorsindítók a telepített apphoz** (~0,5 óra): a manifest `shortcuts` – jobb klikk az
+11. **43 – gyorsindítók a telepített apphoz** (~0,5 óra): a manifest `shortcuts` – jobb klikk az
    ikonra: „Cím hozzáadása”, „Franchise-ok”, „Statisztika”.
-13. **44 – offline indulás** (~2–3 óra): service worker + a legutóbbi lista helyben tárolva –
+12. **44 – offline indulás** (~2–3 óra): service worker + a legutóbbi lista helyben tárolva –
    azonnal megnyílik, net nélkül csak olvasható, utána frissül.
-14. **46 – kiemelt sáv a Felfedezés tetején** (~0,5 óra terv + ~1,5 óra): a mozis újdonságok közül
+13. **46 – kiemelt sáv a Felfedezés tetején** (~0,5 óra terv + ~1,5 óra): a mozis újdonságok közül
    5–6 nagy, széles képes kiemelés leírással, „Adatlap” / „+ Hozzáadás”, lapozható.
-15. **47 – dinamikus szín a franchise-csempéken** (~0,5 óra terv + ~45 perc): a Franchise-ok ablak
+14. **47 – dinamikus szín a franchise-csempéken** (~0,5 óra terv + ~45 perc): a Franchise-ok ablak
    csempéi a logó / gyűjteménykép hangulatszínét kapják (mint az adatlap a borítóból).
 (A 39-es – „Nem érdekel” – és a 40-es – kihúzás – kész, 2026-10-06; a 37-es „Neked ajánlott”
 sorában is legyen ×.)
@@ -874,7 +878,7 @@ Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a ta
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
 nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
 29 – Marvel betöltve a sorrenddel (szkripttel, 2026-10-06); 39 – „Nem érdekel” az ajánlásokon, 40 –
-kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 25, 27, 13, 26, 33, 35, 36, 37, 38 (alacsony prioritás), 41–44, 46, 47 („Következő feladat”); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
+kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 25, 27, 13, 26, 33, 35, 36, 37, 41–44, 46, 47 („Következő feladat”); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
 (B – vezérlősáv, 2026-10-05).
 **Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
 appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,

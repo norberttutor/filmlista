@@ -17,6 +17,7 @@ import FranchiseSelect from '@/components/FranchiseSelect';
 import ImdbBadge from '@/components/ImdbBadge';
 import ReleaseBadge from '@/components/ReleaseBadge';
 import WatchProviders from '@/components/WatchProviders';
+import TopCast from '@/components/TopCast';
 import { hasSeasons, SeasonList, SeasonTimeline, useSeasonActions } from '@/components/Seasons';
 import SimilarTitles from '@/components/SimilarTitles';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
@@ -331,6 +332,16 @@ function TitlePage({
     return () => controller.abort();
   }, [t.media_type, t.tmdb_id]);
 
+  // szereplők (terv-3 38): a top cast első 3 tagja, szintén a háttérben, a mozgás után
+  const [cast, setCast] = useState(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    apiGet('/api/tmdb/credits', { type: t.media_type, id: t.tmdb_id }, { signal: controller.signal })
+      .then((data) => afterTransition().then(() => !controller.signal.aborted && setCast(data.cast)))
+      .catch((err) => err.name !== 'AbortError' && console.warn('Szereplők:', err.message));
+    return () => controller.abort();
+  }, [t.media_type, t.tmdb_id]);
+
   // nyitva marad az ablak (kikattintásra, lapváltáskor), ha épp a törlést erősítenéd meg, a
   // Franchise mezőben új nevet / átnevezést gépelsz, menteni vagy felvenni készülsz
   const editingElsewhere = () =>
@@ -453,6 +464,7 @@ function TitlePage({
             {t.poster_path && <img src={POSTER_BASE + t.poster_path} alt="" decoding="async" />}
           </div>
           <WatchProviders providers={providers} className="side" />
+          <TopCast cast={cast} variant="side" />
         </div>
         <div className="editor-main">
           <header>
@@ -520,6 +532,8 @@ function TitlePage({
                 </div>
               )
             )}
+            {/* keskenyebben (< 900 px) a szereplők egy sorban a leírás alatt */}
+            <TopCast cast={cast} variant="inline" />
           </header>
 
           {preview ? (

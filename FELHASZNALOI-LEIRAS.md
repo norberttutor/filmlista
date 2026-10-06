@@ -179,6 +179,10 @@ nem listán lévő címek adatlapja a Cím hozzáadása találataiból és a Fel
   sávban az **Állapot**, a **Letöltve** és a **Mama** (telefonon a sávban fent az Állapot, alatta a
   Letöltve és a Mama; a Franchise és a csillagok egymás alatt);
 - sorozatnál az állapot helyett az **évadok** (lásd [7.](#7-sorozatok-és-évadok));
+- **Szereplők:** a film / sorozat első három szereplője. Széles képernyőn a bal oszlopban, a „Hol
+  nézhető?” alatt, kerek fotóval és a szerep nevével; keskenyebben (telefonon) a leírás alatt egy
+  sorban. A **névre** kattintva a színész TMDB-oldala nyílik új lapon. (A szerepnevek a TMDB-ről
+  jönnek, gyakran angolul.)
 - alul **Hasonló címek**: a TMDB ajánlásai vízszintes sorban, „+ Hozzáadás” / „✓ A listán”. A
   **borítóra** kattintva a hasonló cím adatlapja nyílik **ugyanebben az ablakban** (a még nem
   listán lévőé előnézetként, „Hozzáadás a listához” gombbal); a cím fölötti **„‹ Vissza: …”**
@@ -491,6 +495,7 @@ Minden fejlesztés után ide kerül egy sor (legújabb felül), és a fenti tém
 
 | Dátum | Mi változott |
 |---|---|
+| 2026. 10. 06. | Szereplők az adatlapon: az első három szereplő fotóval és szereppel (asztalon a bal oszlopban, telefonon egy sorban a leírás alatt); a névre kattintva a színész TMDB-oldala ([5.](#5-egy-cím-adatlapja-és-szerkesztése)). |
 | 2026. 10. 06. | Franchise-ra szűrve a lista fölötti sáv a franchise legjobb értékelésű címének jelenetképét kapja (a sáv jobb oldalán, balra a sötétbe olvadva), nagyobb logóval; a gyűjtemény-ablak fejléce is ezt a képet mutatja ([9.](#9-franchise-ok-és-gyűjtemények)). |
 | 2026. 10. 06. | A franchise-ok mérője (a Franchise-ok ablak csempéin, a lista fölötti sávban és a gyűjtemény-ablakban): a listádon lévő címekből a megnézettek aránya, zölden – a még hiányzó részek nem számítanak bele, így ha mindet láttad, ami a listádon van, a sáv megtelik. (Eddig a jobb szélén mindig maradt egy keskeny szürkés rész.) |
 | 2026. 10. 06. | Gyorsabb és takarékosabb működés: a háttérfrissítések (IMDb, háttérkép, évadok, megjelenési dátumok) csak akkor indulnak, ha van mit frissíteni; az adatlap gyorsabban nyílik (a bejelentkezés ellenőrzése helyben történik – emiatt egy másik eszközön kijelentkezve az ottani munkamenet legfeljebb egy óráig még működik). Javítás: 1000 cím fölött is a teljes lista betöltődik; rácsnézetben a nagyon hosszú, szóköz nélküli cím nem lóg rá a szomszéd kártyára. |
