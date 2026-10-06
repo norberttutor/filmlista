@@ -233,7 +233,7 @@ function TitleRow({
       </td>
       <td className="col-status">
         {hasSeasons(t) ? (
-          <SeasonCell title={t} current={item?.season ?? 0} onUpdated={onUpdated} onError={setError} />
+          <SeasonCell title={t} onUpdated={onUpdated} onError={setError} />
         ) : (
           <select
             aria-label={`Állapot – ${t.title}`}

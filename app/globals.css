@@ -1490,8 +1490,8 @@ body:has(> main.login) {
 }
 
 .titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .franchise-select,
-.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) /* nézési sorrendben (terv-3 28) a sorozat évadonként külön tétel: „2. évad” a cím alatt / a soron,
-   a csíkon az évad kiemelve */
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) /* nézési sorrendben (terv-3 28) a sorozat évadonként külön tétel: „2. évad” a cím alatt / a soron
+   (a csíkon nincs kiemelés – Norbi kérése, 2026-10-06) */
 .card-season {
   margin: 0.15rem 0 0;
   font-size: 0.85rem;
@@ -1512,10 +1512,6 @@ body:has(> main.login) {
   border-radius: 999px;
 }
 
-.season[data-current] {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
 
 .card-franchise {
   color: var(--watched-accent);

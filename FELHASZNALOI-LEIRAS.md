@@ -354,7 +354,7 @@ egy film is beilleszthető. A TMDB-gyűjtemény hiányzó részei itt nem szerep
 a **Rendezés** magától **Nézési sorrend** lesz (más rendezés is választható; másik franchise-nál
 vagy franchise nélkül az előző rendezés jön vissza, és ez a lehetőség nem is látszik). Ilyenkor a
 lista a sorrend tételeit mutatja: a **sorozat évadonként külön sorban / kártyán**, „2. évad”
-jelöléssel (az évadcsíkon is kiemelve), akár több helyen is. Az állapot- és a letöltés-szűrő
+jelöléssel, akár több helyen is. Az állapot- és a letöltés-szűrő
 tételenként számít – a **Megnézendő** szűrővel pontosan a még meg nem nézett filmek és évadok
 látszanak, sorrendben.
 

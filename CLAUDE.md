@@ -88,7 +88,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   kiválasztásakor magától erre áll – `orderSort` –, más franchise-nál / franchise nélkül az előző
   rendezés; ilyenkor a lista a sorrend tételeiből áll – `visible`: `{ key, title, item }` –: a
   sorozat évadonként külön tétel, több helyen is („2. évad” a kártyán – `.card-season` – és a soron –
-  `.season-tag` –, a csíkon kiemelve – `SeasonStrip current`), az állapot- és a letöltve-szűrő, a
+  `.season-tag` –; az évadcsíkon nincs kiemelés – Norbi kérése, 2026-10-06), az állapot- és a letöltve-szűrő, a
   darabszámok és a `kept` tételenként – évadnál az évadé, abbahagyott sorozat meg nem nézett
   évadja Abbahagyva), a sor legvégén (csak ≥ 1400 px-en) felirat nélküli nézetváltó: két
   ikongomb, lista (táblázat, `TitleTable`) | rács (borítófal) – `aria-pressed`, `title`; a
@@ -834,6 +834,22 @@ doksival együtt; ha egy pont tartalma változik, frissítsd): a pontok mellett 
    listán lévők nélkül).
 9. **38 – ALACSONY PRIORITÁS: szereplők és rendező az adatlapon** (~0,5 óra látványterv + ~2–2,5 óra) (személyre kattintva a filmjei az
    ablakon belül) – **előbb látványtervek**, Norbi választ.
+**Norbi kérései (2026-10-06, javaslatokból)** – a 38-as után; a kinézeti pontoknál (45–47) **előbb
+látványterv képekkel**, beépítés Norbi elfogadása után:
+10. **41 – megosztható nézési sorrend** (~3 óra): egy franchise nézési sorrendjéhez csak olvasható
+   nyilvános link (belépés nélkül, borítókkal, a megnézett állapot nélkül); visszavonható.
+11. **42 – ízlésprofil a Statisztikában** (~1,5 óra): két csempe – hol tér el a saját értékelésed
+   leginkább az IMDb-től (műfajonként), és a kedvenc műfajok a saját csillagok alapján.
+12. **43 – gyorsindítók a telepített apphoz** (~0,5 óra): a manifest `shortcuts` – jobb klikk az
+   ikonra: „Cím hozzáadása”, „Franchise-ok”, „Statisztika”.
+13. **44 – offline indulás** (~2–3 óra): service worker + a legutóbbi lista helyben tárolva –
+   azonnal megnyílik, net nélkül csak olvasható, utána frissül.
+14. **45 – franchise-fejléc háttérképpel** (~0,5 óra terv + ~1 óra): franchise-ra szűrve a sáv a
+   gyűjtemény elmosott jelenetképével és a logóval.
+15. **46 – kiemelt sáv a Felfedezés tetején** (~0,5 óra terv + ~1,5 óra): a mozis újdonságok közül
+   5–6 nagy, széles képes kiemelés leírással, „Adatlap” / „+ Hozzáadás”, lapozható.
+16. **47 – dinamikus szín a franchise-csempéken** (~0,5 óra terv + ~45 perc): a Franchise-ok ablak
+   csempéi a logó / gyűjteménykép hangulatszínét kapják (mint az adatlap a borítóból).
 (A 39-es – „Nem érdekel” – és a 40-es – kihúzás – kész, 2026-10-06; a 37-es „Neked ajánlott”
 sorában is legyen ×.)
 
@@ -855,14 +871,16 @@ Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a ta
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
 nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
 29 – Marvel betöltve a sorrenddel (szkripttel, 2026-10-06); 39 – „Nem érdekel” az ajánlásokon, 40 –
-kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 25, 27, 13, 26, 33, 35, 36, 37, 38 (alacsony prioritás) („Következő feladat”); 30 – tömörebb adatlap kész
+kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 25, 27, 13, 26, 33, 35, 36, 37, 38 (alacsony prioritás), 41–47 („Következő feladat”); 30 – tömörebb adatlap kész
 (B – vezérlősáv, 2026-10-05).
 **Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
 appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,
 megjelenési naptár, figyelmeztetés hasonló címre, mentett szűrő-összeállítások, díjak az
 adatlapon, alsó navigációs sáv telefonon, aktivitás-hőtérkép, rámutatásra leírás a borítófalon,
 sűrűségváltó, fülek az adatlapon telefonon – magadtól ne javasold újra. A 34-esből elvetve
-(Norbi, 2026-10-06): C2 – csak a borító siklik a megnyitáskor, C3 – kisebb üvegelmosás.
+(Norbi, 2026-10-06): C2 – csak a borító siklik a megnyitáskor, C3 – kisebb üvegelmosás. A 2026-10-06-i javaslatokból nem választotta: újranézés-napló, „Rég láttad”
+ajánló, változásnapló visszavonással, görgetésre mozduló háttérkép az adatlapon, előzetes rámutatásra a
+Felfedezésben – magadtól ne javasold újra.
 **Elvetve (Norbi kérésére, 2026-10-04) – nem kell, magadtól ne javasold újra:** 2 – gyorsműveletek a borítón, 3 – parancspaletta (Ctrl+K) és billentyűparancsok, 5 – „Mit nézzek ma?”, 6 – játékidő a soron és szűrő rá, 11 – saját címkék, 12 – szinkron / felirat jelölése, 17 – csoportosítás hónapok szerint, 18 – évértékelő, 19 – értesítés a telefonra (web push).
 
 ## Fejlesztői megjegyzés

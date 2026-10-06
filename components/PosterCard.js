@@ -46,7 +46,7 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
         )}
         {(item ? item.downloaded : t.is_downloaded) && <span className="badge">Letöltve</span>}
         {release && <ReleaseBadge state={release} />}
-        {seasons ? <SeasonStrip title={t} current={season} /> : <span className="status-strip" aria-hidden="true" />}
+        {seasons ? <SeasonStrip title={t} /> : <span className="status-strip" aria-hidden="true" />}
       </div>
 
       <button
