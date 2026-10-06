@@ -586,7 +586,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   GitHub-alkalmazás nem mutatja)
 - `supabase/*.sql` – a már lefuttatott adatbázis-szkriptek (dokumentáció)
 - `FELHASZNALOI-LEIRAS.md` – felhasználói leírás Norbinak: minden funkció témák szerint
-  (1–17. szakasz), a végén Változásnapló. Kezelési leírás, nem kód: gombnevek, lépések, szabályok
+  (1–17. szakasz), a végén Változásnapló. Kezelési leírás, nem kód: gombnevek, lépések, szabályok.
+  Képes (terv-3 33, 2026-10-06): a képek a `docs/kepek/*.jpg` (23 db, a repóban, ~1,9 MB; asztal
+  1440 × 900, telefon 390 × 844), a zsúfoltabbakon borostyán számozott jelölők (①②③), a szöveg
+  ugyanazokkal a számokkal magyaráz; a telefonos képek HTML-`<img width>`-del egymás mellett. Mind
+  egy szkriptből: `munka/terv-3/33-leiras/leiras-seed.mjs` (próbalista a tesztfiókba) +
+  `leiras-kepek.mjs` (a képek; argumentummal csak a nevükben azt tartalmazók, pl. `05-adatlap`)
 
 ## Adatbázis (már létezik, lásd `supabase/`)
 - `genres (id integer PK = TMDB műfaj ID, name)` – bejelentkezve olvasható/írható
@@ -748,12 +753,22 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   zárjon (`e.target === e.currentTarget`), mert a React a belső „close” eseményét is továbbítja.
 - Képekhez sima `<img>`, nem `next/image`.
 - Nincs middleware / proxy; az auth kliensoldali.
-- **Felhasználói leírás:** minden olyan fejlesztés után, ami a felületen látszik vagy a
-  működést változtatja, frissítsd a `FELHASZNALOI-LEIRAS.md`-t **ugyanabban a commitban**: a
-  témája szerinti szakaszt (ha nincs ilyen, új szakasz a tartalomjegyzékkel együtt), az
-  „Utolsó frissítés” dátumát, és a Változásnaplóba egy sort (legújabb felül). Norbi
-  szemszögéből, a felület pontos feliratainak idézésével; tervezett, még el nem készült
-  funkció nem kerül bele.
+- **Felhasználói leírás** (`FELHASZNALOI-LEIRAS.md`): **időszakosan frissül, nem minden fejlesztés
+  után** (Norbi döntése, 2026-10-06: a felület gyakrabban változik, mint amilyen gyakran a leírásnak
+  követnie kell). A fejlesztés commitjában a leíráshoz (szöveg, képek, Változásnapló) ne nyúlj; a
+  frissítés a roadmap végén álló, számozás nélküli **„Időszakos kézikönyv-frissítés”** pont, Norbi
+  kérésére. Menete: a leírás legutóbbi commitja óta készült változások
+  (`git log $(git log -1 --format=%H -- FELHASZNALOI-LEIRAS.md)..HEAD`) alapján a témák szerinti
+  szakaszok (ha nincs ilyen, új szakasz a tartalomjegyzékkel együtt), a változott felület képei, az
+  „Utolsó frissítés” dátuma, és a Változásnaplóba a közben elkészült változások (a saját napjukkal,
+  legújabb felül). Norbi szemszögéből, a felület pontos feliratainak idézésével; tervezett, még el
+  nem készült funkció nem kerül bele. **Hangnem** (Norbi kérése, 2026-10-06): könnyed, barátságos, tegező –
+  rövid bevezető mondatok, „miért jó ez neked”, de a tények (feliratok, szabályok) pontosak
+  maradnak; a Változásnapló sorai tömörek. A címsorokat ne írd át (a tartalomjegyzék és a
+  Változásnapló hivatkozásai rájuk mutatnak). **Képek** (a frissítéskor): a változott felület
+  `docs/kepek/` képeit generáld újra (`leiras-seed.mjs`, majd `leiras-kepek.mjs <név>`; a jelölők
+  és a szöveg számai egyezzenek); új funkcióhoz, ha érdemes, új kép a szkriptbe. Utána a
+  tesztfiókot ürítsd ki.
 
 ## Állapot
 Kész: adatbázis, projektváz, belépés, lista + szűrők, GitHub, Vercel deploy,
@@ -802,7 +817,8 @@ háttérfrissítés csak ha esedékes, helyi tokenellenőrzés, 1000 cím fölö
 „Nézési sorrend” fülén filmek és évadok saját sorrendben, a megnézett kihúzva, a fő listán „Nézési
 sorrend” rendezés évadonkénti tételekkel (terv-3 28, 2026-10-06). „Nem érdekel” (×) a Felfedezés
 és a Hasonló címek borítóin, „Elrejtett ajánlások” a Felfedezés alján (terv-3 39); kihúzás-animáció
-megnézettre váltáskor (terv-3 40, 2026-10-06).
+megnézettre váltáskor (terv-3 40, 2026-10-06). Képes, barátságos hangvételű felhasználói leírás
+(terv-3 33, 2026-10-06).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -834,40 +850,42 @@ doksival együtt; ha egy pont tartalma változik, frissítsd): a pontok mellett 
 4. **26 – regisztráció** (~2–3 óra, a választott módtól függően): a belépési oldalon „Regisztráció” (`signUp`, megerősítő levél); az új
    fiók nem admin. **Nyitott:** bárki regisztrálhasson, vagy meghívókóddal / admin-jóváhagyással
    (javaslat: az utóbbi – az OMDb napi 1000 kérése közös).
-**Norbi kérései (2026-10-05)** – utánuk, a TERV.md-ben részletezve:
-5. **33 – képes felhasználói leírás** (~2–3 óra): a `FELHASZNALOI-LEIRAS.md` kiegészítése képernyőképekkel
-   (tesztfiók + próbalista, maszkolt e-mail, számozott jelölők), egy újrageneráló szkripttel
-   (`munka/terv-3/leiras-kepek.mjs` → `docs/kepek/`); utána szabály: a változott felület képe is frissül.
-**Norbi kérései (2026-10-05, funkciójavaslatokból)** – a 33-as után:
-6. **35 – franchise felismerése felvételkor** (~1,5 óra): ha a felvett film TMDB-gyűjteménye egy meglévő
+(A 2026-10-05-i 33-as – képes felhasználói leírás – kész, 2026-10-06.)
+**Norbi kérései (2026-10-05, funkciójavaslatokból)** – utánuk:
+5. **35 – franchise felismerése felvételkor** (~1,5 óra): ha a felvett film TMDB-gyűjteménye egy meglévő
    franchise-hoz tartozik, az app **felajánlja** (toast „Hozzárendelés”; Norbi döntése: nem
    automatikus) + egyszeri „Javasolt hozzárendelések” a Franchise-ok ablakban.
-7. **36 – új rész egy franchise-od TMDB-gyűjteményében → harang** (~2,5–3 óra) (hetente, az első feltöltés nem
+6. **36 – új rész egy franchise-od TMDB-gyűjteményében → harang** (~2,5–3 óra) (hetente, az első feltöltés nem
    szól; kattintva előnézet).
-8. **37 – „Neked ajánlott” sor a Felfedezésben** (~1–1,5 óra) (a 8+ saját értékelések TMDB-ajánlásaiból, a
+7. **37 – „Neked ajánlott” sor a Felfedezésben** (~1–1,5 óra) (a 8+ saját értékelések TMDB-ajánlásaiból, a
    listán lévők nélkül).
 **Norbi kérései (2026-10-06, javaslatokból)** – a 37-es után; a kinézeti pontoknál (45–47) **előbb
 látványterv képekkel**, beépítés Norbi elfogadása után:
-9. **41 – megosztható nézési sorrend** (~3 óra): egy franchise nézési sorrendjéhez csak olvasható
+8. **41 – megosztható nézési sorrend** (~3 óra): egy franchise nézési sorrendjéhez csak olvasható
    nyilvános link (belépés nélkül, borítókkal, a megnézett állapot nélkül); visszavonható.
-10. **42 – ízlésprofil a Statisztikában** (~1,5 óra): két csempe – hol tér el a saját értékelésed
+9. **42 – ízlésprofil a Statisztikában** (~1,5 óra): két csempe – hol tér el a saját értékelésed
    leginkább az IMDb-től (műfajonként), és a kedvenc műfajok a saját csillagok alapján.
-11. **43 – gyorsindítók a telepített apphoz** (~0,5 óra): a manifest `shortcuts` – jobb klikk az
+10. **43 – gyorsindítók a telepített apphoz** (~0,5 óra): a manifest `shortcuts` – jobb klikk az
    ikonra: „Cím hozzáadása”, „Franchise-ok”, „Statisztika”.
-12. **44 – offline indulás** (~2–3 óra): service worker + a legutóbbi lista helyben tárolva –
+11. **44 – offline indulás** (~2–3 óra): service worker + a legutóbbi lista helyben tárolva –
    azonnal megnyílik, net nélkül csak olvasható, utána frissül.
-13. **46 – kiemelt sáv a Felfedezés tetején** (~0,5 óra terv + ~1,5 óra): a mozis újdonságok közül
+12. **46 – kiemelt sáv a Felfedezés tetején** (~0,5 óra terv + ~1,5 óra): a mozis újdonságok közül
    5–6 nagy, széles képes kiemelés leírással, „Adatlap” / „+ Hozzáadás”, lapozható.
 (A 39-es – „Nem érdekel” – és a 40-es – kihúzás – kész, 2026-10-06; a 37-es „Neked ajánlott”
 sorában is legyen ×.)
+**Számozás nélkül, mindig a roadmap végén** (Norbi kérése, 2026-10-06):
+- **Időszakos kézikönyv-frissítés** (~1–2 óra, a közben összegyűlt változásoktól függően): a
+  `FELHASZNALOI-LEIRAS.md` szövege, képei és Változásnaplója a legutóbbi frissítése óta elkészült
+  fejlesztésekkel (menete: Konvenciók → „Felhasználói leírás”). Norbi kéri, amikor esedékes; utána
+  is a lista végén marad.
 
 ## Fejlesztési terv, 3. kör (2026-10-04)
 **`munka/terv-3/TERV.md`** (helyi mappa) – a hátralévő pontok (a „Következő feladat” pontjai)
 részletes leírása: mit lát Norbi, megvalósítás (fájlok, SQL, TMDB-hívások), teszt, méret; közös
 alapok és „hogyan kezdj neki”. Előnézet a kör eredeti 21 javaslatáról (privát):
 https://claude.ai/artifact/XWwxnuv2juKRmSEJR3WLUa (helyben `munka/terv-3/tervek.html`).
-Megvalósításkor a pont mellé a TERV.md-be: „kész (commit)”, ide az Állapotba, és a
-`FELHASZNALOI-LEIRAS.md`-be (téma + Változásnapló).
+Megvalósításkor a pont mellé a TERV.md-be: „kész (commit)”, és ide az Állapotba; a
+`FELHASZNALOI-LEIRAS.md`-be csak az időszakos kézikönyv-frissítéskor kerül (lásd Konvenciók).
 **Kész (2026-10-04), Norbi döntéseivel:** 1 – törlés visszavonása (a szerkesztő ablakban marad
 a megerősítés), 4 – értékelés kérése (nem kikapcsolható), 7 – előzetes, 8 – Felfedezés (csak
 magyar szinkronos – közelítés, külön sorozat-sorral), 9 – franchise-gyűjtemény, 14 – üres
@@ -879,7 +897,7 @@ Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a ta
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
 nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
 29 – Marvel betöltve a sorrenddel (szkripttel, 2026-10-06); 39 – „Nem érdekel” az ajánlásokon, 40 –
-kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 25, 27, 13, 26, 33, 35, 36, 37, 41–44, 46 („Következő feladat”); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
+kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 25, 27, 13, 26, 35, 36, 37, 41–44, 46 („Következő feladat”); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
 (B – vezérlősáv, 2026-10-05).
 **Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
 appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,
