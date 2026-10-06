@@ -51,7 +51,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `app/page.js` – kliensoldali session-kezelés: belépés vagy lista
 - `components/LoginForm.js` – e-mail + jelszó belépés (regisztráció nincs, ki van kapcsolva);
   minden középen: cím, alatta az űrlap (nagyobb kijelzőn kártyán, felülről halvány türkiz fény)
-- `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből; fejléc:
+- `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből (`loadTitles()`:
+  ezres adagokban – `lib/fetchAll.js`; a háttérfrissítések csak akkor hívják a szervert, ha a
+  betöltött listában van esedékes cím – `lib/refreshDue.js`); fejléc:
   „Megnézendő filmek és sorozatok”; mellette (jobbra) „Cím hozzáadása”, harang (`NotificationBell`),
   e-mail, Kilépés, a sor végén a „További műveletek” (⋮) menü (`MoreMenu`, Norbi kérése, mint a
   Chrome-ban): „Statisztika” (`StatsDialog`), „Franchise-ok” (`FranchisesDialog`, telefonon is), „IMDb import” (telefonon – `PHONE_QUERY`, ≤ 640 px –
@@ -413,7 +415,23 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   Közös segédek: `externalLink()`, `formatDate()`, `todayDate()`, `DEFAULT_STATUS`,
   `DROPPED_STATUS` („Abbahagyva”, csak sorozatnál), `MAMA_OPTIONS`, `mamaLabel()`
 - `lib/server/auth.js` – `getUserFromRequest()`, `supabaseAsUser()` (a felhasználó nevében,
-  RLS-sel), `unauthorized()` (csak route handlerben)
+  RLS-sel), `unauthorized()` (csak route handlerben). A `getUserFromRequest()` a tokent helyben
+  ellenőrzi (`auth.getClaims()`: a projekt ES256-tal ír alá, a nyilvános kulcs – JWKS – a
+  szerverpéldányban gyorsítótárazva; ~1 ms a korábbi ~60 ms-os Auth-kérés helyett; terv-3 34, E3,
+  Norbi döntése, 2026-10-06). Ára: egy máshol kijelentkeztetett munkamenet tokenje a lejáratáig
+  (≤ 1 óra) még elfogadott – az adatokat az RLS védi. `{ id, email }`-t ad (a route-ok csak azt
+  nézik, van-e)
+- `lib/refreshDue.js` – a háttérfrissítések „esedékes-e” szabályai (terv-3 34, E2, 2026-10-06):
+  `imdbDue` (van IMDb ID, 14 napnál régebbi / hiányzó), `backdropDue` (még nem néztük),
+  `seasonsDue` (sorozat, 7 nap), `releaseDue` (a megjelenési dátumoké), `budapestToday()`. A
+  `lib/titles.js` `refresh…(titles, onUpdated)` függvényei csak akkor hívják a route-ot, ha a
+  betöltött listában van esedékes; a route-ok ugyanezt kérdezik (az IMDb / évad / háttérkép SQL-ben
+  – a napok innen –, a megjelenés ezzel a függvénnyel). Ha a szabályon változtatsz, mindkét helyen
+- `lib/fetchAll.js` – `fetchAll(build)`: a Supabase (PostgREST) egy kérésre legfeljebb **1000
+  sort** ad (mérve, 2026-10-06; Norbi listája ekkor 897 cím): ami ennél több is lehet, ezres
+  adagokban (`.range`), egyértelmű rendezéssel. Használja: a lista betöltése, a nézési sorrendek,
+  az elrejtett ajánlások, a `releases` route. **Új, a teljes listát lekérő lekérdezésnél ezt
+  használd**
 - `lib/server/tmdb.js` – `cachedResponse(body, másodperc)` (`Cache-Control: private, max-age` –
   a böngésző tárolja a nyilvános TMDB-adatot adó GET-válaszokat; terv-3 34, 2026-10-05: providers,
   videos, similar, collection, find 1 nap – `DAY_S`; discover, details 1 óra – `HOUR_S`; search 10
@@ -762,7 +780,8 @@ kikattintásra bezárul, ha nincs mentetlen módosítás (terv-3 24-es pontja, 2
 nézhető?” az adatlapon (magyar streamingszolgáltatók logóval, terv-3 21), IMDb-figyelőlista
 importja (terv-3 20), „Franchise-ok” ablak a ⋮ menüben (terv-3 23, 2026-10-05), kikattintásra záródó ablakok (terv-3 32),
 adatlap a listára vétel előtt – előnézet a találatokból, a Felfedezésből és a Hasonló címekből,
-„Vissza” gombbal (terv-3 31, 2026-10-05). Nézési sorrend a franchise-okban: a gyűjtemény-ablak
+„Vissza” gombbal (terv-3 31, 2026-10-05). Optimalizálás (terv-3 34, 2026-10-05–06): gyorsítótárak,
+háttérfrissítés csak ha esedékes, helyi tokenellenőrzés, 1000 cím fölött is teljes lista. Nézési sorrend a franchise-okban: a gyűjtemény-ablak
 „Nézési sorrend” fülén filmek és évadok saját sorrendben, a megnézett kihúzva, a fő listán „Nézési
 sorrend” rendezés évadonkénti tételekkel (terv-3 28, 2026-10-06). „Nem érdekel” (×) a Felfedezés
 és a Hasonló címek borítóin, „Elrejtett ajánlások” a Felfedezés alján (terv-3 39); kihúzás-animáció
@@ -771,12 +790,11 @@ Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnéze
 
 ## Következő feladat
 A 28-as (nézési sorrend) és a 29-es (a Marvel betöltése – Claude szkripttel, 2026-10-06) kész; a
-29-es felületi része (tömeges import franchise-választóval, sorrend szövegből) Norbi döntésére vár.
-**Szükséges (Norbi kérése, 2026-10-05):** **34 – erőforrás-optimalizálás
-funkcióváltozás nélkül + kinézeti hibák**: a vizsgálat a `munka/optimalizalas/VIZSGALAT.md`-ben.
-Kész (2026-10-05): E4 + E5 gyorsítótár, E1 értesítések, E6 kisebb kép. Hátravan: E2
-háttérfrissítések kihagyása (közös „esedékes-e” feltételek a route-okkal), E3 helyi
-tokenellenőrzés (csak Norbi döntésével), a kinézeti kör bővítése (K3).
+29-es felületi része (tömeges import franchise-választóval, sorrend szövegből) Norbi döntése szerint
+nem kell (2026-10-06) – ilyet Claude szkripttel tölt be; magadtól ne javasold újra.
+A 34-es (erőforrás-optimalizálás + kinézeti hibák) is kész (2026-10-05 és 2026-10-06: E1–E6, K3,
+az 1000 soros korlát kezelése); a C2 / C3 (látható változással járó könnyítések) Norbi döntése
+szerint nem kell. A vizsgálat: `munka/optimalizalas/VIZSGALAT.md`.
 **Norbi kérései (2026-10-04)** – utána, ebben a sorrendben; a részletek
 (megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
 1. **25 – admin jogosultság** (csak Norbi fiókja): csak admin látja a ⋮ menü **Mentések**
@@ -832,13 +850,14 @@ Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a ta
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
 nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
 29 – Marvel betöltve a sorrenddel (szkripttel, 2026-10-06); 39 – „Nem érdekel” az ajánlásokon, 40 –
-kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). Vár még: 34 (szükséges, 2. rész: E2, E3, K3), 25, 27, 13, 26, 33, 35, 36, 37, 38 (alacsony prioritás) („Következő feladat”); 30 – tömörebb adatlap kész
+kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 25, 27, 13, 26, 33, 35, 36, 37, 38 (alacsony prioritás) („Következő feladat”); 30 – tömörebb adatlap kész
 (B – vezérlősáv, 2026-10-05).
 **Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
 appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,
 megjelenési naptár, figyelmeztetés hasonló címre, mentett szűrő-összeállítások, díjak az
 adatlapon, alsó navigációs sáv telefonon, aktivitás-hőtérkép, rámutatásra leírás a borítófalon,
-sűrűségváltó, fülek az adatlapon telefonon – magadtól ne javasold újra.
+sűrűségváltó, fülek az adatlapon telefonon – magadtól ne javasold újra. A 34-esből elvetve
+(Norbi, 2026-10-06): C2 – csak a borító siklik a megnyitáskor, C3 – kisebb üvegelmosás.
 **Elvetve (Norbi kérésére, 2026-10-04) – nem kell, magadtól ne javasold újra:** 2 – gyorsműveletek a borítón, 3 – parancspaletta (Ctrl+K) és billentyűparancsok, 5 – „Mit nézzek ma?”, 6 – játékidő a soron és szűrő rá, 11 – saját címkék, 12 – szinkron / felirat jelölése, 17 – csoportosítás hónapok szerint, 18 – évértékelő, 19 – értesítés a telefonra (web push).
 
 ## Fejlesztői megjegyzés

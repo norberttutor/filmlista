@@ -1,22 +1,12 @@
 import { getUserFromRequest, supabaseAsUser, unauthorized } from '@/lib/server/auth';
 import { tmdbFetch, pickReleaseDates } from '@/lib/server/tmdb';
+import { budapestToday, releaseDue } from '@/lib/refreshDue';
+import { fetchAll } from '@/lib/fetchAll';
 
 const BATCH = 40; // egy kérésben legfeljebb ennyi film (a szerverfüggvény időkorlátja miatt)
 const PARALLEL = 8;
-const RECHECK_DAYS = 3;
-
-const budapestToday = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Budapest' });
-const addDays = (iso, n) => new Date(Date.parse(iso) + n * 864e5).toISOString().slice(0, 10);
-
-// melyik filmet kell (újra) megnézni: meg nem nézett, tavalyi / idei / jövőbeli (vagy év nélküli),
-// 3 napja nem néztük, és a digitális megjelenése nem régebbi 30 napnál (utána már nem változik)
-function due(t, today) {
-  const year = Number(today.slice(0, 4));
-  if (t.status === 'watched') return false;
-  if (t.release_year != null && t.release_year < year - 1) return false;
-  if (t.digital_release && t.digital_release <= addDays(today, -30)) return false;
-  return !t.release_checked_at || Date.parse(t.release_checked_at) < Date.now() - RECHECK_DAYS * 864e5;
-}
+// melyik filmet kell (újra) megnézni: lib/refreshDue.js releaseDue() (a böngésző is azzal dönti el,
+// hív-e egyáltalán)
 
 // POST /api/tmdb/releases
 // A belépett felhasználó filmjeinél frissíti a megjelenési dátumokat a TMDB-ről (mozi,
@@ -27,17 +17,20 @@ export async function POST(request) {
   if (!(await getUserFromRequest(request))) return unauthorized();
 
   const db = supabaseAsUser(request);
-  const { data: movies, error } = await db
-    .from('titles')
-    .select('id, tmdb_id, status, release_year, digital_release, release_checked_at')
-    .eq('media_type', 'movie')
-    .order('id');
+  // az összes film (ezres adagokban: egy kérés legfeljebb 1000 sort ad – lib/fetchAll.js)
+  const { data: movies, error } = await fetchAll(() =>
+    db
+      .from('titles')
+      .select('id, media_type, tmdb_id, status, release_year, digital_release, release_checked_at')
+      .eq('media_type', 'movie')
+      .order('id')
+  );
   if (error) {
     console.error(error);
     return Response.json({ error: 'Nem sikerült lekérdezni a filmeket.' }, { status: 500 });
   }
   const today = budapestToday();
-  const todo = movies.filter((t) => due(t, today));
+  const todo = movies.filter((t) => releaseDue(t, today));
   const batch = todo.slice(0, BATCH);
 
   const updated = [];

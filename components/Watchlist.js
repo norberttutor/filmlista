@@ -45,6 +45,7 @@ import { useMediaQuery } from '@/lib/useMediaQuery';
 import { canMorph, MORPH_NAME, trackTransition } from '@/lib/viewTransition';
 import { franchisesWithOrder, loadOrders, orderedItems } from '@/lib/watchOrder';
 import { loadHidden, resetHidden } from '@/lib/hiddenSuggestions';
+import { fetchAll } from '@/lib/fetchAll';
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 
@@ -114,6 +115,17 @@ const sameFilters = (a, b) => Object.keys(a).every((k) => a[k] === b[k]);
 const fold = (s) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
 const byAddedDesc = (a, b) => new Date(b.created_at) - new Date(a.created_at);
+
+// a teljes lista (legutóbb hozzáadott elöl): ezres adagokban, mert egy kérés legfeljebb 1000
+// sort ad (lib/fetchAll.js); az id a rendezés egyértelműségéhez kell
+const loadTitles = () =>
+  fetchAll(() =>
+    supabase
+      .from('titles_with_genres')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+  );
 
 // üres érték (nincs értékelés / megjelenési év) mindig a lista végére kerül;
 // dir: -1 = csökkenő, 1 = növekvő
@@ -247,10 +259,7 @@ export default function Watchlist({ session }) {
 
     async function load() {
       const [titlesRes, statusesRes, franchisesRes] = await Promise.all([
-        supabase
-          .from('titles_with_genres')
-          .select('*')
-          .order('created_at', { ascending: false }),
+        loadTitles(),
         supabase.from('statuses').select('*').order('sort_order'),
         supabase.from('franchises').select('id, name, logo_path, tmdb_collection_ids'),
       ]);
@@ -273,14 +282,14 @@ export default function Watchlist({ session }) {
         loadHidden().catch((err) => console.warn('Elrejtett ajánlások betöltése sikertelen:', err.message));
 
         // hiányzó / régi IMDb-értékelések pótlása a háttérben; hiba esetén csak a konzolba ír
-        refreshImdbRatings((rows) => {
+        refreshImdbRatings(titlesRes.data, (rows) => {
           if (cancelled) return;
           const byId = new Map(rows.map((r) => [r.id, r]));
           setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
         }).catch((err) => console.warn('IMDb-értékelések frissítése sikertelen:', err.message));
 
         // a szerkesztő ablak háttérképei a háttérben (a még meg nem nézett címekhez)
-        refreshBackdrops((rows) => {
+        refreshBackdrops(titlesRes.data, (rows) => {
           if (cancelled) return;
           const byId = new Map(rows.map((r) => [r.id, r]));
           setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
@@ -308,7 +317,7 @@ export default function Watchlist({ session }) {
             .catch((err) => console.warn(err.message));
         reloadNotifications();
 
-        refreshSeasons((rows) => {
+        refreshSeasons(titlesRes.data, (rows) => {
           if (cancelled) return;
           const byId = new Map(rows.map((r) => [r.id, r]));
           setTitles((ts) => ts.map((t) => byId.get(t.id) ?? t));
@@ -322,7 +331,7 @@ export default function Watchlist({ session }) {
 
         // filmek megjelenési dátumai a háttérben (a még meg nem jelent filmek jelvényéhez); ha
         // közben valamelyik digitálisan megjelent, a harang is szól róla
-        refreshReleases((rows) => {
+        refreshReleases(titlesRes.data, (rows) => {
           if (cancelled) return;
           const byId = new Map(rows.map((r) => [r.id, r]));
           setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
@@ -397,7 +406,7 @@ export default function Watchlist({ session }) {
   // visszaállítás (Mentések) után: a lista, a franchise-ok és az értesítések újra az adatbázisból
   async function reloadAfterRestore() {
     const [titlesRes, franchisesRes] = await Promise.all([
-      supabase.from('titles_with_genres').select('*').order('created_at', { ascending: false }),
+      loadTitles(),
       supabase.from('franchises').select('id, name, logo_path, tmdb_collection_ids'),
     ]);
     const error = titlesRes.error || franchisesRes.error;

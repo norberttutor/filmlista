@@ -1,7 +1,6 @@
 import { getUserFromRequest, supabaseAsUser, unauthorized } from '@/lib/server/auth';
 import { omdbEnabled, fetchImdbRating } from '@/lib/server/omdb';
-
-const REFRESH_DAYS = 14; // ennél régebbi értékelést újra lekérünk
+import { IMDB_REFRESH_DAYS } from '@/lib/refreshDue';
 const BATCH = 25; // egy kérésben legfeljebb ennyi cím (a szerverfüggvény időkorlátja miatt)
 const PARALLEL = 5;
 
@@ -14,7 +13,8 @@ export async function POST(request) {
   if (!omdbEnabled()) return Response.json({ updated: [], remaining: 0, disabled: true });
 
   const db = supabaseAsUser(request);
-  const cutoff = new Date(Date.now() - REFRESH_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  // esedékes: ugyanaz, mint a lib/refreshDue.js imdbDue()-ja (a böngésző azzal dönti el, hív-e)
+  const cutoff = new Date(Date.now() - IMDB_REFRESH_DAYS * 24 * 60 * 60 * 1000).toISOString();
   const due = (query) =>
     query
       .not('imdb_id', 'is', null)

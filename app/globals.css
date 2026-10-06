@@ -1788,6 +1788,8 @@ body:has(> main.login) {
   font-weight: 650;
   line-height: 1.25;
   text-wrap: balance;
+  /* a szóköz nélküli, nagyon hosszú szó is tördelődik (különben a szomszéd kártyára lóg – K3) */
+  overflow-wrap: anywhere;
 }
 
 .original {

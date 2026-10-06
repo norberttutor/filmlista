@@ -1,12 +1,10 @@
 import { getUserFromRequest, supabaseAsUser, unauthorized } from '@/lib/server/auth';
 import { tmdbFetch, pickSeasons } from '@/lib/server/tmdb';
+import { budapestToday, SEASONS_REFRESH_DAYS } from '@/lib/refreshDue';
 
-const REFRESH_DAYS = 7; // ennél régebben ellenőrzött sorozatok évadait újra megnézzük
 const BATCH = 10; // egy kérésben legfeljebb ennyi sorozat (a szerverfüggvény időkorlátja miatt)
 const PARALLEL = 5;
 
-// a megjelenés napja Budapesten (mint az adatbázisban)
-const budapestToday = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Budapest' });
 const aired = (s, today) => s.air_date != null && s.air_date <= today;
 
 // POST /api/tmdb/seasons
@@ -25,7 +23,8 @@ export async function POST(request) {
 
   const db = supabaseAsUser(request);
   const today = budapestToday();
-  const cutoff = new Date(Date.now() - REFRESH_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  // esedékes: ugyanaz, mint a lib/refreshDue.js seasonsDue()-ja (a böngésző azzal dönti el, hív-e)
+  const cutoff = new Date(Date.now() - SEASONS_REFRESH_DAYS * 24 * 60 * 60 * 1000).toISOString();
   const due = (query) =>
     query
       .eq('media_type', 'tv')
