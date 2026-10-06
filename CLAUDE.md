@@ -338,8 +338,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/FranchiseCollection.js` + `app/api/tmdb/collection/route.js` +
   `app/api/tmdb/collection-search/route.js` – franchise-ra szűrve mindig sáv a lista fölött
   (háttérképpel – terv-3 45, 2026-10-06: a franchise legjobb IMDb-értékelésű, háttérképes címének
-  jelenetképe, ha nincs, a TMDB-gyűjteményé; elmosva, sötét áttűnéssel, nagyobb logóval – `data-backdrop`,
-  `--banner-img`)
+  jelenetképe, ha nincs, a TMDB-gyűjteményé – `franchiseBackdrop()`, a gyűjtemény-ablak fejléce is ezt
+  mutatja; a kép a sáv jobb felén – asztalon legfeljebb ~670 px –, elmosás nélkül, balra a sötétbe
+  olvadva, mert teljes szélességben túl nagyított lett volna; telefonon teljes szélességben,
+  halványan; nagyobb logó – `data-backdrop`, `--banner-img`)
   (logó vagy név, mérő: a listán lévők közül a megnézettek aránya zölden, a többi szürke – a hiányzó
   részek nem számítanak, türkiz nincs; Norbi döntése, 2026-10-06 –, „x/y megnézve · n a listán · m
   hiányzik”, gyűjtemény nélkül „· nincs hozzá TMDB-gyűjtemény”; „Gyűjtemény” gomb). Ablak,

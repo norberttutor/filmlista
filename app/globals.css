@@ -3344,31 +3344,40 @@ button.season:hover {
 }
 
 /* háttérképes sáv (terv-3 45, 2026-10-06): a franchise legjobb címének (vagy a gyűjteménynek) a
-   jelenetképe elmosva, balról sötétebb áttűnéssel – a szöveg olvasható marad; a logó nagyobb */
+   jelenetképe a sáv jobb felén (asztalon legfeljebb ~670 px), elmosás nélkül, balra a sötét
+   háttérbe olvadva – a teljes szélességben túlságosan felnagyított, felismerhetetlen kivágás lett
+   volna (Norbi, 2026-10-06); a szöveg a sötét bal oldalon olvasható; a logó nagyobb */
 .collection-banner[data-backdrop] {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  min-height: 6.5rem;
+  min-height: 8rem;
   padding: 1rem 1.25rem;
   border-color: rgb(255 255 255 / 0.1);
+  background: rgb(10 13 18 / 0.55);
 }
 
 .collection-banner[data-backdrop]::before {
   content: '';
   position: absolute;
-  inset: -16px;
-  z-index: -2;
-  background: var(--banner-img) center 30% / cover no-repeat;
-  filter: blur(5px) saturate(1.1);
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  width: min(42rem, 55%);
+  background: var(--banner-img) center 25% / cover no-repeat;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 45%);
+  mask-image: linear-gradient(90deg, transparent, #000 45%);
 }
 
-.collection-banner[data-backdrop]::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(90deg, rgb(10 13 18 / 0.9), rgb(10 13 18 / 0.55) 55%, rgb(10 13 18 / 0.78));
+/* telefonon a teljes szélesség, halványabban (a szöveg a kép fölött van) */
+@media (max-width: 640px) {
+  .collection-banner[data-backdrop]::before {
+    width: 100%;
+    opacity: 0.45;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 70%);
+    mask-image: linear-gradient(90deg, transparent, #000 70%);
+  }
 }
 
 .collection-banner[data-backdrop] .collection-logo {

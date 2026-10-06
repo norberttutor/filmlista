@@ -91,12 +91,7 @@ export default function FranchiseCollection({ franchise, titles, orders, onAdded
 
   const { sections, extras, manual, counts } = summarizeCollection(franchise, titles, collections);
   const { total, watched, onList } = counts;
-  // a sáv háttere (terv-3 45, 2026-10-06): a franchise legjobb IMDb-értékelésű, háttérképes címének
-  // jelenetképe (mint a logónál), ha nincs, a TMDB-gyűjteményé – elmosva, sötét áttűnéssel
-  const best = titles
-    .filter((t) => t.franchise_id === franchise.id && t.backdrop_path)
-    .sort((a, b) => (b.imdb_rating ?? -1) - (a.imdb_rating ?? -1) || (b.imdb_votes ?? 0) - (a.imdb_votes ?? 0))[0];
-  const backdrop = best?.backdrop_path ?? sections.find((s) => s.backdrop_path)?.backdrop_path;
+  const backdrop = franchiseBackdrop(franchise, titles, sections);
 
   return (
     <>
@@ -143,6 +138,16 @@ export default function FranchiseCollection({ franchise, titles, orders, onAdded
       )}
     </>
   );
+}
+
+// A franchise képe (a sáv háttere és a gyűjtemény-ablak fejléce – terv-3 45, 2026-10-06): a
+// franchise legjobb IMDb-értékelésű, háttérképes címének jelenetképe (mint a logónál), ha nincs, a
+// TMDB-gyűjteményé.
+export function franchiseBackdrop(franchise, titles, sections) {
+  const best = titles
+    .filter((t) => t.franchise_id === franchise.id && t.backdrop_path)
+    .sort((a, b) => (b.imdb_rating ?? -1) - (a.imdb_rating ?? -1) || (b.imdb_votes ?? 0) - (a.imdb_votes ?? 0))[0];
+  return best?.backdrop_path ?? sections.find((s) => s.backdrop_path)?.backdrop_path ?? null;
 }
 
 // a listán lévő (felvett) címekből mennyi a megnézett: zöld, a többi a sáv szürkéje – a sávon, a
@@ -196,7 +201,7 @@ export function CollectionDialog({
   const missing = [
     ...new Map(sections.flatMap((s) => s.parts.filter((p) => !p.own)).map((p) => [p.tmdb_id, p])).values(),
   ];
-  const backdrop = sections.find((s) => s.backdrop_path)?.backdrop_path;
+  const backdrop = franchiseBackdrop(franchise, titles, sections);
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
