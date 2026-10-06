@@ -21,7 +21,7 @@ const sortKey = (name) => name.replace(/^(a|az|the)\s+/i, '');
 const byNameNoArticle = (a, b) => sortKey(a.name).localeCompare(sortKey(b.name), 'hu', { sensitivity: 'base' });
 
 // „Franchise-ok” (a ⋮ menüből): az összes franchise ábécérendben, csempénként logóval, számokkal
-// (megnézve / a listán / hiányzik – a TMDB-gyűjteményekből, 3-asával betöltve). A csempe a
+// (megnézve a listán lévőkből / hiányzik – a TMDB-gyűjteményekből, 3-asával betöltve). A csempe a
 // gyűjtemény-ablakot nyitja; „Szűrés erre”, „Átnevezés”, „Törlés”; alul „+ Új franchise”.
 export default function FranchisesDialog({
   franchises,
@@ -203,9 +203,9 @@ export default function FranchisesDialog({
                     ) : (
                       <>
                         <b>
-                          {counts.watched}/{counts.total}
+                          {counts.watched}/{counts.onList}
                         </b>{' '}
-                        megnézve · {counts.onList} a listán
+                        megnézve
                         {ready ? counts.missing > 0 && ` · ${counts.missing} hiányzik` : ' · …'}
                         {ready && sections.length === 0 && counts.total > 0 && ' · nincs TMDB-gyűjtemény'}
                       </>

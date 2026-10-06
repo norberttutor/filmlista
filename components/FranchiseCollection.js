@@ -108,11 +108,12 @@ export default function FranchiseCollection({ franchise, titles, orders, onAdded
           <b>{franchise.name}</b>
         )}
         <CollectionMeter {...counts} />
+        {/* a szám a mérővel egyezik: a listán lévők közül a megnézettek (Norbi kérése, 2026-10-06) */}
         <span className="collection-count">
           <b>
-            {watched}/{total}
+            {watched}/{onList}
           </b>{' '}
-          megnézve · {onList} a listán
+          megnézve
           {onList < total && ` · ${total - onList} hiányzik`}
           {sections.length === 0 && ' · nincs hozzá TMDB-gyűjtemény'}
         </span>
@@ -288,9 +289,9 @@ export function CollectionDialog({
           <CollectionMeter {...counts} />
           <span>
             <b>
-              {counts.watched}/{counts.total}
+              {counts.watched}/{counts.onList}
             </b>{' '}
-            megnézve · {counts.onList} a listán
+            megnézve
             {missing.length > 0 && ` · ${missing.length} hiányzik`}
           </span>
         </p>

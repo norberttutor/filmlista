@@ -85,7 +85,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   legutóbb / legkorábban hozzáadott, legjobb értékelés, legújabb / legrégebbi megjelenés;
   üres érték a végére; franchise-ra szűrve, ha annak van saját nézési sorrendje – terv-3 28 –, elöl
   „Nézési sorrend” (`WATCH_ORDER`): Norbi döntése, 2026-10-06, csak ilyenkor kínálja, és a franchise
-  kiválasztásakor magától erre áll – `orderSort` –, más franchise-nál / franchise nélkül az előző
+  kiválasztásakor magától erre áll – `orderSort`; nézési sorrend nélküli franchise-nál magától
+  „Legrégebbi megjelenés” – `FRANCHISE_SORT` –; franchise kiválasztásakor – nézési sorrendtől függetlenül – az állapotszűrő magától „Mind” – a franchise-szűrő
+  megszűnésekor az előző állapot jön vissza, `statusBeforeFranchise`, kézi állapotválasztás után nem;
+  Norbi kérése, 2026-10-06; kézi rendezésválasztás után az marad –, más franchise-nál / franchise nélkül az előző
   rendezés; ilyenkor a lista a sorrend tételeiből áll – `visible`: `{ key, title, item }` –: a
   sorozat évadonként külön tétel, több helyen is („2. évad” a kártyán – `.card-season` – és a soron –
   `.season-tag` –; az évadcsíkon nincs kiemelés – Norbi kérése, 2026-10-06), az állapot- és a letöltve-szűrő, a
@@ -326,8 +329,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   oszlop): logó sötét alapon (`FranchiseLogo`; ha nincs, a név), név, mérő; a csempe hangulatszínt
   kap a franchise legjobb IMDb-értékelésű, borítós címének borítójából (terv-3 47, 2026-10-06,
   látványterv nélkül – `FranchiseTile` + `usePosterColor`, `.fr-tile[data-ambient]`: halvány keret,
-  derengő csempetető, színezett logóháttér), „x/y megnézve · n a
-  listán · m hiányzik” – a TMDB-gyűjteményekkel együtt (a `FranchiseCollection` közös
+  derengő csempetető, színezett logóháttér), „x/y megnézve · m hiányzik” (y = a listán lévők
+  száma, mint a mérőben – Norbi kérése, 2026-10-06) – a hiányzók a TMDB-gyűjteményekből (a `FranchiseCollection` közös
   függvényeivel; 3-asával töltve, franchise-onként a lekérés kulcsával – `paramsKey` –
   megjegyezve, ha a címek / kézi gyűjtemények változnak, újra; betöltés alatt „· …”, `aria-busy`),
   „· nincs TMDB-gyűjtemény”, üresen „Még nincs címe”. A csempére kattintva a gyűjtemény-ablak
@@ -346,8 +349,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   olvadva, mert teljes szélességben túl nagyított lett volna; telefonon teljes szélességben,
   halványan; nagyobb logó – `data-backdrop`, `--banner-img`)
   (logó vagy név, mérő: a listán lévők közül a megnézettek aránya zölden, a többi szürke – a hiányzó
-  részek nem számítanak, türkiz nincs; Norbi döntése, 2026-10-06 –, „x/y megnézve · n a listán · m
-  hiányzik”, gyűjtemény nélkül „· nincs hozzá TMDB-gyűjtemény”; „Gyűjtemény” gomb). Ablak,
+  részek nem számítanak, türkiz nincs; Norbi döntése, 2026-10-06 –, „x/y megnézve · m hiányzik” –
+  y a listán lévők száma, a mérővel egyezően –, gyűjtemény nélkül „· nincs hozzá TMDB-gyűjtemény”; „Gyűjtemény” gomb). Ablak,
   gyűjteményenként egy szakasz: a franchise **összes** filmjének (legfeljebb 60) minden
   `belongs_to_collection`-je, plusz a kézzel hozzárendeltek (`franchises.tmdb_collection_ids`,
   „kézzel hozzárendelve · Eltávolítás”), a legkorábbi részük szerint sorban; a részek
@@ -873,6 +876,12 @@ látványterv képekkel**, beépítés Norbi elfogadása után:
    5–6 nagy, széles képes kiemelés leírással, „Adatlap” / „+ Hozzáadás”, lapozható.
 (A 39-es – „Nem érdekel” – és a 40-es – kihúzás – kész, 2026-10-06; a 37-es „Neked ajánlott”
 sorában is legyen ×.)
+**Norbi kérése (2026-10-06)** – utánuk:
+13. **48 – a felhasználói leírás a ⋮ menüből** (~2–2,5 óra): új menüpont („Felhasználói leírás”),
+   ami az appon belül, képekkel együtt mutatja a `FELHASZNALOI-LEIRAS.md`-t (a tartalomjegyzék
+   hivatkozásai működnek, telefonon is). Javaslat: build közben HTML-lé alakítva egy saját oldalon
+   (pl. `/leiras`, új lapon), a képek a `public/`-ba másolva. **Nyitott:** új lapon nyíljon, vagy az
+   appon belüli ablakban; mindenki lássa, vagy csak bejelentkezve.
 **Számozás nélkül, mindig a roadmap végén** (Norbi kérése, 2026-10-06):
 - **Időszakos kézikönyv-frissítés** (~1–2 óra, a közben összegyűlt változásoktól függően): a
   `FELHASZNALOI-LEIRAS.md` szövege, képei és Változásnaplója a legutóbbi frissítése óta elkészült
@@ -897,7 +906,7 @@ Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a ta
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
 nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
 29 – Marvel betöltve a sorrenddel (szkripttel, 2026-10-06); 39 – „Nem érdekel” az ajánlásokon, 40 –
-kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 25, 27, 13, 26, 35, 36, 37, 41–44, 46 („Következő feladat”); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
+kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 25, 27, 13, 26, 35, 36, 37, 41–44, 46, 48 („Következő feladat”); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
 (B – vezérlősáv, 2026-10-05).
 **Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
 appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,

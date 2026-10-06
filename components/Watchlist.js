@@ -166,6 +166,9 @@ const SORTS = [
 // állapot- és a letöltve-szűrő tételenként (évadnál az évadé) érvényes. Csak ilyenkor kínálja,
 // és a franchise kiválasztásakor magától erre áll.
 const WATCH_ORDER = { code: 'watch_order', name: 'Nézési sorrend' };
+// franchise-ra szűrve, ha nincs saját nézési sorrendje, alapból megjelenés szerint (Norbi kérése,
+// 2026-10-06) – ugyanúgy magától, mint a nézési sorrend; kézi választás után az marad
+const FRANCHISE_SORT = 'year_asc';
 
 function Chip({ active, onClick, label, count }) {
   return (
@@ -184,6 +187,10 @@ export default function Watchlist({ session }) {
   const [loading, setLoading] = useState(true);
   // a franchise-logó keresése ezeknél már elindult ebben a munkamenetben
   const logoTried = useRef(new Set());
+  // franchise kiválasztásakor az állapotszűrő magától „Mind” lesz, nézési sorrendtől függetlenül
+  // (Norbi kérése, 2026-10-06); ez az előtte beállított érték – a franchise-szűrő megszűnésekor visszajön.
+  // Kézi állapotválasztás vagy szűrőcsere (applyFilters) után nincs mit visszaállítani.
+  const statusBeforeFranchise = useRef(null);
   const [loadError, setLoadError] = useState('');
   const [adding, setAdding] = useState(false);
   const [addQuery, setAddQuery] = useState(''); // a „Cím hozzáadása” panel kezdő keresése
@@ -238,7 +245,8 @@ export default function Watchlist({ session }) {
   const [franchise, setFranchise] = useState(DEFAULT_FILTERS.franchise);
   const [downloaded, setDownloaded] = useState(DEFAULT_FILTERS.downloaded); // all | yes | no
   const [sort, setSort] = useState('added_desc');
-  // nézési sorrendes franchise-nál arra áll (amíg a felhasználó mást nem választ)
+  // franchise-ra szűrve magától áll be: nézési sorrend, ha van, különben a legrégebbi megjelenés
+  // (amíg a felhasználó mást nem választ)
   const [orderSort, setOrderSort] = useState(true);
   const [query, setQuery] = useState(''); // keresés a felvett címek között
   const [beforeSearch, setBeforeSearch] = useState(null); // a keresés előtti szűrők
@@ -246,6 +254,7 @@ export default function Watchlist({ session }) {
   const filters = { type, status, downloaded, genre, mama, franchise };
 
   function applyFilters(f) {
+    statusBeforeFranchise.current = null;
     setType(f.type);
     setStatus(f.status);
     setDownloaded(f.downloaded);
@@ -461,7 +470,8 @@ export default function Watchlist({ session }) {
   // nézési sorrend: csak ha a kiválasztott franchise-nak van saját sorrendje
   const orderFranchises = useMemo(() => franchisesWithOrder(titles, orders), [titles, orders]);
   const orderAvailable = franchiseChosen && orderFranchises.has(Number(franchise));
-  const activeSort = orderAvailable && orderSort ? WATCH_ORDER.code : sort;
+  const activeSort =
+    franchiseChosen && orderSort ? (orderAvailable ? WATCH_ORDER.code : FRANCHISE_SORT) : sort;
   const orderList = useMemo(
     () => (activeSort === WATCH_ORDER.code ? orderedItems(Number(franchise), titles, orders).items : null),
     [activeSort, franchise, titles, orders]
@@ -633,9 +643,21 @@ export default function Watchlist({ session }) {
     if (value !== '' && value !== NO_FRANCHISE) {
       setType('all');
       setGenre('');
-    } else if (type === 'all' && !searching) {
-      backToMovies();
+      if (statusBeforeFranchise.current === null) statusBeforeFranchise.current = status;
+      setStatus('all');
+      return;
     }
+    const restore = statusBeforeFranchise.current;
+    statusBeforeFranchise.current = null;
+    const toMovies = type === 'all' && !searching;
+    if (restore !== null) setStatus(toMovies && restore === DROPPED_STATUS ? 'all' : restore);
+    if (toMovies) backToMovies();
+  }
+
+  // kézi állapotválasztás: a franchise-szűrő megszűnésekor ez marad
+  function pickStatus(value) {
+    statusBeforeFranchise.current = null;
+    setStatus(value);
   }
 
   // gépeléskor az egész listán keres (a szűrők félreállnak, keresés közben szűkíthető); a
@@ -985,7 +1007,7 @@ export default function Watchlist({ session }) {
               className="status-select"
               aria-label="Állapot"
               value={status}
-              onChange={(e) => setStatus(e.target.value)}
+              onChange={(e) => pickStatus(e.target.value)}
             >
               <option value="all">Minden állapot ({(itemsBeforeStatus ?? beforeStatus).length})</option>
               {shownStatuses.map((s) => (
@@ -999,7 +1021,7 @@ export default function Watchlist({ session }) {
               <div className="chips status-chips" role="group" aria-label="Állapot">
                 <Chip
                   active={status === 'all'}
-                  onClick={() => setStatus('all')}
+                  onClick={() => pickStatus('all')}
                   label="Mind"
                   count={(itemsBeforeStatus ?? beforeStatus).length}
                 />
@@ -1007,7 +1029,7 @@ export default function Watchlist({ session }) {
                   <Chip
                     key={s.code}
                     active={status === s.code}
-                    onClick={() => setStatus(s.code)}
+                    onClick={() => pickStatus(s.code)}
                     label={s.name}
                     count={countByStatus[s.code] ?? 0}
                   />
