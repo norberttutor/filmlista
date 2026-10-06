@@ -293,7 +293,8 @@ A listán lévő, még meg nem jelent filmek **szaggatott kerettel** válnak el 
 **Franchise-ok áttekintése** (⋮ menü → **Franchise-ok**, telefonon is): az összes franchise-od
 egy ablakban, **ábécérendben** (a névelő – „A”, „Az”, „The” – nem számít: „A majmok bolygója” az
 M-nél van). Csempénként:
-- a franchise **logója** (ha nincs, a neve), alatta a név és egy mérő: a listádon lévő címeiből
+- a franchise **logója** (ha nincs, a neve) – a csempe halványan a franchise legjobb címének
+  borítószínét veszi fel –, alatta a név és egy mérő: a listádon lévő címeiből
   mennyit láttál már (zöld; a még hiányzó részek nem számítanak bele);
 - a számok: „3/7 megnézve · 5 a listán · 2 hiányzik” – a hiányzókat a TMDB-gyűjteményekből
   számolja (első megnyitáskor pár másodperc alatt töltődnek be, addig „…”); gyűjtemény nélkül
@@ -495,6 +496,7 @@ Minden fejlesztés után ide kerül egy sor (legújabb felül), és a fenti tém
 
 | Dátum | Mi változott |
 |---|---|
+| 2026. 10. 06. | A Franchise-ok ablak csempéi saját színt kapnak (a franchise legjobb értékelésű címének borítójából): halványan színezett keret és logóháttér ([9.](#9-franchise-ok-és-gyűjtemények)). |
 | 2026. 10. 06. | Szereplők az adatlapon: az első három szereplő fotóval és szereppel (asztalon a bal oszlopban, telefonon egy sorban a leírás alatt); a névre kattintva a színész TMDB-oldala ([5.](#5-egy-cím-adatlapja-és-szerkesztése)). |
 | 2026. 10. 06. | Franchise-ra szűrve a lista fölötti sáv a franchise legjobb értékelésű címének jelenetképét kapja (a sáv jobb oldalán, balra a sötétbe olvadva), nagyobb logóval; a gyűjtemény-ablak fejléce is ezt a képet mutatja ([9.](#9-franchise-ok-és-gyűjtemények)). |
 | 2026. 10. 06. | A franchise-ok mérője (a Franchise-ok ablak csempéin, a lista fölötti sávban és a gyűjtemény-ablakban): a listádon lévő címekből a megnézettek aránya, zölden – a még hiányzó részek nem számítanak bele, így ha mindet láttad, ami a listádon van, a sáv megtelik. (Eddig a jobb szélén mindig maradt egy keskeny szürkés rész.) |

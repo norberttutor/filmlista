@@ -12,6 +12,7 @@ import {
 } from '@/components/FranchiseCollection';
 import { mapLimit } from '@/lib/bulkImport';
 import { useBackdropClose } from '@/lib/useBackdropClose';
+import { usePosterColor, ambientProps } from '@/lib/posterColor';
 
 // kis- és nagybetű, ékezet nélkül (a kereséshez)
 const fold = (s) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
@@ -191,7 +192,7 @@ export default function FranchisesDialog({
             const { counts, sections } = summary;
             const editing = edit?.id === f.id ? edit : null;
             return (
-              <li key={f.id} className="fr-tile" data-editing={editing ? editing.mode : undefined}>
+              <FranchiseTile key={f.id} posterPath={tintPoster(f, titles)} data-editing={editing ? editing.mode : undefined}>
                 <button type="button" className="fr-main" aria-busy={!ready || undefined} onClick={() => setOpenId(f.id)}>
                   <span className="fr-logo">{f.logo_path ? <FranchiseLogo path={f.logo_path} /> : <b>{f.name}</b>}</span>
                   <span className="fr-name">{f.name}</span>
@@ -256,7 +257,7 @@ export default function FranchisesDialog({
                     {editing.error}
                   </p>
                 )}
-              </li>
+              </FranchiseTile>
             );
           })}
         </ul>
@@ -309,5 +310,25 @@ export default function FranchisesDialog({
         />
       )}
     </dialog>
+  );
+}
+
+// A csempe hangulatszíne (terv-3 47, 2026-10-06, Norbi kérésére látványterv nélkül): a franchise
+// legjobb IMDb-értékelésű, borítós címének borítójából (lib/posterColor.js, mint az adatlapé) – a
+// keret, a logó háttere és a csempe teteje halványan ebben a színben (CSS: .fr-tile[data-ambient]).
+function tintPoster(franchise, titles) {
+  const best = titles
+    .filter((t) => t.franchise_id === franchise.id && t.poster_path)
+    .sort((a, b) => (b.imdb_rating ?? -1) - (a.imdb_rating ?? -1) || (b.imdb_votes ?? 0) - (a.imdb_votes ?? 0))[0];
+  return best?.poster_path ?? null;
+}
+
+function FranchiseTile({ posterPath, children, ...rest }) {
+  const ambient = usePosterColor(posterPath);
+  const { style, ...data } = ambientProps(ambient);
+  return (
+    <li className="fr-tile" style={style} {...data} {...rest}>
+      {children}
+    </li>
   );
 }
