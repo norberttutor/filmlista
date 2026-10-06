@@ -354,7 +354,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   a részek egy napig. (Az első változat franchise-onként csak egy gyűjteményt mutatott, és
   Norbi 40 franchise-ából 15-nél kihagyott címeket – 2026-10-04.) Közös exportok (a Franchise-ok
   ablak is használja): `collectionParams()`, `paramsKey()`, `fetchCollections()`,
-  `summarizeCollection()` (szakaszok, további címek, számok + `missing`), `CollectionMeter`,
+  `summarizeCollection()` (szakaszok, további címek, számok + `missing`), `CollectionMeter` (a
+  szakaszai `flex: none` és saját `.listed` osztály – a közös `.on-list` címke margója 2026-10-06-ig
+  0%-nál is ~19 px-et foglalt, teli mérő sem telt meg),
   `CollectionDialog`. A gyűjtemény-ablak két fülön (terv-3 28, Norbi döntése; `role="tablist"`,
   nyilakkal is; a panelek rejtve megmaradnak): „Gyűjtemény” (a fenti) és „Nézési sorrend”
   (`WatchOrder`); sorrend-szerkesztés közben kikattintásra nem zár, az Esc csak a szerkesztést zárja
@@ -795,39 +797,41 @@ nem kell (2026-10-06) – ilyet Claude szkripttel tölt be; magadtól ne javasol
 A 34-es (erőforrás-optimalizálás + kinézeti hibák) is kész (2026-10-05 és 2026-10-06: E1–E6, K3,
 az 1000 soros korlát kezelése); a C2 / C3 (látható változással járó könnyítések) Norbi döntése
 szerint nem kell. A vizsgálat: `munka/optimalizalas/VIZSGALAT.md`.
+**Becsült idő** (Norbi kérése, 2026-10-06: a roadmap listázásakor mindig írd mellé; teszttel és
+doksival együtt; ha egy pont tartalma változik, frissítsd): a pontok mellett „~… óra”.
 **Norbi kérései (2026-10-04)** – utána, ebben a sorrendben; a részletek
 (megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
-1. **25 – admin jogosultság** (csak Norbi fiókja): csak admin látja a ⋮ menü **Mentések**
+1. **25 – admin jogosultság** (~2–2,5 óra) (csak Norbi fiókja): csak admin látja a ⋮ menü **Mentések**
    pontját és a **Mama** paramétert mindenhol (szűrő, oszlop, szerkesztő, kártya, CSV); javaslat:
    `app_metadata.role = 'admin'` (SQL-lel, a tokenben), `is_admin()` – a mentés-függvények
    adatbázisszinten is csak adminnak. A tesztfiók is admin (Norbi döntése, a teszt miatt).
-2. **27 – jelszó módosítása**: bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”: jelenlegi +
+2. **27 – jelszó módosítása** (~2 óra + Norbi Supabase-beállítása ~15 perc): bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”: jelenlegi +
    új kétszer; előbb ellenőrző belépés, utána `updateUser`) és „Elfelejtettem a jelszavam” a
    belépési oldalon (`resetPasswordForEmail` → levél → `PASSWORD_RECOVERY` → új jelszó). Norbi
    teendője: Supabase URL Configuration + magyar levélsablonok.
-3. **13 – Mama külön hozzáférése**, Norbi döntéseivel: **jelszavas fiók** (Norbi hozza létre a
+3. **13 – Mama külön hozzáférése** (~4–5 óra), Norbi döntéseivel: **jelszavas fiók** (Norbi hozza létre a
    Supabase-ben, Auto Confirm; a `list_viewers` köti Norbihoz); Mama belépés után a saját
    egyszerű oldalát látja: a megnézendő, nem letöltött, franchise nélküli filmek, de **a még
    meg nem jelentek nem**; „Érdekel” → Norbinál „Érdekli” + harang („Mamát érdekli”); „Nem
    érdekel” → eltűnik Mamánál, **Norbinál „Nem érdekli”-ként tompán látszik** (új
    `mama_status = 'declined'`, a Mama-szűrőben is). Előtte kell: Mama e-mail-címe és fiókja,
    plusz egy második tesztfiók.
-4. **26 – regisztráció**: a belépési oldalon „Regisztráció” (`signUp`, megerősítő levél); az új
+4. **26 – regisztráció** (~2–3 óra, a választott módtól függően): a belépési oldalon „Regisztráció” (`signUp`, megerősítő levél); az új
    fiók nem admin. **Nyitott:** bárki regisztrálhasson, vagy meghívókóddal / admin-jóváhagyással
    (javaslat: az utóbbi – az OMDb napi 1000 kérése közös).
 **Norbi kérései (2026-10-05)** – utánuk, a TERV.md-ben részletezve:
-5. **33 – képes felhasználói leírás**: a `FELHASZNALOI-LEIRAS.md` kiegészítése képernyőképekkel
+5. **33 – képes felhasználói leírás** (~2–3 óra): a `FELHASZNALOI-LEIRAS.md` kiegészítése képernyőképekkel
    (tesztfiók + próbalista, maszkolt e-mail, számozott jelölők), egy újrageneráló szkripttel
    (`munka/terv-3/leiras-kepek.mjs` → `docs/kepek/`); utána szabály: a változott felület képe is frissül.
 **Norbi kérései (2026-10-05, funkciójavaslatokból)** – a 33-as után:
-6. **35 – franchise felismerése felvételkor**: ha a felvett film TMDB-gyűjteménye egy meglévő
+6. **35 – franchise felismerése felvételkor** (~1,5 óra): ha a felvett film TMDB-gyűjteménye egy meglévő
    franchise-hoz tartozik, az app **felajánlja** (toast „Hozzárendelés”; Norbi döntése: nem
    automatikus) + egyszeri „Javasolt hozzárendelések” a Franchise-ok ablakban.
-7. **36 – új rész egy franchise-od TMDB-gyűjteményében → harang** (hetente, az első feltöltés nem
+7. **36 – új rész egy franchise-od TMDB-gyűjteményében → harang** (~2,5–3 óra) (hetente, az első feltöltés nem
    szól; kattintva előnézet).
-8. **37 – „Neked ajánlott” sor a Felfedezésben** (a 8+ saját értékelések TMDB-ajánlásaiból, a
+8. **37 – „Neked ajánlott” sor a Felfedezésben** (~1–1,5 óra) (a 8+ saját értékelések TMDB-ajánlásaiból, a
    listán lévők nélkül).
-9. **38 – ALACSONY PRIORITÁS: szereplők és rendező az adatlapon** (személyre kattintva a filmjei az
+9. **38 – ALACSONY PRIORITÁS: szereplők és rendező az adatlapon** (~0,5 óra látványterv + ~2–2,5 óra) (személyre kattintva a filmjei az
    ablakon belül) – **előbb látványtervek**, Norbi választ.
 (A 39-es – „Nem érdekel” – és a 40-es – kihúzás – kész, 2026-10-06; a 37-es „Neked ajánlott”
 sorában is legyen ×.)

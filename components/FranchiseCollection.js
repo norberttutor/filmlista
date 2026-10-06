@@ -140,7 +140,7 @@ export function CollectionMeter({ total, watched, onList }) {
   return (
     <span className="collection-meter" aria-hidden="true">
       <i style={{ width: `${total ? (watched / total) * 100 : 0}%` }} />
-      <i className="on-list" style={{ width: `${total ? ((onList - watched) / total) * 100 : 0}%` }} />
+      <i className="listed" style={{ width: `${total ? ((onList - watched) / total) * 100 : 0}%` }} />
     </span>
   );
 }

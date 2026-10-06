@@ -3183,13 +3183,16 @@ button.season:hover {
   background: rgb(255 255 255 / 0.1);
 }
 
+/* a szakaszok szélessége pontosan az arány (nem zsugorodnak; saját osztály – a közös .on-list
+   címke margója 2026-10-06-ig 0%-nál is ~19 px-et foglalt, így teli mérő sem telt meg) */
 .collection-meter i {
   display: block;
+  flex: none;
   height: 100%;
   background: var(--st-watched);
 }
 
-.collection-meter i.on-list {
+.collection-meter i.listed {
   background: var(--accent);
 }
 
