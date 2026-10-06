@@ -135,8 +135,16 @@ találatoknál). Csak a valószínűleg **magyar szinkronos** címek:
 Magyarországon megjelent (sorozatnál magyar streamingen elérhető), angol vagy magyar nyelvű,
 magyar leírással; dokumentum-, valóság- és talkshow nélkül.
 
+**Nem érdekel:** ha egy ajánlott cím nem érdekel, a borítójára mutatva a jobb felső sarokban
+megjelenik egy **×** (telefonon mindig látszik). Rákattintva a cím eltűnik, és többé nem ajánlja
+sem a Felfedezés, sem a Hasonló címek – a keresésben viszont továbbra is megtalálod. Fölötte 10
+másodpercig: „„…” elrejtve – többé nem ajánljuk. **Visszavonás**”. A Felfedezés alján
+**Elrejtett ajánlások (N)**: kinyitva a rejtett címek listája, mindegyik mellett **Mégis érdekel** –
+erre visszakerül az ajánlások közé.
+
 **Hasonló címek** – minden adatlap alján (lásd [5.](#5-egy-cím-adatlapja-és-szerkesztése)),
-„+ Hozzáadás” gombbal; a borítójukra kattintva az adatlapjuk ugyanabban az ablakban.
+„+ Hozzáadás” gombbal; a borítójukra kattintva az adatlapjuk ugyanabban az ablakban; a **×**-szel
+ezek is elrejthetők (a „Visszavonás” a Hasonló címek tetején jelenik meg).
 
 **Tömeges import** (⋮ menü, csak széles képernyőn):
 1. Soronként egy cím, legfeljebb 150. A sor végére írt évszám pontosít (pl. „Dűne 2021” vagy
@@ -208,7 +216,9 @@ törlés csak ezután történik meg (ha közben bezárod az oldalt, a cím megm
   (csak a szűrő nevezi meg).
 - **Folyamatban** – türkiz.
 - **Megnézve** – zöld; a cím **háttérbe húzódik**: fekete-fehér, fakó borító, tompított szöveg
-  (rámutatva teljes színű).
+  (rámutatva teljes színű). Amikor egy címet (vagy a nézési sorrendben egy évadot) Megnézve-re
+  állítasz, egy zöld vonal fut végig a címén – „kihúzod” –, majd elhalványul (a nézési sorrend
+  ablakában a vonal megmarad). Ha a gépen be van kapcsolva a „kevesebb mozgás”, nincs animáció.
 - **Abbahagyva** – halvány lila, csak sorozatnál (lásd [7.](#7-sorozatok-és-évadok)); ugyanúgy
   háttérbe húzódik.
 - Az adatlapon a kiválasztott állapotra újra kattintva visszaáll Megnézendőre.
@@ -412,7 +422,7 @@ erre nyilvános felülete).
 ## 14. Mentések és adatbiztonság
 
 **Automatikus heti mentés:** hétfőnként hajnalban mentés készül a listádról (címek,
-franchise-ok, évadok, értesítések, nézési sorrendek); a 8 hétnél régebbiek törlődnek. (A 2026. 10.
+franchise-ok, évadok, értesítések, nézési sorrendek, elrejtett ajánlások); a 8 hétnél régebbiek törlődnek. (A 2026. 10.
 06. előtti mentések nézési sorrend nélkül állnak vissza.)
 
 **⋮ menü → Mentések:**
@@ -479,6 +489,7 @@ Minden fejlesztés után ide kerül egy sor (legújabb felül), és a fenti tém
 
 | Dátum | Mi változott |
 |---|---|
+| 2026. 10. 06. | „Nem érdekel”: a Felfedezés és a Hasonló címek borítóin **×** – a cím többé nem ajánlott (visszavonható; a Felfedezés alján „Elrejtett ajánlások” → „Mégis érdekel”). Megnézettre állításkor egy zöld vonal fut végig a címen („kihúzás”) ([4.](#4-címek-felvétele), [6.](#6-állapotok-letöltve-értékelések)). |
 | 2026. 10. 06. | Nézési sorrend a franchise-okban: a gyűjtemény-ablak új **Nézési sorrend** fülén a franchise filmjei és a sorozatok évadjai saját sorrendbe állíthatók (húzással vagy ↑ / ↓), kipipálhatók, a megnézett kihúzva a helyén marad, a következő kiemelve. Ha van saját sorrend, a listán a franchise kiválasztásakor a rendezés magától **Nézési sorrend** lesz, a sorozatok évadonként külön sorban ([9.](#9-franchise-ok-és-gyűjtemények)). |
 | 2026. 10. 05. | A lábléc jobb alsó sarkában „sponsored by ADERTIS” felirat; az ADERTIS-ra kattintva a www.adertis.hu nyílik meg új lapon. |
 | 2026. 10. 05. | Tömörebb adatlap: felül a Franchise és a Saját értékelés egymás mellett, alattuk egy keretes sávban az Állapot, a Letöltve és a Mama; a mezők címkéi kis nagybetűk – asztalon feleannyi helyet foglal ([5.](#5-egy-cím-adatlapja-és-szerkesztése)). |

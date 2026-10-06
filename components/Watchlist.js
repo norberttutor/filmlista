@@ -44,6 +44,7 @@ import { downloadListCsv } from '@/lib/exportList';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 import { canMorph, MORPH_NAME, trackTransition } from '@/lib/viewTransition';
 import { franchisesWithOrder, loadOrders, orderedItems } from '@/lib/watchOrder';
+import { loadHidden, resetHidden } from '@/lib/hiddenSuggestions';
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 
@@ -268,6 +269,8 @@ export default function Watchlist({ session }) {
         loadOrders()
           .then((rows) => !cancelled && setOrders(rows))
           .catch((err) => console.warn('Nézési sorrendek betöltése sikertelen:', err.message));
+        // „Nem érdekel” – elrejtett ajánlások (a Felfedezés és a Hasonló címek szűri)
+        loadHidden().catch((err) => console.warn('Elrejtett ajánlások betöltése sikertelen:', err.message));
 
         // hiányzó / régi IMDb-értékelések pótlása a háttérben; hiba esetén csak a konzolba ír
         refreshImdbRatings((rows) => {
@@ -337,6 +340,7 @@ export default function Watchlist({ session }) {
     load();
     return () => {
       cancelled = true;
+      resetHidden();
     };
   }, []);
 
@@ -406,6 +410,7 @@ export default function Watchlist({ session }) {
     loadOrders()
       .then(setOrders)
       .catch((err) => console.warn(err.message));
+    loadHidden().catch((err) => console.warn(err.message));
     loadNotifications()
       .then(setNotifications)
       .catch((err) => console.warn(err.message));

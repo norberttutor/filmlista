@@ -6,6 +6,7 @@ import ImdbBadge from '@/components/ImdbBadge';
 import GenreList from '@/components/GenreList';
 import { hasSeasons, seasonCounts, SeasonStrip } from '@/components/Seasons';
 import ReleaseBadge from '@/components/ReleaseBadge';
+import { useStrike } from '@/lib/useStrike';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
 
@@ -16,6 +17,7 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
   const season = item?.season ?? 0;
   const status = item ? item.status : t.status;
   const label = season ? `${t.title} – ${season}. évad` : t.title;
+  const strike = useStrike(status); // megnézettre váltáskor kihúzás a címen
   const seasons = hasSeasons(t) ? seasonCounts(t) : null;
   // még meg nem jelent film: szaggatott keret a borító körül és dátumos jelvény
   const release = releaseState(t);
@@ -70,18 +72,20 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
 
       {/* az IMDb- (vagy TMDB-) adatlap a címre kattintva nyílik */}
       <h3>
-        {link ? (
-          <a
-            href={link.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`${t.title} megnyitása: ${link.site}`}
-          >
-            {t.title}
-          </a>
-        ) : (
-          t.title
-        )}
+        <span key={strike} className="strike" data-strike={strike ? '' : undefined}>
+          {link ? (
+            <a
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${t.title} megnyitása: ${link.site}`}
+            >
+              {t.title}
+            </a>
+          ) : (
+            t.title
+          )}
+        </span>
       </h3>
       {season > 0 && <p className="card-season">{season}. évad</p>}
       {t.original_title && t.original_title !== t.title && (

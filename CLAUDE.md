@@ -309,7 +309,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   listán” (a `.discover` oszlopa `minmax(0, 1fr)`: a sorok a helyükön görögnek – enélkül a
   rács a 16 borító szélességére nőtt, és telefonon az egész lap kicsinyedett, 2026-10-05). A
   borítók türkiz kerete rámutatásra csak `@media (hover: hover)` alatt (telefonon az érintés
-  után ne ragadjon be), fókusznál mindig. Norbit csak a **magyar szinkronos** címek érdeklik; a TMDB ezt nem tárolja, ezért
+  után ne ragadjon be), fókusznál mindig. A nem listán lévők borítóján × („Nem érdekel”, terv-3
+  39, `HideButton`): az elrejtett címek nem látszanak; alul „Elrejtett ajánlások (N)” → lista,
+  „Mégis érdekel”. Norbit csak a **magyar szinkronos** címek érdeklik; a TMDB ezt nem tárolja, ezért
   közelítés: film = magyarországi megjelenés (`discover/movie`, `region=HU`,
   `with_release_type` 2|3 vagy 4), sorozat = magyar előfizetéses streamingen elérhető
   (`discover/tv`, `watch_region=HU`, `flatrate`, 90 napon belül futott rész); mindkettőnél
@@ -461,7 +463,20 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   jegyződik meg),
   vízszintesen görgethető borítósor (évszám, típus; a borító gomb az ablakon belül a cím adatlapját
   nyitja – `onPreview`, előnézet vagy a listán lévőé –, a cím link a TMDB-oldalra), „+ Hozzáadás”
-  (`addTitle()`), a listán lévőknél „✓ A listán”
+  (`addTitle()`), a listán lévőknél „✓ A listán”; a többi borítón × („Nem érdekel”, terv-3 39)
+- `lib/hiddenSuggestions.js` + `components/HideSuggestion.js` – „Nem érdekel” (terv-3 39,
+  2026-10-06): elrejtett ajánlások (`hidden_suggestions`), közös tároló a `lib/toast.js` mintájára
+  (`useHiddenSuggestions()` – titleKey → sor; `loadHidden()` a Watchlist betöltésekor és
+  visszaállítás után, `resetHidden()` kilépéskor; `hideSuggestion()` / `unhideSuggestion()`
+  optimista, hibánál visszaáll). A Felfedezés és a Hasonló címek szűri (a keresés nem). `HideButton`
+  (× a borító jobb felső sarkában; egérrel csak rámutatáskor / fókusznál látszik), `HideNote` +
+  `useHideSuggestion()`: „„…” elrejtve – többé nem ajánljuk. Visszavonás” helyben, a szakasz tetején,
+  10 mp-ig (a szerkesztő ablakban az értesítősáv nem kattintható)
+- `lib/useStrike.js` – kihúzás (terv-3 40): `useStrike(status)` → hányszor vált megnézettre, amióta
+  látszik; a cím köré tett `.strike` span kulcsa és `data-strike` jelzője (PosterCard, TitleTable
+  sora – nézési sorrendben a tétel állapota): váltáskor a span újraépül, a CSS-animáció lefut,
+  betöltéskor nem. A nézési sorrendben (`WatchOrder`) a kipipált tétel `data-strike`-ot kap, a vonal
+  ott megmarad
 - `app/api/imdb/refresh/route.js` – `POST`: a hiányzó vagy 14 napnál régebbi IMDb-értékeléseket
   frissíti (25-ösével, a felhasználó jogosultságaival); a `Watchlist` betöltéskor hívja
 - `lib/server/omdb.js` – `fetchImdbRating()`, `omdbEnabled()` (csak route handlerben)
@@ -582,6 +597,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   állapot a címekből / évadokból jön. `set_franchise_order(franchise, items jsonb)` (a felhasználó
   jogaival, egy tranzakcióban cseréli). Trigger (`titles_franchise_order_moved`): más franchise-ba
   került cím kikerül a régi sorrendből (visszakerülve a végére jön). A mentésben is (version 2)
+- `hidden_suggestions (user_id default auth.uid(), media_type, tmdb_id, title, poster_path,
+  release_year, created_at)`, PK `(user_id, media_type, tmdb_id)`, RLS – `16_hidden_suggestions.sql`
+  (terv-3 39, 2026-10-06): a „Nem érdekel”-lel elrejtett ajánlások; a cím / borító / év a
+  „Elrejtett ajánlások” listához (TMDB-lekérés nélkül). A mentésben is (version 3)
 - Trigger (`06_watched_clears_downloaded.sql`): amikor egy cím „Megnézve” állapotba kerül
   (átváltáskor vagy megnézettként felvéve), az `is_downloaded` hamis lesz; ha utána kézzel
   újra letöltöttnek jelölik, az megmarad. A felület is azonnal leveszi a pipát.
@@ -597,9 +616,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   megnézve; filmenként egyszer (az egyedi kulcs)
 - `backups (id, user_id default auth.uid(), kind ('weekly' | 'manual' | 'before_restore' |
   'imported'), created_at, title_count, data jsonb)` – `12_backups.sql`. A `data` a felhasználó
-  sorai változatlanul (`to_jsonb`): `{ version: 2, franchises, titles, title_genres, genres,
-  title_seasons, notifications, franchise_order }` (`backup_snapshot(user)`; a version 1-es –
-  2026-10-06 előtti – mentésekben nincs `franchise_order`, azok sorrend nélkül állnak vissza). RLS: a sajátját látja és törölheti,
+  sorai változatlanul (`to_jsonb`): `{ version: 3, franchises, titles, title_genres, genres,
+  title_seasons, notifications, franchise_order, hidden_suggestions }` (`backup_snapshot(user)`;
+  a version 1-es – 2026-10-06 előtti – mentésekben nincs `franchise_order`, azok sorrend nélkül
+  állnak vissza; a version 1–2-esekben nincs `hidden_suggestions`: visszaállításukkor az elrejtett
+  ajánlások nem változnak – `16_hidden_suggestions.sql`). RLS: a sajátját látja és törölheti,
   írni csak a függvények írnak. `write_backup(user, kind)`: üres listáról nem ment; mentés után
   a 8 hétnél (55 nap 23 óránál) régebbieket törli – üres listánál nem, így a régiek megmaradnak.
   `backup_all_users()`: pg_cron, `filmlista-heti-mentes`, hétfő 03:00 UTC. A felületről:
@@ -666,7 +687,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   kártyáinak beúszása (a görgetés vezérli: `animation-timeline: view()`); a csillagok
   pattanása (0,34 s, egymás után); a pipa bepattanása (átmenet, betöltéskor nem mozog); a harang
   rezzenése (0,9 s, egyszer); a csontváz csillogása (1,4 s, ismétlődik); az értesítősáv
-  fogyó csíkja (a sáv ideje, 8 s, lineáris – a hátralévő időt mutatja). A `globals.css`
+  fogyó csíkja (a sáv ideje, 8 s, lineáris – a hátralévő időt mutatja); a kihúzás (terv-3 40,
+  Norbi kérése, 2026-10-06): megnézettre váltáskor zöld vonal fut végig a címen (0,26 s), majd
+  elhalványul – összesen 0,75 s, a kártyán és a soron (`.strike`, háttér-vonal, a színe a
+  regisztrált `--strike-ink` változó); a nézési sorrendben 0,3 s alatt húzódik be és megmarad. A `globals.css`
   végén egy közös `prefers-reduced-motion: reduce` szabály minden átmenetet és animációt
   kikapcsol (a nézetváltás álelemeit is; a nézetváltást a kód el sem indítja).
 - Hiányzó borító: a `.thumb:empty` / `.poster-fallback` filmikont kap (`--icon-film`).
@@ -726,6 +750,11 @@ automatikus heti mentés (2026-10-04): az adatbázisban 8 hétig (pg_cron), „M
 állapotok, gyorsgombok a letapadt szűrősorban, előzetes a szerkesztőben, évadok idővonala,
 Felfedezés (magyar szinkronos közelítés), franchise-gyűjtemény a hiányzó részekkel.
 Franchise-filmek importja (franchise.xlsx): 194 cím, 34 franchise; hozzáadás dátuma = megjelenés.
+Marvel-import (2026-10-06, Norbi listája képről, szkripttel – `munka/terv-3/29-marvel/`): 85 cím a
+„Marvel” franchise-ban (81 új, Megnézendő, hozzáadás dátuma = megjelenés; a TMDB magyar címei, a
+változatjelölés – „Pókember 2.1”, „Bővített változat” – Norbi címéből; a Bosszúállók, Fekete Özvegy,
+Shang-Chi, Morbius már a listán volt) és a 88 tételes nézési sorrend (filmek + évadok, Norbi
+sorrendjében); előtte „Kézi” mentés.
 Norbi listája (norbert.tutor@gmail.com) 2026-10-02-án Excelből importálva: 512 cím.
 A még meg nem jelent filmek szaggatott kerettel és dátumos jelvénnyel, a harang szól a digitális
 megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül). Asztalon az adatlap
@@ -735,15 +764,15 @@ importja (terv-3 20), „Franchise-ok” ablak a ⋮ menüben (terv-3 23, 2026-1
 adatlap a listára vétel előtt – előnézet a találatokból, a Felfedezésből és a Hasonló címekből,
 „Vissza” gombbal (terv-3 31, 2026-10-05). Nézési sorrend a franchise-okban: a gyűjtemény-ablak
 „Nézési sorrend” fülén filmek és évadok saját sorrendben, a megnézett kihúzva, a fő listán „Nézési
-sorrend” rendezés évadonkénti tételekkel (terv-3 28, 2026-10-06).
+sorrend” rendezés évadonkénti tételekkel (terv-3 28, 2026-10-06). „Nem érdekel” (×) a Felfedezés
+és a Hasonló címek borítóin, „Elrejtett ajánlások” a Felfedezés alján (terv-3 39); kihúzás-animáció
+megnézettre váltáskor (terv-3 40, 2026-10-06).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
-**PRIORITÁS (Norbi kérése, 2026-10-05) – a lista élén** (a 28-as – nézési sorrend – kész,
-2026-10-06):
-1. **29 – Marvel franchise betöltése és nézési sorrendje** a 28-asra építve (tömeges import
-   franchise-választóval, a nézési sorrend szövegből „Loki 1. évad” formában vagy Excelből).
-**Szükséges (Norbi kérése, 2026-10-05) – a prioritásos 29 után:** **34 – erőforrás-optimalizálás
+A 28-as (nézési sorrend) és a 29-es (a Marvel betöltése – Claude szkripttel, 2026-10-06) kész; a
+29-es felületi része (tömeges import franchise-választóval, sorrend szövegből) Norbi döntésére vár.
+**Szükséges (Norbi kérése, 2026-10-05):** **34 – erőforrás-optimalizálás
 funkcióváltozás nélkül + kinézeti hibák**: a vizsgálat a `munka/optimalizalas/VIZSGALAT.md`-ben.
 Kész (2026-10-05): E4 + E5 gyorsítótár, E1 értesítések, E6 kisebb kép. Hátravan: E2
 háttérfrissítések kihagyása (közös „esedékes-e” feltételek a route-okkal), E3 helyi
@@ -782,10 +811,8 @@ tokenellenőrzés (csak Norbi döntésével), a kinézeti kör bővítése (K3).
    listán lévők nélkül).
 9. **38 – ALACSONY PRIORITÁS: szereplők és rendező az adatlapon** (személyre kattintva a filmjei az
    ablakon belül) – **előbb látványtervek**, Norbi választ.
-10. **39 – „Nem érdekel” (×) az ajánlásokon** (Felfedezés, Hasonló címek, „Neked ajánlott”):
-   elrejtve marad; új tábla `hidden_suggestions`, a mentésbe is.
-11. **40 – megnézettre állításkor rövid „kihúzás” animáció** (0,2 s, a 28-as checklisttel
-   egységesen; előbb rövid videó Norbinak).
+(A 39-es – „Nem érdekel” – és a 40-es – kihúzás – kész, 2026-10-06; a 37-es „Neked ajánlott”
+sorában is legyen ×.)
 
 ## Fejlesztési terv, 3. kör (2026-10-04)
 **`munka/terv-3/TERV.md`** (helyi mappa) – a hátralévő pontok (a „Következő feladat” pontjai)
@@ -804,7 +831,8 @@ adatlapon; 22 – telefonon nincs „IMDb import”; 23 – „Franchise-ok” a
 Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a találatokból, a
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
 nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
-Vár még: **29 (prioritás)**, 34 (szükséges, 2. rész: E2, E3, K3), 25, 27, 13, 26, 33, 35, 36, 37, 38 (alacsony prioritás), 39, 40 („Következő feladat”); 30 – tömörebb adatlap kész
+29 – Marvel betöltve a sorrenddel (szkripttel, 2026-10-06); 39 – „Nem érdekel” az ajánlásokon, 40 –
+kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). Vár még: 34 (szükséges, 2. rész: E2, E3, K3), 25, 27, 13, 26, 33, 35, 36, 37, 38 (alacsony prioritás) („Következő feladat”); 30 – tömörebb adatlap kész
 (B – vezérlősáv, 2026-10-05).
 **Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
 appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,

@@ -3071,6 +3071,87 @@ button.season:hover {
   margin: 0;
 }
 
+/* ---------- „Nem érdekel” – elrejtett ajánlások (terv-3 39) ---------- */
+/* × a borító jobb felső sarkában (Felfedezés, Hasonló címek); egérrel csak rámutatáskor /
+   fókusznál látszik, érintőképernyőn mindig. Alatta / fölötte helyben „Visszavonás”. */
+.discover-item,
+.similar-item {
+  position: relative;
+}
+
+.hide-btn {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  padding: 0;
+  color: var(--text);
+  background: rgb(8 11 16 / 0.75);
+  border: 1px solid rgb(255 255 255 / 0.18);
+  border-radius: 999px;
+}
+
+.hide-btn:hover {
+  color: var(--accent);
+  background: rgb(8 11 16 / 0.92);
+  border-color: var(--accent-line);
+}
+
+@media (hover: hover) {
+  .hide-btn {
+    opacity: 0;
+  }
+
+  .discover-item:hover .hide-btn,
+  .similar-item:hover .hide-btn,
+  .hide-btn:focus-visible {
+    opacity: 1;
+  }
+}
+
+.hide-note {
+  margin: 0 0 0.4rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.hide-note:empty {
+  margin: 0;
+}
+
+/* a Felfedezés alján: „Elrejtett ajánlások (N)” → lista, „Mégis érdekel” */
+.discover-hidden {
+  margin-top: 0.4rem;
+}
+
+.hidden-list {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hidden-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.hidden-list .thumb {
+  width: 2.3rem;
+}
+
+.hidden-text {
+  flex: 1;
+  display: grid;
+  min-width: 0;
+}
+
 /* ---------- Franchise-gyűjtemény (sáv a lista fölött, ablak) ---------- */
 .collection-banner {
   display: flex;
@@ -3604,10 +3685,9 @@ button.season:hover {
 }
 
 /* megnézve: kihúzva, halványan, fekete-fehér borítóval – a helyén */
+/* a kihúzás vonala: .strike (lent, „Mozgás”) */
 .wo-list li[data-done] .wo-title {
   color: var(--watched-text);
-  text-decoration: line-through;
-  text-decoration-thickness: 2px;
 }
 
 .wo-list li[data-done] .wo-season {
@@ -5063,6 +5143,58 @@ body:has(.editor[open]) {
 /* ---------- Mozgás ---------- */
 /* A "kevesebb mozgás" rendszerbeállításnál mind kikapcsol (a lap végén; a nézetváltást a
    Watchlist / TitleEditor el sem indítja). */
+
+/* kihúzás (terv-3 40): megnézettre váltáskor (betöltéskor nem – lib/useStrike.js) egy zöld vonal
+   fut végig a címen (0,26 s), majd elhalványul – összesen 0,75 s, a kártyán és a soron; a
+   nézési sorrendben a vonal megmarad (0,3 s alatt húzódik be). A vonal háttér (a szöveg mögött),
+   így több sorban is minden sort áthúz; a színe regisztrált változó, hogy áttűnhessen. A 0,2 s-os
+   szabály kivétele. */
+@property --strike-ink {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+
+.strike {
+  background: linear-gradient(var(--strike-ink), var(--strike-ink)) 0 58% / 0 2px no-repeat;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.strike[data-strike] {
+  animation: strike-sweep 0.75s ease-out;
+}
+
+@keyframes strike-sweep {
+  0% {
+    background-size: 0 2px;
+    --strike-ink: var(--st-watched);
+  }
+  35%,
+  60% {
+    background-size: 100% 2px;
+    --strike-ink: var(--st-watched);
+  }
+  100% {
+    background-size: 100% 2px;
+    --strike-ink: transparent;
+  }
+}
+
+.wo-list li[data-done] .strike {
+  --strike-ink: var(--watched-text);
+  background-size: 100% 2px;
+}
+
+.wo-list li[data-strike] .strike {
+  animation: wo-strike 0.3s ease-out;
+}
+
+@keyframes wo-strike {
+  from {
+    background-size: 0 2px;
+  }
+}
 
 /* nézetváltás: kattintáskor a kártya / sor borítója átsiklik a szerkesztő ablak nagy
    borítójának helyére, bezáráskor vissza (asztalon, ≥ 900 px; View Transitions). A forrás

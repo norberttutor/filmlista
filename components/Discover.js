@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { titleKey } from '@/lib/titles';
+import { unhideSuggestion, useHiddenSuggestions } from '@/lib/hiddenSuggestions';
+import { HideButton, HideNote, useHideSuggestion } from '@/components/HideSuggestion';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w185';
 
@@ -15,11 +17,27 @@ const SECTIONS = [
 ];
 
 const shortDate = (iso) => new Date(iso).toLocaleDateString('hu-HU', { month: 'short', day: 'numeric' });
+const THUMB = 'https://image.tmdb.org/t/p/w92';
 
 // existingKeys: a listán lévők; rowState / onAdd: a kereső panel felvétele (ugyanaz, mint a
-// találatoknál); onPreview(cím, borítóElem): a borítóra kattintva a cím adatlapja (előnézet)
+// találatoknál); onPreview(cím, borítóElem): a borítóra kattintva a cím adatlapja (előnézet). A borítón ×
+// („Nem érdekel”, terv-3 39): az elrejtett címek nem látszanak; alul „Elrejtett ajánlások” –
+// „Mégis érdekel”.
 export default function Discover({ existingKeys, rowState, onAdd, onPreview }) {
   const [lists, setLists] = useState({}); // list → { results } | { error }
+  const hidden = useHiddenSuggestions();
+  const { note, hide, undo } = useHideSuggestion();
+  const [showHidden, setShowHidden] = useState(false);
+  const [hiddenError, setHiddenError] = useState('');
+
+  async function unhide(h) {
+    setHiddenError('');
+    try {
+      await unhideSuggestion(h);
+    } catch (err) {
+      setHiddenError(err.message);
+    }
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -38,9 +56,11 @@ export default function Discover({ existingKeys, rowState, onAdd, onPreview }) {
       <p className="muted small">
         Csak Magyarországon megjelent, angol vagy magyar nyelvű címek – ezek többnyire szinkronosak.
       </p>
+      <HideNote note={note} onUndo={undo} />
       {SECTIONS.map((s) => {
         const data = lists[s.list];
-        if (data?.results?.length === 0) return null;
+        const results = data?.results?.filter((r) => !hidden.has(titleKey(r)));
+        if (results?.length === 0) return null;
         return (
           <section key={s.list} className="discover-row" aria-labelledby={`discover-${s.list}`}>
             <h3 id={`discover-${s.list}`}>{s.title}</h3>
@@ -57,7 +77,7 @@ export default function Discover({ existingKeys, rowState, onAdd, onPreview }) {
               </div>
             ) : (
               <ul className="discover-list">
-                {data.results.map((r) => {
+                {results.map((r) => {
                   const key = titleKey(r);
                   const id = `discover-${r.media_type}-${r.tmdb_id}`;
                   const state = rowState[key] ?? {};
@@ -72,6 +92,7 @@ export default function Discover({ existingKeys, rowState, onAdd, onPreview }) {
                         {/* CORS-szal (a vászonra rajzolhatóság miatt; a hangulatszín ma már külön, kisebb képből számol) */}
                         <img src={POSTER_BASE + r.poster_path} alt="" loading="lazy" crossOrigin="anonymous" />
                       </button>
+                      {!existingKeys.has(key) && <HideButton item={r} onHide={hide} />}
                       <b className="discover-title" id={id}>
                         {r.title}
                       </b>
@@ -106,6 +127,47 @@ export default function Discover({ existingKeys, rowState, onAdd, onPreview }) {
           </section>
         );
       })}
+      {hidden.size > 0 && (
+        <section className="discover-hidden">
+          <button
+            type="button"
+            className="link"
+            aria-expanded={showHidden}
+            aria-controls="discover-hidden-list"
+            onClick={() => setShowHidden((v) => !v)}
+          >
+            Elrejtett ajánlások ({hidden.size})
+          </button>
+          {hiddenError && (
+            <p className="error small" role="alert">
+              {hiddenError}
+            </p>
+          )}
+          {showHidden && (
+            <ul id="discover-hidden-list" className="hidden-list">
+              {[...hidden.values()].map((h) => (
+                <li key={titleKey(h)}>
+                  <span className="thumb">{h.poster_path && <img src={THUMB + h.poster_path} alt="" loading="lazy" />}</span>
+                  <span className="hidden-text">
+                    <b>{h.title ?? 'Ismeretlen cím'}</b>
+                    <span className="muted small">
+                      {[h.release_year, h.media_type === 'tv' ? 'Sorozat' : 'Film'].filter(Boolean).join(' · ')}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    className="ghost mini"
+                    aria-label={`Mégis érdekel: ${h.title ?? 'cím'}`}
+                    onClick={() => unhide(h)}
+                  >
+                    Mégis érdekel
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
     </div>
   );
 }

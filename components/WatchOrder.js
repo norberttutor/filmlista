@@ -37,6 +37,7 @@ export default function WatchOrder({ franchise, titles, orders, editing, onEditi
   const [error, setError] = useState('');
   const [busy, setBusy] = useState({}); // tételkulcs → mentés folyamatban
   const [asking, setAsking] = useState(null); // tételkulcs: alatta „Hogy tetszett?”
+  const [struck, setStruck] = useState(null); // tételkulcs: most pipálva – a kihúzás behúzódik
   const [note, setNote] = useState(null); // { text, titleId, previous } – kitöltött évadok
   const noteTimer = useRef(null);
   const [dragging, setDragging] = useState(null);
@@ -176,6 +177,7 @@ export default function WatchOrder({ franchise, titles, orders, editing, onEditi
     const status = itemDone(i) ? DEFAULT_STATUS : 'watched';
     setError('');
     setAsking(null);
+    setStruck(status === 'watched' ? i.key : null);
     setBusy((b) => ({ ...b, [i.key]: true }));
     try {
       let row;
@@ -288,6 +290,7 @@ export default function WatchOrder({ franchise, titles, orders, editing, onEditi
               data-next={(!editing && next?.key === i.key) || undefined}
               data-status={i.status}
               data-dragging={dragging === i.key || undefined}
+              data-strike={struck === i.key || undefined}
             >
               {editing ? (
                 <span
@@ -311,8 +314,10 @@ export default function WatchOrder({ franchise, titles, orders, editing, onEditi
               <span className="thumb">{poster && <img src={THUMB + poster} alt="" loading="lazy" />}</span>
               <span className="wo-text">
                 <span className="wo-title">
-                  {i.title.title}
-                  {i.season > 0 && <span className="wo-season"> – {i.season}. évad</span>}
+                  <span className="strike">
+                    {i.title.title}
+                    {i.season > 0 && <span className="wo-season"> – {i.season}. évad</span>}
+                  </span>
                 </span>
                 <span className="wo-meta">
                   {itemMeta(i)}

@@ -4,6 +4,8 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { addTitle, titleKey } from '@/lib/titles';
 import { afterTransition } from '@/lib/viewTransition';
+import { useHiddenSuggestions } from '@/lib/hiddenSuggestions';
+import { HideButton, HideNote, useHideSuggestion } from '@/components/HideSuggestion';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w154';
 // alapból nyitva; ha becsukja, a böngésző megjegyzi (ha nem tudja, nyitva marad). Telefonon
@@ -28,7 +30,7 @@ function storedOpen() {
 // listán lévőknél "✓ A listán". A borítóra kattintva a cím adatlapja nyílik az ablakon belül
 // (onPreview; a listán lévőé szerkeszthető), a címre kattintva a TMDB-oldala (Norbi döntése,
 // 2026-10-05). Nyitva tölt be; ha becsukja, azt a böngésző megjegyzi (telefonon mindig csukva
-// indul).
+// indul). A borítón × („Nem érdekel”, terv-3 39): az elrejtett címek nem látszanak.
 export default function SimilarTitles({ title, existingKeys, onAdded, onPreview }) {
   const bodyId = useId();
   const [open, setOpen] = useState(storedOpen);
@@ -36,6 +38,9 @@ export default function SimilarTitles({ title, existingKeys, onAdded, onPreview 
   const [adding, setAdding] = useState(null); // a felvétel alatt álló cím kulcsa
   const [errors, setErrors] = useState({}); // kulcs → hibaüzenet
   const fetched = useRef(false); // betöltve (újranyitáskor nem kéri le újra)
+  const hidden = useHiddenSuggestions();
+  const { note, hide, undo } = useHideSuggestion();
+  const shown = load.results.filter((r) => !hidden.has(titleKey(r)));
 
   // kinyitáskor tölt be; ha betöltés közben becsukja, vagy hiba volt, a következő nyitás újrapróbálja
   useEffect(() => {
@@ -102,6 +107,7 @@ export default function SimilarTitles({ title, existingKeys, onAdded, onPreview 
 
       {open && (
         <div id={bodyId} className="similar-body">
+          <HideNote note={note} onUndo={undo} />
           {/* betöltés közben borító-körvonalak (felolvasónak a szöveg) */}
           {load.status === 'loading' && (
             <>
@@ -123,12 +129,14 @@ export default function SimilarTitles({ title, existingKeys, onAdded, onPreview 
               {load.error}
             </p>
           )}
-          {load.status === 'done' && load.results.length === 0 && (
-            <p className="muted small">A TMDB ehhez a címhez nem ajánl hasonlót.</p>
+          {load.status === 'done' && shown.length === 0 && (
+            <p className="muted small">
+              {load.results.length ? 'Az ajánlásokat elrejtetted.' : 'A TMDB ehhez a címhez nem ajánl hasonlót.'}
+            </p>
           )}
-          {load.results.length > 0 && (
+          {shown.length > 0 && (
             <ul className="similar-list" aria-label={`Hasonló címek – ${title.title}`}>
-              {load.results.map((r) => {
+              {shown.map((r) => {
                 const key = titleKey(r);
                 const onList = existingKeys.has(key);
                 return (
@@ -141,6 +149,7 @@ export default function SimilarTitles({ title, existingKeys, onAdded, onPreview 
                     >
                       <img src={POSTER_BASE + r.poster_path} alt="" loading="lazy" />
                     </button>
+                    {!onList && <HideButton item={r} onHide={hide} />}
                     <a
                       className="similar-title"
                       href={`https://www.themoviedb.org/${r.media_type}/${r.tmdb_id}`}

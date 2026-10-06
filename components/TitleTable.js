@@ -17,6 +17,7 @@ import ImdbBadge from '@/components/ImdbBadge';
 import GenreList from '@/components/GenreList';
 import ReleaseBadge from '@/components/ReleaseBadge';
 import { hasSeasons, SeasonCell, SeasonDownloads } from '@/components/Seasons';
+import { useStrike } from '@/lib/useStrike';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w154';
@@ -101,6 +102,7 @@ function TitleRow({
   const ambient = usePosterColor(t.poster_path, pointed);
   // még meg nem jelent film: szaggatott keret a borító körül és dátumos jelvény
   const release = releaseState(t);
+  const strike = useStrike(item ? item.status : t.status); // megnézettre váltáskor kihúzás a címen
 
   // Mentés azonnal: a sor rögtön az új értéket mutatja, hiba esetén visszaáll.
   async function save(changes) {
@@ -160,13 +162,15 @@ function TitleRow({
           <div className="row-text">
             {/* mindig egy sorban; ha így sem fér ki, "…" és rámutatva a teljes cím */}
             <p className="row-name" title={t.title}>
-              {link ? (
-                <a href={link.href} target="_blank" rel="noopener noreferrer">
-                  {t.title}
-                </a>
-              ) : (
-                t.title
-              )}
+              <span key={strike} className="strike" data-strike={strike ? '' : undefined}>
+                {link ? (
+                  <a href={link.href} target="_blank" rel="noopener noreferrer">
+                    {t.title}
+                  </a>
+                ) : (
+                  t.title
+                )}
+              </span>
             </p>
             {t.original_title && t.original_title !== t.title && (
               <p className="original">{t.original_title}</p>
