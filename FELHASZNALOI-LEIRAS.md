@@ -3,7 +3,7 @@
 Az app minden funkciója témák szerint: mit tud, hol találod, hogyan használd.
 Minden új fejlesztés után bővül; a legutóbbi változások a végén, a **Változásnaplóban**.
 
-Utolsó frissítés: 2026. 10. 05. · Élő oldal: https://filmlista-six.vercel.app/
+Utolsó frissítés: 2026. 10. 06. · Élő oldal: https://filmlista-six.vercel.app/
 
 > Tipp: VS Code-ban a **Ctrl+Shift+V** formázott előnézetben nyitja meg ezt a leírást.
 
@@ -96,7 +96,9 @@ törlésekor a korábbi szűrők visszaállnak.
 
 **Rendezés** (a kereső melletti lenyíló): Legutóbb hozzáadott · Legkorábban hozzáadott · Legjobb
 saját értékelés · Legjobb IMDb-értékelés · Legújabb megjelenés · Legrégebbi megjelenés. Az
-érték nélküli címek a végére kerülnek.
+érték nélküli címek a végére kerülnek. Ha egy franchise-ra szűrsz, és annak van **saját nézési
+sorrendje**, a lista elején **Nézési sorrend** is megjelenik, és a rendezés magától erre áll
+(részletek: [9.](#9-franchise-ok-és-gyűjtemények)).
 
 **Letapadó szűrősor:** lefelé görgetéskor a szűrősor a képernyő tetején marad (áttetsző
 üveghatással). Asztalon ilyenkor két gyorsgomb is megjelenik mellette: **+** (Cím hozzáadása)
@@ -315,6 +317,37 @@ türkiz) és „x/y megnézve · n a listán · m hiányzik”. A **Gyűjtemény
   gyakran nincs találat, angolul igen, pl. „Star Wars”) → **Hozzárendelés**; a kézzel
   hozzárendelt szakasznál **Eltávolítás**.
 
+Az ablak tetején két fül: **Gyűjtemény** (a fenti) és **Nézési sorrend**.
+
+**Nézési sorrend** (a gyűjtemény-ablak második füle): a franchise **listádon lévő** filmjei és a
+sorozatok **évadjai külön tételként** (pl. „Loki – 2. évad”), számozott listában – így két évad közé
+egy film is beilleszthető. A TMDB-gyűjtemény hiányzó részei itt nem szerepelnek.
+- Amíg nem állítasz be saját sorrendet, **megjelenés szerint** áll; fent „x/y megnézve ·
+  megjelenés szerint” (vagy „saját sorrend”).
+- **Kipipálás:** a tétel előtti jelölőnégyzettel a filmet vagy az évadot megnézettre állítod
+  (ugyanaz, mint a listán vagy az adatlapon). A megnézett tétel **kihúzva, halványan a helyén
+  marad**; az első még meg nem nézett tétel kiemelve: **Következik**. A pipát újra kattintva
+  visszaveheted. Évadnál – mint a listán – az előtte lévő, még üres évadok is megnézettek lesznek
+  („1. évad is megnézve.” → **Visszavonás**). Ha a cím ettől megnézett lett és még nincs
+  értékelése, a tétel alatt **„Hogy tetszett?”** csillagsor (vagy **Később**).
+- A **bejelentett**, még meg nem jelent évad nem pipálható; az **abbahagyott** sorozat meg nem
+  nézett évadjai „Abbahagyva” jelöléssel a helyükön maradnak, a „Következik” átugorja őket.
+- **Sorrend szerkesztése:** a tételek a bal szélükön lévő fogantyúval **húzhatók** (egérrel vagy
+  ujjal), vagy a **↑ / ↓** gombokkal léptethetők. **Kész** – mentés; **Mégse** (vagy Esc) – elveti;
+  **Megjelenés szerint** + **Kész** – a saját sorrend törlődik, újra megjelenés szerint áll.
+  Szerkesztés közben az ablak kikattintásra nem zárul be.
+- **Új cím vagy évad** (pl. új évad érkezik, vagy egy filmet a franchise-hoz rendelsz) a sorrend
+  **végére** kerül – szerkesztéssel áthelyezhető. Ha egy címet másik franchise-ba teszel, kikerül a
+  régi sorrendből.
+
+**Nézési sorrend a listán:** ha a franchise-nak van saját sorrendje, a franchise kiválasztásakor
+a **Rendezés** magától **Nézési sorrend** lesz (más rendezés is választható; másik franchise-nál
+vagy franchise nélkül az előző rendezés jön vissza, és ez a lehetőség nem is látszik). Ilyenkor a
+lista a sorrend tételeit mutatja: a **sorozat évadonként külön sorban / kártyán**, „2. évad”
+jelöléssel (az évadcsíkon is kiemelve), akár több helyen is. Az állapot- és a letöltés-szűrő
+tételenként számít – a **Megnézendő** szűrővel pontosan a még meg nem nézett filmek és évadok
+látszanak, sorrendben.
+
 ## 10. Mama-jelölések
 
 Jelölheted, melyik cím érdekli Mamát, és mit kapott már meg:
@@ -379,7 +412,8 @@ erre nyilvános felülete).
 ## 14. Mentések és adatbiztonság
 
 **Automatikus heti mentés:** hétfőnként hajnalban mentés készül a listádról (címek,
-franchise-ok, évadok, értesítések); a 8 hétnél régebbiek törlődnek.
+franchise-ok, évadok, értesítések, nézési sorrendek); a 8 hétnél régebbiek törlődnek. (A 2026. 10.
+06. előtti mentések nézési sorrend nélkül állnak vissza.)
 
 **⋮ menü → Mentések:**
 - a mentések listája: dátum, fajta (*Heti* / *Kézi* / *Visszaállítás előtt* / *Feltöltött*),
@@ -445,6 +479,7 @@ Minden fejlesztés után ide kerül egy sor (legújabb felül), és a fenti tém
 
 | Dátum | Mi változott |
 |---|---|
+| 2026. 10. 06. | Nézési sorrend a franchise-okban: a gyűjtemény-ablak új **Nézési sorrend** fülén a franchise filmjei és a sorozatok évadjai saját sorrendbe állíthatók (húzással vagy ↑ / ↓), kipipálhatók, a megnézett kihúzva a helyén marad, a következő kiemelve. Ha van saját sorrend, a listán a franchise kiválasztásakor a rendezés magától **Nézési sorrend** lesz, a sorozatok évadonként külön sorban ([9.](#9-franchise-ok-és-gyűjtemények)). |
 | 2026. 10. 05. | A lábléc jobb alsó sarkában „sponsored by ADERTIS” felirat; az ADERTIS-ra kattintva a www.adertis.hu nyílik meg új lapon. |
 | 2026. 10. 05. | Tömörebb adatlap: felül a Franchise és a Saját értékelés egymás mellett, alattuk egy keretes sávban az Állapot, a Letöltve és a Mama; a mezők címkéi kis nagybetűk – asztalon feleannyi helyet foglal ([5.](#5-egy-cím-adatlapja-és-szerkesztése)). |
 | 2026. 10. 05. | Gyorsabb újranyitás: a TMDB-ről jövő adatokat (Hol nézhető?, előzetes, hasonló címek, gyűjtemény) a böngésző egy napig, a cím adatait és a Felfedezést egy óráig, a keresési találatokat 10 percig megjegyzi – ugyanaz az adatlap újranyitva azonnal kész. A saját listád adatai mindig frissek. Kevesebb háttérkérés betöltéskor. |

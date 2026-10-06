@@ -1490,7 +1490,34 @@ body:has(> main.login) {
 }
 
 .titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .franchise-select,
-.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .card-franchise {
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) /* nézési sorrendben (terv-3 28) a sorozat évadonként külön tétel: „2. évad” a cím alatt / a soron,
+   a csíkon az évad kiemelve */
+.card-season {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.card[data-status='watched'] .card-season,
+.card[data-status='dropped'] .card-season {
+  color: var(--watched-accent);
+}
+
+.season-tag {
+  padding: 0 0.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 999px;
+}
+
+.season[data-current] {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.card-franchise {
   color: var(--watched-accent);
 }
 
@@ -3401,6 +3428,300 @@ button.season:hover {
 /* a további címeknél nincs sorszám (nem egy filmsorozat részei) */
 .collection-parts.extras .collection-poster::before {
   content: none;
+}
+
+/* fülek a gyűjtemény-ablakban (Gyűjtemény | Nézési sorrend – terv-3 28): kerek keretben, a
+   kiválasztott halvány türkiz, mint a nézetváltó */
+.dialog-tabs {
+  display: flex;
+  gap: 2px;
+  width: fit-content;
+  margin: 0.4rem 1.75rem 0;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.dialog-tabs [role='tab'] {
+  padding: 0.35rem 1rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+}
+
+.dialog-tabs [role='tab']:not([aria-selected='true']):hover {
+  color: var(--text);
+  background-color: var(--hover-tint);
+}
+
+.dialog-tabs [role='tab'][aria-selected='true'] {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+/* nézési sorrend: számozott lista – jelölőnégyzet (szerkesztéskor fogantyú), sorszám, kis
+   borító, cím („Loki – 2. évad”), jelölők, szerkesztéskor ↑ / ↓. A megnézett kihúzva, halványan
+   a helyén marad; a következő türkiz hátterű. */
+.wo-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.wo-bar p {
+  margin: 0;
+}
+
+.wo-bar .spacer {
+  flex: 1;
+}
+
+.wo-summary {
+  font-variant-numeric: tabular-nums;
+}
+
+.wo-hint {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.wo-note {
+  min-height: 1.4rem;
+  margin: 0.3rem 0 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.wo-empty {
+  margin: 1rem 0 0;
+}
+
+.wo-list {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wo-list li {
+  display: grid;
+  grid-template-columns: 1.5rem 2rem 2.3rem minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: 0.7rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.wo-list li:hover {
+  background-color: var(--hover-tint);
+}
+
+.wo-list li[data-next] {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+.wo-check {
+  justify-self: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  margin: 0;
+}
+
+.wo-check:disabled {
+  cursor: not-allowed;
+  border-style: dashed;
+  opacity: 0.6;
+}
+
+.wo-num {
+  text-align: right;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.wo-list .thumb {
+  width: 2.3rem;
+  border-radius: 5px;
+}
+
+.wo-text {
+  display: grid;
+  min-width: 0;
+}
+
+/* tördelődik (telefonon se vágja le az évadot) */
+.wo-title {
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.wo-season {
+  color: var(--accent);
+}
+
+.wo-meta {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.wo-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.3rem;
+}
+
+.wo-tag {
+  padding: 0.1rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 650;
+  white-space: nowrap;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.wo-tag.next {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.wo-tag.dropped {
+  color: var(--st-dropped);
+}
+
+.wo-tag.dl {
+  color: var(--muted);
+}
+
+/* megnézve: kihúzva, halványan, fekete-fehér borítóval – a helyén */
+.wo-list li[data-done] .wo-title {
+  color: var(--watched-text);
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+
+.wo-list li[data-done] .wo-season {
+  color: var(--watched-accent);
+}
+
+.wo-list li[data-done] .thumb img,
+.wo-list li[data-status='dropped'] .thumb img {
+  filter: grayscale(1) brightness(0.78);
+}
+
+.wo-list li[data-status='dropped']:not([data-done]) .wo-title {
+  color: var(--watched-text);
+}
+
+/* szerkesztéskor: fogantyú (húzás egérrel / ujjal), ↑ / ↓ */
+.wo-handle {
+  justify-self: center;
+  width: 1.1rem;
+  height: 1.9rem;
+  cursor: grab;
+  touch-action: none;
+  border-radius: 4px;
+  background: radial-gradient(circle, var(--muted) 1.4px, transparent 1.6px) 0 0 / 0.55rem 0.48rem;
+  opacity: 0.8;
+}
+
+.wo-handle:hover {
+  opacity: 1;
+}
+
+.wo-list li[data-dragging] {
+  background: var(--surface-raised);
+  border-color: var(--edge);
+  box-shadow: var(--shadow-pop);
+}
+
+.wo-list li[data-dragging] .wo-handle {
+  cursor: grabbing;
+}
+
+.wo-list[data-editing] li {
+  user-select: none;
+}
+
+.wo-move {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.wo-move button {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  font-weight: 700;
+  color: var(--text);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.wo-move button:hover:not(:disabled) {
+  background-color: var(--hover-tint);
+}
+
+.wo-move button:disabled {
+  opacity: 0.35;
+}
+
+/* „Hogy tetszett?” a kipipált tétel alatt */
+.wo-ask {
+  grid-column: 4 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+  padding: 0.45rem 0 0.15rem;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .dialog-tabs {
+    margin-inline: 1rem;
+  }
+
+  .wo-list li {
+    grid-template-columns: 1.5rem 1.5rem 2rem minmax(0, 1fr) auto;
+    column-gap: 0.5rem;
+    padding-inline: 0.45rem;
+  }
+
+  .wo-tags {
+    grid-column: 4 / -1;
+    grid-row: 2;
+    justify-content: flex-start;
+  }
+
+  .wo-tags:empty {
+    display: none;
+  }
+
+  .wo-move {
+    grid-column: 5;
+    grid-row: 1;
+  }
+}
+
+@supports (corner-shape: squircle) {
+  .wo-list li {
+    corner-shape: squircle;
+    border-radius: 16px;
+  }
 }
 
 /* TMDB-gyűjtemény keresése és hozzárendelése */

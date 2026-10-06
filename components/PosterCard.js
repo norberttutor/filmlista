@@ -9,8 +9,13 @@ import ReleaseBadge from '@/components/ReleaseBadge';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
 
-export default function PosterCard({ title: t, franchise, onEdit }) {
+// item: a nézési sorrend tétele (a fő lista „Nézési sorrend” rendezésében, lib/watchOrder.js) –
+// évadnál „2. évad” felirat, és az állapot / letöltve az évadé
+export default function PosterCard({ title: t, item = null, franchise, onEdit }) {
   const link = externalLink(t);
+  const season = item?.season ?? 0;
+  const status = item ? item.status : t.status;
+  const label = season ? `${t.title} – ${season}. évad` : t.title;
   const seasons = hasSeasons(t) ? seasonCounts(t) : null;
   // még meg nem jelent film: szaggatott keret a borító körül és dátumos jelvény
   const release = releaseState(t);
@@ -23,7 +28,7 @@ export default function PosterCard({ title: t, franchise, onEdit }) {
   return (
     <article
       className="card"
-      data-status={t.status}
+      data-status={status}
       data-release={release ? release.kind : undefined}
       onPointerEnter={() => setPointed(true)}
       {...ambientProps(ambient)}
@@ -37,15 +42,15 @@ export default function PosterCard({ title: t, franchise, onEdit }) {
         ) : (
           <span className="poster-fallback">{t.title}</span>
         )}
-        {t.is_downloaded && <span className="badge">Letöltve</span>}
+        {(item ? item.downloaded : t.is_downloaded) && <span className="badge">Letöltve</span>}
         {release && <ReleaseBadge state={release} />}
-        {seasons ? <SeasonStrip title={t} /> : <span className="status-strip" aria-hidden="true" />}
+        {seasons ? <SeasonStrip title={t} current={season} /> : <span className="status-strip" aria-hidden="true" />}
       </div>
 
       <button
         type="button"
         className="edit-btn"
-        aria-label={`Szerkesztés: ${t.title}`}
+        aria-label={`Szerkesztés: ${label}`}
         onClick={() => onEdit(t, posterRef.current)}
       >
         <svg
@@ -78,6 +83,7 @@ export default function PosterCard({ title: t, franchise, onEdit }) {
           t.title
         )}
       </h3>
+      {season > 0 && <p className="card-season">{season}. évad</p>}
       {t.original_title && t.original_title !== t.title && (
         <p className="original">{t.original_title}</p>
       )}
@@ -86,8 +92,8 @@ export default function PosterCard({ title: t, franchise, onEdit }) {
         {t.release_year && <span>{t.release_year}</span>}
         <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
         <ImdbBadge title={t} />
-        {t.status !== DEFAULT_STATUS && <span className="status-name">{t.status_name}</span>}
-        {seasons && (
+        {status !== DEFAULT_STATUS && <span className="status-name">{item ? item.statusName : t.status_name}</span>}
+        {seasons && !season && (
           <span>
             {seasons.watched}/{seasons.aired} évad
           </span>

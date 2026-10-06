@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { addTitle, setFranchiseCollections, updateTitle } from '@/lib/titles';
 import { useBackdropClose } from '@/lib/useBackdropClose';
+import WatchOrder from '@/components/WatchOrder';
 
 const IMG = 'https://image.tmdb.org/t/p/';
 const byYear = (a, b) => (a.release_year ?? 9999) - (b.release_year ?? 9999);
@@ -63,7 +64,7 @@ export function summarizeCollection(franchise, titles, collections) {
 //   gyűjtemény nélküli filmek);
 // - „+ TMDB-gyűjtemény hozzáadása”: keresés a TMDB gyűjteményei között (pl. Star Wars).
 // A sáv akkor is megjelenik, ha nincs TMDB-gyűjtemény (a saját címekkel).
-export default function FranchiseCollection({ franchise, titles, onAdded, onFranchiseUpdated }) {
+export default function FranchiseCollection({ franchise, titles, orders, onAdded, onUpdated, onOrderChanged, onFranchiseUpdated }) {
   const params = collectionParams(franchise, titles);
   const { movies, extra } = params;
   const needsFetch = Boolean(movies || extra);
@@ -121,7 +122,11 @@ export default function FranchiseCollection({ franchise, titles, onAdded, onFran
           extras={extras}
           counts={counts}
           manual={manual}
+          titles={titles}
+          orders={orders}
           onAdded={onAdded}
+          onUpdated={onUpdated}
+          onOrderChanged={onOrderChanged}
           onFranchiseUpdated={onFranchiseUpdated}
           onClose={() => setOpen(false)}
         />
@@ -148,12 +153,35 @@ function Poster({ path }) {
   );
 }
 
-export function CollectionDialog({ franchise, sections, extras, counts, manual, onAdded, onFranchiseUpdated, onClose }) {
+// Két fül (Norbi döntése, terv-3 28): „Gyűjtemény” (a TMDB-gyűjtemények és a további címek) és
+// „Nézési sorrend” (WatchOrder). A panelek rejtve megmaradnak (a sorrend vázlata nem vész el).
+const TABS = [
+  { id: 'collection', label: 'Gyűjtemény' },
+  { id: 'order', label: 'Nézési sorrend' },
+];
+
+export function CollectionDialog({
+  franchise,
+  sections,
+  extras,
+  counts,
+  manual,
+  titles,
+  orders,
+  onAdded,
+  onUpdated,
+  onOrderChanged,
+  onFranchiseUpdated,
+  onClose,
+}) {
   const dialogRef = useRef(null);
   const headingRef = useRef(null);
   const [state, setState] = useState({}); // tmdb_id → { busy } | { error }
   const [error, setError] = useState('');
   const [searching, setSearching] = useState(false); // a „+ TMDB-gyűjtemény” kereső nyitva
+  const [tab, setTab] = useState('collection');
+  const [ordering, setOrdering] = useState(false); // a nézési sorrend szerkesztése folyik
+  const tabRefs = useRef({});
   const missing = [
     ...new Map(sections.flatMap((s) => s.parts.filter((p) => !p.own)).map((p) => [p.tmdb_id, p])).values(),
   ];
@@ -193,11 +221,23 @@ export function CollectionDialog({ franchise, sections, extras, counts, manual, 
   }
 
   const busyAny = Object.values(state).some((s) => s.busy);
-  // asztalon kikattintásra bezárul – felvétel közben és nyitott TMDB-gyűjtemény-keresőnél nem
+  // asztalon kikattintásra bezárul – felvétel közben, nyitott TMDB-gyűjtemény-keresőnél és a
+  // nézési sorrend szerkesztése közben nem
   const outsideClose = useBackdropClose(dialogRef, {
     onClose: () => dialogRef.current.close(),
-    canClose: () => !busyAny && !searching,
+    canClose: () => !busyAny && !searching && !ordering,
   });
+
+  // a fülek között nyilakkal is (Home / End: az első / az utolsó)
+  function tabKey(e) {
+    const i = TABS.findIndex((t) => t.id === tab);
+    const to = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: TABS.length - 1 }[e.key];
+    if (to === undefined) return;
+    e.preventDefault();
+    const next = TABS[(to + TABS.length) % TABS.length].id;
+    setTab(next);
+    tabRefs.current[next]?.focus();
+  }
 
   return (
     <dialog
@@ -205,6 +245,13 @@ export function CollectionDialog({ franchise, sections, extras, counts, manual, 
       className="editor collection-dialog"
       aria-labelledby="collection-title"
       onClose={onClose}
+      // sorrend-szerkesztés közben az Esc csak a szerkesztést zárja (a vázlat elvész)
+      onCancel={(e) => {
+        if (e.target === e.currentTarget && ordering) {
+          e.preventDefault();
+          setOrdering(false);
+        }
+      }}
       {...outsideClose}
     >
       <div
@@ -233,6 +280,44 @@ export function CollectionDialog({ franchise, sections, extras, counts, manual, 
         </p>
       </div>
 
+      <div className="dialog-tabs" role="tablist" aria-label="Nézet">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            ref={(el) => (tabRefs.current[t.id] = el)}
+            type="button"
+            role="tab"
+            id={`collection-tab-${t.id}`}
+            aria-selected={tab === t.id}
+            aria-controls={`collection-panel-${t.id}`}
+            tabIndex={tab === t.id ? 0 : -1}
+            onClick={() => setTab(t.id)}
+            onKeyDown={tabKey}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div
+        role="tabpanel"
+        id="collection-panel-order"
+        aria-labelledby="collection-tab-order"
+        className="collection-section"
+        hidden={tab !== 'order'}
+      >
+        <WatchOrder
+          franchise={franchise}
+          titles={titles}
+          orders={orders}
+          editing={ordering}
+          onEditingChange={setOrdering}
+          onOrderChanged={onOrderChanged}
+          onUpdated={onUpdated}
+        />
+      </div>
+
+      <div role="tabpanel" id="collection-panel-collection" aria-labelledby="collection-tab-collection" hidden={tab !== 'collection'}>
       {sections.map((s) => (
         <section key={s.id} className="collection-section" aria-labelledby={`collection-${s.id}`}>
           <div className="collection-section-head">
@@ -327,9 +412,10 @@ export function CollectionDialog({ franchise, sections, extras, counts, manual, 
           </p>
         )}
       </section>
+      </div>
 
       <div className="editor-actions">
-        {missing.length > 1 && (
+        {tab === 'collection' && missing.length > 1 && (
           <button type="button" className="ghost" disabled={busyAny} onClick={addMissing}>
             A hiányzó {missing.length} felvétele
           </button>

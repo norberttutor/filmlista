@@ -81,7 +81,14 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   szűkíthetők –, a keresés törlésekor a keresés előtti szűrők állnak vissza),
   mellette felirat nélkül (`aria-label`) a Rendezés (`SORTS`:
   legutóbb / legkorábban hozzáadott, legjobb értékelés, legújabb / legrégebbi megjelenés;
-  üres érték a végére), a sor legvégén (csak ≥ 1400 px-en) felirat nélküli nézetváltó: két
+  üres érték a végére; franchise-ra szűrve, ha annak van saját nézési sorrendje – terv-3 28 –, elöl
+  „Nézési sorrend” (`WATCH_ORDER`): Norbi döntése, 2026-10-06, csak ilyenkor kínálja, és a franchise
+  kiválasztásakor magától erre áll – `orderSort` –, más franchise-nál / franchise nélkül az előző
+  rendezés; ilyenkor a lista a sorrend tételeiből áll – `visible`: `{ key, title, item }` –: a
+  sorozat évadonként külön tétel, több helyen is („2. évad” a kártyán – `.card-season` – és a soron –
+  `.season-tag` –, a csíkon kiemelve – `SeasonStrip current`), az állapot- és a letöltve-szűrő, a
+  darabszámok és a `kept` tételenként – évadnál az évadé, abbahagyott sorozat meg nem nézett
+  évadja Abbahagyva), a sor legvégén (csak ≥ 1400 px-en) felirat nélküli nézetváltó: két
   ikongomb, lista (táblázat, `TitleTable`) | rács (borítófal) – `aria-pressed`, `title`; a
   választást a böngésző megjegyzi (`localStorage`, `filmlista-nezet`), alapból lista;
   1400 px alatt mindig borítófal. Borítófal: telefonon (≤ 640 px) 3 kártya egy sorban (kisebb
@@ -344,7 +351,29 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   Norbi 40 franchise-ából 15-nél kihagyott címeket – 2026-10-04.) Közös exportok (a Franchise-ok
   ablak is használja): `collectionParams()`, `paramsKey()`, `fetchCollections()`,
   `summarizeCollection()` (szakaszok, további címek, számok + `missing`), `CollectionMeter`,
-  `CollectionDialog`
+  `CollectionDialog`. A gyűjtemény-ablak két fülön (terv-3 28, Norbi döntése; `role="tablist"`,
+  nyilakkal is; a panelek rejtve megmaradnak): „Gyűjtemény” (a fenti) és „Nézési sorrend”
+  (`WatchOrder`); sorrend-szerkesztés közben kikattintásra nem zár, az Esc csak a szerkesztést zárja
+- `components/WatchOrder.js` + `lib/watchOrder.js` – nézési sorrend (terv-3 28, 2026-10-06, Norbi
+  döntéseivel): a franchise **listán lévő** filmjei és a sorozatok **évadjai külön tételként**
+  (`franchiseItems()`; évad nélküli sorozat egy tétel; tételkulcs `címId:évad`, 0 = film),
+  számozott listában: jelölőnégyzet, sorszám, kis borító, „Loki – 2. évad”, év / „Bejelentve”.
+  `orderedItems()`: a tárolt sorrend (`franchise_order`), a benne nem szereplők (új cím / évad)
+  **a végére**, egymás közt megjelenés szerint (film: mozis / digitális dátum, különben az év;
+  évad: `air_date`); amíg nincs tárolt sorrend, megjelenés szerint. A megnézett tétel **kihúzva a
+  helyén marad** (`data-done`), az első meg nem nézett, megjelent, nem abbahagyott „Következik”
+  (`nextItem()`); abbahagyott sorozat meg nem nézett évadja „Abbahagyva”, kihagyva; bejelentett
+  évad nem jelölhető. A pipa filmnél `updateTitle(status)` (vissza: Megnézendő), évadnál
+  `setSeasonStatus` (az előtte lévő üres évadokat is kitölti, „Visszavonás” a sávban – mint a
+  listán: az egész kattintást visszacsinálja); ha a cím megnézett lett és nincs értékelése, a tétel
+  alatt „Hogy tetszett?” (Norbi döntése; az ablak fölött a toast nem kattintható, ezért helyben, a
+  Watchlist `handleRowUpdated(row, false)`-szal nem kérdez újra). „Sorrend szerkesztése”: húzás a
+  fogantyúnál (pointer-események az ablakon – az átrendezéskor a fogantyú a DOM-ban máshová kerül;
+  `touch-action: none`; az ablak szélén görget) és ↑ / ↓ (a fókusz a gombon marad, felolvasónak
+  „…: 3. hely”); „Kész” egyben ment (`saveOrder` → `set_franchise_order` RPC), „Megjelenés
+  szerint” + „Kész” törli a saját sorrendet (`clearOrder` – a rendezés is eltűnik), „Mégse” / Esc
+  elveti. `loadOrders()` a Watchlist betöltésekor (hibánál a lista attól még működik),
+  `franchisesWithOrder()` – melyik franchise-nak van ma is érvényes sorrendje
 - `app/api/tmdb/videos/route.js` – `GET ?type&id` → `{ video: { key, name, lang } | null }`:
   YouTube, „Trailer” előbb, hivatalos előbb, legfrissebb; magyar nyelvű, ha nincs, angol (ha a
   cím már nincs a TMDB-n: `null`; a similar route is üres listát ad ilyenkor)
@@ -546,6 +575,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (szándékosan NULL is lehet – az app üresnek veszi –, mert az oszlop előtti mentések
   visszaállításakor NULL kerül bele). **Általános szabály:** mentett táblába új oszlop csak
   NULL-t engedő (vagy a visszaállítás tölti ki), különben a régi mentések nem állíthatók vissza
+- `franchise_order (franchise_id FK → franchises on delete cascade, title_id FK → titles on delete
+  cascade, season_number ≥ 0 – 0: film / évad nélküli sorozat –, user_id default auth.uid(),
+  position)`, PK `(franchise_id, title_id, season_number)`, RLS (a cím és a franchise is a
+  felhasználóé) – `15_franchise_order.sql` (terv-3 28, 2026-10-06). Csak a sorrend; a megnézett
+  állapot a címekből / évadokból jön. `set_franchise_order(franchise, items jsonb)` (a felhasználó
+  jogaival, egy tranzakcióban cseréli). Trigger (`titles_franchise_order_moved`): más franchise-ba
+  került cím kikerül a régi sorrendből (visszakerülve a végére jön). A mentésben is (version 2)
 - Trigger (`06_watched_clears_downloaded.sql`): amikor egy cím „Megnézve” állapotba kerül
   (átváltáskor vagy megnézettként felvéve), az `is_downloaded` hamis lesz; ha utána kézzel
   újra letöltöttnek jelölik, az megmarad. A felület is azonnal leveszi a pipát.
@@ -561,8 +597,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   megnézve; filmenként egyszer (az egyedi kulcs)
 - `backups (id, user_id default auth.uid(), kind ('weekly' | 'manual' | 'before_restore' |
   'imported'), created_at, title_count, data jsonb)` – `12_backups.sql`. A `data` a felhasználó
-  sorai változatlanul (`to_jsonb`): `{ version: 1, franchises, titles, title_genres, genres,
-  title_seasons, notifications }` (`backup_snapshot(user)`). RLS: a sajátját látja és törölheti,
+  sorai változatlanul (`to_jsonb`): `{ version: 2, franchises, titles, title_genres, genres,
+  title_seasons, notifications, franchise_order }` (`backup_snapshot(user)`; a version 1-es –
+  2026-10-06 előtti – mentésekben nincs `franchise_order`, azok sorrend nélkül állnak vissza). RLS: a sajátját látja és törölheti,
   írni csak a függvények írnak. `write_backup(user, kind)`: üres listáról nem ment; mentés után
   a 8 hétnél (55 nap 23 óránál) régebbieket törli – üres listánál nem, így a régiek megmaradnak.
   `backup_all_users()`: pg_cron, `filmlista-heti-mentes`, hétfő 03:00 UTC. A felületről:
@@ -696,11 +733,17 @@ kikattintásra bezárul, ha nincs mentetlen módosítás (terv-3 24-es pontja, 2
 nézhető?” az adatlapon (magyar streamingszolgáltatók logóval, terv-3 21), IMDb-figyelőlista
 importja (terv-3 20), „Franchise-ok” ablak a ⋮ menüben (terv-3 23, 2026-10-05), kikattintásra záródó ablakok (terv-3 32),
 adatlap a listára vétel előtt – előnézet a találatokból, a Felfedezésből és a Hasonló címekből,
-„Vissza” gombbal (terv-3 31, 2026-10-05).
+„Vissza” gombbal (terv-3 31, 2026-10-05). Nézési sorrend a franchise-okban: a gyűjtemény-ablak
+„Nézési sorrend” fülén filmek és évadok saját sorrendben, a megnézett kihúzva, a fő listán „Nézési
+sorrend” rendezés évadonkénti tételekkel (terv-3 28, 2026-10-06).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
-**Szükséges (Norbi kérése, 2026-10-05) – mindenek előtt:** **34 – erőforrás-optimalizálás
+**PRIORITÁS (Norbi kérése, 2026-10-05) – a lista élén** (a 28-as – nézési sorrend – kész,
+2026-10-06):
+1. **29 – Marvel franchise betöltése és nézési sorrendje** a 28-asra építve (tömeges import
+   franchise-választóval, a nézési sorrend szövegből „Loki 1. évad” formában vagy Excelből).
+**Szükséges (Norbi kérése, 2026-10-05) – a prioritásos 29 után:** **34 – erőforrás-optimalizálás
 funkcióváltozás nélkül + kinézeti hibák**: a vizsgálat a `munka/optimalizalas/VIZSGALAT.md`-ben.
 Kész (2026-10-05): E4 + E5 gyorsítótár, E1 értesítések, E6 kisebb kép. Hátravan: E2
 háttérfrissítések kihagyása (közös „esedékes-e” feltételek a route-okkal), E3 helyi
@@ -725,14 +768,24 @@ tokenellenőrzés (csak Norbi döntésével), a kinézeti kör bővítése (K3).
 4. **26 – regisztráció**: a belépési oldalon „Regisztráció” (`signUp`, megerősítő levél); az új
    fiók nem admin. **Nyitott:** bárki regisztrálhasson, vagy meghívókóddal / admin-jóváhagyással
    (javaslat: az utóbbi – az OMDb napi 1000 kérése közös).
-**Norbi kérései (2026-10-05)** – utánuk, a TERV.md-ben részletezve (nyitott kérdésekkel):
-5. **28 – lejátszási lista**: saját nézési sorrend (film, sorozat vagy évad elemekkel, húzással
-   átrendezve, „Következik” jelölés); új táblák (`playlists`, `playlist_items`) a mentésbe is.
-6. **29 – Marvel franchise betöltése és nézési sorrendje** a 28-asra építve (tömeges import
-   franchise-választóval, sorrend szövegből „Loki 1. évad” formában vagy Excelből).
-7. **33 – képes felhasználói leírás**: a `FELHASZNALOI-LEIRAS.md` kiegészítése képernyőképekkel
+**Norbi kérései (2026-10-05)** – utánuk, a TERV.md-ben részletezve:
+5. **33 – képes felhasználói leírás**: a `FELHASZNALOI-LEIRAS.md` kiegészítése képernyőképekkel
    (tesztfiók + próbalista, maszkolt e-mail, számozott jelölők), egy újrageneráló szkripttel
    (`munka/terv-3/leiras-kepek.mjs` → `docs/kepek/`); utána szabály: a változott felület képe is frissül.
+**Norbi kérései (2026-10-05, funkciójavaslatokból)** – a 33-as után:
+6. **35 – franchise felismerése felvételkor**: ha a felvett film TMDB-gyűjteménye egy meglévő
+   franchise-hoz tartozik, az app **felajánlja** (toast „Hozzárendelés”; Norbi döntése: nem
+   automatikus) + egyszeri „Javasolt hozzárendelések” a Franchise-ok ablakban.
+7. **36 – új rész egy franchise-od TMDB-gyűjteményében → harang** (hetente, az első feltöltés nem
+   szól; kattintva előnézet).
+8. **37 – „Neked ajánlott” sor a Felfedezésben** (a 8+ saját értékelések TMDB-ajánlásaiból, a
+   listán lévők nélkül).
+9. **38 – ALACSONY PRIORITÁS: szereplők és rendező az adatlapon** (személyre kattintva a filmjei az
+   ablakon belül) – **előbb látványtervek**, Norbi választ.
+10. **39 – „Nem érdekel” (×) az ajánlásokon** (Felfedezés, Hasonló címek, „Neked ajánlott”):
+   elrejtve marad; új tábla `hidden_suggestions`, a mentésbe is.
+11. **40 – megnézettre állításkor rövid „kihúzás” animáció** (0,2 s, a 28-as checklisttel
+   egységesen; előbb rövid videó Norbinak).
 
 ## Fejlesztési terv, 3. kör (2026-10-04)
 **`munka/terv-3/TERV.md`** (helyi mappa) – a hátralévő pontok (a „Következő feladat” pontjai)
@@ -749,9 +802,15 @@ jelent filmek (szaggatott keret + jelvény + harang; szűrőgomb Norbi kérésé
 kikattintásra bezáruló adatlap; 20 – IMDb-figyelőlista importja; 21 – „Hol nézhető?” csak az
 adatlapon; 22 – telefonon nincs „IMDb import”; 23 – „Franchise-ok” ablak (2026-10-05); 32 – kikattintás a Statisztika, Franchise-ok, gyűjtemény és
 Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a találatokból, a
-Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05). Vár még:
-34 (szükséges, 2. rész: E2, E3, K3), 25, 27, 13, 26, 28, 29, 33 („Következő feladat”); 30 – tömörebb adatlap kész
+Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
+nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
+Vár még: **29 (prioritás)**, 34 (szükséges, 2. rész: E2, E3, K3), 25, 27, 13, 26, 33, 35, 36, 37, 38 (alacsony prioritás), 39, 40 („Következő feladat”); 30 – tömörebb adatlap kész
 (B – vezérlősáv, 2026-10-05).
+**Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
+appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,
+megjelenési naptár, figyelmeztetés hasonló címre, mentett szűrő-összeállítások, díjak az
+adatlapon, alsó navigációs sáv telefonon, aktivitás-hőtérkép, rámutatásra leírás a borítófalon,
+sűrűségváltó, fülek az adatlapon telefonon – magadtól ne javasold újra.
 **Elvetve (Norbi kérésére, 2026-10-04) – nem kell, magadtól ne javasold újra:** 2 – gyorsműveletek a borítón, 3 – parancspaletta (Ctrl+K) és billentyűparancsok, 5 – „Mit nézzek ma?”, 6 – játékidő a soron és szűrő rá, 11 – saját címkék, 12 – szinkron / felirat jelölése, 17 – csoportosítás hónapok szerint, 18 – évértékelő, 19 – értesítés a telefonra (web push).
 
 ## Fejlesztői megjegyzés

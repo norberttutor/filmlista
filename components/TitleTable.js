@@ -22,8 +22,10 @@ import { usePosterColor, ambientProps } from '@/lib/posterColor';
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w154';
 
 // Asztali nézet: egy cím soronként, a saját adatok közvetlenül a sorban szerkeszthetők.
+// entries: { key, title, item } – az item a nézési sorrend tétele (a fő lista „Nézési sorrend”
+// rendezésében: évadnál „2. évad”, az állapot az évadé), egyébként null
 export default function TitleTable({
-  titles,
+  entries,
   statuses,
   franchises,
   onCreateFranchise,
@@ -57,10 +59,11 @@ export default function TitleTable({
           </tr>
         </thead>
         <tbody>
-          {titles.map((t) => (
+          {entries.map((e) => (
             <TitleRow
-              key={t.id}
-              title={t}
+              key={e.key}
+              title={e.title}
+              item={e.item}
               statuses={statuses}
               franchises={franchises}
               onCreateFranchise={onCreateFranchise}
@@ -79,6 +82,7 @@ export default function TitleTable({
 
 function TitleRow({
   title: t,
+  item,
   statuses,
   franchises,
   onCreateFranchise,
@@ -135,7 +139,7 @@ function TitleRow({
 
   return (
     <tr
-      data-status={t.status}
+      data-status={item ? item.status : t.status}
       data-release={release ? release.kind : undefined}
       onPointerEnter={() => setPointed(true)}
       onFocus={() => setPointed(true)}
@@ -168,6 +172,7 @@ function TitleRow({
               <p className="original">{t.original_title}</p>
             )}
             <p className="meta">
+              {item?.season > 0 && <span className="season-tag">{item.season}. évad</span>}
               {t.release_year && <span>{t.release_year}</span>}
               <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
               <ImdbBadge title={t} />
@@ -224,7 +229,7 @@ function TitleRow({
       </td>
       <td className="col-status">
         {hasSeasons(t) ? (
-          <SeasonCell title={t} onUpdated={onUpdated} onError={setError} />
+          <SeasonCell title={t} current={item?.season ?? 0} onUpdated={onUpdated} onError={setError} />
         ) : (
           <select
             aria-label={`Állapot – ${t.title}`}

@@ -185,7 +185,8 @@ export function useSeasonActions(title, onUpdated, onError) {
 
 // Évadcsík: szakaszonként egy évad az állapotszínével, a bejelentett szaggatott. Ha van
 // onCycle, a megjelent évadra kattintva lépteti az állapotot (üres → Folyamatban → Megnézve).
-export function SeasonStrip({ title, onCycle }) {
+// current: a nézési sorrend tételének évada (a fő lista „Nézési sorrend” rendezésében) – kiemelve
+export function SeasonStrip({ title, onCycle, current = 0 }) {
   const today = todayDate();
   const { aired, watched } = seasonCounts(title);
   return (
@@ -204,6 +205,7 @@ export function SeasonStrip({ title, onCycle }) {
             type="button"
             className="season"
             data-status={s.status}
+            data-current={s.season_number === current || undefined}
             title={label}
             aria-label={`${label} – kattintásra: ${STATUS_TEXT[NEXT_SEASON_STATUS[s.status]]}`}
             onClick={() => onCycle(s.season_number, NEXT_SEASON_STATUS[s.status])}
@@ -213,6 +215,7 @@ export function SeasonStrip({ title, onCycle }) {
             key={s.season_number}
             className="season"
             data-status={s.status}
+            data-current={s.season_number === current || undefined}
             data-upcoming={isAired ? undefined : ''}
             title={label}
             aria-hidden={onCycle ? undefined : 'true'}
@@ -446,7 +449,7 @@ export function SeasonList({ title, actions }) {
 
 // A táblázat Állapot cellája sorozatnál: évadcsík (kattintható), alatta "3/5 évad", ami
 // lenyitja az évadlistát (a sor nem lesz magasabb). Kattintás kívül / Esc: bezár.
-export function SeasonCell({ title, onUpdated, onError }) {
+export function SeasonCell({ title, current = 0, onUpdated, onError }) {
   const actions = useSeasonActions(title, onUpdated, onError);
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -475,7 +478,7 @@ export function SeasonCell({ title, onUpdated, onError }) {
 
   return (
     <div className="season-cell" ref={rootRef}>
-      <SeasonStrip title={title} onCycle={actions.setStatus} />
+      <SeasonStrip title={title} current={current} onCycle={actions.setStatus} />
       <button
         ref={buttonRef}
         type="button"

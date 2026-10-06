@@ -43,6 +43,7 @@ import { loadNotifications, markNotificationsRead } from '@/lib/notifications';
 import { downloadListCsv } from '@/lib/exportList';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 import { canMorph, MORPH_NAME, trackTransition } from '@/lib/viewTransition';
+import { franchisesWithOrder, loadOrders, orderedItems } from '@/lib/watchOrder';
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 
@@ -147,6 +148,12 @@ const SORTS = [
   },
 ];
 
+// franchise-ra szűrve, ha annak van saját nézési sorrendje (terv-3 28, Norbi döntése): a lista a
+// sorrend tételeiből áll – a sorozat évadonként külön tétel, több helyen is szerepelhet –, és az
+// állapot- és a letöltve-szűrő tételenként (évadnál az évadé) érvényes. Csak ilyenkor kínálja,
+// és a franchise kiválasztásakor magától erre áll.
+const WATCH_ORDER = { code: 'watch_order', name: 'Nézési sorrend' };
+
 function Chip({ active, onClick, label, count }) {
   return (
     <button type="button" className="chip" aria-pressed={active} onClick={onClick}>
@@ -160,6 +167,7 @@ export default function Watchlist({ session }) {
   const [titles, setTitles] = useState([]);
   const [statuses, setStatuses] = useState([]);
   const [franchises, setFranchises] = useState([]);
+  const [orders, setOrders] = useState([]); // a franchise-ok nézési sorrendjei (franchise_order sorai)
   const [loading, setLoading] = useState(true);
   // a franchise-logó keresése ezeknél már elindult ebben a munkamenetben
   const logoTried = useRef(new Set());
@@ -217,6 +225,8 @@ export default function Watchlist({ session }) {
   const [franchise, setFranchise] = useState(DEFAULT_FILTERS.franchise);
   const [downloaded, setDownloaded] = useState(DEFAULT_FILTERS.downloaded); // all | yes | no
   const [sort, setSort] = useState('added_desc');
+  // nézési sorrendes franchise-nál arra áll (amíg a felhasználó mást nem választ)
+  const [orderSort, setOrderSort] = useState(true);
   const [query, setQuery] = useState(''); // keresés a felvett címek között
   const [beforeSearch, setBeforeSearch] = useState(null); // a keresés előtti szűrők
   const [filtersOpen, setFiltersOpen] = useState(false); // telefonon alapból összecsukva
@@ -255,6 +265,9 @@ export default function Watchlist({ session }) {
         setTitles(titlesRes.data);
         setStatuses(statusesRes.data);
         setFranchises(franchisesRes.data.sort(byName));
+        loadOrders()
+          .then((rows) => !cancelled && setOrders(rows))
+          .catch((err) => console.warn('Nézési sorrendek betöltése sikertelen:', err.message));
 
         // hiányzó / régi IMDb-értékelések pótlása a háttérben; hiba esetén csak a konzolba ír
         refreshImdbRatings((rows) => {
@@ -390,6 +403,9 @@ export default function Watchlist({ session }) {
     }
     setTitles(titlesRes.data);
     setFranchises(franchisesRes.data.sort(byName));
+    loadOrders()
+      .then(setOrders)
+      .catch((err) => console.warn(err.message));
     loadNotifications()
       .then(setNotifications)
       .catch((err) => console.warn(err.message));
@@ -406,8 +422,8 @@ export default function Watchlist({ session }) {
     [titles]
   );
 
-  // minden szűrő az állapot kivételével – ebből jönnek az állapotgombok darabszámai
-  const beforeStatus = useMemo(
+  // minden szűrő az állapot és a letöltve kivételével
+  const baseFiltered = useMemo(
     () =>
       ofType.filter(
         (t) =>
@@ -417,11 +433,33 @@ export default function Watchlist({ session }) {
             (franchise === NO_FRANCHISE
               ? t.franchise_id == null
               : String(t.franchise_id) === franchise)) &&
-          (downloaded === 'all' || t.is_downloaded === (downloaded === 'yes')) &&
           words.every((w) => searchText.get(t.id).includes(w))
       ),
-    [ofType, genre, mama, franchise, downloaded, words, searchText]
+    [ofType, genre, mama, franchise, words, searchText]
   );
+
+  // minden szűrő az állapot kivételével – ebből jönnek az állapotgombok darabszámai
+  const beforeStatus = useMemo(
+    () => baseFiltered.filter((t) => downloaded === 'all' || t.is_downloaded === (downloaded === 'yes')),
+    [baseFiltered, downloaded]
+  );
+
+  // nézési sorrend: csak ha a kiválasztott franchise-nak van saját sorrendje
+  const orderFranchises = useMemo(() => franchisesWithOrder(titles, orders), [titles, orders]);
+  const orderAvailable = franchiseChosen && orderFranchises.has(Number(franchise));
+  const activeSort = orderAvailable && orderSort ? WATCH_ORDER.code : sort;
+  const orderList = useMemo(
+    () => (activeSort === WATCH_ORDER.code ? orderedItems(Number(franchise), titles, orders).items : null),
+    [activeSort, franchise, titles, orders]
+  );
+  // a sorrend tételei a szűrőkkel (a letöltve tételenként: évadnál az évadé)
+  const itemsBeforeStatus = useMemo(() => {
+    if (!orderList) return null;
+    const ok = new Set(baseFiltered.map((t) => t.id));
+    return orderList.filter(
+      (i) => ok.has(i.title.id) && (downloaded === 'all' || i.downloaded === (downloaded === 'yes'))
+    );
+  }, [orderList, baseFiltered, downloaded]);
 
   // az "Abbahagyva" csak sorozatnál fordulhat elő: a Filmek nézetben nincs gombja
   const shownStatuses = useMemo(
@@ -431,27 +469,39 @@ export default function Watchlist({ session }) {
 
   const countByStatus = useMemo(() => {
     const counts = {};
-    for (const t of beforeStatus) counts[t.status] = (counts[t.status] ?? 0) + 1;
+    for (const t of itemsBeforeStatus ?? beforeStatus) counts[t.status] = (counts[t.status] ?? 0) + 1;
     return counts;
-  }, [beforeStatus]);
+  }, [itemsBeforeStatus, beforeStatus]);
 
   // ha a szűrés vagy a rendezés változik (más kulcs): 1. oldal, és a megtartott sorok elengedve
-  const filterKey = [type, status, genre, mama, franchise, downloaded, sort, words.join(' ')].join('|');
+  const filterKey = [type, status, genre, mama, franchise, downloaded, activeSort, words.join(' ')].join('|');
 
   // a most szerkesztett címek a helyükön maradnak, amíg a szűrés nem változik: pl. a "Nem
   // letöltött" nézetben letöltöttnek jelölt film nem tűnik el azonnal (a pipa visszavehető)
-  const [kept, setKept] = useState({ key: filterKey, ids: [] });
+  // (nézési sorrendben a tételek: items – a tételkulcsok)
+  const [kept, setKept] = useState({ key: filterKey, ids: [], items: [] });
   // szűrésváltáskor elengedjük őket (akkor is, ha később ugyanez a szűrés jön vissza)
-  if (kept.key !== filterKey) setKept({ key: filterKey, ids: [] });
+  if (kept.key !== filterKey) setKept({ key: filterKey, ids: [], items: [] });
   const keptIds = useMemo(() => new Set(kept.ids), [kept]);
+  const keptItems = useMemo(() => new Set(kept.items), [kept]);
 
+  const statusNames = useMemo(() => new Map(statuses.map((s) => [s.code, s.name])), [statuses]);
+
+  // a lista bejegyzései: { key, title, item } – az item csak nézési sorrendben (a tétel: film,
+  // évad nélküli sorozat vagy egy évad), egyébként null
   const visible = useMemo(() => {
+    if (itemsBeforeStatus) {
+      const keys = new Set(itemsBeforeStatus.filter((i) => status === 'all' || i.status === status).map((i) => i.key));
+      return orderList
+        .filter((i) => keys.has(i.key) || keptItems.has(i.key))
+        .map((i) => ({ key: i.key, title: i.title, item: { ...i, statusName: statusNames.get(i.status) } }));
+    }
     const { compare } = SORTS.find((s) => s.code === sort);
     const matching = beforeStatus.filter((t) => status === 'all' || t.status === status);
     const ids = new Set(matching.map((t) => t.id));
     const stayed = ofType.filter((t) => keptIds.has(t.id) && !ids.has(t.id));
-    return [...matching, ...stayed].sort(compare);
-  }, [beforeStatus, ofType, keptIds, status, sort]);
+    return [...matching, ...stayed].sort(compare).map((t) => ({ key: t.id, title: t, item: null }));
+  }, [itemsBeforeStatus, orderList, keptItems, statusNames, beforeStatus, ofType, keptIds, status, sort]);
 
   // hiányzó franchise-logók (a franchise első filmjének címlogója) a háttérben: betöltéskor, és
   // rögtön, amikor egy logó nélküli franchise-hoz az első cím bekerül (gyűjtemény, adatlap, sor,
@@ -565,6 +615,7 @@ export default function Watchlist({ session }) {
   // ha a franchise-szűrő megszűnik (és nincs keresés), újra Filmek
   function changeFranchise(value) {
     setFranchise(value);
+    setOrderSort(true);
     if (value !== '' && value !== NO_FRANCHISE) {
       setType('all');
       setGenre('');
@@ -593,6 +644,7 @@ export default function Watchlist({ session }) {
     setQuery('');
     setBeforeSearch(null);
     applyFilters({ ...SEARCH_FILTERS, franchise: String(id) });
+    setOrderSort(true);
     setShowFranchises(false);
     filtersAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -611,6 +663,7 @@ export default function Watchlist({ session }) {
   async function handleDeleteFranchise(id) {
     await deleteFranchise(id);
     setFranchises((fs) => fs.filter((f) => f.id !== id));
+    setOrders((os) => os.filter((o) => o.franchise_id !== id));
     // az adatbázis már üresre állította a címeknél, itt csak helyben követjük
     setTitles((ts) => ts.map((t) => (t.franchise_id === id ? { ...t, franchise_id: null } : t)));
     if (franchise === String(id)) changeFranchise('');
@@ -621,10 +674,24 @@ export default function Watchlist({ session }) {
   // szűrés változásáig a helyén marad
   function replaceTitle(row) {
     setTitles((ts) => ts.map((x) => (x.id === row.id ? row : x)));
+    // nézési sorrendben a cím most látható tételei maradnak a helyükön
+    const items = visible.filter((e) => e.item && e.title.id === row.id).map((e) => e.key);
     setKept((k) => ({
       key: filterKey,
       ids: k.key === filterKey ? [...new Set([...k.ids, row.id])] : [row.id],
+      items: k.key === filterKey ? [...new Set([...k.items, ...items])] : items,
     }));
+    // más franchise-ba került: a régi sorrendből kikerült (az adatbázis-trigger is ezt teszi)
+    setOrders((os) =>
+      os.some((o) => o.title_id === row.id && o.franchise_id !== row.franchise_id)
+        ? os.filter((o) => o.title_id !== row.id || o.franchise_id === row.franchise_id)
+        : os
+    );
+  }
+
+  // a franchise nézési sorrendje mentve (rows: az új sorok; üres: megjelenés szerint)
+  function handleOrderChanged(franchiseId, rows) {
+    setOrders((os) => [...os.filter((o) => o.franchise_id !== franchiseId), ...rows]);
   }
 
   // az IMDb-importból beírt csillagok helyben is
@@ -662,9 +729,11 @@ export default function Watchlist({ session }) {
     titlesRef.current = titles;
   }, [titles]);
 
-  function handleRowUpdated(row) {
+  // ask: false – a gyűjtemény-ablak nézési sorrendjéből (az ablak alatt a sáv nem kattintható,
+  // ott a tétel alatt kérdez)
+  function handleRowUpdated(row, ask = true) {
     const before = titlesRef.current.find((x) => x.id === row.id);
-    if (before && before.status !== 'watched' && row.status === 'watched' && !row.my_rating) {
+    if (ask && before && before.status !== 'watched' && row.status === 'watched' && !row.my_rating) {
       askRating(row);
     }
     titlesRef.current = titlesRef.current.map((x) => (x.id === row.id ? row : x));
@@ -904,7 +973,7 @@ export default function Watchlist({ session }) {
               value={status}
               onChange={(e) => setStatus(e.target.value)}
             >
-              <option value="all">Minden állapot ({beforeStatus.length})</option>
+              <option value="all">Minden állapot ({(itemsBeforeStatus ?? beforeStatus).length})</option>
               {shownStatuses.map((s) => (
                 <option key={s.code} value={s.code}>
                   {s.name} ({countByStatus[s.code] ?? 0})
@@ -918,7 +987,7 @@ export default function Watchlist({ session }) {
                   active={status === 'all'}
                   onClick={() => setStatus('all')}
                   label="Mind"
-                  count={beforeStatus.length}
+                  count={(itemsBeforeStatus ?? beforeStatus).length}
                 />
                 {shownStatuses.map((s) => (
                   <Chip
@@ -1065,8 +1134,19 @@ export default function Watchlist({ session }) {
                 value={query}
                 onChange={(e) => changeQuery(e.target.value)}
               />
-              <select aria-label="Rendezés" value={sort} onChange={(e) => setSort(e.target.value)}>
-                {SORTS.map((s) => (
+              <select
+                aria-label="Rendezés"
+                value={activeSort}
+                onChange={(e) => {
+                  if (e.target.value === WATCH_ORDER.code) {
+                    setOrderSort(true);
+                  } else {
+                    setSort(e.target.value);
+                    setOrderSort(false);
+                  }
+                }}
+              >
+                {(orderAvailable ? [WATCH_ORDER, ...SORTS] : SORTS).map((s) => (
                   <option key={s.code} value={s.code}>
                     {s.name}
                   </option>
@@ -1129,7 +1209,10 @@ export default function Watchlist({ session }) {
               key={franchise}
               franchise={franchises.find((f) => String(f.id) === franchise)}
               titles={titles}
+              orders={orders}
               onAdded={(row) => setTitles((ts) => [row, ...ts])}
+              onUpdated={(row) => handleRowUpdated(row, false)}
+              onOrderChanged={handleOrderChanged}
               onFranchiseUpdated={(f) => setFranchises((fs) => fs.map((x) => (x.id === f.id ? { ...x, ...f } : x)))}
             />
           )}
@@ -1194,7 +1277,7 @@ export default function Watchlist({ session }) {
             </EmptyState>
           ) : isDesktop && view === 'list' ? (
             <TitleTable
-              titles={paged}
+              entries={paged}
               statuses={statuses}
               franchises={franchises}
               onCreateFranchise={handleCreateFranchise}
@@ -1206,11 +1289,12 @@ export default function Watchlist({ session }) {
             />
           ) : (
             <ul className="grid">
-              {paged.map((t) => (
-                <li key={t.id}>
+              {paged.map((e) => (
+                <li key={e.key}>
                   <PosterCard
-                    title={t}
-                    franchise={franchiseName.get(t.franchise_id)}
+                    title={e.title}
+                    item={e.item}
+                    franchise={franchiseName.get(e.title.franchise_id)}
                     onEdit={openEditor}
                   />
                 </li>
@@ -1235,11 +1319,14 @@ export default function Watchlist({ session }) {
         <FranchisesDialog
           franchises={franchises}
           titles={titles}
+          orders={orders}
           onCreate={handleCreateFranchise}
           onRename={handleRenameFranchise}
           onDelete={handleDeleteFranchise}
           onShow={showFranchise}
           onAdded={(row) => setTitles((ts) => [row, ...ts])}
+          onUpdated={(row) => handleRowUpdated(row, false)}
+          onOrderChanged={handleOrderChanged}
           onFranchiseUpdated={(f) => setFranchises((fs) => fs.map((x) => (x.id === f.id ? { ...x, ...f } : x)))}
           onClose={() => setShowFranchises(false)}
         />

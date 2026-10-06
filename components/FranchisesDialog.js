@@ -25,11 +25,14 @@ const byNameNoArticle = (a, b) => sortKey(a.name).localeCompare(sortKey(b.name),
 export default function FranchisesDialog({
   franchises,
   titles,
+  orders,
   onCreate,
   onRename,
   onDelete,
   onShow,
   onAdded,
+  onUpdated,
+  onOrderChanged,
   onFranchiseUpdated,
   onClose,
 }) {
@@ -296,7 +299,11 @@ export default function FranchisesDialog({
           extras={open.summary.extras}
           counts={open.summary.counts}
           manual={open.summary.manual}
+          titles={titles}
+          orders={orders}
           onAdded={onAdded}
+          onUpdated={onUpdated}
+          onOrderChanged={onOrderChanged}
           onFranchiseUpdated={onFranchiseUpdated}
           onClose={() => setOpenId(null)}
         />
