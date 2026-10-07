@@ -489,8 +489,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (nem abbahagyott) sorozathoz új, még meg nem jelent évad érkezik → `season_announced`; az új,
   már megjelent évadot `aired_notified = false`-szal veszi fel (arról a gyűjtés szól); az első
   feltöltésnél a megjelentekről nem szól
-- `app/api/tmdb/similar/route.js` – `GET ?type=movie|tv&id=` → a TMDB ajánlásai (ha nincs, a
-  hasonlók), csak borítóval, legfeljebb 12, a kereséssel azonos mezőnevekkel
+- `app/api/tmdb/similar/route.js` – `GET ?type=movie|tv&id=` → a TMDB ajánlásai (ha kevés, a
+  hasonlókkal pótolva, forrásonként 2 oldalig), csak borítóval, legfeljebb 12, a kereséssel azonos
+  mezőnevekkel. Szűrés (Norbi kérése, 2026-10-07): csak 2000-es vagy újabb (sorozatnál az első évad
+  éve), legalább 6,0-s **TMDB**-értékelésű, legalább 50 szavazatos címek – filmnél és sorozatnál is
+  (az IMDb-érték címenként egy OMDb-kérés lenne, a napi 1000-es keretből; Norbi az A változatot
+  választotta). A kliens `v=2` paraméterrel kéri (a böngésző egynapos gyorsítótára miatt; a szűrés
+  következő változásakor emeld)
 - `app/api/tmdb/backdrops/route.js` – `POST`: a még meg nem nézett címek (`backdrop_checked_at`
   üres) háttérképét lekéri a TMDB-ről és elmenti (40-esével, a felhasználó jogaival; ha nincs
   háttérkép vagy a cím már nincs a TMDB-n, csak megjelöli). A `Watchlist` betöltéskor hívja

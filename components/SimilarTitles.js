@@ -49,7 +49,9 @@ export default function SimilarTitles({ title, existingKeys, onAdded, onPreview 
     setLoad({ status: 'loading', results: [], error: '' });
     apiGet(
       '/api/tmdb/similar',
-      { type: title.media_type, id: title.tmdb_id },
+      // v: a szűrés változásakor (2026-10-07: 2000 utáni, 6,0+) új cím, hogy a böngésző egy napig
+      // tárolt régi válasza ne jöjjön
+      { type: title.media_type, id: title.tmdb_id, v: 2 },
       { signal: controller.signal }
     )
       // a megnyitás mozgása alatt nem rajzolunk újra (afterTransition)
