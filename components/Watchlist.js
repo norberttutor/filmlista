@@ -166,6 +166,12 @@ const SORTS = [
 // állapot- és a letöltve-szűrő tételenként (évadnál az évadé) érvényes. Csak ilyenkor kínálja,
 // és a franchise kiválasztásakor magától erre áll.
 const WATCH_ORDER = { code: 'watch_order', name: 'Nézési sorrend' };
+// a telepített app gyorsindítói (app/manifest.js, terv-3 43): ?nyit=… → mit nyisson meg
+const SHORTCUTS = {
+  hozzaadas: ({ openAdd }) => openAdd(),
+  'franchise-ok': ({ setShowFranchises }) => setShowFranchises(true),
+  statisztika: ({ setShowStats }) => setShowStats(true),
+};
 // franchise-ra szűrve, ha nincs saját nézési sorrendje, alapból megjelenés szerint (Norbi kérése,
 // 2026-10-06) – ugyanúgy magától, mint a nézési sorrend; kézi választás után az marad
 const FRANCHISE_SORT = 'year_asc';
@@ -805,6 +811,22 @@ export default function Watchlist({ session }) {
     setAdding(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
+  // gyorsindítók (terv-3 43): a telepített app ikonjának menüjéből /?nyit=… címmel indul – a lista
+  // betöltése után egyszer megnyitja a kért részt, és a címből eltünteti a paramétert (újratöltéskor
+  // ne nyíljon újra). Belépés nélkül a cím a belépés után is megmarad, így akkor nyílik.
+  const shortcutDone = useRef(false);
+  useEffect(() => {
+    if (loading || shortcutDone.current) return;
+    shortcutDone.current = true;
+    const url = new URL(window.location.href);
+    const target = url.searchParams.get('nyit');
+    if (!target) return;
+    url.searchParams.delete('nyit');
+    window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+    if (loadError) return;
+    SHORTCUTS[target]?.({ openAdd, setShowFranchises, setShowStats });
+  }, [loading, loadError]);
 
   // a telefonos "Szűrők" gomb rövid összegzése, pl. "Filmek · Megnézendő · Nem letöltött ·
   // Franchise nélkül"
