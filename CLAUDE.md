@@ -611,7 +611,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   aztán a lista; a Watchlist betöltéskor, valamint az évadfrissítés és a megjelenésidátum-frissítés
   után hívja – utóbbiakat csak, ha frissült sor (a `refreshSeasons` / `refreshReleases` a
   frissített sorok számát adja; hibánál is újratölt; terv-3 34, E1). A telepített app ikonján `navigator.setAppBadge()` mutatja a számot.
-  Ha nő az olvasatlanok száma (betöltéskor is, ha van), a harang egyszer megrezzen (`.ringing`)
+  Ha nő az olvasatlanok száma (betöltéskor is, ha van), a harang egyszer megrezzen (`.ringing`).
+  **Törlés** (Norbi kérése, 2026-10-07): soronként × (`.notif-del`; egérrel csak a sorra mutatva /
+  fókusznál látszik, érintőn mindig; utána a fókusz a következő × -re), a fejlécben „Összes törlése”
+  (`.notif-clear`, a látható – legfeljebb 30 – értesítés); `Watchlist.removeNotifications()`: azonnal
+  eltűnik, az értesítősávban „Visszavonás” (`dismissNotifications` / `restoreNotifications`; a
+  közben beérkező lekérdezés sem hozza vissza – `dismissedIds`). A sor nem törlődik, csak
+  `dismissed_at` kap (különben a gyűjtés újraírná)
 - `components/BulkImport.js` + `lib/bulkImport.js` – „Tömeges import” (csak asztali nézetben,
   a ⋮ menüből: `ref.current.open()`): soronként egy cím (legfeljebb `MAX_LINES` = 150; a sor
   végi évszám 1900–idén+5 szűr, pl. „Dűne 2021”; az ismétlődő sorok egyszer), TMDB-keresés
@@ -702,7 +708,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   újra letöltöttnek jelölik, az megmarad. A felület is azonnal leveszi a pipát.
 - `notifications (id, user_id default auth.uid(), title_id FK → titles on delete cascade,
   season_number, kind ('season_announced' | 'season_aired' | 'movie_digital' | 'mama_interested'), air_date,
-  created_at, read_at)`, egyedi `(title_id, season_number, kind)`, RLS – `10_notifications.sql`.
+  created_at, read_at, dismissed_at)`, egyedi `(title_id, season_number, kind)`, RLS – `10_notifications.sql`.
+  `dismissed_at` (`18_notification_dismiss.sql`, NULL-t enged): a harangból törölt – a lista nem
+  kéri le; a sor megmarad, így az egyedi kulcs miatt a gyűjtők nem írják újra (a `movie_digital`-t
+  14 napig újraírnák); Mama újbóli „Érdekel”-je (`mama_mark`) üríti.
   `title_seasons.aired_notified`: szóltunk-e már az évad megjelenéséről.
   `collect_season_notifications()` (a felhasználó jogaival): a még nem jelzett, már megjelent
   évadokról értesítést ír (abbahagyott sorozatról és már megnézett évadról nem), és jelzettnek
@@ -892,7 +901,8 @@ Gyorsindítók a telepített app ikonján (terv-3 43, 2026-10-07). Ízlésprofil
 42, 2026-10-07). **Mama külön hozzáférése** (terv-3 13, 2026-10-07): Mama
 (tutorne.eva@gmail.com) saját fiókkal a „Norbi filmjei” oldalt látja („B” változat – nagy sorok,
 Érdekel / Nem érdekel a sorban és az adatlapon); Norbinál „Nem érdekli” jelölés és „Mamát érdekli”
-harang; a Mama-tesztfiók a tesztfiókhoz kötve.
+harang; a Mama-tesztfiók a tesztfiókhoz kötve. Értesítések törlése a harangból (×, „Összes törlése”,
+visszavonható – 2026-10-07).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -904,44 +914,46 @@ az 1000 soros korlát kezelése); a C2 / C3 (látható változással járó kön
 szerint nem kell. A vizsgálat: `munka/optimalizalas/VIZSGALAT.md`.
 **Becsült idő** (Norbi kérése, 2026-10-06: a roadmap listázásakor mindig írd mellé; teszttel és
 doksival együtt; ha egy pont tartalma változik, frissítsd): a pontok mellett „~… óra”.
-**Norbi kérései (2026-10-04)** – utána, ebben a sorrendben; a részletek
+**Norbi kérései (2026-10-04)** – utána, ebben a sorrendben (a 25-ös és a 26-os a lista végén, lásd lent); a részletek
 (megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
-1. **25 – admin jogosultság** (~2–2,5 óra) (csak Norbi fiókja): csak admin látja a ⋮ menü **Mentések**
-   pontját és a **Mama** paramétert mindenhol (szűrő, oszlop, szerkesztő, kártya, CSV); javaslat:
-   `app_metadata.role = 'admin'` (SQL-lel, a tokenben), `is_admin()` – a mentés-függvények
-   adatbázisszinten is csak adminnak. A tesztfiók is admin (Norbi döntése, a teszt miatt).
-2. **27 – jelszó módosítása** (~2 óra + Norbi Supabase-beállítása ~15 perc): bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”: jelenlegi +
+1. **27 – jelszó módosítása** (~2 óra + Norbi Supabase-beállítása ~15 perc): bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”: jelenlegi +
    új kétszer; előbb ellenőrző belépés, utána `updateUser`) és „Elfelejtettem a jelszavam” a
    belépési oldalon (`resetPasswordForEmail` → levél → `PASSWORD_RECOVERY` → új jelszó). Norbi
    teendője: Supabase URL Configuration + magyar levélsablonok.
-3. **26 – regisztráció** (~2–3 óra, a választott módtól függően): a belépési oldalon „Regisztráció” (`signUp`, megerősítő levél); az új
-   fiók nem admin. **Nyitott:** bárki regisztrálhasson, vagy meghívókóddal / admin-jóváhagyással
-   (javaslat: az utóbbi – az OMDb napi 1000 kérése közös).
 (A 2026-10-05-i 33-as – képes felhasználói leírás – kész, 2026-10-06. A 13-as – Mama külön
 hozzáférése – kész, 2026-10-07: Mama fiókja – tutorne.eva@gmail.com – Norbiéhoz kötve, élesben 141 film
 látszik nála, ebből 24 „Érdekel”; napló: `munka/terv-3/13-mama/ALLAPOT.md`.)
 **Norbi kérései (2026-10-05, funkciójavaslatokból)** – utánuk:
-4. **35 – franchise felismerése felvételkor** (~1,5 óra): ha a felvett film TMDB-gyűjteménye egy meglévő
+2. **35 – franchise felismerése felvételkor** (~1,5 óra): ha a felvett film TMDB-gyűjteménye egy meglévő
    franchise-hoz tartozik, az app **felajánlja** (toast „Hozzárendelés”; Norbi döntése: nem
    automatikus) + egyszeri „Javasolt hozzárendelések” a Franchise-ok ablakban.
-5. **36 – új rész egy franchise-od TMDB-gyűjteményében → harang** (~2,5–3 óra) (hetente, az első feltöltés nem
+3. **36 – új rész egy franchise-od TMDB-gyűjteményében → harang** (~2,5–3 óra) (hetente, az első feltöltés nem
    szól; kattintva előnézet).
-6. **37 – „Neked ajánlott” sor a Felfedezésben** (~1–1,5 óra) (a 8+ saját értékelések TMDB-ajánlásaiból, a
+4. **37 – „Neked ajánlott” sor a Felfedezésben** (~1–1,5 óra) (a 8+ saját értékelések TMDB-ajánlásaiból, a
    listán lévők nélkül).
 **Norbi kérései (2026-10-06, javaslatokból)** – a 37-es után; a kinézeti pontoknál (45–47) **előbb
 látványterv képekkel**, beépítés Norbi elfogadása után:
-7. **41 – megosztható nézési sorrend** (~3 óra): egy franchise nézési sorrendjéhez csak olvasható
+5. **41 – megosztható nézési sorrend** (~3 óra): egy franchise nézési sorrendjéhez csak olvasható
    nyilvános link (belépés nélkül, borítókkal, a megnézett állapot nélkül); visszavonható.
-8. **44 – offline indulás** (~2–3 óra): service worker + a legutóbbi lista helyben tárolva –
+6. **44 – offline indulás** (~2–3 óra): service worker + a legutóbbi lista helyben tárolva –
    azonnal megnyílik, net nélkül csak olvasható, utána frissül.
 (A 39-es – „Nem érdekel” – és a 40-es – kihúzás – kész, 2026-10-06; a 37-es „Neked ajánlott”
 sorában is legyen ×. A 46-os – kiemelt sáv –, a 43-as – gyorsindítók – és a 42-es – ízlésprofil – kész, 2026-10-07.)
 **Norbi kérése (2026-10-06)** – utánuk:
-9. **48 – a felhasználói leírás a ⋮ menüből** (~2–2,5 óra): új menüpont („Felhasználói leírás”),
+7. **48 – a felhasználói leírás a ⋮ menüből** (~2–2,5 óra): új menüpont („Felhasználói leírás”),
    ami az appon belül, képekkel együtt mutatja a `FELHASZNALOI-LEIRAS.md`-t (a tartalomjegyzék
    hivatkozásai működnek, telefonon is). Javaslat: build közben HTML-lé alakítva egy saját oldalon
    (pl. `/leiras`, új lapon), a képek a `public/`-ba másolva. **Nyitott:** új lapon nyíljon, vagy az
    appon belüli ablakban; mindenki lássa, vagy csak bejelentkezve.
+**Legalacsonyabb prioritás** (Norbi döntése, 2026-10-07: a meglévőkön kívül más felhasználó nem lesz,
+Mama fiókja pedig már korlátozott – a 13-as óta a saját oldalát látja):
+8. **25 – admin jogosultság** (~2–2,5 óra) (csak Norbi fiókja): csak admin látja a ⋮ menü **Mentések**
+   pontját és a **Mama** paramétert mindenhol (szűrő, oszlop, szerkesztő, kártya, CSV); javaslat:
+   `app_metadata.role = 'admin'` (SQL-lel, a tokenben), `is_admin()` – a mentés-függvények
+   adatbázisszinten is csak adminnak. A tesztfiók is admin (Norbi döntése, a teszt miatt).
+9. **26 – regisztráció** (~2–3 óra, a választott módtól függően): a belépési oldalon „Regisztráció” (`signUp`, megerősítő levél); az új
+   fiók nem admin. **Nyitott:** bárki regisztrálhasson, vagy meghívókóddal / admin-jóváhagyással
+   (javaslat: az utóbbi – az OMDb napi 1000 kérése közös).
 **Számozás nélkül, mindig a roadmap végén** (Norbi kérése, 2026-10-06):
 - **Időszakos kézikönyv-frissítés** (~1–2 óra, a közben összegyűlt változásoktól függően): a
   `FELHASZNALOI-LEIRAS.md` szövege, képei és Változásnaplója a legutóbbi frissítése óta elkészült
@@ -966,7 +978,7 @@ Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a ta
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
 nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
 29 – Marvel betöltve a sorrenddel (szkripttel, 2026-10-06); 39 – „Nem érdekel” az ajánlásokon, 40 –
-kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 25, 27, 26, 35, 36, 37, 41, 44, 48 („Következő feladat”); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
+kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 27, 35, 36, 37, 41, 44, 48, majd a legalacsonyabb prioritással 25, 26 („Következő feladat”); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
 (B – vezérlősáv, 2026-10-05).
 **Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
 appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,

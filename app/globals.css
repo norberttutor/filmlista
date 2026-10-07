@@ -611,12 +611,78 @@ body:has(> main.login) {
 }
 
 .notif-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   margin: 0.2rem 0.4rem 0.4rem;
+}
+
+.notif-head p {
+  margin: 0;
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+/* „Összes törlése”: halk szöveges gomb a fejléc jobb szélén (rámutatva türkiz) */
+.notif-clear {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 999px;
+}
+
+.notif-clear:hover,
+.notif-clear:focus-visible {
+  color: var(--accent);
+  background: var(--hover-tint);
+}
+
+/* soronként × a jobb szélen: egérrel csak a sorra mutatva / fókusznál látszik, érintőn mindig */
+.notif-list li {
+  position: relative;
+}
+
+.notif-list .notif-item {
+  padding-right: 2.4rem; /* a × helye (a később álló .notif-item padding ne írja felül) */
+}
+
+.notif-del {
+  position: absolute;
+  top: 50%;
+  right: 0.45rem;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  color: var(--text);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  transform: translateY(-50%);
+}
+
+.notif-del:hover {
+  color: var(--accent);
+  background: var(--surface-raised);
+  border-color: var(--accent-line);
+}
+
+@media (hover: hover) {
+  .notif-del {
+    opacity: 0;
+  }
+
+  .notif-list li:hover .notif-del,
+  .notif-del:focus-visible {
+    opacity: 1;
+  }
 }
 
 .notif-empty {

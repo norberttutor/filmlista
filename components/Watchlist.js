@@ -39,7 +39,7 @@ import Toaster from '@/components/Toaster';
 import EmptyState from '@/components/EmptyState';
 import StarRating from '@/components/StarRating';
 import { toast, dismissToast } from '@/lib/toast';
-import { loadNotifications, markNotificationsRead } from '@/lib/notifications';
+import { dismissNotifications, loadNotifications, markNotificationsRead, restoreNotifications } from '@/lib/notifications';
 import { downloadListCsv } from '@/lib/exportList';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 import { canMorph, MORPH_NAME, trackTransition } from '@/lib/viewTransition';
@@ -230,6 +230,8 @@ export default function Watchlist({ session }) {
   // itt már olvasottnak jelöltek: egy közben beérkező (korábban indult) lekérdezés se írja vissza
   // őket olvasatlannak
   const readIds = useRef(new Set());
+  // itt törölt értesítések: a közben beérkező lekérdezés se hozza vissza őket
+  const dismissedIds = useRef(new Set());
   const isDesktop = useMediaQuery(DESKTOP_QUERY);
   const isPhone = useMediaQuery(PHONE_QUERY);
   const [view, setView] = useState(storedView); // a Watchlist csak a böngészőben fut
@@ -324,9 +326,11 @@ export default function Watchlist({ session }) {
               (ns) =>
                 !cancelled &&
                 setNotifications(
-                  ns.map((n) =>
-                    !n.read_at && readIds.current.has(n.id) ? { ...n, read_at: new Date().toISOString() } : n
-                  )
+                  ns
+                    .filter((n) => !dismissedIds.current.has(n.id))
+                    .map((n) =>
+                      !n.read_at && readIds.current.has(n.id) ? { ...n, read_at: new Date().toISOString() } : n
+                    )
                 )
             )
             .catch((err) => console.warn(err.message));
@@ -416,6 +420,42 @@ export default function Watchlist({ session }) {
     for (const n of notifications) if (!n.read_at) readIds.current.add(n.id);
     setNotifications((ns) => ns.map((n) => (n.read_at ? n : { ...n, read_at: now })));
     markNotificationsRead();
+  }
+
+  // törlés a harangból (egy vagy mind): azonnal eltűnik, az értesítősávban „Visszavonás”
+  async function removeNotifications(list) {
+    const ids = list.map((n) => n.id);
+    const putBack = () => {
+      for (const id of ids) dismissedIds.current.delete(id);
+      setNotifications((ns) =>
+        [...ns.filter((n) => !ids.includes(n.id)), ...list].sort(
+          (a, b) => b.created_at.localeCompare(a.created_at) || b.id - a.id
+        )
+      );
+    };
+    for (const id of ids) dismissedIds.current.add(id);
+    setNotifications((ns) => ns.filter((n) => !ids.includes(n.id)));
+    try {
+      await dismissNotifications(ids);
+    } catch (err) {
+      putBack();
+      toast({ text: err.message });
+      return;
+    }
+    toast({
+      text: ids.length === 1 ? 'Értesítés törölve.' : `${ids.length} értesítés törölve.`,
+      action: {
+        label: 'Visszavonás',
+        onClick: async () => {
+          try {
+            await restoreNotifications(ids);
+            putBack();
+          } catch (err) {
+            toast({ text: err.message });
+          }
+        },
+      },
+    });
   }
 
   // visszaállítás (Mentések) után: a lista, a franchise-ok és az értesítések újra az adatbázisból
@@ -885,6 +925,7 @@ export default function Watchlist({ session }) {
               titles={titles}
               onOpenTitle={(t) => openEditor(t)}
               onRead={readNotifications}
+              onRemove={removeNotifications}
             />
           )}
           <span className="muted small">{session.user.email}</span>

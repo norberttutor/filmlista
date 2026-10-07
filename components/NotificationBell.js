@@ -20,15 +20,28 @@ function describe(n) {
 // Harang a fejlécben: a nem olvasott értesítések száma, kinyitva a legutóbbiak (új évad
 // bejelentése / megjelenése, film digitális megjelenése). Kinyitáskor mind olvasott lesz (az
 // akkor újak kiemelve maradnak, amíg nyitva van); egy értesítésre kattintva a cím szerkesztő
-// ablaka nyílik.
+// ablaka nyílik. Törlés (Norbi kérése, 2026-10-07): soronként × (egérrel rámutatva / fókusznál
+// látszik, érintőképernyőn mindig), fölül „Összes törlése”; a Watchlist onRemove-ja azonnal elveszi,
+// az értesítősávban „Visszavonás”.
 // Kattintás kívül / Esc: bezár.
-export default function NotificationBell({ notifications, titles, onOpenTitle, onRead }) {
+export default function NotificationBell({ notifications, titles, onOpenTitle, onRead, onRemove }) {
   const [open, setOpen] = useState(false);
   const [side, setSide] = useState('left'); // a lista a harang melyik széléhez igazodik
   const [fresh, setFresh] = useState(() => new Set()); // a kinyitáskor még olvasatlanok
   const panelId = useId();
   const rootRef = useRef(null);
   const buttonRef = useRef(null);
+  const listRef = useRef(null);
+
+  // a törölt sor helyén a következő (különben az előző) sor törlőgombja kapja a fókuszt
+  function remove(n, index) {
+    onRemove([n]);
+    requestAnimationFrame(() => {
+      const left = listRef.current?.querySelectorAll('.notif-del');
+      const next = left?.[Math.min(index, left.length - 1)];
+      (next ?? buttonRef.current)?.focus();
+    });
+  }
 
   const byId = useMemo(() => new Map(titles.map((t) => [t.id, t])), [titles]);
   const items = notifications.filter((n) => byId.has(n.title_id)); // törölt sorozat nélkül
@@ -114,15 +127,29 @@ export default function NotificationBell({ notifications, titles, onOpenTitle, o
           role="region"
           aria-label="Értesítések"
         >
-          <p className="notif-head">Értesítések</p>
+          <div className="notif-head">
+            <p>Értesítések</p>
+            {items.length > 0 && (
+              <button
+                type="button"
+                className="notif-clear"
+                onClick={() => {
+                  onRemove(items);
+                  buttonRef.current?.focus();
+                }}
+              >
+                Összes törlése
+              </button>
+            )}
+          </div>
           {items.length === 0 ? (
             <p className="notif-empty">
               Még nincs értesítés. Itt jelzem, ha egy sorozatodhoz új évadot jelentenek be, ha
               egy évad megjelenik, vagy ha egy várt film digitálisan is elérhető lesz.
             </p>
           ) : (
-            <ul className="notif-list">
-              {items.map((n) => {
+            <ul className="notif-list" ref={listRef}>
+              {items.map((n, index) => {
                 const t = byId.get(n.title_id);
                 const isNew = fresh.has(n.id);
                 return (
@@ -149,6 +176,17 @@ export default function NotificationBell({ notifications, titles, onOpenTitle, o
                           {formatDate(n.created_at)}
                         </time>
                       </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="notif-del"
+                      aria-label={`Értesítés törlése: ${t.title}`}
+                      title="Törlés"
+                      onClick={() => remove(n, index)}
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+                        <path d="M6 6l12 12M18 6L6 18" />
+                      </svg>
                     </button>
                   </li>
                 );
