@@ -13,6 +13,8 @@ import {
 import { mapLimit } from '@/lib/bulkImport';
 import { useBackdropClose } from '@/lib/useBackdropClose';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
+import { franchiseSuggestions } from '@/lib/franchiseSuggest';
+import FranchiseSuggestions from '@/components/FranchiseSuggestions';
 
 // kis- és nagybetű, ékezet nélkül (a kereséshez)
 const fold = (s) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
@@ -182,6 +184,9 @@ export default function FranchisesDialog({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+
+        {/* javasolt hozzárendelések (terv-3 35) – keresés közben nem */}
+        {!q && <FranchiseSuggestions suggestions={franchiseSuggestions(titles, franchises)} onUpdated={onUpdated} />}
 
         {shown.length === 0 && (
           <p className="muted">{q ? `Nincs ilyen franchise: „${query.trim()}”.` : 'Még nincs franchise-od.'}</p>

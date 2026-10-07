@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { titleKey } from '@/lib/titles';
 import { unhideSuggestion, useHiddenSuggestions } from '@/lib/hiddenSuggestions';
 import { HideButton, HideNote, useHideSuggestion } from '@/components/HideSuggestion';
 import FeaturedBand from '@/components/FeaturedBand';
+import { mapLimit } from '@/lib/bulkImport';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w185';
 
@@ -15,7 +16,57 @@ const SECTIONS = [
   { list: 'upcoming', title: 'Hamarosan a mozikban', sub: 'A következő három hónap magyarországi bemutatói' },
   { list: 'digital', title: 'Új digitálisan', sub: 'Az utóbbi hetekben lett letölthető, streamelhető' },
   { list: 'tv', title: 'Népszerű sorozatok', sub: 'Magyar streamingen elérhető, most futó sorozatok' },
+  // terv-3 37: a saját 8+ értékelések TMDB-ajánlásaiból (nem a /api/tmdb/discover adja – lent)
+  { list: 'foryou', title: 'Neked ajánlott', sub: 'A 8+ értékeléseid alapján – itt a magyar megjelenést nem szűrjük' },
 ];
+
+const SEEDS = 10; // ennyi saját értékelés ajánlásaiból
+const FOR_YOU = 16; // a sor legfeljebb ennyi címe
+
+// a „Neked ajánlott” sor kiinduló címei: a 8+ csillagos saját értékelések, a legjobbak, azon belül a
+// legutóbb megnézettek elöl, legfeljebb 10
+export function recommendSeeds(titles) {
+  const when = (t) => t.watched_at ?? t.created_at ?? '';
+  return titles
+    .filter((t) => t.my_rating >= 8 && t.tmdb_id != null)
+    .sort((a, b) => b.my_rating - a.my_rating || when(b).localeCompare(when(a)))
+    .slice(0, SEEDS)
+    .map((t) => ({ media_type: t.media_type, tmdb_id: t.tmdb_id }));
+}
+
+// a kiinduló címek ajánlásai (/api/tmdb/similar – ugyanaz, mint az adatlap Hasonló címei, a szerver és
+// a böngésző is tárolja) 3-asával; a gyakoriság szerint (ami több kedvencedhez is ajánlott, elöl),
+// egyenlőségnél az ajánlásokban elfoglalt jobb hely szerint; a listán lévők (exclude) nélkül
+async function loadForYou(seeds, exclude, signal) {
+  const found = new Map(); // titleKey → { r, count, rank }
+  let failed = 0;
+  await mapLimit(
+    seeds,
+    3,
+    async (s) => {
+      try {
+        const { results } = await apiGet('/api/tmdb/similar', { type: s.media_type, id: s.tmdb_id, v: 2 }, { signal });
+        results.forEach((r, pos) => {
+          const key = titleKey(r);
+          if (exclude.has(key)) return;
+          const hit = found.get(key) ?? { r, count: 0, rank: 0 };
+          hit.count += 1;
+          hit.rank += pos;
+          found.set(key, hit);
+        });
+      } catch (err) {
+        if (err.name === 'AbortError') throw err;
+        failed += 1;
+      }
+    },
+    () => {}
+  );
+  if (failed === seeds.length) throw new Error('Nem sikerült betölteni az ajánlásokat. Próbáld újra később.');
+  return [...found.values()]
+    .sort((a, b) => b.count - a.count || a.rank / a.count - b.rank / b.count)
+    .slice(0, FOR_YOU)
+    .map((h) => h.r);
+}
 
 const shortDate = (iso) => new Date(iso).toLocaleDateString('hu-HU', { month: 'short', day: 'numeric' });
 const THUMB = 'https://image.tmdb.org/t/p/w92';
@@ -26,7 +77,8 @@ const FEATURED = 6; // a kiemelt sáv címei (terv-3 46)
 // („Nem érdekel”, terv-3 39): az elrejtett címek nem látszanak; alul „Elrejtett ajánlások” –
 // „Mégis érdekel”. Fölül a kiemelt sáv (`FeaturedBand`, terv-3 46): a „Most a mozikban” első 6
 // (nem elrejtett) címe nagyban – a lenti mozis sor ezek nélkül, a következőtől folytatódik.
-export default function Discover({ existingKeys, rowState, onAdd, onPreview }) {
+// seeds: a „Neked ajánlott” sor kiinduló címei (recommendSeeds); ha nincs, a sor nem látszik.
+export default function Discover({ existingKeys, seeds = [], rowState, onAdd, onPreview }) {
   const [lists, setLists] = useState({}); // list → { results } | { error }
   const [featured, setFeatured] = useState(undefined); // undefined: tölt, null: nincs / hiba
   const hidden = useHiddenSuggestions();
@@ -46,6 +98,7 @@ export default function Discover({ existingKeys, rowState, onAdd, onPreview }) {
   useEffect(() => {
     const controller = new AbortController();
     for (const s of SECTIONS) {
+      if (s.list === 'foryou') continue; // ezt a böngésző gyűjti (lent)
       apiGet('/api/tmdb/discover', { list: s.list }, { signal: controller.signal })
         .then((data) => setLists((l) => ({ ...l, [s.list]: { results: data.results } })))
         .catch((err) => {
@@ -60,6 +113,22 @@ export default function Discover({ existingKeys, rowState, onAdd, onPreview }) {
       });
     return () => controller.abort();
   }, []);
+
+  // „Neked ajánlott”: a betöltéskor listán lévők kimaradnak (a most felvettek „✓ A listán”-nal maradnak)
+  const existingRef = useRef(existingKeys);
+  existingRef.current = existingKeys;
+  const seedKey = seeds.map(titleKey).join(',');
+  useEffect(() => {
+    if (!seedKey) return;
+    const controller = new AbortController();
+    loadForYou(seeds, new Set(existingRef.current), controller.signal)
+      .then((results) => setLists((l) => ({ ...l, foryou: { results } })))
+      .catch((err) => {
+        if (err.name !== 'AbortError') setLists((l) => ({ ...l, foryou: { error: err.message } }));
+      });
+    return () => controller.abort();
+    // a kiinduló címek kulcsa változásakor (seedKey) tölt újra, nem a tömb minden új példányánál
+  }, [seedKey]);
 
   const featuredItems = featured?.filter((r) => !hidden.has(titleKey(r))).slice(0, FEATURED) ?? [];
   const featuredKeys = new Set(featuredItems.map(titleKey));
@@ -85,6 +154,7 @@ export default function Discover({ existingKeys, rowState, onAdd, onPreview }) {
         )
       )}
       {SECTIONS.map((s) => {
+        if (s.list === 'foryou' && !seedKey) return null;
         const data = lists[s.list];
         const results = data?.results?.filter(
           (r) => !hidden.has(titleKey(r)) && !(s.list === 'cinema' && featuredKeys.has(titleKey(r)))

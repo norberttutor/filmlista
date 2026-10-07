@@ -9,10 +9,11 @@ const THUMB_BASE = 'https://image.tmdb.org/t/p/w154';
 const MIN_LENGTH = 2;
 const DEBOUNCE_MS = 400;
 
+// recommendSeeds: a Felfedezés „Neked ajánlott” sorának kiinduló címei (terv-3 37);
 // initialQuery: kitöltve nyílik (pl. az üres listakeresés „Keresés a TMDB-n” gombjáról);
 // onPreview(találat, borítóElem): a borítóra / címre kattintva a cím adatlapja (előnézet, a
 // listán lévőé szerkeszthető) – a találatoknál és a Felfedezésben is
-export default function TitleSearch({ existingKeys, onAdded, onPreview, onClose, initialQuery = '' }) {
+export default function TitleSearch({ existingKeys, recommendSeeds, onAdded, onPreview, onClose, initialQuery = '' }) {
   const [query, setQuery] = useState(initialQuery);
   // az utolsó befejezett keresés: melyik szövegre, mit kaptunk
   const [found, setFound] = useState({ q: '', results: [], error: '' });
@@ -92,7 +93,7 @@ export default function TitleSearch({ existingKeys, onAdded, onPreview, onClose,
 
       {/* amíg nincs keresés: felfedező sorok (mozi, hamarosan, digitálisan új, sorozatok) */}
       {q.length === 0 && (
-        <Discover existingKeys={existingKeys} rowState={rowState} onAdd={handleAdd} onPreview={onPreview} />
+        <Discover existingKeys={existingKeys} seeds={recommendSeeds} rowState={rowState} onAdd={handleAdd} onPreview={onPreview} />
       )}
 
       {q.length >= MIN_LENGTH && found.results.length > 0 && (

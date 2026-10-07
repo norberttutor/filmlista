@@ -7,6 +7,7 @@ import PosterCard from '@/components/PosterCard';
 import Pagination from '@/components/Pagination';
 import ImdbRatingsImport from '@/components/ImdbRatingsImport';
 import TitleSearch from '@/components/TitleSearch';
+import { recommendSeeds } from '@/components/Discover';
 import TitleEditor from '@/components/TitleEditor';
 import TitleTable from '@/components/TitleTable';
 import {
@@ -21,6 +22,7 @@ import {
   refreshSeasons,
   refreshBackdrops,
   refreshReleases,
+  refreshTitleCollections,
   DEFAULT_STATUS,
   DROPPED_STATUS,
   MAMA_OPTIONS,
@@ -46,6 +48,7 @@ import { canMorph, MORPH_NAME, trackTransition } from '@/lib/viewTransition';
 import { franchisesWithOrder, loadOrders, orderedItems } from '@/lib/watchOrder';
 import { loadHidden, resetHidden } from '@/lib/hiddenSuggestions';
 import { fetchAll } from '@/lib/fetchAll';
+import { article, collectionFranchiseMap, suggestedFranchiseId } from '@/lib/franchiseSuggest';
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 
@@ -311,6 +314,13 @@ export default function Watchlist({ session }) {
           const byId = new Map(rows.map((r) => [r.id, r]));
           setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
         }).catch((err) => console.warn('Háttérképek lekérése sikertelen:', err.message));
+
+        // a filmek TMDB-gyűjteménye a háttérben (a franchise-javaslathoz, terv-3 35)
+        refreshTitleCollections(titlesRes.data, (rows) => {
+          if (cancelled) return;
+          const byId = new Map(rows.map((r) => [r.id, r]));
+          setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
+        }).catch((err) => console.warn('TMDB-gyűjtemények lekérése sikertelen:', err.message));
 
         // sorozatok évadai a háttérben: a még évad nélküliek megkapják, a hetente
         // ellenőrzöttekhez az új (megjelent / bejelentett) évad felkerül
@@ -822,6 +832,88 @@ export default function Watchlist({ session }) {
     replaceTitle(row);
   }
 
+  // új cím a listán (kereső, Felfedezés, adatlap, Hasonló címek, gyűjtemény, importok). Ha franchise
+  // nélküli film, és a TMDB-gyűjteménye egy franchise-odé, az app felajánlja (terv-3 35, Norbi
+  // döntése: magától nem rendeli hozzá): a felvételek kis szünete után egy sáv – egy filmnél
+  // „Hozzárendelés”, többnél (pl. tömeges import) „Megnézés” → a Franchise-ok ablak javaslatai.
+  // Nyitott ablak (adatlap, import) fölött a sáv nem kattintható: a bezárásáig vár.
+  const franchisesRef = useRef(franchises);
+  useEffect(() => {
+    franchisesRef.current = franchises;
+  }, [franchises]);
+  const pendingSuggest = useRef([]); // a felajánlásra váró címek azonosítói
+  const suggestTimer = useRef(0);
+  const flushSuggestRef = useRef(null);
+  flushSuggestRef.current = flushSuggestions;
+
+  function handleAdded(row) {
+    titlesRef.current = [row, ...titlesRef.current];
+    setTitles((ts) => [row, ...ts]);
+    if (row.media_type !== 'movie' || row.franchise_id != null || row.tmdb_collection_id == null) return;
+    pendingSuggest.current.push(row.id);
+    clearTimeout(suggestTimer.current);
+    suggestTimer.current = setTimeout(() => flushSuggestRef.current(), 1200);
+  }
+
+  useEffect(() => {
+    // egy ablak bezárult: ha vár felajánlás, most jöhet (a 'close' nem buborékol, ezért elkapva)
+    const onClose = () => {
+      if (pendingSuggest.current.length === 0) return;
+      clearTimeout(suggestTimer.current);
+      suggestTimer.current = setTimeout(() => flushSuggestRef.current(), 300);
+    };
+    document.addEventListener('close', onClose, true);
+    return () => {
+      document.removeEventListener('close', onClose, true);
+      clearTimeout(suggestTimer.current);
+    };
+  }, []);
+
+  function flushSuggestions() {
+    if (document.querySelector('dialog[open]')) return; // a bezáráskor újra
+    const ids = pendingSuggest.current;
+    pendingSuggest.current = [];
+    const map = collectionFranchiseMap(titlesRef.current, franchisesRef.current);
+    // a friss sorokból: közben kézzel beállított franchise-nál már nem kérdez
+    const items = ids
+      .map((id) => titlesRef.current.find((t) => t.id === id))
+      .filter(Boolean)
+      .map((t) => ({ t, f: franchisesRef.current.find((f) => f.id === suggestedFranchiseId(t, map)) }))
+      .filter((x) => x.f);
+    if (items.length > 1) {
+      toast({
+        text: `${items.length} új film egy franchise-odba tartozik`,
+        action: { label: 'Megnézés', onClick: () => setShowFranchises(true) },
+      });
+    } else if (items.length === 1) {
+      const { t, f } = items[0];
+      toast({
+        image: t.poster_path ? TOAST_THUMB + t.poster_path : null,
+        text: (
+          <>
+            „<b>{t.title}</b>” – {article(f.name)} <b>{f.name}</b> franchise-ba tartozik?
+          </>
+        ),
+        action: { label: 'Hozzárendelés', onClick: () => assignFranchise(t, f) },
+      });
+    }
+  }
+
+  async function assignFranchise(t, f) {
+    try {
+      handleRowUpdated(await updateTitle(t.id, { franchise_id: f.id }), false);
+      toast({
+        text: (
+          <>
+            „<b>{t.title}</b>” bekerült {article(f.name)} <b>{f.name}</b> franchise-ba
+          </>
+        ),
+      });
+    } catch (err) {
+      toast({ text: err.message });
+    }
+  }
+
   function askRating(t) {
     let id = 0;
     const rate = async (n) => {
@@ -995,13 +1087,13 @@ export default function Watchlist({ session }) {
                 ref={imdbImportRef}
                 titles={titles}
                 onApplied={applyRatingsLocally}
-                onAdded={(row) => setTitles((ts) => [row, ...ts])}
+                onAdded={handleAdded}
               />
               {isDesktop && (
                 <BulkImport
                   ref={bulkImportRef}
                   existingKeys={existingKeys}
-                  onAdded={(row) => setTitles((ts) => [row, ...ts])}
+                  onAdded={handleAdded}
                 />
               )}
             </>
@@ -1024,7 +1116,8 @@ export default function Watchlist({ session }) {
               key={addQuery}
               initialQuery={addQuery}
               existingKeys={existingKeys}
-              onAdded={(row) => setTitles((ts) => [row, ...ts])}
+              recommendSeeds={recommendSeeds(titles)}
+              onAdded={handleAdded}
               onPreview={openEditor}
               onClose={() => setAdding(false)}
             />
@@ -1309,7 +1402,7 @@ export default function Watchlist({ session }) {
               franchise={franchises.find((f) => String(f.id) === franchise)}
               titles={titles}
               orders={orders}
-              onAdded={(row) => setTitles((ts) => [row, ...ts])}
+              onAdded={handleAdded}
               onUpdated={(row) => handleRowUpdated(row, false)}
               onOrderChanged={handleOrderChanged}
               onFranchiseUpdated={(f) => setFranchises((fs) => fs.map((x) => (x.id === f.id ? { ...x, ...f } : x)))}
@@ -1423,7 +1516,7 @@ export default function Watchlist({ session }) {
           onRename={handleRenameFranchise}
           onDelete={handleDeleteFranchise}
           onShow={showFranchise}
-          onAdded={(row) => setTitles((ts) => [row, ...ts])}
+          onAdded={handleAdded}
           onUpdated={(row) => handleRowUpdated(row, false)}
           onOrderChanged={handleOrderChanged}
           onFranchiseUpdated={(f) => setFranchises((fs) => fs.map((x) => (x.id === f.id ? { ...x, ...f } : x)))}
@@ -1478,7 +1571,7 @@ export default function Watchlist({ session }) {
           onDeleteFranchise={handleDeleteFranchise}
           onRenameFranchise={handleRenameFranchise}
           existingKeys={existingKeys}
-          onAdded={(row) => setTitles((ts) => [row, ...ts])}
+          onAdded={handleAdded}
           onSaved={replaceTitle}
           onChanged={replaceTitle}
           onDelete={requestDelete}

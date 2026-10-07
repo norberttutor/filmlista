@@ -360,7 +360,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   nem lapoz (Norbi döntése). A nem listán lévőn × („Nem érdekel”) – az elrejtett helyére a következő
   jelölt lép (a route 10 jelöltet ad: a „Most a mozikban” első 10-éből a háttérképesek, egy óráig
   gyorsítótárazva). A lenti „Most a mozikban” sorból a kiemeltek kimaradnak (Norbi döntése). Betöltés
-  alatt csontváz (`.featured-sk`), hibánál a sáv elmarad
+  alatt csontváz (`.featured-sk`), hibánál a sáv elmarad.
+  **„Neked ajánlott”** (terv-3 37, 2026-10-07) – az ötödik, utolsó sor: a 8+ saját értékelések közül a
+  legjobb 10 (azon belül a legutóbb megnézettek – `recommendSeeds(titles)`, a Watchlist adja a
+  `TitleSearch`-en át) `/api/tmdb/similar` ajánlásai (ugyanaz a route és `v=2`, mint a Hasonló
+  címeknél, így gyorsítótárazva), 3-asával, a gyakoriság szerint (ami több kedvenchez is ajánlott,
+  elöl), legfeljebb 16; a betöltéskor listán lévők kimaradnak (a most felvett „✓ A listán”-nal marad);
+  ×-szel elrejthető. A magyar megjelenést itt nem szűri (az alcím jelzi); 8+ értékelés nélkül nincs sor
 - `components/FranchisesDialog.js` – „Franchise-ok” ablak a ⋮ menüből (terv-3 23-as pont,
   2026-10-05, Norbi döntéseivel): az összes franchise **ábécérendben, névelő nélkül** („A” / „Az” /
   „The” nem számít, a név kiírva változatlan), csempénként (asztalon 4, 900 px alatt 3, telefonon 2
@@ -378,7 +384,27 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   a mezőben csak a szerkesztést zárja), „Törlés” (megerősítéssel; a címek maradnak). Felül kereső
   (ékezet nélkül is), alul „+ Új franchise” (létrehozás után a gyűjtemény-ablaka nyílik). A
   külső ablak `onClose`-a csak a saját eseményére zár (`e.target === e.currentTarget`): a
-  belső `<dialog>` „close” eseményét a React a külső kezelőnek is továbbítja
+  belső `<dialog>` „close” eseményét a React a külső kezelőnek is továbbítja.
+  Fölül (keresés közben nem) **„Javasolt hozzárendelések”** (`components/FranchiseSuggestions.js`,
+  terv-3 35): a franchise nélküli filmek, amelyek egy franchise-od TMDB-gyűjteményébe tartoznak;
+  pipálható (alapból mind) → „Hozzárendelés (N)” (`assignFranchises()`, franchise-onként egy
+  módosítás); soronként „Nem kell” (`franchise_suggestion_off`: többé nem javasolja). Ha nincs
+  javaslat, nem látszik
+- `lib/franchiseSuggest.js` – franchise-javaslat (terv-3 35, 2026-10-07; Norbi döntése: **csak
+  felajánlja**, magától soha nem rendel hozzá, a meglévő franchise-t nem írja át):
+  `collectionFranchiseMap()` (TMDB-gyűjtemény → franchise: a franchise filmjeinek `tmdb_collection_id`-ja
+  és a kézzel hozzárendelt gyűjtemények; több franchise-nál a kézi nyer, aztán a több filmes, aztán
+  a név), `suggestedFranchiseId(t, map)`, `franchiseSuggestions()`, `article()` („a” / „az”). A
+  `Watchlist.handleAdded` (minden felvétel ezen át megy) a felvétel után 1,2 mp-cel felajánlja: egy
+  filmnél sáv „„…” – a Dűne franchise-ba tartozik?” + „Hozzárendelés”, többnél (pl. tömeges import)
+  „N új film egy franchise-odba tartozik” + „Megnézés” (a Franchise-ok ablak). Nyitott `<dialog>`
+  alatt (adatlap, import) a sáv nem kattintható, ezért a bezárásáig vár (`close` esemény, elkapva);
+  közben kézzel beállított franchise-nál már nem kérdez
+- `app/api/tmdb/title-collections/route.js` – `POST`: a filmek TMDB-gyűjteménye
+  (`tmdb_collection_id`, `collection_checked_at`) 40-esével, a felhasználó jogaival; esedékes:
+  `collectionDue()` (még nem néztük; vagy gyűjtemény nélküli, tavalyi / idei / jövőbeli film,
+  30 naponta). A `Watchlist` betöltéskor hívja (`refreshTitleCollections()`, legfeljebb 40 kör).
+  Az új filmek felvételkor kapják meg (a details route adja)
 - `components/FranchiseCollection.js` + `app/api/tmdb/collection/route.js` +
   `app/api/tmdb/collection-search/route.js` – franchise-ra szűrve mindig sáv a lista fölött
   (háttérképpel – terv-3 45, 2026-10-06: a franchise legjobb IMDb-értékelésű, háttérképes címének
@@ -481,7 +507,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   nézik, van-e)
 - `lib/refreshDue.js` – a háttérfrissítések „esedékes-e” szabályai (terv-3 34, E2, 2026-10-06):
   `imdbDue` (van IMDb ID, 14 napnál régebbi / hiányzó), `backdropDue` (még nem néztük),
-  `seasonsDue` (sorozat, 7 nap), `releaseDue` (a megjelenési dátumoké), `budapestToday()`. A
+  `seasonsDue` (sorozat, 7 nap), `releaseDue` (a megjelenési dátumoké), `collectionDue` (a filmek
+  TMDB-gyűjteménye – terv-3 35), `budapestToday()`. A
   `lib/titles.js` `refresh…(titles, onUpdated)` függvényei csak akkor hívják a route-ot, ha a
   betöltött listában van esedékes; a route-ok ugyanezt kérdezik (az IMDb / évad / háttérkép SQL-ben
   – a napok innen –, a megjelenés ezzel a függvénnyel). Ha a szabályon változtatsz, mindkét helyen
@@ -501,7 +528,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `app/api/tmdb/search/route.js` – `GET ?q=` → `search/multi`, csak film/sorozat
 - `app/api/tmdb/details/route.js` – `GET ?type=movie|tv&id=` → a `titles` oszlopainak
   megfelelő objektum + `genres [{id, name}]`, sorozatnál `seasons` is; magyar leírás híján
-  angol; az IMDb-értékelést is lekéri (OMDb), ha nem sikerül, a cím attól még felvehető
+  angol; az IMDb-értékelést is lekéri (OMDb), ha nem sikerül, a cím attól még felvehető;
+  filmnél a TMDB-gyűjtemény is (`tmdb_collection_id`, `collection_checked_at` – terv-3 35)
 - `app/api/tmdb/seasons/route.js` – `POST`: a még nem vagy 7 napnál régebben ellenőrzött
   sorozatok évadait frissíti a TMDB-ről (új – megjelent vagy bejelentett – évad, név,
   epizódszám, dátum; az állapothoz / letöltve jelzőhöz nem nyúl), 10-esével; a frissített
@@ -669,7 +697,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `backdrop_path` (a TMDB széles jelenetképe a szerkesztő ablakhoz), `backdrop_checked_at` (mikor
   néztük meg – `11_backdrop.sql`), filmnél `theatrical_release` (mozis bemutató),
   `digital_release` (digitális, letölthető megjelenés), `release_checked_at` (mikor néztük a
-  TMDB-n) – `14_release_dates.sql`, NULL-t engedők,
+  TMDB-n) – `14_release_dates.sql`, NULL-t engedők, filmnél `tmdb_collection_id` (a TMDB-gyűjtemény),
+  `collection_checked_at`, `franchise_suggestion_off` (a felajánlott franchise-t elutasította) –
+  `19_title_collection.sql` (terv-3 35), NULL-t engedők,
   `created_at`, `updated_at` (trigger); egyedi: `(user_id, media_type, tmdb_id)`
 - `title_seasons (title_id FK → titles on delete cascade, season_number ≥ 1, user_id default
   auth.uid(), name, episode_count, air_date, status FK → statuses, is_downloaded, watched_at,
@@ -902,7 +932,9 @@ Gyorsindítók a telepített app ikonján (terv-3 43, 2026-10-07). Ízlésprofil
 (tutorne.eva@gmail.com) saját fiókkal a „Norbi filmjei” oldalt látja („B” változat – nagy sorok,
 Érdekel / Nem érdekel a sorban és az adatlapon); Norbinál „Nem érdekli” jelölés és „Mamát érdekli”
 harang; a Mama-tesztfiók a tesztfiókhoz kötve. Értesítések törlése a harangból (×, „Összes törlése”,
-visszavonható – 2026-10-07).
+visszavonható – 2026-10-07). Franchise-javaslat felvételkor és „Javasolt hozzárendelések” a
+Franchise-ok ablakban (terv-3 35, csak felajánlja), „Neked ajánlott” sor a Felfedezésben (terv-3 37,
+2026-10-07).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -923,35 +955,31 @@ doksival együtt; ha egy pont tartalma változik, frissítsd): a pontok mellett 
 (A 2026-10-05-i 33-as – képes felhasználói leírás – kész, 2026-10-06. A 13-as – Mama külön
 hozzáférése – kész, 2026-10-07: Mama fiókja – tutorne.eva@gmail.com – Norbiéhoz kötve, élesben 141 film
 látszik nála, ebből 24 „Érdekel”; napló: `munka/terv-3/13-mama/ALLAPOT.md`.)
-**Norbi kérései (2026-10-05, funkciójavaslatokból)** – utánuk:
-2. **35 – franchise felismerése felvételkor** (~1,5 óra): ha a felvett film TMDB-gyűjteménye egy meglévő
-   franchise-hoz tartozik, az app **felajánlja** (toast „Hozzárendelés”; Norbi döntése: nem
-   automatikus) + egyszeri „Javasolt hozzárendelések” a Franchise-ok ablakban.
-3. **36 – új rész egy franchise-od TMDB-gyűjteményében → harang** (~2,5–3 óra) (hetente, az első feltöltés nem
+**Norbi kérései (2026-10-05, funkciójavaslatokból)** – utánuk (a 35-ös – franchise-javaslat – és a
+37-es – „Neked ajánlott” – kész, 2026-10-07):
+2. **36 – új rész egy franchise-od TMDB-gyűjteményében → harang** (~2,5–3 óra) (hetente, az első feltöltés nem
    szól; kattintva előnézet).
-4. **37 – „Neked ajánlott” sor a Felfedezésben** (~1–1,5 óra) (a 8+ saját értékelések TMDB-ajánlásaiból, a
-   listán lévők nélkül).
-**Norbi kérései (2026-10-06, javaslatokból)** – a 37-es után; a kinézeti pontoknál (45–47) **előbb
+**Norbi kérései (2026-10-06, javaslatokból)** – a 36-os után; a kinézeti pontoknál (45–47) **előbb
 látványterv képekkel**, beépítés Norbi elfogadása után:
-5. **41 – megosztható nézési sorrend** (~3 óra): egy franchise nézési sorrendjéhez csak olvasható
+3. **41 – megosztható nézési sorrend** (~3 óra): egy franchise nézési sorrendjéhez csak olvasható
    nyilvános link (belépés nélkül, borítókkal, a megnézett állapot nélkül); visszavonható.
-6. **44 – offline indulás** (~2–3 óra): service worker + a legutóbbi lista helyben tárolva –
+4. **44 – offline indulás** (~2–3 óra): service worker + a legutóbbi lista helyben tárolva –
    azonnal megnyílik, net nélkül csak olvasható, utána frissül.
-(A 39-es – „Nem érdekel” – és a 40-es – kihúzás – kész, 2026-10-06; a 37-es „Neked ajánlott”
-sorában is legyen ×. A 46-os – kiemelt sáv –, a 43-as – gyorsindítók – és a 42-es – ízlésprofil – kész, 2026-10-07.)
+(A 39-es – „Nem érdekel” – és a 40-es – kihúzás – kész, 2026-10-06; a „Neked ajánlott” sorban is
+van ×. A 46-os – kiemelt sáv –, a 43-as – gyorsindítók – és a 42-es – ízlésprofil – kész, 2026-10-07.)
 **Norbi kérése (2026-10-06)** – utánuk:
-7. **48 – a felhasználói leírás a ⋮ menüből** (~2–2,5 óra): új menüpont („Felhasználói leírás”),
+5. **48 – a felhasználói leírás a ⋮ menüből** (~2–2,5 óra): új menüpont („Felhasználói leírás”),
    ami az appon belül, képekkel együtt mutatja a `FELHASZNALOI-LEIRAS.md`-t (a tartalomjegyzék
    hivatkozásai működnek, telefonon is). Javaslat: build közben HTML-lé alakítva egy saját oldalon
    (pl. `/leiras`, új lapon), a képek a `public/`-ba másolva. **Nyitott:** új lapon nyíljon, vagy az
    appon belüli ablakban; mindenki lássa, vagy csak bejelentkezve.
 **Legalacsonyabb prioritás** (Norbi döntése, 2026-10-07: a meglévőkön kívül más felhasználó nem lesz,
 Mama fiókja pedig már korlátozott – a 13-as óta a saját oldalát látja):
-8. **25 – admin jogosultság** (~2–2,5 óra) (csak Norbi fiókja): csak admin látja a ⋮ menü **Mentések**
+6. **25 – admin jogosultság** (~2–2,5 óra) (csak Norbi fiókja): csak admin látja a ⋮ menü **Mentések**
    pontját és a **Mama** paramétert mindenhol (szűrő, oszlop, szerkesztő, kártya, CSV); javaslat:
    `app_metadata.role = 'admin'` (SQL-lel, a tokenben), `is_admin()` – a mentés-függvények
    adatbázisszinten is csak adminnak. A tesztfiók is admin (Norbi döntése, a teszt miatt).
-9. **26 – regisztráció** (~2–3 óra, a választott módtól függően): a belépési oldalon „Regisztráció” (`signUp`, megerősítő levél); az új
+7. **26 – regisztráció** (~2–3 óra, a választott módtól függően): a belépési oldalon „Regisztráció” (`signUp`, megerősítő levél); az új
    fiók nem admin. **Nyitott:** bárki regisztrálhasson, vagy meghívókóddal / admin-jóváhagyással
    (javaslat: az utóbbi – az OMDb napi 1000 kérése közös).
 **Számozás nélkül, mindig a roadmap végén** (Norbi kérése, 2026-10-06):
@@ -978,7 +1006,7 @@ Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a ta
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
 nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
 29 – Marvel betöltve a sorrenddel (szkripttel, 2026-10-06); 39 – „Nem érdekel” az ajánlásokon, 40 –
-kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 27, 35, 36, 37, 41, 44, 48, majd a legalacsonyabb prioritással 25, 26 („Következő feladat”); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
+kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 27, 36, 41, 44, 48, majd a legalacsonyabb prioritással 25, 26 („Következő feladat”); 35 – franchise-javaslat és 37 – „Neked ajánlott” kész (2026-10-07); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
 (B – vezérlősáv, 2026-10-05).
 **Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
 appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,

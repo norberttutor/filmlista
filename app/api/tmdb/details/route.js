@@ -82,6 +82,9 @@ async function loadDetails(type, id) {
     ...(type === 'movie' && {
       ...pickReleaseDates(data.release_dates?.results),
       release_checked_at: new Date().toISOString(),
+      // a TMDB-gyűjtemény (a franchise-javaslathoz, terv-3 35)
+      tmdb_collection_id: data.belongs_to_collection?.id ?? null,
+      collection_checked_at: new Date().toISOString(),
     }),
   };
 }
