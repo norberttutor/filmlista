@@ -6273,6 +6273,20 @@ input[type='checkbox']:checked {
   color: var(--muted);
 }
 
+/* szűrő: Filmek (eldöntendők) / Érdekel – a lista szűrőgombjai, nagyobban */
+.mama-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1.4rem;
+}
+
+.mama-tabs .chip {
+  padding: 0.6rem 1.3rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
 .mama-empty {
   margin: 3rem 0;
   font-size: 1.1rem;

@@ -10,6 +10,12 @@ import MamaDetail from '@/components/MamaDetail';
 const POSTER = 'https://image.tmdb.org/t/p/w185';
 const PAGE = 24; // ennyi film látszik, utána „További filmek”
 
+// a szűrő (Norbi kérése, 2026-10-07): alapból a még eldöntendők, külön az „Érdekel”-re jelöltek
+const TABS = [
+  { code: 'open', label: 'Filmek', match: (t) => t.mama_status == null, empty: 'Most nincs új film, amiről kérdeznénk.' },
+  { code: 'interested', label: 'Érdekel', match: (t) => t.mama_status === 'interested', empty: 'Még nem jelöltél meg filmet. A „Filmek” közül az „Érdekel” gombbal teheted ide.' },
+];
+
 // Mama jelölése a saját függvényével (supabase/17_mama_access.sql): 'interested' / 'declined' / null
 async function mamaMark(id, choice) {
   const { error } = await supabase.rpc('mama_mark', { p_title_id: id, p_choice: choice });
@@ -21,14 +27,23 @@ async function mamaMark(id, choice) {
 
 // Mama oldala (terv-3 13, Norbi választása: „B” látványterv – munka/terv-3/terv-13/): Norbi
 // listájából a mama_list() filmjei (franchise nélküli, megnézendő, jelöletlen, már megjelent + az
-// „Érdekli”-k a Megkaptáig), szűrő és rendezés nélkül, a legutóbb hozzáadott elöl. Soronként borító,
-// cím, év, műfaj, IMDb, leírás és a két gomb; a sorra kattintva az adatlap (MamaDetail). „Nem érdekel”
-// → a sor eltűnik, az értesítősávban „Visszavonás”; az „Érdekel” újra kattintva visszavonható.
+// „Érdekli”-k a Megkaptáig), a legutóbb hozzáadott elöl; szűrő: „Filmek” (jelöletlen, alapból) /
+// „Érdekel”. Soronként borító, cím, év, műfaj, IMDb, leírás és a két gomb; a sorra kattintva az
+// adatlap (MamaDetail). „Nem érdekel” → a sor eltűnik, az értesítősávban „Visszavonás”; az „Érdekel”
+// újra kattintva visszavonható – a jelölt sor ezért a szűrő váltásáig a helyén marad (kept).
 export default function MamaView() {
   const [list, setList] = useState(null); // null: tölt
   const [loadError, setLoadError] = useState('');
+  const [tab, setTab] = useState('open');
+  const [kept, setKept] = useState(() => new Set());
   const [shown, setShown] = useState(PAGE);
   const [openId, setOpenId] = useState(null);
+
+  function pickTab(code) {
+    setTab(code);
+    setKept(new Set());
+    setShown(PAGE);
+  }
 
   async function load() {
     setLoadError('');
@@ -78,6 +93,7 @@ export default function MamaView() {
       return;
     }
     setStatus(item.id, choice);
+    setKept((k) => new Set(k).add(item.id));
     try {
       await mamaMark(item.id, choice);
     } catch (err) {
@@ -87,6 +103,8 @@ export default function MamaView() {
   }
 
   const opened = list?.find((t) => t.id === openId);
+  const current = TABS.find((x) => x.code === tab);
+  const visible = list ? list.filter((t) => current.match(t) || kept.has(t.id)) : [];
 
   return (
     <main className="mama-page">
@@ -100,6 +118,17 @@ export default function MamaView() {
         </button>
       </header>
 
+      {list && !loadError && (
+        <div className="mama-tabs" role="group" aria-label="Szűrés">
+          {TABS.map((x) => (
+            <button key={x.code} type="button" className="chip" aria-pressed={tab === x.code} onClick={() => pickTab(x.code)}>
+              {x.label}
+              <span className="n">{list.filter(x.match).length}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {loadError ? (
         <div className="mama-empty">
           <p role="alert">{loadError}</p>
@@ -109,12 +138,12 @@ export default function MamaView() {
         </div>
       ) : list === null ? (
         <p className="muted mama-empty">Betöltés…</p>
-      ) : list.length === 0 ? (
-        <p className="mama-empty">Most nincs új film, amiről kérdeznénk.</p>
+      ) : visible.length === 0 ? (
+        <p className="mama-empty">{current.empty}</p>
       ) : (
         <>
           <ul className="mama-rows">
-            {list.slice(0, shown).map((t) => {
+            {visible.slice(0, shown).map((t) => {
               const yes = t.mama_status === 'interested';
               return (
                 <li key={t.id} className={yes ? 'interested' : undefined}>
@@ -150,7 +179,7 @@ export default function MamaView() {
               );
             })}
           </ul>
-          {list.length > shown && (
+          {visible.length > shown && (
             <button type="button" className="ghost mama-more" onClick={() => setShown((n) => n + PAGE)}>
               További filmek
             </button>

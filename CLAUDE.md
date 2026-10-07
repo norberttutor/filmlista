@@ -59,8 +59,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   saját sorát (terv-3 13): ha van (Mama – néző), `MamaView`, különben `Watchlist`; amíg nem tudja,
   „Betöltés…”; hibánál a `Watchlist` nyílik (a néző ott csak a saját üres adatait látná)
 - `components/MamaView.js` + `components/MamaDetail.js` – **Mama oldala** (terv-3 13, Norbi választása:
-  „B” látványterv – `munka/terv-3/terv-13/`): „Norbi filmjei”, „Kilépés”; szűrő, rendezés, kereső,
-  menü, harang nincs. A `mama_list()` filmjei (a legutóbb hozzáadott elöl), 24-esével „További filmek”;
+  „B” látványterv – `munka/terv-3/terv-13/`): „Norbi filmjei”, „Kilépés”; rendezés, kereső,
+  menü, harang nincs. Egy szűrő (Norbi kérése, 2026-10-07; `.mama-tabs`, darabszámmal): „Filmek” (a
+  jelöletlenek – eldöntendők, alapból) / „Érdekel”; a most jelölt / visszavont sor a szűrő váltásáig a
+  helyén marad (`kept`). A `mama_list()` filmjei (a legutóbb hozzáadott elöl), 24-esével „További filmek”;
   soronként borító, cím, év, műfajok, IMDb (`ImdbBadge`), 2 soros leírás (telefonon nincs) és a két
   gomb: „Érdekel” (borostyán – saját jelölés; kiválasztva „✓ Érdekel”, újra kattintva visszavonja) /
   „Nem érdekel” (a sor eltűnik, az értesítősávban „Visszavonás” – a régi helyére teszi vissza).
@@ -68,7 +70,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   **adatlap** (`MamaDetail`, `dialog.editor.mama-detail`): háttérkép, borító, cím, év, műfajok, IMDb,
   „Előzetes megnézése” (`/api/tmdb/videos`), leírás, „Hol nézhető?” (`WatchProviders`), alul a két
   nagy gomb; „Nem érdekel”-re bezárul. Kikattintásra (asztalon) / „Bezárás” (×) / Esc zár; telefonon
-  alsó lap fogantyúval (lehúzva zár). Üres listánál „Most nincs új film, amiről kérdeznénk.”. CSS: a
+  alsó lap fogantyúval (lehúzva zár). Üres „Filmek”-nél „Most nincs új film, amiről kérdeznénk.”. CSS: a
   „Mama oldala” szakasz (nagyobb betűk, `.mama-*`). E2e: „Mama oldala (terv-3 13)…” (Mama-tesztfiók,
   külön böngészőablak, telefonméret)
 - `components/LoginForm.js` – e-mail + jelszó belépés (regisztráció nincs, ki van kapcsolva);
