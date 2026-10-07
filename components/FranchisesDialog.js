@@ -307,6 +307,8 @@ export default function FranchisesDialog({
           onOrderChanged={onOrderChanged}
           onFranchiseUpdated={onFranchiseUpdated}
           onClose={() => setOpenId(null)}
+          // a gyűjtemény-ablak mellé kattintva a Franchise-ok ablak is bezárul (Norbi kérése, 2026-10-07)
+          onOutsideClose={() => dialogRef.current?.close()}
         />
       )}
     </dialog>

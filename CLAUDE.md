@@ -302,8 +302,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   beágyazott ablak kattintása a külsőnek nem számít kívülnek. Használja (terv-3 24 és 32, Norbi
   kérése): `TitleEditor` (mentetlen módosításnál `onBlocked` → figyelmeztetés), `StatsDialog`
   (mindig), `FranchisesDialog` (átnevezés / törlés-megerősítés / új név gépelése és nyitott
-  gyűjtemény-ablak alatt nem), `CollectionDialog` (rész felvétele közben és nyitott
-  TMDB-gyűjtemény-keresőnél nem), `BackupsDialog` (mentés / visszaállítás közben és nyitott
+  gyűjtemény-ablak alatt nem), `CollectionDialog` (rész felvétele közben és a nézési sorrend
+  szerkesztése közben nem; a nyitott TMDB-gyűjtemény-keresőnél igen – Norbi kérése, 2026-10-07; a
+  Franchise-ok ablakból nyitva mindkét ablak bezárul – `onOutsideClose`), `BackupsDialog` (mentés / visszaállítás közben és nyitott
   megerősítésnél nem). Az importablakok (Tömeges import, IMDb import) nem (Norbi döntése)
 - `components/SiteFooter.js` – kötelező TMDB forrásmegjelölés, ne töröld; jobbra lent „sponsored by
   ADERTIS” (az ADERTIS link: https://www.adertis.hu, új lapon – Norbi kérése, 2026-10-05; külön

@@ -190,6 +190,7 @@ export function CollectionDialog({
   onOrderChanged,
   onFranchiseUpdated,
   onClose,
+  onOutsideClose,
 }) {
   const dialogRef = useRef(null);
   const headingRef = useRef(null);
@@ -238,11 +239,15 @@ export function CollectionDialog({
   }
 
   const busyAny = Object.values(state).some((s) => s.busy);
-  // asztalon kikattintásra bezárul – felvétel közben, nyitott TMDB-gyűjtemény-keresőnél és a
-  // nézési sorrend szerkesztése közben nem
+  // asztalon kikattintásra bezárul – felvétel közben és a nézési sorrend szerkesztése közben nem.
+  // A nyitott TMDB-gyűjtemény-kereső nem tartja nyitva (Norbi kérése, 2026-10-07: a beírt keresés
+  // elvesztése nem baj). onOutsideClose: a Franchise-ok ablakból nyitva az is bezárul
   const outsideClose = useBackdropClose(dialogRef, {
-    onClose: () => dialogRef.current.close(),
-    canClose: () => !busyAny && !searching && !ordering,
+    onClose: () => {
+      dialogRef.current.close();
+      onOutsideClose?.();
+    },
+    canClose: () => !busyAny && !ordering,
   });
 
   // a fülek között nyilakkal is (Home / End: az első / az utolsó)
