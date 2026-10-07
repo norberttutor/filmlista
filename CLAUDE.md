@@ -30,6 +30,8 @@ Egyetlen felhasználó (Norbi), de az adatmodell felhasználónként elkülöní
   szintén csak szerveroldalon. Ha hiányzik, az app értékelés nélkül működik (nincs hiba).
 
 Csak helyben (`.env.local`), a Vercelre nem: `TEST_USER_EMAIL` / `TEST_USER_PASSWORD`,
+`MAMATEST_USER_EMAIL` / `MAMATEST_USER_PASSWORD` (második tesztfiók Mama szerepéhez – a 13-as
+ponthoz, Norbi hozta létre 2026-10-07; az értékeit soha ne írd ki),
 `SUPABASE_DB_URL` (admin) és `BACKUP_DB_URL` – a csak olvasó `backup_reader` szerep kapcsolata
 (`munka/e2e/mentes-olvaso.mjs` állítja be); ugyanez a GitHubon is titok (Settings → Secrets and
 variables → Actions → `BACKUP_DB_URL`) a heti mentés-feladathoz.
@@ -874,13 +876,25 @@ doksival együtt; ha egy pont tartalma változik, frissítsd): a pontok mellett 
    új kétszer; előbb ellenőrző belépés, utána `updateUser`) és „Elfelejtettem a jelszavam” a
    belépési oldalon (`resetPasswordForEmail` → levél → `PASSWORD_RECOVERY` → új jelszó). Norbi
    teendője: Supabase URL Configuration + magyar levélsablonok.
-3. **13 – Mama külön hozzáférése** (~4–5 óra), Norbi döntéseivel: **jelszavas fiók** (Norbi hozza létre a
-   Supabase-ben, Auto Confirm; a `list_viewers` köti Norbihoz); Mama belépés után a saját
-   egyszerű oldalát látja: a megnézendő, nem letöltött, franchise nélküli filmek, de **a még
-   meg nem jelentek nem**; „Érdekel” → Norbinál „Érdekli” + harang („Mamát érdekli”); „Nem
-   érdekel” → eltűnik Mamánál, **Norbinál „Nem érdekli”-ként tompán látszik** (új
-   `mama_status = 'declined'`, a Mama-szűrőben is). Előtte kell: Mama e-mail-címe és fiókja,
-   plusz egy második tesztfiók.
+3. **13 – Mama külön hozzáférése** (~4,5–5,5 óra; végleges specifikáció Norbi döntéseivel, 2026-10-07 –
+   részletek a TERV.md 13-as szakaszában): **jelszavas fiók** (Norbi hozza létre a Supabase-ben, Auto
+   Confirm; a `list_viewers` köti Norbihoz). Mama belépés után a saját egyszerű oldalát látja, **szűrő
+   és rendezés nélkül**, hozzáadás szerint (legújabb elöl): Norbi **franchise nélküli, megnézendő,
+   Mama-jelölés nélküli, már megjelent filmjei** (a letöltöttek is; sorozat nem) + az általa
+   „Érdekel”-re jelöltek, amíg Norbi „Megkapta”-ra nem állítja őket. **Adatlap** (borító, cím, év,
+   műfajok, IMDb-érték, leírás, előzetes, „Hol nézhető?”) „Érdekel” / „Nem érdekel” gombbal → Norbinál
+   „Érdekli” (+ harang) / **„Nem érdekli”** (új `mama_status = 'declined'`, tompán, a
+   Mama-szűrőben is); a nem érdeklő kikerül a listájából (Visszavonás), az „Érdekel” átváltható. **Film felvétele
+   nincs** (Norbi döntése). Előfeltételek megvannak (2026-10-07): Mama fiókja – `tutorne.eva@gmail.com`,
+   Norbi létrehozta – és a Mama-tesztfiók (`MAMATEST_USER_EMAIL` / `MAMATEST_USER_PASSWORD`). A
+   meglévő 24 „Mama: Érdekli” film indulástól Mamánál van „Érdekel” állapottal.
+   **Megvalósítás 5 lépésben, folyamatos dokumentálással** (Norbi kérése, 2026-10-07: a hosszú munka
+   miatt egy elfogyó session-keret után is folytatható legyen): napló `munka/terv-3/13-mama/ALLAPOT.md`
+   + „folyamatban-13” emlék; **minden lépés végén** a napló, a `munka/README.md` frissítése és
+   **visszajelzés Norbinak**. Lépések: 1. adatbázis + `test-17` (~1 óra) → 2. Norbi oldala: „Nem
+   érdekli”, harang (~0,5–1 óra, önállóan élesíthető) → 3. látványterv képekkel, Norbi jóváhagyja (~0,5
+   óra) → 4. Mama felülete + e2e (~1,5–2 óra) → 5. élesítés: Mama fiókjának összekötése (~15 perc).
+   Részletek: TERV.md 13-as szakasz.
 4. **26 – regisztráció** (~2–3 óra, a választott módtól függően): a belépési oldalon „Regisztráció” (`signUp`, megerősítő levél); az új
    fiók nem admin. **Nyitott:** bárki regisztrálhasson, vagy meghívókóddal / admin-jóváhagyással
    (javaslat: az utóbbi – az OMDb napi 1000 kérése közös).
