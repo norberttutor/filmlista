@@ -2124,6 +2124,11 @@ body:has(> main.login) {
   color: var(--accent-2);
 }
 
+/* „Nem érdekli” (terv-3 13): nem kért jelölés – tompa szürke, nem borostyán */
+.titles-table td.col-mama select.mama-set:has(> option[value='declined']:checked) {
+  color: var(--muted);
+}
+
 @media (hover: hover) {
   .titles-table td.col-status select:where(:has(> option[value='to_watch']:checked)),
   .titles-table td.col-mama select:where(:has(> option[value='']:checked)) {
@@ -2370,9 +2375,13 @@ body:has(> main.login) {
   color: var(--accent);
 }
 
-/* "Mama: …" a kártyán: saját jelölés, borostyán */
+/* "Mama: …" a kártyán: saját jelölés, borostyán; a „Nem érdekli” tompa szürke */
 .card .mama-tag {
   color: var(--accent-2);
+}
+
+.card .mama-tag[data-mama='declined'] {
+  color: var(--muted);
 }
 
 .icon-btn {
@@ -5197,6 +5206,13 @@ body:has(.editor[open]) {
   color: var(--accent-2);
 }
 
+/* „Nem érdekli”: kiválasztva is semleges (nem kért jelölés – nem borostyán) */
+.mama-chips input[value='declined']:checked + span {
+  background: var(--hover-tint);
+  border-color: var(--line);
+  color: var(--muted);
+}
+
 .editor-actions {
   display: flex;
   flex-wrap: wrap;
@@ -6228,6 +6244,356 @@ input[type='checkbox']:checked {
     padding: 1.2rem;
   }
 }
+
+/* ---------- Mama oldala (terv-3 13, Norbi választása: „B” – nagy sorok, gombok a sorban) ---------- */
+/* nagyobb betűk, kevés vezérlő; az „Érdekel” saját jelölés: borostyán (--accent-2), a sor kerete is */
+.mama-page {
+  width: min(75rem, 100%);
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+
+.mama-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.6rem;
+}
+
+.mama-head h1 {
+  margin: 0;
+  font-size: 2.4rem;
+  line-height: 1.1;
+}
+
+.mama-head p {
+  margin: 0.4rem 0 0;
+  font-size: 1.05rem;
+  color: var(--muted);
+}
+
+.mama-empty {
+  margin: 3rem 0;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.mama-rows {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mama-rows li {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 1rem;
+  background: color-mix(in oklab, var(--bg) 55%, var(--surface));
+  border: 1px solid var(--line-soft);
+  border-radius: 20px;
+}
+
+.mama-rows li.interested {
+  border-color: var(--accent-2-line);
+}
+
+.mama-open,
+.mama-title {
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.mama-poster {
+  display: block;
+  width: 6rem;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  background: var(--placeholder-bg) var(--icon-film) center / 40% no-repeat;
+  border-radius: 12px;
+}
+
+.mama-poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mama-text h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+/* rámutatásra csak egérrel (telefonon az érintés után ne ragadjon be), fókusznál mindig */
+@media (hover: hover) {
+  .mama-title:hover {
+    color: var(--accent);
+  }
+}
+
+.mama-title:focus-visible {
+  color: var(--accent);
+}
+
+.mama-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.3rem 0 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.mama-overview {
+  display: -webkit-box;
+  max-width: 46rem;
+  margin: 0.45rem 0 0;
+  overflow: hidden;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.mama-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 11rem;
+}
+
+.mama-btn {
+  padding: 0.75rem 1.2rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--control-border);
+  border-radius: 999px;
+}
+
+.mama-btn:hover {
+  background: var(--hover-tint);
+}
+
+.mama-btn.yes {
+  color: var(--accent-2);
+  border-color: var(--accent-2-line);
+}
+
+.mama-btn.yes[aria-pressed='true'] {
+  background: var(--accent-2-soft);
+}
+
+.mama-more {
+  display: block;
+  margin: 1.8rem auto 0;
+  padding: 0.7rem 1.6rem;
+  font-size: 1.05rem;
+}
+
+/* adatlap */
+.editor.mama-detail {
+  width: min(56rem, calc(100vw - 2rem));
+  overflow: auto;
+  border-radius: 28px;
+}
+
+.mama-close {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+  z-index: 2;
+  background: rgb(10 14 20 / 0.55);
+}
+
+.mama-backdrop {
+  height: 13.75rem;
+  background-position: center 25%;
+  background-size: cover;
+  -webkit-mask: linear-gradient(#000 55%, transparent);
+  mask: linear-gradient(#000 55%, transparent);
+}
+
+.mama-detail-body {
+  display: grid;
+  grid-template-columns: 13.75rem minmax(0, 1fr);
+  gap: 1.8rem;
+  padding: 2rem 2rem 1.4rem;
+}
+
+.mama-detail-body.has-backdrop {
+  position: relative;
+  margin-top: -6.9rem;
+  padding-top: 0;
+}
+
+.mama-detail-body.has-backdrop h2 {
+  margin-top: 5.6rem;
+}
+
+.mama-detail-poster {
+  display: block;
+  width: 13.75rem;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  background: var(--placeholder-bg) var(--icon-film) center / 40% no-repeat;
+  border-radius: 20px;
+  box-shadow: 0 12px 30px rgb(0 0 0 / 0.5);
+}
+
+.mama-detail-poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mama-detail-body h2 {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1.1;
+  outline: none;
+}
+
+.mama-detail-body .trailer-btn {
+  margin-top: 1rem;
+}
+
+.mama-detail-overview {
+  margin: 1rem 0 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.mama-detail-body .watch-providers {
+  margin-top: 1.2rem;
+}
+
+.mama-detail-actions {
+  display: flex;
+  gap: 0.8rem;
+  padding: 1.2rem 2rem 1.6rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+.mama-detail-actions .mama-btn {
+  flex: 1;
+  padding: 0.9rem;
+  font-size: 1.15rem;
+}
+
+@supports (corner-shape: squircle) {
+  .mama-rows li,
+  .mama-poster,
+  .mama-detail-poster,
+  .editor.mama-detail {
+    corner-shape: squircle;
+  }
+}
+
+@media (max-width: 640px) {
+  .mama-page {
+    padding: 1.2rem 1rem 2rem;
+  }
+
+  .mama-head h1 {
+    font-size: 1.8rem;
+  }
+
+  .mama-head p {
+    font-size: 0.95rem;
+  }
+
+  .mama-rows li {
+    grid-template-columns: 5rem minmax(0, 1fr);
+    gap: 0.9rem;
+  }
+
+  .mama-poster {
+    width: 5rem;
+  }
+
+  .mama-overview {
+    display: none;
+  }
+
+  .mama-buttons {
+    flex-direction: row;
+    grid-column: 1 / -1;
+  }
+
+  .mama-buttons .mama-btn {
+    flex: 1;
+    padding: 0.7rem 0.5rem;
+  }
+
+  /* telefonon alsó lap, mint Norbi adatlapja */
+  .editor.mama-detail {
+    width: 100%;
+    max-width: 100%;
+    max-height: 94dvh;
+    margin: auto 0 0;
+    border-bottom: 0;
+    border-radius: 24px 24px 0 0;
+    corner-shape: round;
+  }
+
+  .editor.mama-detail[open] {
+    transition: translate 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  @starting-style {
+    .editor.mama-detail[open] {
+      opacity: 1;
+      translate: 0 100%;
+    }
+  }
+
+  .mama-backdrop {
+    height: 10.6rem;
+  }
+
+  .mama-detail-body {
+    grid-template-columns: 1fr;
+    padding: 2rem 1.2rem 1rem;
+  }
+
+  .mama-detail-body.has-backdrop {
+    margin-top: -3.75rem;
+  }
+
+  .mama-detail-body.has-backdrop h2 {
+    margin-top: 2.5rem;
+  }
+
+  .mama-detail-poster {
+    display: none;
+  }
+
+  .mama-detail-body h2 {
+    font-size: 1.6rem;
+  }
+
+  .mama-detail-actions {
+    position: sticky;
+    bottom: 0;
+    padding: 1rem 1.2rem 1.4rem;
+    background: var(--surface);
+  }
+}
+
 
 /* ---------- Kevesebb mozgás ---------- */
 /* ha a rendszerben be van kapcsolva: nincsenek átmenetek, animációk (aurora), beúszás és nagyítás */

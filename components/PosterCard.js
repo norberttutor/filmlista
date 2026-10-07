@@ -102,7 +102,11 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
             {seasons.watched}/{seasons.aired} évad
           </span>
         )}
-        {t.mama_status && <span className="mama-tag">Mama: {mamaLabel(t.mama_status)}</span>}
+        {t.mama_status && (
+          <span className="mama-tag" data-mama={t.mama_status}>
+            Mama: {mamaLabel(t.mama_status)}
+          </span>
+        )}
       </p>
       {t.my_rating && (
         <p className="card-stars">

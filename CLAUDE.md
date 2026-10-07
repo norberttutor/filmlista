@@ -55,7 +55,22 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `franchise-ok` | `statisztika`; a `Watchlist` a lista betöltése után egyszer megnyitja
   (`SHORTCUTS`), és a paramétert kiveszi a címből (újratöltéskor ne nyíljon újra). A már telepített
   appnál a Chrome a manifest frissülése után (néha csak az app újraindítása után) mutatja
-- `app/page.js` – kliensoldali session-kezelés: belépés vagy lista
+- `app/page.js` – kliensoldali session-kezelés: belépés vagy lista. Belépés után megnézi a `list_viewers`
+  saját sorát (terv-3 13): ha van (Mama – néző), `MamaView`, különben `Watchlist`; amíg nem tudja,
+  „Betöltés…”; hibánál a `Watchlist` nyílik (a néző ott csak a saját üres adatait látná)
+- `components/MamaView.js` + `components/MamaDetail.js` – **Mama oldala** (terv-3 13, Norbi választása:
+  „B” látványterv – `munka/terv-3/terv-13/`): „Norbi filmjei”, „Kilépés”; szűrő, rendezés, kereső,
+  menü, harang nincs. A `mama_list()` filmjei (a legutóbb hozzáadott elöl), 24-esével „További filmek”;
+  soronként borító, cím, év, műfajok, IMDb (`ImdbBadge`), 2 soros leírás (telefonon nincs) és a két
+  gomb: „Érdekel” (borostyán – saját jelölés; kiválasztva „✓ Érdekel”, újra kattintva visszavonja) /
+  „Nem érdekel” (a sor eltűnik, az értesítősávban „Visszavonás” – a régi helyére teszi vissza).
+  Optimista mentés a `mama_mark()`-kal, hibánál visszaáll és üzen. A borítóra / címre kattintva
+  **adatlap** (`MamaDetail`, `dialog.editor.mama-detail`): háttérkép, borító, cím, év, műfajok, IMDb,
+  „Előzetes megnézése” (`/api/tmdb/videos`), leírás, „Hol nézhető?” (`WatchProviders`), alul a két
+  nagy gomb; „Nem érdekel”-re bezárul. Kikattintásra (asztalon) / „Bezárás” (×) / Esc zár; telefonon
+  alsó lap fogantyúval (lehúzva zár). Üres listánál „Most nincs új film, amiről kérdeznénk.”. CSS: a
+  „Mama oldala” szakasz (nagyobb betűk, `.mama-*`). E2e: „Mama oldala (terv-3 13)…” (Mama-tesztfiók,
+  külön böngészőablak, telefonméret)
 - `components/LoginForm.js` – e-mail + jelszó belépés (regisztráció nincs, ki van kapcsolva);
   minden középen: cím, alatta az űrlap (nagyobb kijelzőn kártyán, felülről halvány türkiz fény)
 - `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből (`loadTitles()`:
@@ -75,7 +90,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   automatikusan beáll, a franchise-szűrő megszüntetésekor vissza Filmek) – állapotgombok
   (mobilon, ≤ 640 px: lenyíló a típus mellett; az „Abbahagyva” csak Sorozatok / Filmek és
   sorozatok típusnál) + Letöltés lenyíló (Összes / Letöltött / Nem letöltött) – Műfaj (csak az
-  adott típus műfajai) – Mama (Összes / Érdekli / Megkapta; csak ha van Mama-jelölés) –
+  adott típus műfajai) – Mama (Összes / Érdekli / Nem érdekli / Megkapta; csak ha van Mama-jelölés) –
   Franchise (Összes / Franchise nélkül / a listán használtak, típustól
   függetlenül) – mellette felirat nélküli ↺ gomb („Szűrők alaphelyzetbe”, rámutatva súgó;
   alapállapotban halvány, letiltott). **A szűrők alapállapota** (betöltéskor és a ↺-vel,
@@ -153,7 +168,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (halvány aláhúzással), „Hozzáadva: <dátum>” a `created_at` alapján (csak megjelenítés, nem
   szerkeszthető), saját értékelés kis csillagsorként (`StarsDisplay`), ceruza gomb a bal felső
   sarokban → szerkesztő ablak (billentyűzettel / felolvasóval ez a borító-kattintás megfelelője);
-  „Mama: …” borostyánnal (`.mama-tag`), műfajok színes pöttyel (`GenreList`); az első
+  „Mama: …” borostyánnal (`.mama-tag`; a „Nem érdekli” tompa szürke – `data-mama="declined"`), műfajok
+  színes pöttyel (`GenreList`); az első
   rámutatáskor kiszámolja a borító hangulatszínét (`usePosterColor`), rámutatva a borító ebben fénylik
   (a kurzort követő „fénylő kártyaél” 2026-10-04-én Norbi kérésére kikerült). Még meg nem
   jelent filmnél (`releaseState(t)`, `data-release`) szaggatott keret a borító körül és
@@ -583,7 +599,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   gyorsítótárazva)
 - `components/NotificationBell.js` + `lib/notifications.js` – harang a fejlécben: a nem olvasott
   értesítések száma borostyán jelvényben (`--accent-2`); kinyitva a legutóbbi 30 (új évad bejelentése / megjelenése,
-  film digitális megjelenése – „Digitálisan is megjelent – már letölthető”, borítóval); kinyitáskor mind olvasott (az adatbázisban is, `markNotificationsRead()`; a
+  film digitális megjelenése – „Digitálisan is megjelent – már letölthető”, Mama jelölése – „Mamát
+  érdekli”, terv-3 13; borítóval); kinyitáskor mind olvasott (az adatbázisban is, `markNotificationsRead()`; a
   közben beérkező régi lekérdezés sem írja vissza – `readIds` a Watchlistben); elemre
   kattintva a sorozat szerkesztő ablaka; kívülre kattintás / Esc bezár. A lista a harang bal széléhez igazodik, ha ott
   kilógna, a jobbhoz (`lib/popupSide.js`, nyitáskor mérve – a ⋮ menü is így); telefonon teljes
@@ -633,8 +650,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `dropped` (Abbahagyva – `09_dropped.sql`; a felület csak sorozatnál kínálja)
 - `titles` – `user_id` (default `auth.uid()`), `media_type` ('movie' | 'tv'), `title`,
   `original_title`, `release_year`, `overview`, `poster_path`, `tmdb_id`, `imdb_id`,
-  `status` (FK → statuses), `is_downloaded`, `mama_status` (null | 'interested' | 'received',
-  „Mama” jelző: üres / Érdekli / Megkapta – `03_mama.sql`), `franchise_id` (FK → franchises,
+  `status` (FK → statuses), `is_downloaded`, `mama_status` (null | 'interested' | 'declined' |
+  'received', „Mama” jelző: üres / Érdekli / Nem érdekli / Megkapta – `03_mama.sql`, a 'declined'
+  `17_mama_access.sql`; a „Nem érdekli”-t Mama jelöli a saját oldalán, Norbinál tompa szürke: táblázat –
+  `select.mama-set:has(option[value=declined]:checked)` –, kártya, adatlap – `.mama-chips
+  input[value=declined]` –, nem borostyán), `franchise_id` (FK → franchises,
   null = nincs; `on delete set null`), `imdb_rating` (numeric 0–10), `imdb_votes`,
   `imdb_rating_updated_at` (`05_imdb_rating.sql`), `my_rating` (1–10), `notes`, `watched_at`,
   `seasons_checked_at` (mikor nézte az app a TMDB-n a sorozat évadait – `08_title_seasons.sql`),
@@ -679,7 +699,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (átváltáskor vagy megnézettként felvéve), az `is_downloaded` hamis lesz; ha utána kézzel
   újra letöltöttnek jelölik, az megmarad. A felület is azonnal leveszi a pipát.
 - `notifications (id, user_id default auth.uid(), title_id FK → titles on delete cascade,
-  season_number, kind ('season_announced' | 'season_aired' | 'movie_digital'), air_date,
+  season_number, kind ('season_announced' | 'season_aired' | 'movie_digital' | 'mama_interested'), air_date,
   created_at, read_at)`, egyedi `(title_id, season_number, kind)`, RLS – `10_notifications.sql`.
   `title_seasons.aired_notified`: szóltunk-e már az évad megjelenéséről.
   `collect_season_notifications()` (a felhasználó jogaival): a még nem jelzett, már megjelent
@@ -708,6 +728,19 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `backup_reader` szerep: bejelentkezhet (jelszó csak a `.env.local`-ban és a GitHubon),
   csak olvas, csak a `backups` táblát látja (saját RLS-szabály). A `session_replication_role`
   itt nem állítható (nincs jog).
+- `list_viewers (viewer_id uuid PK → auth.users, owner_id → auth.users, created_at)` – ki kinek a
+  listáját nézi (terv-3 13, `17_mama_access.sql`): Mama (néző) → Norbi (gazda). RLS: a néző a saját
+  sorát látja (ebből tudja az app, hogy Mama lépett be); írni csak SQL-ből (`munka/e2e/mama-kapcsolas.mjs`).
+  A Mama-tesztfiók a tesztfiókhoz kötve. Nincs a mentésben (beállítás, nem lista-adat).
+  **`mama_list()`** (security definer, csak `authenticated`): a hívó gazdájának filmjei – (megnézendő,
+  franchise nélküli, jelöletlen, már megjelent – `title_released(t)`, a letöltöttek is) vagy
+  `mama_status = 'interested'` (bármilyen állapotban, a Megkaptáig); `created_at desc`; csak a
+  megjelenítéshez kellő oszlopok (`user_id`, saját értékelés, állapot soha). **`mama_mark(title_id,
+  choice)`** ('interested' / 'declined' / null): csak Mama listáján lévő (vagy „Nem érdekli”) filmre,
+  „Megkapta”-ra nem; csak a `mama_status`-t írja; „Érdekli”-re váltáskor `mama_interested` értesítés
+  Norbinak (újbóli jelöléskor újra olvasatlan). **`title_released(t)`**: a `releaseState()` szabálya
+  SQL-ben (ha az egyik változik, a másikat is módosítani kell). Mama a `titles` táblát közvetlenül nem
+  látja. Teszt: `munka/e2e/test-17.mjs` (`--live`)
 - `title_genres (title_id, genre_id)` – kapcsolótábla
 - `titles_with_genres` nézet (`security_invoker`): `titles.*` + `status_name` + `genres text[]`
   + `seasons jsonb` (az évadok évadszám szerint; filmnél / évad nélkül `[]`)

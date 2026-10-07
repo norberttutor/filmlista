@@ -11,6 +11,7 @@ const THUMB_BASE = 'https://image.tmdb.org/t/p/w92';
 // filmnél: "Digitálisan is megjelent – már letölthető"
 function describe(n) {
   if (n.kind === 'movie_digital') return 'Digitálisan is megjelent – már letölthető';
+  if (n.kind === 'mama_interested') return 'Mamát érdekli'; // Mama jelölte a saját oldalán (terv-3 13)
   const nth = `${article(n.season_number)} ${n.season_number}.`;
   if (n.kind === 'season_aired') return `Megjelent ${nth} évad`;
   return `Bejelentették ${nth} évadot${n.air_date ? ` – várható: ${formatDate(n.air_date)}` : ''}`;

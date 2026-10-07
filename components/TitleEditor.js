@@ -37,6 +37,7 @@ function ClearableChips({ name, options, value, onChange, className }) {
           <input
             type="radio"
             name={name}
+            value={o.code}
             checked={value === o.code}
             onChange={() => onChange(o.code)}
             onClick={() => value === o.code && onChange(null)}
