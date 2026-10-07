@@ -887,7 +887,10 @@ sorrend” rendezés évadonkénti tételekkel (terv-3 28, 2026-10-06). „Nem �
 megnézettre váltáskor (terv-3 40, 2026-10-06). Képes, barátságos hangvételű felhasználói leírás
 (terv-3 33, 2026-10-06). Kiemelt sáv a Felfedezés tetején (terv-3 46, „A” változat, 2026-10-07).
 Gyorsindítók a telepített app ikonján (terv-3 43, 2026-10-07). Ízlésprofil a Statisztikában (terv-3
-42, 2026-10-07).
+42, 2026-10-07). **Mama külön hozzáférése** (terv-3 13, 2026-10-07): Mama
+(tutorne.eva@gmail.com) saját fiókkal a „Norbi filmjei” oldalt látja („B” változat – nagy sorok,
+Érdekel / Nem érdekel a sorban és az adatlapon); Norbinál „Nem érdekli” jelölés és „Mamát érdekli”
+harang; a Mama-tesztfiók a tesztfiókhoz kötve.
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -909,47 +912,30 @@ doksival együtt; ha egy pont tartalma változik, frissítsd): a pontok mellett 
    új kétszer; előbb ellenőrző belépés, utána `updateUser`) és „Elfelejtettem a jelszavam” a
    belépési oldalon (`resetPasswordForEmail` → levél → `PASSWORD_RECOVERY` → új jelszó). Norbi
    teendője: Supabase URL Configuration + magyar levélsablonok.
-3. **13 – Mama külön hozzáférése** (~4,5–5,5 óra; végleges specifikáció Norbi döntéseivel, 2026-10-07 –
-   részletek a TERV.md 13-as szakaszában): **jelszavas fiók** (Norbi hozza létre a Supabase-ben, Auto
-   Confirm; a `list_viewers` köti Norbihoz). Mama belépés után a saját egyszerű oldalát látja, **szűrő
-   és rendezés nélkül**, hozzáadás szerint (legújabb elöl): Norbi **franchise nélküli, megnézendő,
-   Mama-jelölés nélküli, már megjelent filmjei** (a letöltöttek is; sorozat nem) + az általa
-   „Érdekel”-re jelöltek, amíg Norbi „Megkapta”-ra nem állítja őket. **Adatlap** (borító, cím, év,
-   műfajok, IMDb-érték, leírás, előzetes, „Hol nézhető?”) „Érdekel” / „Nem érdekel” gombbal → Norbinál
-   „Érdekli” (+ harang) / **„Nem érdekli”** (új `mama_status = 'declined'`, tompán, a
-   Mama-szűrőben is); a nem érdeklő kikerül a listájából (Visszavonás), az „Érdekel” átváltható. **Film felvétele
-   nincs** (Norbi döntése). Előfeltételek megvannak (2026-10-07): Mama fiókja – `tutorne.eva@gmail.com`,
-   Norbi létrehozta – és a Mama-tesztfiók (`MAMATEST_USER_EMAIL` / `MAMATEST_USER_PASSWORD`). A
-   meglévő 24 „Mama: Érdekli” film indulástól Mamánál van „Érdekel” állapottal.
-   **Megvalósítás 5 lépésben, folyamatos dokumentálással** (Norbi kérése, 2026-10-07: a hosszú munka
-   miatt egy elfogyó session-keret után is folytatható legyen): napló `munka/terv-3/13-mama/ALLAPOT.md`
-   + „folyamatban-13” emlék; **minden lépés végén** a napló, a `munka/README.md` frissítése és
-   **visszajelzés Norbinak**. Lépések: 1. adatbázis + `test-17` (~1 óra) → 2. Norbi oldala: „Nem
-   érdekli”, harang (~0,5–1 óra, önállóan élesíthető) → 3. látványterv képekkel, Norbi jóváhagyja (~0,5
-   óra) → 4. Mama felülete + e2e (~1,5–2 óra) → 5. élesítés: Mama fiókjának összekötése (~15 perc).
-   Részletek: TERV.md 13-as szakasz.
-4. **26 – regisztráció** (~2–3 óra, a választott módtól függően): a belépési oldalon „Regisztráció” (`signUp`, megerősítő levél); az új
+3. **26 – regisztráció** (~2–3 óra, a választott módtól függően): a belépési oldalon „Regisztráció” (`signUp`, megerősítő levél); az új
    fiók nem admin. **Nyitott:** bárki regisztrálhasson, vagy meghívókóddal / admin-jóváhagyással
    (javaslat: az utóbbi – az OMDb napi 1000 kérése közös).
-(A 2026-10-05-i 33-as – képes felhasználói leírás – kész, 2026-10-06.)
+(A 2026-10-05-i 33-as – képes felhasználói leírás – kész, 2026-10-06. A 13-as – Mama külön
+hozzáférése – kész, 2026-10-07: Mama fiókja – tutorne.eva@gmail.com – Norbiéhoz kötve, élesben 141 film
+látszik nála, ebből 24 „Érdekel”; napló: `munka/terv-3/13-mama/ALLAPOT.md`.)
 **Norbi kérései (2026-10-05, funkciójavaslatokból)** – utánuk:
-5. **35 – franchise felismerése felvételkor** (~1,5 óra): ha a felvett film TMDB-gyűjteménye egy meglévő
+4. **35 – franchise felismerése felvételkor** (~1,5 óra): ha a felvett film TMDB-gyűjteménye egy meglévő
    franchise-hoz tartozik, az app **felajánlja** (toast „Hozzárendelés”; Norbi döntése: nem
    automatikus) + egyszeri „Javasolt hozzárendelések” a Franchise-ok ablakban.
-6. **36 – új rész egy franchise-od TMDB-gyűjteményében → harang** (~2,5–3 óra) (hetente, az első feltöltés nem
+5. **36 – új rész egy franchise-od TMDB-gyűjteményében → harang** (~2,5–3 óra) (hetente, az első feltöltés nem
    szól; kattintva előnézet).
-7. **37 – „Neked ajánlott” sor a Felfedezésben** (~1–1,5 óra) (a 8+ saját értékelések TMDB-ajánlásaiból, a
+6. **37 – „Neked ajánlott” sor a Felfedezésben** (~1–1,5 óra) (a 8+ saját értékelések TMDB-ajánlásaiból, a
    listán lévők nélkül).
 **Norbi kérései (2026-10-06, javaslatokból)** – a 37-es után; a kinézeti pontoknál (45–47) **előbb
 látványterv képekkel**, beépítés Norbi elfogadása után:
-8. **41 – megosztható nézési sorrend** (~3 óra): egy franchise nézési sorrendjéhez csak olvasható
+7. **41 – megosztható nézési sorrend** (~3 óra): egy franchise nézési sorrendjéhez csak olvasható
    nyilvános link (belépés nélkül, borítókkal, a megnézett állapot nélkül); visszavonható.
-9. **44 – offline indulás** (~2–3 óra): service worker + a legutóbbi lista helyben tárolva –
+8. **44 – offline indulás** (~2–3 óra): service worker + a legutóbbi lista helyben tárolva –
    azonnal megnyílik, net nélkül csak olvasható, utána frissül.
 (A 39-es – „Nem érdekel” – és a 40-es – kihúzás – kész, 2026-10-06; a 37-es „Neked ajánlott”
 sorában is legyen ×. A 46-os – kiemelt sáv –, a 43-as – gyorsindítók – és a 42-es – ízlésprofil – kész, 2026-10-07.)
 **Norbi kérése (2026-10-06)** – utánuk:
-10. **48 – a felhasználói leírás a ⋮ menüből** (~2–2,5 óra): új menüpont („Felhasználói leírás”),
+9. **48 – a felhasználói leírás a ⋮ menüből** (~2–2,5 óra): új menüpont („Felhasználói leírás”),
    ami az appon belül, képekkel együtt mutatja a `FELHASZNALOI-LEIRAS.md`-t (a tartalomjegyzék
    hivatkozásai működnek, telefonon is). Javaslat: build közben HTML-lé alakítva egy saját oldalon
    (pl. `/leiras`, új lapon), a képek a `public/`-ba másolva. **Nyitott:** új lapon nyíljon, vagy az
@@ -978,7 +964,7 @@ Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a ta
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
 nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
 29 – Marvel betöltve a sorrenddel (szkripttel, 2026-10-06); 39 – „Nem érdekel” az ajánlásokon, 40 –
-kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 25, 27, 13, 26, 35, 36, 37, 41, 44, 48 („Következő feladat”); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
+kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 25, 27, 26, 35, 36, 37, 41, 44, 48 („Következő feladat”); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
 (B – vezérlősáv, 2026-10-05).
 **Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
 appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,
