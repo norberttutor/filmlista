@@ -6186,6 +6186,31 @@ input[type='checkbox']:checked {
   background: var(--st-watching);
 }
 
+/* Ízlésprofil (terv-3 42): a saját csillagok borostyánban (saját jelölés), az IMDb-nél szigorúbb
+   műfajok sávja semleges szürke; a műfajnév előtt a műfaj színes pöttye (a közös .genre::before) */
+.tile-bars.taste .meter i,
+.tile-bars.deviation-up .meter i {
+  background: var(--accent-2);
+}
+
+.tile-bars.deviation-down .meter i {
+  background: var(--muted);
+}
+
+.tile-bars b small {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.deviation {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.deviation + .deviation {
+  margin-top: 0.4rem;
+}
+
 @media (max-width: 900px) {
   .bento {
     grid-template-columns: 1fr;

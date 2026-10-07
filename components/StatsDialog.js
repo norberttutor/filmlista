@@ -1,7 +1,7 @@
 'use client';
 
 import { useLayoutEffect, useMemo, useRef } from 'react';
-import { listStats, formatDecimal } from '@/lib/stats';
+import { listStats, formatDecimal, formatSigned, TASTE_MIN } from '@/lib/stats';
 import { genreColor } from '@/lib/genreColors';
 import { useBackdropClose } from '@/lib/useBackdropClose';
 
@@ -58,6 +58,8 @@ export default function StatsDialog({ titles, franchiseName, onClose }) {
   const otherGenres = s.genres.slice(TOP_GENRES).reduce((sum, [, n]) => sum + n, 0);
   const frMax = Math.max(1, ...s.franchises.map(([, n]) => n));
   const diff = s.ratings.mine != null && s.ratings.imdb != null ? s.ratings.mine - s.ratings.imdb : null;
+  // ízlésprofil: az eltérés-sávok léptéke (legalább 1 pont, hogy a kis eltérés kicsinek látsszon)
+  const devMax = Math.max(1, ...[...s.taste.above, ...s.taste.below].map((d) => Math.abs(d.diff)));
 
   return (
     <dialog ref={dialogRef} className="editor stats-dialog" aria-labelledby="stats-title" onClose={onClose} {...backdrop}>
@@ -125,6 +127,71 @@ export default function StatsDialog({ titles, franchiseName, onClose }) {
             {diff != null && Math.abs(diff) >= 0.05 && (
               <p className="sub">
                 Átlagosan {formatDecimal(Math.abs(diff))} ponttal értékelsz {diff > 0 ? 'magasabbra' : 'alacsonyabbra'}, mint az IMDb.
+              </p>
+            )}
+          </section>
+
+          {/* ízlésprofil (terv-3 42, 2026-10-07): a saját csillagok műfajonként */}
+          <section className="tile tile-3" aria-labelledby="st-favorites">
+            <h3 id="st-favorites">Kedvenc műfajaid</h3>
+            {s.taste.favorites.length ? (
+              <ul className="tile-bars taste">
+                {s.taste.favorites.map((x) => (
+                  <li key={x.genre}>
+                    <span className="genre" style={{ '--genre': genreColor(x.genre) }} title={x.genre}>
+                      {x.genre}
+                    </span>
+                    <span className="meter" aria-hidden="true">
+                      <i style={{ width: `${x.average * 10}%` }} />
+                    </span>
+                    <b aria-label={`átlag ${formatDecimal(x.average)}, ${x.count} cím`}>
+                      {formatDecimal(x.average)}
+                      <small> · {x.count}</small>
+                    </b>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="sub">Egy műfajhoz legalább {TASTE_MIN} saját értékelés kell – még egyiknél sincs meg.</p>
+            )}
+            {s.taste.favorites.length > 0 && <p className="sub">A saját csillagaid átlaga műfajonként (· értékelt címek).</p>}
+          </section>
+
+          <section className="tile tile-3" aria-labelledby="st-deviation">
+            <h3 id="st-deviation">Te és az IMDb műfajonként</h3>
+            {s.taste.above.length || s.taste.below.length ? (
+              <>
+                {[
+                  ['Jobban tetszik neked', s.taste.above, 'up'],
+                  ['Szigorúbb vagy', s.taste.below, 'down'],
+                ].map(
+                  ([label, list, dir]) =>
+                    list.length > 0 && (
+                      <div key={dir} className="deviation">
+                        <p className="sub">{label}</p>
+                        <ul className={`tile-bars deviation-${dir}`}>
+                          {list.map((x) => (
+                            <li key={x.genre}>
+                              <span className="genre" style={{ '--genre': genreColor(x.genre) }} title={x.genre}>
+                                {x.genre}
+                              </span>
+                              <span className="meter" aria-hidden="true">
+                                <i style={{ width: `${(Math.abs(x.diff) / devMax) * 100}%` }} />
+                              </span>
+                              <b aria-label={`${formatSigned(x.diff)} pont az IMDb-hez képest, ${x.count} cím`}>
+                                {formatSigned(x.diff)}
+                              </b>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )
+                )}
+              </>
+            ) : (
+              <p className="sub">
+                Egy műfajhoz legalább {TASTE_MIN} cím kell saját és IMDb-értékeléssel is – még egyiknél sincs meg (vagy
+                mindenhol egyetértesz az IMDb-vel).
               </p>
             )}
           </section>
