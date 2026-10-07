@@ -3106,8 +3106,280 @@ button.season:hover {
 
   .discover-item:hover .hide-btn,
   .similar-item:hover .hide-btn,
+  .featured-slide:hover .hide-btn,
   .hide-btn:focus-visible {
     opacity: 1;
+  }
+}
+
+/* Kiemelt sáv a Felfedezés tetején (terv-3 46, Norbi választása: „A” látványterv – munka/terv-3/
+   terv-46/): egy nagy, széles jelenetkép jobbra, balra a sötétbe olvadva; rajta logó / cím, adatok,
+   leírás, gombok; jobbra lent pöttyök és nyilak, alatta a kis képek. Telefonon fent a kép, alatta a
+   szöveg, a kis képek és a nyilak nélkül (ujjal lapozható). */
+.featured {
+  margin: 0 0 1.6rem;
+}
+
+.featured-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0 0 0.6rem;
+}
+
+.featured-head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.featured-count {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.featured-slide {
+  position: relative;
+  height: 22rem;
+  overflow: hidden;
+  background: #0b0f15;
+  border-radius: 22px;
+  box-shadow: 0 0 0 1px var(--line);
+  touch-action: pan-y;
+}
+
+.featured-bg {
+  position: absolute;
+  inset: 0 0 0 30%;
+  background-position: center 25%;
+  background-size: cover;
+  -webkit-mask: linear-gradient(90deg, transparent, #000 35%);
+  mask: linear-gradient(90deg, transparent, #000 35%);
+}
+
+.featured-slide::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(0deg, rgb(11 15 21 / 0.85), transparent 45%);
+}
+
+.featured-slide .hide-btn {
+  top: 0.9rem;
+  right: 0.9rem;
+  z-index: 2;
+}
+
+.featured-body {
+  position: absolute;
+  right: 45%;
+  bottom: 1.6rem;
+  left: 2rem;
+  z-index: 1;
+}
+
+.featured-logo,
+.featured-name {
+  margin: 0;
+}
+
+.featured-logo img {
+  display: block;
+  max-width: min(20rem, 100%);
+  max-height: 5.5rem;
+  object-fit: contain;
+  object-position: left bottom;
+  filter: drop-shadow(0 2px 10px rgb(0 0 0 / 0.6));
+}
+
+.featured-name {
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.featured-meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.featured-when {
+  color: var(--accent);
+}
+
+.featured-overview {
+  display: -webkit-box;
+  max-width: 34rem;
+  margin: 0.6rem 0 0;
+  overflow: hidden;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.featured-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.featured-add:not(:disabled) {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+.featured-nav {
+  position: absolute;
+  right: 1.2rem;
+  bottom: 1.2rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.featured-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+/* a pötty kicsi, de a gomb (kattintható terület) nagyobb */
+.featured-dots button {
+  display: grid;
+  place-items: center;
+  width: 1.1rem;
+  height: 1.6rem;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+
+.featured-dots button::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  background: rgb(255 255 255 / 0.28);
+  border-radius: 999px;
+}
+
+.featured-dots button.on {
+  width: 1.9rem;
+}
+
+.featured-dots button.on::before {
+  width: 1.4rem;
+  background: var(--accent);
+}
+
+.featured-arrow {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: #fff;
+  background: rgb(10 14 20 / 0.55);
+  border: 1px solid rgb(255 255 255 / 0.18);
+  border-radius: 50%;
+  backdrop-filter: blur(8px);
+}
+
+.featured-arrow:hover {
+  color: var(--accent);
+  border-color: var(--accent-line);
+}
+
+.featured-thumbs {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.7rem;
+}
+
+.featured-thumbs button {
+  flex: 1;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  background-position: center;
+  background-size: cover;
+  border: 0;
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px var(--line);
+  opacity: 0.55;
+}
+
+.featured-thumbs button:hover {
+  opacity: 0.85;
+}
+
+.featured-thumbs button.on {
+  box-shadow: 0 0 0 2px var(--accent);
+  opacity: 1;
+}
+
+.featured-sk {
+  display: block;
+  height: 22rem;
+  margin: 0 0 1.6rem;
+  border-radius: 22px;
+}
+
+@supports (corner-shape: squircle) {
+  .featured-slide,
+  .featured-sk {
+    corner-shape: squircle;
+  }
+}
+
+@media (max-width: 640px) {
+  .featured-slide {
+    height: auto;
+  }
+
+  .featured-bg {
+    position: relative;
+    inset: auto;
+    display: block;
+    aspect-ratio: 16 / 9;
+    -webkit-mask: linear-gradient(0deg, transparent, #000 40%);
+    mask: linear-gradient(0deg, transparent, #000 40%);
+  }
+
+  .featured-slide::after,
+  .featured-thumbs,
+  .featured-arrow {
+    display: none;
+  }
+
+  .featured-body {
+    position: relative;
+    inset: auto;
+    margin-top: -2.4rem;
+    padding: 0 1rem 1rem;
+  }
+
+  .featured-nav {
+    position: static;
+    justify-content: center;
+    padding: 0 0 0.8rem;
+  }
+
+  .featured-name {
+    font-size: 1.4rem;
+  }
+
+  .featured-overview {
+    -webkit-line-clamp: 4;
+  }
+
+  .featured-sk {
+    height: 26rem;
   }
 }
 

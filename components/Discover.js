@@ -5,6 +5,7 @@ import { apiGet } from '@/lib/api';
 import { titleKey } from '@/lib/titles';
 import { unhideSuggestion, useHiddenSuggestions } from '@/lib/hiddenSuggestions';
 import { HideButton, HideNote, useHideSuggestion } from '@/components/HideSuggestion';
+import FeaturedBand from '@/components/FeaturedBand';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w185';
 
@@ -18,13 +19,16 @@ const SECTIONS = [
 
 const shortDate = (iso) => new Date(iso).toLocaleDateString('hu-HU', { month: 'short', day: 'numeric' });
 const THUMB = 'https://image.tmdb.org/t/p/w92';
+const FEATURED = 6; // a kiemelt sáv címei (terv-3 46)
 
 // existingKeys: a listán lévők; rowState / onAdd: a kereső panel felvétele (ugyanaz, mint a
 // találatoknál); onPreview(cím, borítóElem): a borítóra kattintva a cím adatlapja (előnézet). A borítón ×
 // („Nem érdekel”, terv-3 39): az elrejtett címek nem látszanak; alul „Elrejtett ajánlások” –
-// „Mégis érdekel”.
+// „Mégis érdekel”. Fölül a kiemelt sáv (`FeaturedBand`, terv-3 46): a „Most a mozikban” első 6
+// (nem elrejtett) címe nagyban – a lenti mozis sor ezek nélkül, a következőtől folytatódik.
 export default function Discover({ existingKeys, rowState, onAdd, onPreview }) {
   const [lists, setLists] = useState({}); // list → { results } | { error }
+  const [featured, setFeatured] = useState(undefined); // undefined: tölt, null: nincs / hiba
   const hidden = useHiddenSuggestions();
   const { note, hide, undo } = useHideSuggestion();
   const [showHidden, setShowHidden] = useState(false);
@@ -48,8 +52,17 @@ export default function Discover({ existingKeys, rowState, onAdd, onPreview }) {
           if (err.name !== 'AbortError') setLists((l) => ({ ...l, [s.list]: { error: err.message } }));
         });
     }
+    apiGet('/api/tmdb/featured', {}, { signal: controller.signal })
+      .then((data) => setFeatured(data.results))
+      .catch((err) => {
+        // hibánál a sáv elmarad, a sorok attól még működnek
+        if (err.name !== 'AbortError') setFeatured(null);
+      });
     return () => controller.abort();
   }, []);
+
+  const featuredItems = featured?.filter((r) => !hidden.has(titleKey(r))).slice(0, FEATURED) ?? [];
+  const featuredKeys = new Set(featuredItems.map(titleKey));
 
   return (
     <div className="discover">
@@ -57,9 +70,25 @@ export default function Discover({ existingKeys, rowState, onAdd, onPreview }) {
         Csak Magyarországon megjelent, angol vagy magyar nyelvű címek – ezek többnyire szinkronosak.
       </p>
       <HideNote note={note} onUndo={undo} />
+      {featured === undefined ? (
+        <div className="sk featured-sk" aria-busy="true" aria-label="Kiemelések betöltése…" />
+      ) : (
+        featuredItems.length > 0 && (
+          <FeaturedBand
+            items={featuredItems}
+            existingKeys={existingKeys}
+            rowState={rowState}
+            onAdd={onAdd}
+            onPreview={onPreview}
+            onHide={hide}
+          />
+        )
+      )}
       {SECTIONS.map((s) => {
         const data = lists[s.list];
-        const results = data?.results?.filter((r) => !hidden.has(titleKey(r)));
+        const results = data?.results?.filter(
+          (r) => !hidden.has(titleKey(r)) && !(s.list === 'cinema' && featuredKeys.has(titleKey(r)))
+        );
         if (results?.length === 0) return null;
         return (
           <section key={s.list} className="discover-row" aria-labelledby={`discover-${s.list}`}>

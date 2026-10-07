@@ -322,7 +322,19 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (`discover/tv`, `watch_region=HU`, `flatrate`, 90 napon belül futott rész); mindkettőnél
   angol vagy magyar eredeti nyelv, van magyar leírás, és nincs dokumentum / valóságshow /
   talkshow / hírek / szappanopera műfaj. A felület ezt egy mondatban jelzi. Listánként
-  legfeljebb 16, 5 oldalig, egy óráig gyorsítótárazva (`cached()`)
+  legfeljebb 16, 5 oldalig, egy óráig gyorsítótárazva (`cached()`). A listák betöltője közös:
+  `lib/server/discover.js` (`discoverList(name)`, `DISCOVER_LISTS`; csak route handlerben).
+  **Kiemelt sáv** fölül (terv-3 46, 2026-10-07, Norbi választása: „A” látványterv –
+  `munka/terv-3/terv-46/`; `components/FeaturedBand.js` + `app/api/tmdb/featured/route.js`): a
+  „Most a mozikban” első 6 nem elrejtett címe egyenként, nagy jelenetképpel (jobbra, balra a sötétbe
+  olvadva), logóval (magyar, ha van – különben `pickLogo`; ha nincs, a cím), év · 2 műfaj ·
+  játékidő · „moziban júl. 29. óta” (türkiz), 3 soros leírás, „Adatlap” (előnézet, nézetváltás
+  nélkül) / „+ Hozzáadás” (a kereső felvétele) / „✓ A listán”; ‹ / › nyíl, pöttyök, alatta a kis
+  képek; telefonon fent a kép, alatta a szöveg, nyíl és kis képek nélkül, ujjal húzva lapoz. Magától
+  nem lapoz (Norbi döntése). A nem listán lévőn × („Nem érdekel”) – az elrejtett helyére a következő
+  jelölt lép (a route 10 jelöltet ad: a „Most a mozikban” első 10-éből a háttérképesek, egy óráig
+  gyorsítótárazva). A lenti „Most a mozikban” sorból a kiemeltek kimaradnak (Norbi döntése). Betöltés
+  alatt csontváz (`.featured-sk`), hibánál a sáv elmarad
 - `components/FranchisesDialog.js` – „Franchise-ok” ablak a ⋮ menüből (terv-3 23-as pont,
   2026-10-05, Norbi döntéseivel): az összes franchise **ábécérendben, névelő nélkül** („A” / „Az” /
   „The” nem számít, a név kiírva változatlan), csempénként (asztalon 4, 900 px alatt 3, telefonon 2
@@ -821,7 +833,7 @@ háttérfrissítés csak ha esedékes, helyi tokenellenőrzés, 1000 cím fölö
 sorrend” rendezés évadonkénti tételekkel (terv-3 28, 2026-10-06). „Nem érdekel” (×) a Felfedezés
 és a Hasonló címek borítóin, „Elrejtett ajánlások” a Felfedezés alján (terv-3 39); kihúzás-animáció
 megnézettre váltáskor (terv-3 40, 2026-10-06). Képes, barátságos hangvételű felhasználói leírás
-(terv-3 33, 2026-10-06).
+(terv-3 33, 2026-10-06). Kiemelt sáv a Felfedezés tetején (terv-3 46, „A” változat, 2026-10-07).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -872,12 +884,10 @@ látványterv képekkel**, beépítés Norbi elfogadása után:
    ikonra: „Cím hozzáadása”, „Franchise-ok”, „Statisztika”.
 11. **44 – offline indulás** (~2–3 óra): service worker + a legutóbbi lista helyben tárolva –
    azonnal megnyílik, net nélkül csak olvasható, utána frissül.
-12. **46 – kiemelt sáv a Felfedezés tetején** (~0,5 óra terv + ~1,5 óra): a mozis újdonságok közül
-   5–6 nagy, széles képes kiemelés leírással, „Adatlap” / „+ Hozzáadás”, lapozható.
 (A 39-es – „Nem érdekel” – és a 40-es – kihúzás – kész, 2026-10-06; a 37-es „Neked ajánlott”
-sorában is legyen ×.)
+sorában is legyen ×. A 46-os – kiemelt sáv – kész, 2026-10-07.)
 **Norbi kérése (2026-10-06)** – utánuk:
-13. **48 – a felhasználói leírás a ⋮ menüből** (~2–2,5 óra): új menüpont („Felhasználói leírás”),
+12. **48 – a felhasználói leírás a ⋮ menüből** (~2–2,5 óra): új menüpont („Felhasználói leírás”),
    ami az appon belül, képekkel együtt mutatja a `FELHASZNALOI-LEIRAS.md`-t (a tartalomjegyzék
    hivatkozásai működnek, telefonon is). Javaslat: build közben HTML-lé alakítva egy saját oldalon
    (pl. `/leiras`, új lapon), a képek a `public/`-ba másolva. **Nyitott:** új lapon nyíljon, vagy az
@@ -906,7 +916,7 @@ Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a ta
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
 nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
 29 – Marvel betöltve a sorrenddel (szkripttel, 2026-10-06); 39 – „Nem érdekel” az ajánlásokon, 40 –
-kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 25, 27, 13, 26, 35, 36, 37, 41–44, 46, 48 („Következő feladat”); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
+kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 25, 27, 13, 26, 35, 36, 37, 41–44, 48 („Következő feladat”); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
 (B – vezérlősáv, 2026-10-05).
 **Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
 appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,

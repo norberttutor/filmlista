@@ -520,12 +520,12 @@ export default function Watchlist({ session }) {
         .filter((i) => keys.has(i.key) || keptItems.has(i.key))
         .map((i) => ({ key: i.key, title: i.title, item: { ...i, statusName: statusNames.get(i.status) } }));
     }
-    const { compare } = SORTS.find((s) => s.code === sort);
+    const { compare } = SORTS.find((s) => s.code === activeSort);
     const matching = beforeStatus.filter((t) => status === 'all' || t.status === status);
     const ids = new Set(matching.map((t) => t.id));
     const stayed = ofType.filter((t) => keptIds.has(t.id) && !ids.has(t.id));
     return [...matching, ...stayed].sort(compare).map((t) => ({ key: t.id, title: t, item: null }));
-  }, [itemsBeforeStatus, orderList, keptItems, statusNames, beforeStatus, ofType, keptIds, status, sort]);
+  }, [itemsBeforeStatus, orderList, keptItems, statusNames, beforeStatus, ofType, keptIds, status, activeSort]);
 
   // hiányzó franchise-logók (a franchise első filmjének címlogója) a háttérben: betöltéskor, és
   // rögtön, amikor egy logó nélküli franchise-hoz az első cím bekerül (gyűjtemény, adatlap, sor,
