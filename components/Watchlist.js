@@ -49,10 +49,21 @@ import { franchisesWithOrder, loadOrders, orderedItems } from '@/lib/watchOrder'
 import { loadHidden, resetHidden } from '@/lib/hiddenSuggestions';
 import { fetchAll } from '@/lib/fetchAll';
 import { article, collectionFranchiseMap, suggestedFranchiseId } from '@/lib/franchiseSuggest';
+import { loadSnapshot, saveSnapshot, useOnline } from '@/lib/offline';
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 
 const TOAST_THUMB = 'https://image.tmdb.org/t/p/w92';
+
+// a ⋮ menü pontjai, amelyek net nélkül nem működnének (csak olvasható módban nem látszanak)
+const ONLINE_ONLY = ['imdb', 'bulk', 'backups'];
+
+// a tárolt listán állva (a szerver nem érhető el) ennyi időnként újrapróbálja
+const RETRY_MS = 30_000;
+
+// a helyben tárolt lista ideje: „okt. 8. 21:14”
+const snapshotTime = (iso) =>
+  new Date(iso).toLocaleString('hu-HU', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 // franchise-szűrő: '' = összes, NO_FRANCHISE = franchise nélküliek, egyébként franchise id
 const NO_FRANCHISE = 'none';
@@ -201,6 +212,18 @@ export default function Watchlist({ session }) {
   // Kézi állapotválasztás vagy szűrőcsere (applyFilters) után nincs mit visszaállítani.
   const statusBeforeFranchise = useRef(null);
   const [loadError, setLoadError] = useState('');
+  // offline indulás (terv-3 44): amíg a friss lista meg nem jön, a helyben tárolt látszik
+  // (stale: a mentés ideje; különben null) – közben a lista csak olvasható. failed: a friss
+  // betöltés nem sikerült (nincs net / a szerver nem érhető el); reloadKey: újrapróbálás
+  const [stale, setStale] = useState(null);
+  const [failed, setFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const online = useOnline();
+  const readOnly = Boolean(stale) || !online;
+  const userId = session.user.id;
+  // a friss lista már megjött (ezután a tárolt nem írhatja felül)
+  const live = useRef(false);
+  const snapshotShown = useRef(false); // a tárolt lista látszik (vagy látszott)
   const [adding, setAdding] = useState(false);
   const [addQuery, setAddQuery] = useState(''); // a „Cím hozzáadása” panel kezdő keresése
   const [showStats, setShowStats] = useState(false); // a statisztika ablak nyitva
@@ -274,6 +297,26 @@ export default function Watchlist({ session }) {
     setFranchise(f.franchise);
   }
 
+  // a helyben tárolt lista: azonnal látszik, amíg a friss meg nem jön
+  useEffect(() => {
+    let cancelled = false;
+    loadSnapshot(userId).then((snap) => {
+      if (cancelled || live.current || !snap) return;
+      setTitles(snap.titles);
+      setStatuses(snap.statuses);
+      setFranchises(snap.franchises);
+      setOrders(snap.orders ?? []);
+      setNotifications(snap.notifications ?? []);
+      snapshotShown.current = true;
+      setStale(snap.savedAt);
+      setLoadError('');
+      setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -288,10 +331,21 @@ export default function Watchlist({ session }) {
       const error = titlesRes.error || statusesRes.error || franchisesRes.error;
       if (error) {
         console.error(error);
-        setLoadError(
-          'Nem sikerült betölteni a listát. Ellenőrizd a .env.local beállításait, és hogy fut-e a Supabase projekt.'
-        );
+        setFailed(true);
+        // ha már a tárolt lista látszik, az marad (a sáv jelzi); különben hibaüzenet – a tárolt
+        // lista közben még megérkezhet, az leveszi
+        if (!snapshotShown.current) {
+          setLoadError(
+            navigator.onLine
+              ? 'Nem sikerült betölteni a listát. Ellenőrizd az internetkapcsolatot, és frissítsd az oldalt (F5).'
+              : 'Nincs internetkapcsolat, és ezen az eszközön még nincs elmentett lista. Ha visszajön a net, magától betöltődik.'
+          );
+        }
       } else {
+        live.current = true;
+        setStale(null);
+        setFailed(false);
+        setLoadError('');
         setTitles(titlesRes.data);
         setStatuses(statusesRes.data);
         setFranchises(franchisesRes.data.sort(byName));
@@ -380,7 +434,42 @@ export default function Watchlist({ session }) {
       cancelled = true;
       resetHidden();
     };
-  }, []);
+  }, [reloadKey]);
+
+  // sikertelen betöltés után: ha visszajön a net, azonnal, egyébként félpercenként újrapróbálja
+  useEffect(() => {
+    if (!failed) return;
+    const retry = () => setReloadKey((k) => k + 1);
+    const timer = setInterval(retry, RETRY_MS);
+    window.addEventListener('online', retry);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('online', retry);
+    };
+  }, [failed, reloadKey]);
+
+  // a friss lista (és minden módosítása) helyben is: a következő indításkor ez látszik elsőként
+  // (1,5 mp csend után; a lap elrejtésekor / bezárásakor azonnal, ha van mentetlen változás)
+  const unsaved = useRef(null);
+  useEffect(() => {
+    if (!live.current) return;
+    const data = { titles, statuses, franchises, orders, notifications };
+    unsaved.current = data;
+    const timer = setTimeout(() => {
+      unsaved.current = null;
+      saveSnapshot(userId, data);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [userId, titles, statuses, franchises, orders, notifications]);
+  useEffect(() => {
+    const flush = () => {
+      if (document.visibilityState !== 'hidden' || !unsaved.current) return;
+      saveSnapshot(userId, unsaved.current);
+      unsaved.current = null;
+    };
+    document.addEventListener('visibilitychange', flush);
+    return () => document.removeEventListener('visibilitychange', flush);
+  }, [userId]);
 
   // a kiválasztott típus (filmek / sorozatok) címei
   const ofType = useMemo(
@@ -588,7 +677,7 @@ export default function Watchlist({ session }) {
   // tömeges import) – nem csak a következő betöltéskor. Kis várakozással, hogy az egymás után
   // felvett címek egy kérésbe essenek; franchise-onként munkamenetenként egyszer (ha a TMDB-n nincs
   // logó, a szerver 7 napig nem próbálja újra).
-  const logoDue = loading
+  const logoDue = loading || readOnly
     ? ''
     : (() => {
         const used = new Set(titles.map((t) => t.franchise_id).filter(Boolean));
@@ -991,16 +1080,21 @@ export default function Watchlist({ session }) {
   }
 
   return (
-    <main>
+    // data-list: honnan jön a lista (a teszt ezen várja meg a friss adatot)
+    <main data-list={loading ? 'loading' : stale ? 'stale' : 'live'}>
       <header className="top">
         <div>
           <h1 className="brand">Megnézendő filmek és sorozatok</h1>
           {!loading && !loadError && (
-            <p className="count">{titles.length} cím a listán</p>
+            <p className="count">
+              {titles.length} cím a listán
+              {/* a tárolt lista látszik, a friss a háttérben jön (a sáv csak hibánál szól) */}
+              {stale && online && !failed && <span className="muted"> · frissítés…</span>}
+            </p>
           )}
         </div>
         <div className="account">
-          {!loading && !loadError && (
+          {!loading && !loadError && !readOnly && (
             <button
               type="button"
               className="primary"
@@ -1081,7 +1175,7 @@ export default function Watchlist({ session }) {
                     icon: 'history',
                     onSelect: () => setShowBackups(true),
                   },
-                ]}
+                ].filter((item) => !readOnly || !ONLINE_ONLY.includes(item.id))}
               />
               <ImdbRatingsImport
                 ref={imdbImportRef}
@@ -1108,10 +1202,18 @@ export default function Watchlist({ session }) {
           {loadError}
         </p>
       )}
+      {/* net nélkül (vagy ha a szerver nem érhető el): a tárolt / már betöltött lista, csak olvasható */}
+      {!loading && !loadError && (!online || (stale && failed)) && (
+        <p className="offline-note" role="status">
+          <strong>Nincs internetkapcsolat.</strong>{' '}
+          {stale ? `A lista a ${snapshotTime(stale)}-kor elmentett állapotot mutatja; ` : ''}
+          most csak nézelődni lehet. Ha visszajön a net, magától frissül.
+        </p>
+      )}
 
       {!loading && !loadError && (
         <>
-          {adding && (
+          {adding && !readOnly && (
             <TitleSearch
               key={addQuery}
               initialQuery={addQuery}
@@ -1288,7 +1390,7 @@ export default function Watchlist({ session }) {
 
               {/* letapadt szűrősorban (lejjebb görgetve) gyorsgombok: Cím hozzáadása, vissza a
                   lap tetejére – csak asztalon (telefonon ott a lebegő „+”) */}
-              {filtersStuck && (
+              {filtersStuck && !readOnly && (
                 <span className="stuck-tools">
                   <button
                     type="button"
@@ -1478,6 +1580,7 @@ export default function Watchlist({ session }) {
               onEdit={openEditor}
               onUpdated={handleRowUpdated}
               onDelete={requestDelete}
+              readOnly={readOnly}
             />
           ) : (
             <ul className="grid">
@@ -1537,7 +1640,7 @@ export default function Watchlist({ session }) {
 
       {/* telefonon lebegő "+" gomb a fejléc "Cím hozzáadása" gombja helyett (a CSS csak
           640 px alatt mutatja); lefelé görgetéskor elhúzódik */}
-      {!loading && !loadError && (
+      {!loading && !loadError && !readOnly && (
         <button
           type="button"
           className={fabHidden ? 'fab hidden' : 'fab'}
@@ -1575,6 +1678,7 @@ export default function Watchlist({ session }) {
           onSaved={replaceTitle}
           onChanged={replaceTitle}
           onDelete={requestDelete}
+          readOnly={readOnly}
           morphTo={editorFrom.current}
           onClose={() => setEditing(null)}
         />

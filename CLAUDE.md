@@ -57,7 +57,20 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   appnál a Chrome a manifest frissülése után (néha csak az app újraindítása után) mutatja
 - `app/page.js` – kliensoldali session-kezelés: belépés vagy lista. Belépés után megnézi a `list_viewers`
   saját sorát (terv-3 13): ha van (Mama – néző), `MamaView`, különben `Watchlist`; amíg nem tudja,
-  „Betöltés…”; hibánál a `Watchlist` nyílik (a néző ott csak a saját üres adatait látná)
+  „Betöltés…”; hibánál a `Watchlist` nyílik (a néző ott csak a saját üres adatait látná). A néző-e
+  választ a böngésző megjegyzi (`localStorage`, `filmlista-nezo:<userId>`): a következő indításkor nem
+  vár rá, net nélkül is tudja. Regisztrálja a service workert (`registerServiceWorker()`). Net nélkül,
+  lejárt tokennel (vagy ha a `getSession()` 4 mp – net nélkül 0,3 mp – alatt nem válaszol: a Supabase
+  ilyenkor sokáig újrapróbál) a tárolt munkamenettel (`storedSession()`, `offline: true`) a `Watchlist`
+  nyílik; kilépéskor (`SIGNED_OUT`) a helyben tárolt lista törlődik (`clearSnapshots()`)
+- `public/sw.js` + `lib/offline.js` – **offline indulás** (terv-3 44, 2026-10-08): service worker (csak a
+  kiadott változatban; `next.config.mjs`: `/sw.js` `no-cache`): az oldal előbb a hálózatról (3 mp-es
+  időkorláttal, utána / net nélkül a tárolt), a `/_next/static/` és a TMDB-képek (CORS-szal, legfeljebb
+  1500) előbb a tárolóból; az `/api` és a Supabase nem. A lap betöltés után elküldi a használt
+  programfájlokat (`assets` üzenet) – a régi kiadásokéi ekkor törlődnek. A tárolás módjának
+  változásakor a `VERSION`-t emeld. A lista helyben: IndexedDB `filmlista` / `snapshots`,
+  felhasználónként (`loadSnapshot` / `saveSnapshot` / `clearSnapshots`); `useOnline()`. Mama oldala
+  (`MamaView`) nem tárol helyben: net nélkül elindul, de üres / hibát mutat
 - `components/MamaView.js` + `components/MamaDetail.js` – **Mama oldala** (terv-3 13, Norbi választása:
   „B” látványterv – `munka/terv-3/terv-13/`): „Norbi filmjei”, „Kilépés”; rendezés, kereső,
   menü, harang nincs. Egy szűrő (Norbi kérése, 2026-10-07; `.mama-tabs`, darabszámmal): „Filmek” (a
@@ -77,7 +90,17 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   minden középen: cím, alatta az űrlap (nagyobb kijelzőn kártyán, felülről halvány türkiz fény)
 - `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből (`loadTitles()`:
   ezres adagokban – `lib/fetchAll.js`; a háttérfrissítések csak akkor hívják a szervert, ha a
-  betöltött listában van esedékes cím – `lib/refreshDue.js`); fejléc:
+  betöltött listában van esedékes cím – `lib/refreshDue.js`). **Offline** (terv-3 44): induláskor
+  azonnal a helyben tárolt lista (címek, állapotok, franchise-ok, nézési sorrendek, értesítések;
+  `stale` = a mentés ideje), a friss a háttérben jön („· frissítés…” a darabszám mellett); a friss
+  lista és minden módosítása 1,5 mp után helyben is mentődik. Amíg a tárolt látszik vagy nincs net
+  (`readOnly`): nincs „Cím hozzáadása” / „+” / gyorsgomb, a ⋮ menüből kimarad az IMDb import, a
+  Tömeges import és a Mentések (`ONLINE_ONLY`), a táblázat vezérlői és az adatlap mezői tiltva (`Lock`
+  – `fieldset.lock`, `display: contents`; az adatlapon csak „Bezárás”), a háttérfrissítések nem
+  indulnak; net nélkül / sikertelen betöltésnél sáv (`.offline-note`): „Nincs internetkapcsolat. A lista
+  a … -kor elmentett állapotot mutatja; most csak nézelődni lehet…”. Sikertelen betöltésnél a net
+  visszatérésekor és félpercenként újrapróbálja (`reloadKey`). A borítófalon nincs mit tiltani (a
+  kártya csak az adatlapot nyitja). Teszt: `munka/e2e/test-44.mjs`; fejléc:
   „Megnézendő filmek és sorozatok”; mellette (jobbra) „Cím hozzáadása”, harang (`NotificationBell`),
   e-mail, Kilépés, a sor végén a „További műveletek” (⋮) menü (`MoreMenu`, Norbi kérése, mint a
   Chrome-ban): „Statisztika” (`StatsDialog`), „Franchise-ok” (`FranchisesDialog`, telefonon is), „IMDb import” (telefonon – `PHONE_QUERY`, ≤ 640 px –
@@ -170,7 +193,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (halvány aláhúzással), „Hozzáadva: <dátum>” a `created_at` alapján (csak megjelenítés, nem
   szerkeszthető), saját értékelés kis csillagsorként (`StarsDisplay`), ceruza gomb a bal felső
   sarokban → szerkesztő ablak (billentyűzettel / felolvasóval ez a borító-kattintás megfelelője);
-  „Mama: …” borostyánnal (`.mama-tag`; a „Nem érdekli” tompa szürke – `data-mama="declined"`), műfajok
+  Mamából csak az „Érdekli”: borostyán „M” a borító jobb felső sarkában (`.poster-corner` > `.mama-mark`,
+  a „Letöltve” jelvény mellett; a többi Mama-érték a kártyán nem látszik – a szűrő mutatja; Norbi
+  választása, 2026-10-08, látványterv: `munka/terv-3/mama-ikon/`), műfajok
   színes pöttyel (`GenreList`); az első
   rámutatáskor kiszámolja a borító hangulatszínét (`usePosterColor`), rámutatva a borító ebben fénylik
   (a kurzort követő „fénylő kártyaél” 2026-10-04-én Norbi kérésére kikerült). Még meg nem
@@ -689,7 +714,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `status` (FK → statuses), `is_downloaded`, `mama_status` (null | 'interested' | 'declined' |
   'received', „Mama” jelző: üres / Érdekli / Nem érdekli / Megkapta – `03_mama.sql`, a 'declined'
   `17_mama_access.sql`; a „Nem érdekli”-t Mama jelöli a saját oldalán, Norbinál tompa szürke: táblázat –
-  `select.mama-set:has(option[value=declined]:checked)` –, kártya, adatlap – `.mama-chips
+  `select.mama-set:has(option[value=declined]:checked)` –, adatlap – `.mama-chips
   input[value=declined]` –, nem borostyán), `franchise_id` (FK → franchises,
   null = nincs; `on delete set null`), `imdb_rating` (numeric 0–10), `imdb_votes`,
   `imdb_rating_updated_at` (`05_imdb_rating.sql`), `my_rating` (1–10), `notes`, `watched_at`,
@@ -804,7 +829,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - A megnézett (`watched`) és az abbahagyott (`dropped`) címek háttérbe húzódnak (sor és kártya):
   fekete-fehér, fakó borító,
   tompított, de olvasható szöveg (`--watched-text`, ≥ 4,5:1), halványabb vezérlők, szürke
-  műfajpötty, tompa „Mama” felirat – nem az egész sor átlátszó. Rámutatáskor és fókusznál
+  műfajpötty, szürke „M” (Mama) – nem az egész sor átlátszó. Rámutatáskor és fókusznál
   minden teljes színű.
 - Design: sötét téma a `:root` változókkal; kiemelőszín (`--accent`) neon türkiz `#33e0ef`
   (nem sárga), a „Folyamatban” is ez (`--st-watching: var(--accent)`); állapotszínek
@@ -934,7 +959,8 @@ Gyorsindítók a telepített app ikonján (terv-3 43, 2026-10-07). Ízlésprofil
 harang; a Mama-tesztfiók a tesztfiókhoz kötve. Értesítések törlése a harangból (×, „Összes törlése”,
 visszavonható – 2026-10-07). Franchise-javaslat felvételkor és „Javasolt hozzárendelések” a
 Franchise-ok ablakban (terv-3 35, csak felajánlja), „Neked ajánlott” sor a Felfedezésben (terv-3 37,
-2026-10-07).
+2026-10-07). Offline indulás (terv-3 44, 2026-10-08): service worker + a legutóbbi lista helyben –
+azonnal megnyílik, net nélkül csak olvasható, utána magától frissül.
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -963,23 +989,22 @@ látszik nála, ebből 24 „Érdekel”; napló: `munka/terv-3/13-mama/ALLAPOT.
 látványterv képekkel**, beépítés Norbi elfogadása után:
 3. **41 – megosztható nézési sorrend** (~3 óra): egy franchise nézési sorrendjéhez csak olvasható
    nyilvános link (belépés nélkül, borítókkal, a megnézett állapot nélkül); visszavonható.
-4. **44 – offline indulás** (~2–3 óra): service worker + a legutóbbi lista helyben tárolva –
-   azonnal megnyílik, net nélkül csak olvasható, utána frissül.
 (A 39-es – „Nem érdekel” – és a 40-es – kihúzás – kész, 2026-10-06; a „Neked ajánlott” sorban is
-van ×. A 46-os – kiemelt sáv –, a 43-as – gyorsindítók – és a 42-es – ízlésprofil – kész, 2026-10-07.)
+van ×. A 46-os – kiemelt sáv –, a 43-as – gyorsindítók – és a 42-es – ízlésprofil – kész, 2026-10-07; a
+44-es – offline indulás – kész, 2026-10-08.)
 **Norbi kérése (2026-10-06)** – utánuk:
-5. **48 – a felhasználói leírás a ⋮ menüből** (~2–2,5 óra): új menüpont („Felhasználói leírás”),
+4. **48 – a felhasználói leírás a ⋮ menüből** (~2–2,5 óra): új menüpont („Felhasználói leírás”),
    ami az appon belül, képekkel együtt mutatja a `FELHASZNALOI-LEIRAS.md`-t (a tartalomjegyzék
    hivatkozásai működnek, telefonon is). Javaslat: build közben HTML-lé alakítva egy saját oldalon
    (pl. `/leiras`, új lapon), a képek a `public/`-ba másolva. **Nyitott:** új lapon nyíljon, vagy az
    appon belüli ablakban; mindenki lássa, vagy csak bejelentkezve.
 **Legalacsonyabb prioritás** (Norbi döntése, 2026-10-07: a meglévőkön kívül más felhasználó nem lesz,
 Mama fiókja pedig már korlátozott – a 13-as óta a saját oldalát látja):
-6. **25 – admin jogosultság** (~2–2,5 óra) (csak Norbi fiókja): csak admin látja a ⋮ menü **Mentések**
+5. **25 – admin jogosultság** (~2–2,5 óra) (csak Norbi fiókja): csak admin látja a ⋮ menü **Mentések**
    pontját és a **Mama** paramétert mindenhol (szűrő, oszlop, szerkesztő, kártya, CSV); javaslat:
    `app_metadata.role = 'admin'` (SQL-lel, a tokenben), `is_admin()` – a mentés-függvények
    adatbázisszinten is csak adminnak. A tesztfiók is admin (Norbi döntése, a teszt miatt).
-7. **26 – regisztráció** (~2–3 óra, a választott módtól függően): a belépési oldalon „Regisztráció” (`signUp`, megerősítő levél); az új
+6. **26 – regisztráció** (~2–3 óra, a választott módtól függően): a belépési oldalon „Regisztráció” (`signUp`, megerősítő levél); az új
    fiók nem admin. **Nyitott:** bárki regisztrálhasson, vagy meghívókóddal / admin-jóváhagyással
    (javaslat: az utóbbi – az OMDb napi 1000 kérése közös).
 **Számozás nélkül, mindig a roadmap végén** (Norbi kérése, 2026-10-06):
@@ -1006,7 +1031,7 @@ Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a ta
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
 nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
 29 – Marvel betöltve a sorrenddel (szkripttel, 2026-10-06); 39 – „Nem érdekel” az ajánlásokon, 40 –
-kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 27, 36, 41, 44, 48, majd a legalacsonyabb prioritással 25, 26 („Következő feladat”); 35 – franchise-javaslat és 37 – „Neked ajánlott” kész (2026-10-07); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
+kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 27, 36, 41, 48, majd a legalacsonyabb prioritással 25, 26 („Következő feladat”); 44 – offline indulás kész (2026-10-08); 35 – franchise-javaslat és 37 – „Neked ajánlott” kész (2026-10-07); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
 (B – vezérlősáv, 2026-10-05).
 **Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
 appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,
@@ -1032,7 +1057,9 @@ Felfedezésben – magadtól ne javasold újra.
   `global` a böngészőben futó munkamenetet is lezárja, és az `/api` route-ok 401-et adnak.
   A böngészős teszt „kevesebb mozgás” módban fut (`emulateMedia({ reducedMotion: 'reduce' })`),
   hogy a nézetváltás és az animációk ne zavarják a lépéseket; a mozgást a saját lépése kapcsolja
-  vissza és ellenőrzi.
+  vissza és ellenőrzi. Újratöltéskor előbb a helyben tárolt lista látszik (terv-3 44): a teszt
+  `page.reload`-ja megvárja a frisset (`main[data-list]`: `loading` | `stale` | `live`), a
+  `plainReload` nem vár; a `clearSnapshot()` törli a tárolt listát (pl. a csontváz próbájához).
   Képernyőkép / videó a tesztfiókról: a fejléc e-mail-címét mintacímre kell cserélni
   (`munka/dizajn-2/eszkozok/mask.mjs`); videóhoz a Playwright ffmpeg-je a scratchpadbe kerül
   (`PLAYWRIGHT_BROWSERS_PATH`), lásd `munka/dizajn-2/eszkozok/video*.mjs`.

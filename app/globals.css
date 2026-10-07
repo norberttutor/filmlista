@@ -1455,6 +1455,37 @@ body:has(> main.login) {
   max-width: 40rem;
 }
 
+/* ---------- Offline (terv-3 44): net nélkül a tárolt lista, csak olvasható ---------- */
+.offline-note {
+  margin: 0 var(--gutter) 1rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--control-border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.offline-note strong {
+  color: var(--text);
+}
+
+/* a vezérlőket letiltó fieldset (Lock): az elrendezésen nem változtat */
+fieldset.lock {
+  display: contents;
+}
+
+/* a letiltott csillagsor rámutatásra se mutasson előnézetet */
+fieldset.lock:disabled .stars {
+  pointer-events: none;
+}
+
+@supports (corner-shape: squircle) {
+  .offline-note {
+    corner-shape: squircle;
+  }
+}
+
 /* ---------- Üres állapot (üres lista, találat nélküli szűrés / keresés) ---------- */
 .empty-state {
   display: grid;
@@ -1539,7 +1570,7 @@ body:has(> main.login) {
 
 .titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within)
   :is(.row-name, .original, .meta, .row-genres, .added, .row-overview, .rating-number),
-.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) :is(h3, .original, .meta, .status-name, .genres, .added, .mama-tag) {
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) :is(h3, .original, .meta, .status-name, .genres, .added) {
   color: var(--watched-text);
 }
 
@@ -2441,13 +2472,41 @@ body:has(> main.login) {
   color: var(--accent);
 }
 
-/* "Mama: …" a kártyán: saját jelölés, borostyán; a „Nem érdekli” tompa szürke */
-.card .mama-tag {
-  color: var(--accent-2);
+/* a borító jobb felső sarka: Mama „Érdekli” jelölése („M”) és a „Letöltve” jelvény egymás mellett;
+   a kártyán a többi Mama-érték nem látszik (a szűrő mutatja) */
+.poster-corner {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
-.card .mama-tag[data-mama='declined'] {
+.poster-corner .badge {
+  position: static;
+}
+
+/* saját jelölés: borostyán */
+.mama-mark {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent-2);
+  background: rgb(13 17 23 / 0.8);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 1px var(--accent-2-line),
+    0 2px 8px rgb(0 0 0 / 0.35);
+}
+
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .mama-mark {
   color: var(--muted);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.14);
 }
 
 .icon-btn {
@@ -5524,9 +5583,19 @@ body:has(.editor[open]) {
     width: 2rem;
   }
 
-  .card .badge {
+  .card .poster-corner {
     top: 0.35rem;
     right: 0.35rem;
+    gap: 0.25rem;
+  }
+
+  .card .mama-mark {
+    width: 1.35rem;
+    height: 1.35rem;
+    font-size: 0.7rem;
+  }
+
+  .card .badge {
     gap: 0;
     padding: 0.3rem;
     font-size: 0;

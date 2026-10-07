@@ -14,6 +14,7 @@ import {
 } from '@/lib/titles';
 import StarRating from '@/components/StarRating';
 import FranchiseSelect from '@/components/FranchiseSelect';
+import { Lock } from '@/components/TitleTable';
 import ImdbBadge from '@/components/ImdbBadge';
 import ReleaseBadge from '@/components/ReleaseBadge';
 import WatchProviders from '@/components/WatchProviders';
@@ -253,6 +254,7 @@ function TitlePage({
   onSaved,
   onChanged,
   onDelete,
+  readOnly, // net nélkül (terv-3 44): csak nézni lehet
 }) {
   const row = entry.row;
   const preview = !row;
@@ -403,6 +405,7 @@ function TitlePage({
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (readOnly) return;
     if (preview) {
       handleAdd();
       return;
@@ -540,7 +543,7 @@ function TitlePage({
           {preview ? (
             // előnézet: a szerkesztő mezők helyett egyetlen gomb
             <div className="preview-add">
-              <button type="submit" className="primary" disabled={busy}>
+              <button type="submit" className="primary" disabled={busy || readOnly}>
                 {busy ? 'Hozzáadás…' : 'Hozzáadás a listához'}
               </button>
               <p className="muted small">Felvétel után itt beállíthatod az állapotát és az értékelését is.</p>
@@ -552,7 +555,7 @@ function TitlePage({
               {errorMessage}
             </div>
           ) : (
-            <>
+            <Lock on={readOnly}>
               {/* tömör elrendezés (terv-3 30, B – „vezérlősáv”, Norbi választása, 2026-10-05): fölül
                   a Franchise és a Saját értékelés egymás mellett, alatta keretes sáv: Állapot |
                   Letöltve | Mama; sorozatnál az Évadok a sáv fölött, a sávban csak a Mama */}
@@ -644,7 +647,7 @@ function TitlePage({
                   />
                 </fieldset>
               </div>
-            </>
+            </Lock>
           )}
 
           {/* a TMDB ajánlásai: egy kattintással a listára, a borítóra kattintva az adatlapjuk */}
@@ -655,6 +658,15 @@ function TitlePage({
           <div className="editor-actions">
             {preview ? (
               <>
+                <span className="spacer" />
+                <button type="button" className="ghost" onClick={close}>
+                  Bezárás
+                </button>
+              </>
+            ) : readOnly ? (
+              // net nélkül (terv-3 44) csak nézni lehet
+              <>
+                <span className="muted small">Kapcsolat nélkül csak nézelődni lehet.</span>
                 <span className="spacer" />
                 <button type="button" className="ghost" onClick={close}>
                   Bezárás

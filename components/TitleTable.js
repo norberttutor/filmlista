@@ -35,6 +35,7 @@ export default function TitleTable({
   onEdit,
   onUpdated,
   onDelete,
+  readOnly, // net nélkül (terv-3 44): a vezérlők letiltva
 }) {
   return (
     <div className="table-wrap">
@@ -73,11 +74,22 @@ export default function TitleTable({
               onEdit={onEdit}
               onUpdated={onUpdated}
               onDelete={onDelete}
+              readOnly={readOnly}
             />
           ))}
         </tbody>
       </table>
     </div>
+  );
+}
+
+// net nélkül (terv-3 44): a letiltott fieldset minden benne lévő vezérlőt letilt (a saját
+// komponensekét is); a CSS-ben display: contents, így az elrendezésen nem változtat
+export function Lock({ on, children }) {
+  return (
+    <fieldset className="lock" disabled={on}>
+      {children}
+    </fieldset>
   );
 }
 
@@ -92,6 +104,7 @@ function TitleRow({
   onEdit,
   onUpdated,
   onDelete,
+  readOnly, // net nélkül (terv-3 44): a vezérlők letiltva
 }) {
   const [saveState, setSaveState] = useState(''); // '' | 'saving' | 'saved'
   const [error, setError] = useState('');
@@ -196,16 +209,18 @@ function TitleRow({
               a sorok nem ugrálnak; üresen csak rámutatáskor látszik, de a helyét megtartja */}
           <div className={t.franchise_id ? 'franchise-field' : 'franchise-field empty'}>
             {!t.franchise_id && <span aria-hidden="true">Franchise</span>}
-            <FranchiseSelect
-              className="franchise-select"
-              label={`Franchise – ${t.title}`}
-              value={t.franchise_id}
-              franchises={franchises}
-              onChange={(id) => save({ franchise_id: id })}
-              onCreate={onCreateFranchise}
-              onDelete={onDeleteFranchise}
-              onRename={onRenameFranchise}
-            />
+            <Lock on={readOnly}>
+              <FranchiseSelect
+                className="franchise-select"
+                label={`Franchise – ${t.title}`}
+                value={t.franchise_id}
+                franchises={franchises}
+                onChange={(id) => save({ franchise_id: id })}
+                onCreate={onCreateFranchise}
+                onDelete={onDeleteFranchise}
+                onRename={onRenameFranchise}
+              />
+            </Lock>
           </div>
           {/* leírás: széles képernyőn a cím mellett, keskenyebben alatta (CSS); a teljes
               szöveg rámutatáskor látszik */}
@@ -227,35 +242,39 @@ function TitleRow({
             type="checkbox"
             aria-label={`Letöltve – ${t.title}`}
             checked={t.is_downloaded}
+            disabled={readOnly}
             onChange={(e) => save({ is_downloaded: e.target.checked })}
           />
         )}
       </td>
       <td className="col-status">
-        {hasSeasons(t) ? (
-          <SeasonCell title={t} onUpdated={onUpdated} onError={setError} />
-        ) : (
-          <select
-            aria-label={`Állapot – ${t.title}`}
-            value={t.status}
-            onChange={(e) => changeStatus(e.target.value)}
-          >
-            {/* az "Abbahagyva" csak sorozatnál */}
-            {statuses
-              .filter((s) => s.code !== DROPPED_STATUS || t.media_type === 'tv' || t.status === s.code)
-              .map((s) => (
-                <option key={s.code} value={s.code}>
-                  {/* az alapállapot üresen jelenik meg */}
-                  {s.code === DEFAULT_STATUS ? '' : s.name}
-                </option>
-              ))}
-          </select>
-        )}
+        <Lock on={readOnly}>
+          {hasSeasons(t) ? (
+            <SeasonCell title={t} onUpdated={onUpdated} onError={setError} />
+          ) : (
+            <select
+              aria-label={`Állapot – ${t.title}`}
+              value={t.status}
+              onChange={(e) => changeStatus(e.target.value)}
+            >
+              {/* az "Abbahagyva" csak sorozatnál */}
+              {statuses
+                .filter((s) => s.code !== DROPPED_STATUS || t.media_type === 'tv' || t.status === s.code)
+                .map((s) => (
+                  <option key={s.code} value={s.code}>
+                    {/* az alapállapot üresen jelenik meg */}
+                    {s.code === DEFAULT_STATUS ? '' : s.name}
+                  </option>
+                ))}
+            </select>
+          )}
+        </Lock>
       </td>
       <td className="col-mama">
         <select
           aria-label={`Mama – ${t.title}`}
           className={t.mama_status ? 'mama-set' : undefined}
+          disabled={readOnly}
           value={t.mama_status ?? ''}
           onChange={(e) => save({ mama_status: e.target.value || null })}
         >
@@ -268,15 +287,17 @@ function TitleRow({
         </select>
       </td>
       <td className="col-rating">
-        <div className="rating-field">
-          <StarRating
-            name={`rating-${t.id}`}
-            label={`Értékelés – ${t.title}`}
-            value={t.my_rating}
-            onChange={(n) => save({ my_rating: n })}
-          />
-          <span className="rating-number">{t.my_rating ? `${t.my_rating}/10` : ''}</span>
-        </div>
+        <Lock on={readOnly}>
+          <div className="rating-field">
+            <StarRating
+              name={`rating-${t.id}`}
+              label={`Értékelés – ${t.title}`}
+              value={t.my_rating}
+              onChange={(n) => save({ my_rating: n })}
+            />
+            <span className="rating-number">{t.my_rating ? `${t.my_rating}/10` : ''}</span>
+          </div>
+        </Lock>
       </td>
       <td className="col-actions">
         {/* a mentés állapota képernyőolvasónak (a változás a vezérlőkön látszik) */}
@@ -289,6 +310,7 @@ function TitleRow({
           className="icon-btn"
           aria-label={`Törlés – ${t.title}`}
           title="Törlés (8 mp-ig visszavonható)"
+          disabled={readOnly}
           onClick={() => onDelete(t)}
         >
           <svg

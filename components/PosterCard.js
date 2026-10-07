@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { externalLink, formatDate, mamaLabel, releaseState, DEFAULT_STATUS } from '@/lib/titles';
+import { externalLink, formatDate, releaseState, DEFAULT_STATUS } from '@/lib/titles';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
 import { StarsDisplay } from '@/components/StarRating';
 import ImdbBadge from '@/components/ImdbBadge';
@@ -21,6 +21,8 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
   const seasons = hasSeasons(t) ? seasonCounts(t) : null;
   // még meg nem jelent film: szaggatott keret a borító körül és dátumos jelvény
   const release = releaseState(t);
+  const downloaded = item ? item.downloaded : t.is_downloaded;
+  const mamaWants = t.mama_status === 'interested';
   // a borító hangulatszíne: az első rámutatáskor számolódik, rámutatva a borító ebben fénylik
   const [pointed, setPointed] = useState(false);
   const ambient = usePosterColor(t.poster_path, pointed);
@@ -44,7 +46,18 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
         ) : (
           <span className="poster-fallback">{t.title}</span>
         )}
-        {(item ? item.downloaded : t.is_downloaded) && <span className="badge">Letöltve</span>}
+        {/* jobb felső sarok: Mama „Érdekli” jelölése („M”, a többi Mama-érték a kártyán nem
+            látszik – a szűrő mutatja) és a „Letöltve” jelvény */}
+        {(mamaWants || downloaded) && (
+          <span className="poster-corner">
+            {mamaWants && (
+              <span className="mama-mark" title="Mamát érdekli" role="img" aria-label="Mamát érdekli">
+                M
+              </span>
+            )}
+            {downloaded && <span className="badge">Letöltve</span>}
+          </span>
+        )}
         {release && <ReleaseBadge state={release} />}
         {seasons ? <SeasonStrip title={t} /> : <span className="status-strip" aria-hidden="true" />}
       </div>
@@ -100,11 +113,6 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
         {seasons && !season && (
           <span>
             {seasons.watched}/{seasons.aired} évad
-          </span>
-        )}
-        {t.mama_status && (
-          <span className="mama-tag" data-mama={t.mama_status}>
-            Mama: {mamaLabel(t.mama_status)}
           </span>
         )}
       </p>
