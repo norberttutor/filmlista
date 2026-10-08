@@ -3802,6 +3802,13 @@ button.season:hover {
   cursor: pointer;
 }
 
+/* a jelölőnégyzet méretét a helye adja meg (enélkül 2 px-esre zsugorodott) */
+.fr-suggest-list input[type='checkbox'] {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
 .fr-suggest-list .thumb {
   width: 2.3rem;
   flex: none;
@@ -5101,8 +5108,10 @@ body:has(.editor[open]) {
 
 /* asztalon kétoszlopos ablak: balra a borító (görgetéskor a helyén marad), jobbra az adatok */
 @media (min-width: 900px) {
+  /* 66rem: a vezérlősáv (Állapot | Letöltés | Mama) egy sorba fér (~700 px a jobb oszlopban;
+     Norbi kérése, 2026-10-08 – korábban 60rem, és a Mama új sorba tört) */
   .editor.title-editor {
-    width: min(60rem, calc(100vw - 2rem));
+    width: min(66rem, calc(100vw - 2rem));
   }
 
   .title-editor form {
@@ -5308,8 +5317,16 @@ body:has(.editor[open]) {
   border-radius: 16px;
 }
 
+/* a csoportok kitöltik a sávot, a tartalmuk (felirat, gombok) középre zárva – telefonon is
+   (Norbi kérése, 2026-10-08) */
 .editor-controls > * {
+  flex: 1 1 auto;
   padding: 0.7rem 1rem 0.8rem;
+  text-align: center;
+}
+
+.editor-controls .segmented {
+  justify-content: center;
 }
 
 .editor-controls > * + * {

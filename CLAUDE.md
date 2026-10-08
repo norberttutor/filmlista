@@ -247,7 +247,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   adatai alatt „Előzetes megnézése” (angolnál „angolul” jelzés) → 16:9 YouTube-lejátszó
   (`youtube-nocookie.com`, `.trailer`), „Előzetes bezárása”. Évados sorozatnál az Évadok
   fölött az idővonal (`SeasonTimeline`; a pöttyre kattintva a lista az évadhoz görget).
-  Asztalon (≥ 900 px) széles, kétoszlopos ablak: balra nagy borító (w500, görgetéskor a helyén
+  Asztalon (≥ 900 px) széles (66 rem – így a vezérlősáv egy sorba fér, Norbi kérése, 2026-10-08),
+  kétoszlopos ablak: balra nagy borító (w500, görgetéskor a helyén
   marad; borító nélkül filmikon), jobbra az adatok; telefonon egy oszlop, nagy borító nélkül.
   Nézetváltás (asztalon, `lib/viewTransition.js`): a kattintott kártya / sor borítója átsiklik a
   nagy borító helyére (a `Watchlist` `openEditor(t, forrásElem)` indítja), bezáráskor (Esc –
@@ -270,7 +271,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   **Tömör elrendezés** (terv-3 30, B – „vezérlősáv”, Norbi választása, 2026-10-05): fölül a
   Franchise és a Saját értékelés egymás mellett (`.editor-pair`), alatta keretes sáv
   (`.editor-controls`): Állapot | Letöltve | Mama, elválasztóvonalakkal (évados sorozatnál az
-  Évadok a sáv fölött, a sávban csak a Mama); a mezők címkéi kis, ritkított nagybetűk; telefonon
+  Évadok a sáv fölött, a sávban csak a Mama; asztalon egy sorban; a csoportok – telefonon is – középre zárva); a mezők címkéi kis, ritkított nagybetűk; telefonon
   a pár egymás alatt, a sávban fent az Állapot, alatta a Letöltve és a Mama. Asztalon a
   vezérlőblokk 341 → 168 px (látványtervek: `munka/terv-3/terv-30/`).
   A borító hangulatszínét megnyitáskor kiszámolja (`usePosterColor`): az ablak a film színében
@@ -699,7 +700,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `supabase/*.sql` – a már lefuttatott adatbázis-szkriptek (dokumentáció)
 - `FELHASZNALOI-LEIRAS.md` – felhasználói leírás Norbinak: minden funkció témák szerint
   (1–17. szakasz), a végén Változásnapló. Kezelési leírás, nem kód: gombnevek, lépések, szabályok.
-  Képes (terv-3 33, 2026-10-06): a képek a `docs/kepek/*.jpg` (23 db, a repóban, ~1,9 MB; asztal
+  Képes (terv-3 33, 2026-10-06): a képek a `docs/kepek/*.jpg` (28 db, a repóban, ~2,4 MB; legutóbb frissítve 2026-10-08; asztal
   1440 × 900, telefon 390 × 844), a zsúfoltabbakon borostyán számozott jelölők (①②③), a szöveg
   ugyanazokkal a számokkal magyaráz; a telefonos képek HTML-`<img width>`-del egymás mellett. Mind
   egy szkriptből: `munka/terv-3/33-leiras/leiras-seed.mjs` (próbalista a tesztfiókba) +
@@ -974,10 +975,10 @@ szerint nem kell. A vizsgálat: `munka/optimalizalas/VIZSGALAT.md`.
 doksival együtt; ha egy pont tartalma változik, frissítsd): a pontok mellett „~… óra”.
 **Norbi kérései (2026-10-04)** – utána, ebben a sorrendben (a 25-ös és a 26-os a lista végén, lásd lent); a részletek
 (megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
-1. **27 – jelszó módosítása** (~2 óra + Norbi Supabase-beállítása ~15 perc): bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”: jelenlegi +
-   új kétszer; előbb ellenőrző belépés, utána `updateUser`) és „Elfelejtettem a jelszavam” a
-   belépési oldalon (`resetPasswordForEmail` → levél → `PASSWORD_RECOVERY` → új jelszó). Norbi
-   teendője: Supabase URL Configuration + magyar levélsablonok.
+1. **27 – jelszó módosítása** (~1,5 óra): csak bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”:
+   jelenlegi + új kétszer; előbb ellenőrző belépés, utána `updateUser`). Elfelejtett jelszó a
+   belépési oldalon **nem kell** (Norbi döntése, 2026-10-08) – magadtól ne javasold újra; így
+   Supabase-beállítás sem kell.
 (A 2026-10-05-i 33-as – képes felhasználói leírás – kész, 2026-10-06. A 13-as – Mama külön
 hozzáférése – kész, 2026-10-07: Mama fiókja – tutorne.eva@gmail.com – Norbiéhoz kötve, élesben 141 film
 látszik nála, ebből 24 „Érdekel”; napló: `munka/terv-3/13-mama/ALLAPOT.md`.)
