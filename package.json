@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "node scripts/leiras.mjs && next dev",
+    "build": "node scripts/leiras.mjs && next build",
     "start": "next start"
   },
   "dependencies": {
@@ -12,5 +12,8 @@
     "next": "^16.3.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "marked": "^18.1.0"
   }
 }

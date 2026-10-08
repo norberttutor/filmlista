@@ -105,8 +105,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   e-mail, Kilépés, a sor végén a „További műveletek” (⋮) menü (`MoreMenu`, Norbi kérése, mint a
   Chrome-ban): „Statisztika” (`StatsDialog`), „Franchise-ok” (`FranchisesDialog`, telefonon is), „IMDb import” (telefonon – `PHONE_QUERY`, ≤ 640 px –
   nincs, Norbi kérése), asztali nézetben „Tömeges
-  import” (`BulkImport`) és „Mentés letöltése” (`downloadListCsv`), a végén „Mentések”
-  (`BackupsDialog`, telefonon is). Telefonon (≤ 640 px) a
+  import” (`BulkImport`) és „Mentés letöltése” (`downloadListCsv`), utána „Mentések”
+  (`BackupsDialog`, telefonon is), a végén „Felhasználói leírás” (`ManualDialog`, telefonon és net
+  nélkül is). Telefonon (≤ 640 px) a
   „Cím hozzáadása” helyett lebegő, kerek „+” gomb a jobb alsó sarokban (`.fab`; lefelé
   görgetéskor elhúzódik, felfelé visszajön – ugyanaz a görgetésfigyelő, mint a szűrősoré;
   kattintva megnyitja a keresőt és a lap tetejére görget); szűrősor
@@ -586,7 +587,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `aria-describedby`). Kattintással vagy Enter / Szóköz / nyilakkal nyílik, a menüben nyilak,
   Home / End, Esc (a fókusz vissza a gombra), Tab és kívülre kattintás bezárja. Választáskor a
   fókusz a gombra kerül (a megnyíló ablak bezárásakor oda tér vissza). A pontok:
-  `{ id, label, description, icon, onSelect }` (ikonok: star, chart, list, download, history, stack)
+  `{ id, label, description, icon, onSelect }` (ikonok: star, chart, list, download, history, stack,
+  book)
 - `components/StatsDialog.js` + `lib/stats.js` – „Statisztika” ablak (a ⋮ menüből): csempék
   a betöltött listából (`listStats()`, adatbázis-lekérdezés nélkül) – megnézve az utolsó 12
   hónapban, havonta megnézett címek (saját SVG-oszlopdiagram, `watched_at`), műfajok (a
@@ -697,6 +699,21 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   artifact letölthető. A `backup_reader` jelszavának cseréje: `mentes-olvaso.mjs`, utána a
   GitHub-titkot is át kell írni. Az artifact a futás Summary oldalának alján van (a telefonos
   GitHub-alkalmazás nem mutatja)
+- `components/ManualDialog.js` + `scripts/leiras.mjs` – **felhasználói leírás az appon belül**
+  (terv-3 48, 2026-10-08; Norbi döntése: belső ablak, nem új lap / külön oldal): a ⋮ menü
+  „Felhasználói leírás” pontja `dialog.editor.manual-dialog`-ot nyit (fent „Felhasználói leírás”,
+  „Tartalom” – a tartalomjegyzékhez görget –, „Bezárás”; alatta a görgethető leírás, `.manual`,
+  olvasható szélességben; telefonon teljes képernyő; kikattintásra mindig zár – nincs benne bevitel).
+  A HTML-t a `scripts/leiras.mjs` állítja elő a `FELHASZNALOI-LEIRAS.md`-ből (`marked`, csak
+  fejlesztői függőség) **a `npm run dev` / `npm run build` elején** (a Vercel is így buildel):
+  `public/leiras/leiras.html` + a `docs/kepek/` képei a `public/leiras/kepek/`-be (a mappa git-ből
+  kizárva). A főcím és a VS Code-os tipp kimarad; a fejlécek azonosítója a GitHub szabálya szerint,
+  `leiras-` előtaggal (a `#…` hivatkozások is); a képek lusta betöltéssel, méretezve (`width` /
+  `height` a JPEG-ből – a hivatkozásra ugráskor ne csússzon a lap); külső link új lapon. A cél
+  nélküli belső hivatkozásra / hiányzó képre a szkript figyelmeztet. A belső hivatkozásokat a
+  `ManualDialog` kezeli (az ablakon belül görget, a fókusz a szakaszcímre, az URL nem változik).
+  Net nélkül a service worker tárolójából jön, ha már egyszer megnyílt, különben hibaüzenet +
+  „Újrapróbálás”. Teszt: `munka/e2e/test-48.mjs`
 - `supabase/*.sql` – a már lefuttatott adatbázis-szkriptek (dokumentáció)
 - `FELHASZNALOI-LEIRAS.md` – felhasználói leírás Norbinak: minden funkció témák szerint
   (1–17. szakasz), a végén Változásnapló. Kezelési leírás, nem kód: gombnevek, lépések, szabályok.
@@ -968,7 +985,8 @@ harang; a Mama-tesztfiók a tesztfiókhoz kötve. Értesítések törlése a har
 visszavonható – 2026-10-07). Franchise-javaslat felvételkor és „Javasolt hozzárendelések” a
 Franchise-ok ablakban (terv-3 35, csak felajánlja), „Neked ajánlott” sor a Felfedezésben (terv-3 37,
 2026-10-07). Offline indulás (terv-3 44, 2026-10-08): service worker + a legutóbbi lista helyben –
-azonnal megnyílik, net nélkül csak olvasható, utána magától frissül.
+azonnal megnyílik, net nélkül csak olvasható, utána magától frissül. Felhasználói leírás az appon
+belül, a ⋮ menüből (terv-3 48, 2026-10-08).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -980,7 +998,7 @@ az 1000 soros korlát kezelése); a C2 / C3 (látható változással járó kön
 szerint nem kell. A vizsgálat: `munka/optimalizalas/VIZSGALAT.md`.
 **Becsült idő** (Norbi kérése, 2026-10-06: a roadmap listázásakor mindig írd mellé; teszttel és
 doksival együtt; ha egy pont tartalma változik, frissítsd): a pontok mellett „~… óra”.
-**Norbi kérései (2026-10-04)** – utána, ebben a sorrendben (a 25-ös és a 26-os a lista végén, lásd lent); a részletek
+**Norbi kérései (2026-10-04)** – utána, ebben a sorrendben; a részletek
 (megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
 1. **27 – jelszó módosítása** (~1,5 óra): csak bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”:
    jelenlegi + új kétszer; előbb ellenőrző belépés, utána `updateUser`). Elfelejtett jelszó a
@@ -999,31 +1017,20 @@ látványterv képekkel**, beépítés Norbi elfogadása után:
    nyilvános link (belépés nélkül, borítókkal, a megnézett állapot nélkül); visszavonható.
 (A 39-es – „Nem érdekel” – és a 40-es – kihúzás – kész, 2026-10-06; a „Neked ajánlott” sorban is
 van ×. A 46-os – kiemelt sáv –, a 43-as – gyorsindítók – és a 42-es – ízlésprofil – kész, 2026-10-07; a
-44-es – offline indulás – kész, 2026-10-08.)
-**Norbi kérése (2026-10-06)** – utánuk:
-4. **48 – a felhasználói leírás a ⋮ menüből** (~2–2,5 óra): új menüpont („Felhasználói leírás”),
-   ami az appon belül, képekkel együtt mutatja a `FELHASZNALOI-LEIRAS.md`-t (a tartalomjegyzék
-   hivatkozásai működnek, telefonon is). Javaslat: build közben HTML-lé alakítva egy saját oldalon
-   (pl. `/leiras`, új lapon), a képek a `public/`-ba másolva. **Nyitott:** új lapon nyíljon, vagy az
-   appon belüli ablakban; mindenki lássa, vagy csak bejelentkezve.
+44-es – offline indulás – kész, 2026-10-08. A 48-as – felhasználói leírás a ⋮ menüből – kész,
+2026-10-08.)
 **Norbi kérése (2026-10-08, Claude kinézeti javaslataiból)** – utána; mindegyik alpontnál **előbb
 látványterv** (Norbi kéri, amelyikhez akarja), beépítés csak jóváhagyás után; részletek a TERV.md-ben:
-5. **49 – látványosabb felület** (hátra ~3,5–4 óra; a 49.8 és a 49.10 kész):
-   - **49.1 – logó a cím helyett az adatlapon** (~1,5 óra): a TMDB címlogó nagyban a jelenetképen,
-     alatta kisebben a cím; logó nélkül a mostani cím;
+4. **49 – látványosabb felület** (hátra ~2–2,5 óra; a 49.8 és a 49.10 kész, a 49.1 elvetve):
+   - ~~49.1 – logó a cím helyett az adatlapon~~ – **elvetve** (Norbi, 2026-10-08: elkészült, de
+     kipróbálás után visszavonatta – nem kell);
    - **49.3 – animált átrendeződés szűréskor / rendezéskor** (~2–2,5 óra): a kártyák és sorok a
      helyükre csúsznak, a kiesők elhalványulnak, az újak beúsznak;
    - ~~49.8 – lépcsőzetes beúszás lapozáskor~~ – **kész (2026-10-08, látványterv nélkül – Norbi kérése)**;
    - ~~49.10 – saját görgetősáv~~ – **kész (2026-10-08, látványterv nélkül)**.
-**Legalacsonyabb prioritás** (Norbi döntése, 2026-10-07: a meglévőkön kívül más felhasználó nem lesz,
-Mama fiókja pedig már korlátozott – a 13-as óta a saját oldalát látja):
-6. **25 – admin jogosultság** (~2–2,5 óra) (csak Norbi fiókja): csak admin látja a ⋮ menü **Mentések**
-   pontját és a **Mama** paramétert mindenhol (szűrő, oszlop, szerkesztő, kártya, CSV); javaslat:
-   `app_metadata.role = 'admin'` (SQL-lel, a tokenben), `is_admin()` – a mentés-függvények
-   adatbázisszinten is csak adminnak. A tesztfiók is admin (Norbi döntése, a teszt miatt).
-7. **26 – regisztráció** (~2–3 óra, a választott módtól függően): a belépési oldalon „Regisztráció” (`signUp`, megerősítő levél); az új
-   fiók nem admin. **Nyitott:** bárki regisztrálhasson, vagy meghívókóddal / admin-jóváhagyással
-   (javaslat: az utóbbi – az OMDb napi 1000 kérése közös).
+**Lekerült a roadmapről** (Norbi döntése, 2026-10-08: a közeljövőben nincs tervben; magadtól ne
+javasold újra): **25 – admin jogosultság**, **26 – regisztráció** (a meglévőkön kívül más felhasználó
+nem lesz, Mama fiókja pedig a 13-as óta korlátozott). A részletes tervük a TERV.md-ben megmaradt.
 **Számozás nélkül, mindig a roadmap végén** (Norbi kérése, 2026-10-06):
 - **Időszakos kézikönyv-frissítés** (~1–2 óra, a közben összegyűlt változásoktól függően): a
   `FELHASZNALOI-LEIRAS.md` szövege, képei és Változásnaplója a legutóbbi frissítése óta elkészült
@@ -1048,7 +1055,7 @@ Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a ta
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
 nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
 29 – Marvel betöltve a sorrenddel (szkripttel, 2026-10-06); 39 – „Nem érdekel” az ajánlásokon, 40 –
-kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 27, 36, 41, 48, 49 (kinézeti újítások, látványtervvel), majd a legalacsonyabb prioritással 25, 26 („Következő feladat”); 44 – offline indulás kész (2026-10-08); 35 – franchise-javaslat és 37 – „Neked ajánlott” kész (2026-10-07); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
+kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 27, 36, 41, 49 (kinézeti újítások, látványtervvel) („Következő feladat”; a 25 és a 26 lekerült – Norbi, 2026-10-08); 48 – felhasználói leírás a ⋮ menüből kész (2026-10-08, belső ablakban); 44 – offline indulás kész (2026-10-08); 35 – franchise-javaslat és 37 – „Neked ajánlott” kész (2026-10-07); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
 (B – vezérlősáv, 2026-10-05).
 **Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
 appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,
@@ -1059,7 +1066,8 @@ sűrűségváltó, fülek az adatlapon telefonon – magadtól ne javasold újra
 ajánló, változásnapló visszavonással, görgetésre mozduló háttérkép az adatlapon, előzetes rámutatásra a
 Felfedezésben – magadtól ne javasold újra. A 2026-10-08-i kinézeti javaslatokból (49) elvetve: mozgó
 borítófal a belépési oldalon, elmosottból kiélesedő borítók, kedvencek borostyán kerete, szikrák 10
-csillagnál, felpörgő számok / felnövő oszlopok a Statisztikában, feltöltődő franchise-mérők –
+csillagnál, felpörgő számok / felnövő oszlopok a Statisztikában, feltöltődő franchise-mérők, címlogó az adatlapon
+(49.1 – beépítve, majd visszavonva) –
 magadtól ne javasold újra.
 **Elvetve (Norbi kérésére, 2026-10-04) – nem kell, magadtól ne javasold újra:** 2 – gyorsműveletek a borítón, 3 – parancspaletta (Ctrl+K) és billentyűparancsok, 5 – „Mit nézzek ma?”, 6 – játékidő a soron és szűrő rá, 11 – saját címkék, 12 – szinkron / felirat jelölése, 17 – csoportosítás hónapok szerint, 18 – évértékelő, 19 – értesítés a telefonra (web push).
 

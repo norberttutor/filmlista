@@ -6526,6 +6526,203 @@ input[type='checkbox']:checked {
   }
 }
 
+/* ---------- Felhasználói leírás (terv-3 48) ---------- */
+/* a ⋮ menüből nyíló ablak: fent rögzített fejléc, alatta a görgethető leírás olvasható
+   szélességben (a HTML-t a scripts/leiras.mjs készíti a FELHASZNALOI-LEIRAS.md-ből); telefonon
+   a teljes képernyő */
+.editor.manual-dialog {
+  width: min(56rem, calc(100vw - 2rem));
+  height: calc(100dvh - 2rem);
+}
+
+.manual-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.manual-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.6rem;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.manual-head h2 {
+  margin: 0 auto 0 0;
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.manual-head h2:focus {
+  outline: none;
+}
+
+.manual-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.manual-state {
+  display: grid;
+  justify-items: start;
+  gap: 0.8rem;
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 2rem 1.6rem;
+}
+
+.manual-state p {
+  margin: 0;
+}
+
+.manual {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 1.4rem 1.6rem 3rem;
+  line-height: 1.6;
+}
+
+.manual h2 {
+  margin: 2.4rem 0 0.8rem;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--line-soft);
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+
+.manual h2#leiras-tartalom {
+  margin-top: 1.4rem;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.manual h3 {
+  margin: 1.8rem 0 0.6rem;
+  font-size: 1.1rem;
+}
+
+.manual :is(h2, h3):focus {
+  outline: none;
+}
+
+.manual :is(p, ul, ol, blockquote, table) {
+  margin: 0 0 1rem;
+}
+
+.manual :is(ul, ol) {
+  padding-left: 1.4rem;
+}
+
+.manual li + li {
+  margin-top: 0.3rem;
+}
+
+.manual a {
+  color: var(--accent);
+  text-underline-offset: 0.18em;
+}
+
+.manual hr {
+  display: none; /* a h2-k felső vonala választ el */
+}
+
+.manual img {
+  max-width: 100%;
+  height: auto;
+  vertical-align: top;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--placeholder-bg);
+}
+
+/* a telefonos képek egymás mellett (egy bekezdésben több kép) */
+.manual p:has(> img + img) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.manual blockquote {
+  padding: 0.6rem 1rem;
+  color: var(--muted);
+  border-left: 3px solid var(--accent-line);
+  background: var(--surface-raised);
+  border-radius: 0 10px 10px 0;
+}
+
+.manual blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.manual code {
+  padding: 0.1em 0.35em;
+  font-size: 0.9em;
+  background: var(--surface-raised);
+  border-radius: 6px;
+}
+
+/* széles táblázat: telefonon vízszintesen görgethető */
+.manual table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.manual :is(th, td) {
+  padding: 0.45rem 0.7rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.manual th {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@supports (corner-shape: squircle) {
+  .manual img {
+    border-radius: 13px;
+    corner-shape: squircle;
+  }
+}
+
+@media (max-width: 640px) {
+  .editor.manual-dialog {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    corner-shape: round;
+  }
+
+  .manual-head {
+    padding: 0.7rem 1rem;
+  }
+
+  .manual-head h2 {
+    font-size: 1.15rem;
+  }
+
+  .manual {
+    padding: 1rem 1rem 2.5rem;
+  }
+}
+
 /* ---------- Mama oldala (terv-3 13, Norbi választása: „B” – nagy sorok, gombok a sorban) ---------- */
 /* nagyobb betűk, kevés vezérlő; az „Érdekel” saját jelölés: borostyán (--accent-2), a sor kerete is */
 .mama-page {

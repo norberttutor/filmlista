@@ -13,6 +13,8 @@ const ICONS = {
   history: <path d="M3.5 12a8.5 8.5 0 1 0 2.5-6M3 3.5V8h4.5M12 7.5V12l3 2" />,
   // egymásra tett lapok (franchise-ok: filmsorozatok gyűjteménye)
   stack: <path d="M12 3l9 4.5-9 4.5-9-4.5zM3 12l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5" />,
+  // nyitott könyv (felhasználói leírás)
+  book: <path d="M12 6.5C10 4.8 7 4.3 3 4.5v14c4-.2 7 .3 9 2 2-1.7 5-2.2 9-2v-14c-4-.2-7 .3-9 2zM12 6.5v14" />,
 };
 
 // "További műveletek" (⋮) gomb a fejlécben, mint a Chrome menüje: kattintásra vagy

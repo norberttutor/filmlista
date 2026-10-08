@@ -34,6 +34,7 @@ import NotificationBell from '@/components/NotificationBell';
 import BulkImport from '@/components/BulkImport';
 import ListSkeleton from '@/components/ListSkeleton';
 import StatsDialog from '@/components/StatsDialog';
+import ManualDialog from '@/components/ManualDialog';
 import BackupsDialog from '@/components/BackupsDialog';
 import MoreMenu from '@/components/MoreMenu';
 import FranchisesDialog from '@/components/FranchisesDialog';
@@ -229,6 +230,7 @@ export default function Watchlist({ session }) {
   const [showStats, setShowStats] = useState(false); // a statisztika ablak nyitva
   const [showFranchises, setShowFranchises] = useState(false); // a Franchise-ok ablak nyitva
   const [showBackups, setShowBackups] = useState(false); // a mentések ablak nyitva
+  const [showManual, setShowManual] = useState(false); // a felhasználói leírás ablak nyitva
   // a ⋮ menüből nyíló importok (a saját ablakukat / fájlválasztójukat nyitják)
   const imdbImportRef = useRef(null);
   const bulkImportRef = useRef(null);
@@ -1185,6 +1187,13 @@ export default function Watchlist({ session }) {
                     icon: 'history',
                     onSelect: () => setShowBackups(true),
                   },
+                  {
+                    id: 'manual',
+                    label: 'Felhasználói leírás',
+                    description: 'Minden funkció, képekkel',
+                    icon: 'book',
+                    onSelect: () => setShowManual(true),
+                  },
                 ].filter((item) => !readOnly || !ONLINE_ONLY.includes(item.id))}
               />
               <ImdbRatingsImport
@@ -1640,6 +1649,8 @@ export default function Watchlist({ session }) {
       {showStats && (
         <StatsDialog titles={titles} franchiseName={franchiseName} onClose={() => setShowStats(false)} />
       )}
+
+      {showManual && <ManualDialog onClose={() => setShowManual(false)} />}
 
       {showBackups && (
         <BackupsDialog

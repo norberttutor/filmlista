@@ -4,3 +4,6 @@ out
 .vercel
 .env*.local
 .DS_Store
+
+# a felhasználói leírás HTML-je és képei (scripts/leiras.mjs állítja elő a build előtt)
+/public/leiras/
