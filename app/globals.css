@@ -255,6 +255,42 @@ input[type='checkbox']:focus-visible {
   }
 }
 
+/* saját görgetősáv (terv-3 49.10, Norbi kérése, 2026-10-08): vékony, sötét, lekerekített fogantyú
+   átlátszó sínen; a fogantyúra mutatva türkiz, húzás közben teli türkiz (a lap, az ablakok, a
+   vízszintes borítósorok, a lenyílók) – a Windows szürke sávja helyett. Chrome / Edge: a
+   ::-webkit-scrollbar szabályok (csak akkor érvényesek, ha az elemen nincs scrollbar-width /
+   scrollbar-color – ezért azokat sehol ne adj meg); Firefox: a szabványos, vékony sáv. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(100% 0 0 / 0.16) padding-box;
+  border: 2px solid transparent; /* a látható fogantyú 6 px, a megfogható rész 10 px */
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklab, var(--accent) 70%, transparent);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--accent);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(100% 0 0 / 0.16) transparent;
+  }
+}
+
 button {
   font: inherit;
   cursor: pointer;
@@ -3127,7 +3163,6 @@ button.season:hover {
   list-style: none;
   overflow-x: auto;
   scroll-snap-type: x proximity;
-  scrollbar-width: thin;
 }
 
 .discover-item {
@@ -5889,6 +5924,28 @@ body:has(.editor[open]) {
   from {
     opacity: 0.25;
     transform: translateY(28px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* lapozáskor (terv-3 49.8, Norbi kérése, 2026-10-08) a kártyák / sorok egymás után úsznak be
+   (balról jobbra, soronként; 0,3 s + elemenként 22 ms késés). A Watchlist ~1,2 s-ig ad
+   data-paging jelzőt: addig ez az animáció váltja a borítófal görgetéses beúszását (ugyanazon az
+   elemen egyszerre csak egy fut). A sibling-index() nélküli böngészőben egyszerre úsznak be. */
+.grid[data-paging] > li,
+.titles-table tbody[data-paging] > tr {
+  animation: page-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-timeline: auto;
+  animation-delay: calc((sibling-index() - 1) * 22ms);
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
   }
   to {
     opacity: 1;

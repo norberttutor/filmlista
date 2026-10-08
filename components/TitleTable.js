@@ -36,6 +36,7 @@ export default function TitleTable({
   onUpdated,
   onDelete,
   readOnly, // net nélkül (terv-3 44): a vezérlők letiltva
+  paging, // lapozás után: a sorok egymás után úsznak be (terv-3 49.8)
 }) {
   return (
     <div className="table-wrap">
@@ -60,7 +61,7 @@ export default function TitleTable({
             </th>
           </tr>
         </thead>
-        <tbody>
+        <tbody data-paging={paging ? '' : undefined}>
           {entries.map((e) => (
             <TitleRow
               key={e.key}

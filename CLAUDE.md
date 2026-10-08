@@ -858,7 +858,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   lebegéssel, `body::before`; a belépési oldalon nincs, kétoldalt 4% hely + maszk, hogy ne
   legyen éle és vízszintes görgetés; nyitott ablaknál áll – az elmosott háttér mögött úgysem
   látszik, és így az elmosást nem kell képkockánként újraszámolni); a nézetváltás borító ↔ szerkesztő (0,3 s); a borítófal
-  kártyáinak beúszása (a görgetés vezérli: `animation-timeline: view()`); a csillagok
+  kártyáinak beúszása (a görgetés vezérli: `animation-timeline: view()`); lapozáskor a kártyák /
+  táblázatsorok lépcsőzetes beúszása (terv-3 49.8, 2026-10-08: 0,3 s + elemenként 22 ms,
+  `sibling-index()`; a `Watchlist` ~1,2 s-ig `data-paging` jelzőt ad a rácsra / a `tbody`-ra –
+  `pageAnim` –, addig ez váltja a görgetéses beúszást); a csillagok
   pattanása (0,34 s, egymás után); a pipa bepattanása (átmenet, betöltéskor nem mozog); a harang
   rezzenése (0,9 s, egyszer); a csontváz csillogása (1,4 s, ismétlődik); az értesítősáv
   fogyó csíkja (a sáv ideje, 8 s, lineáris – a hátralévő időt mutatja); a kihúzás (terv-3 40,
@@ -867,6 +870,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   regisztrált `--strike-ink` változó); a nézési sorrendben 0,3 s alatt húzódik be és megmarad. A `globals.css`
   végén egy közös `prefers-reduced-motion: reduce` szabály minden átmenetet és animációt
   kikapcsol (a nézetváltás álelemeit is; a nézetváltást a kód el sem indítja).
+- Görgetősáv (terv-3 49.10, 2026-10-08): saját, a `globals.css` elején – `::-webkit-scrollbar` (10 px,
+  átlátszó sín, 6 px-es lekerekített halvány fogantyú, rámutatva türkiz, húzva teli türkiz); Firefoxban
+  `scrollbar-width: thin`. Chrome / Edge alatt a `::-webkit-scrollbar` csak ott érvényes, ahol nincs
+  `scrollbar-width` / `scrollbar-color` – ezeket ne add meg elemre (a `.discover-list`-ről ezért került le).
 - Hiányzó borító: a `.thumb:empty` / `.poster-fallback` filmikont kap (`--icon-film`).
 - Anyag: leheletnyi, álló filmszemcse a háttéren (`body::after`, rögzítve, a tartalom mögött);
   „squircle” sarkok (`corner-shape: squircle`, `@supports` mögött – Chrome / Edge 139+, máshol
@@ -999,13 +1006,22 @@ van ×. A 46-os – kiemelt sáv –, a 43-as – gyorsindítók – és a 42-es
    hivatkozásai működnek, telefonon is). Javaslat: build közben HTML-lé alakítva egy saját oldalon
    (pl. `/leiras`, új lapon), a képek a `public/`-ba másolva. **Nyitott:** új lapon nyíljon, vagy az
    appon belüli ablakban; mindenki lássa, vagy csak bejelentkezve.
+**Norbi kérése (2026-10-08, Claude kinézeti javaslataiból)** – utána; mindegyik alpontnál **előbb
+látványterv** (Norbi kéri, amelyikhez akarja), beépítés csak jóváhagyás után; részletek a TERV.md-ben:
+5. **49 – látványosabb felület** (hátra ~3,5–4 óra; a 49.8 és a 49.10 kész):
+   - **49.1 – logó a cím helyett az adatlapon** (~1,5 óra): a TMDB címlogó nagyban a jelenetképen,
+     alatta kisebben a cím; logó nélkül a mostani cím;
+   - **49.3 – animált átrendeződés szűréskor / rendezéskor** (~2–2,5 óra): a kártyák és sorok a
+     helyükre csúsznak, a kiesők elhalványulnak, az újak beúsznak;
+   - ~~49.8 – lépcsőzetes beúszás lapozáskor~~ – **kész (2026-10-08, látványterv nélkül – Norbi kérése)**;
+   - ~~49.10 – saját görgetősáv~~ – **kész (2026-10-08, látványterv nélkül)**.
 **Legalacsonyabb prioritás** (Norbi döntése, 2026-10-07: a meglévőkön kívül más felhasználó nem lesz,
 Mama fiókja pedig már korlátozott – a 13-as óta a saját oldalát látja):
-5. **25 – admin jogosultság** (~2–2,5 óra) (csak Norbi fiókja): csak admin látja a ⋮ menü **Mentések**
+6. **25 – admin jogosultság** (~2–2,5 óra) (csak Norbi fiókja): csak admin látja a ⋮ menü **Mentések**
    pontját és a **Mama** paramétert mindenhol (szűrő, oszlop, szerkesztő, kártya, CSV); javaslat:
    `app_metadata.role = 'admin'` (SQL-lel, a tokenben), `is_admin()` – a mentés-függvények
    adatbázisszinten is csak adminnak. A tesztfiók is admin (Norbi döntése, a teszt miatt).
-6. **26 – regisztráció** (~2–3 óra, a választott módtól függően): a belépési oldalon „Regisztráció” (`signUp`, megerősítő levél); az új
+7. **26 – regisztráció** (~2–3 óra, a választott módtól függően): a belépési oldalon „Regisztráció” (`signUp`, megerősítő levél); az új
    fiók nem admin. **Nyitott:** bárki regisztrálhasson, vagy meghívókóddal / admin-jóváhagyással
    (javaslat: az utóbbi – az OMDb napi 1000 kérése közös).
 **Számozás nélkül, mindig a roadmap végén** (Norbi kérése, 2026-10-06):
@@ -1032,7 +1048,7 @@ Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a ta
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
 nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
 29 – Marvel betöltve a sorrenddel (szkripttel, 2026-10-06); 39 – „Nem érdekel” az ajánlásokon, 40 –
-kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 27, 36, 41, 48, majd a legalacsonyabb prioritással 25, 26 („Következő feladat”); 44 – offline indulás kész (2026-10-08); 35 – franchise-javaslat és 37 – „Neked ajánlott” kész (2026-10-07); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
+kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 27, 36, 41, 48, 49 (kinézeti újítások, látványtervvel), majd a legalacsonyabb prioritással 25, 26 („Következő feladat”); 44 – offline indulás kész (2026-10-08); 35 – franchise-javaslat és 37 – „Neked ajánlott” kész (2026-10-07); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
 (B – vezérlősáv, 2026-10-05).
 **Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
 appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,
@@ -1041,7 +1057,10 @@ adatlapon, alsó navigációs sáv telefonon, aktivitás-hőtérkép, rámutatá
 sűrűségváltó, fülek az adatlapon telefonon – magadtól ne javasold újra. A 34-esből elvetve
 (Norbi, 2026-10-06): C2 – csak a borító siklik a megnyitáskor, C3 – kisebb üvegelmosás. A 2026-10-06-i javaslatokból nem választotta: újranézés-napló, „Rég láttad”
 ajánló, változásnapló visszavonással, görgetésre mozduló háttérkép az adatlapon, előzetes rámutatásra a
-Felfedezésben – magadtól ne javasold újra.
+Felfedezésben – magadtól ne javasold újra. A 2026-10-08-i kinézeti javaslatokból (49) elvetve: mozgó
+borítófal a belépési oldalon, elmosottból kiélesedő borítók, kedvencek borostyán kerete, szikrák 10
+csillagnál, felpörgő számok / felnövő oszlopok a Statisztikában, feltöltődő franchise-mérők –
+magadtól ne javasold újra.
 **Elvetve (Norbi kérésére, 2026-10-04) – nem kell, magadtól ne javasold újra:** 2 – gyorsműveletek a borítón, 3 – parancspaletta (Ctrl+K) és billentyűparancsok, 5 – „Mit nézzek ma?”, 6 – játékidő a soron és szűrő rá, 11 – saját címkék, 12 – szinkron / felirat jelölése, 17 – csoportosítás hónapok szerint, 18 – évértékelő, 19 – értesítés a telefonra (web push).
 
 ## Fejlesztői megjegyzés

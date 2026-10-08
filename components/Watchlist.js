@@ -754,7 +754,17 @@ export default function Watchlist({ session }) {
   function changePage(p) {
     setPageState({ key: filterKey, first: (p - 1) * pageSize });
     filtersAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setPageAnim((n) => n + 1);
   }
+
+  // lapozáskor (terv-3 49.8) a kártyák / sorok egymás után úsznak be: a rács / táblázat egy ideig
+  // data-paging jelzőt kap (a CSS erre indítja, a borítófal görgetéses beúszása addig áll)
+  const [pageAnim, setPageAnim] = useState(0);
+  useEffect(() => {
+    if (!pageAnim) return;
+    const timer = setTimeout(() => setPageAnim(0), 1200);
+    return () => clearTimeout(timer);
+  }, [pageAnim]);
 
   function changeType(code) {
     setType(code);
@@ -1581,9 +1591,10 @@ export default function Watchlist({ session }) {
               onUpdated={handleRowUpdated}
               onDelete={requestDelete}
               readOnly={readOnly}
+              paging={pageAnim > 0}
             />
           ) : (
-            <ul className="grid">
+            <ul className="grid" data-paging={pageAnim > 0 ? '' : undefined}>
               {paged.map((e) => (
                 <li key={e.key}>
                   <PosterCard
