@@ -5323,11 +5323,6 @@ body:has(.editor[open]) {
   margin-bottom: 0.35rem;
 }
 
-.editor-controls > .check {
-  display: flex;
-  align-items: center;
-}
-
 @media (max-width: 640px) {
   .editor-pair {
     grid-template-columns: minmax(0, 1fr);
@@ -5342,7 +5337,7 @@ body:has(.editor[open]) {
     border-bottom: 1px solid var(--line);
   }
 
-  .editor-controls > .check {
+  .editor-controls > .downloaded-field {
     border-left: 0;
   }
 }

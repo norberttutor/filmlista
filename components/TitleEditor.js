@@ -30,6 +30,8 @@ const BACKDROP_BASE = 'https://image.tmdb.org/t/p/'; // a háttérkép (telefono
 const PHONE_QUERY = '(max-width: 640px)';
 
 // Rádiógombok "chip" formában; a kiválasztottra újra kattintva visszaáll üresre.
+const DOWNLOADED_OPTIONS = [{ code: 'yes', name: 'Letöltve' }];
+
 function ClearableChips({ name, options, value, onChange, className }) {
   return (
     <div className={className ? `segmented ${className}` : 'segmented'}>
@@ -625,14 +627,17 @@ function TitlePage({
                       />
                     </fieldset>
 
-                    <label className="check">
-                      <input
-                        type="checkbox"
-                        checked={form.is_downloaded}
-                        onChange={(e) => setField('is_downloaded', e.target.checked)}
+                    <fieldset className="field downloaded-field">
+                      <legend>Letöltés</legend>
+                      {/* egyetlen gomb, mint az Állapotnál: újra kattintva kikapcsol ("nem
+                          letöltött" gomb nincs – Norbi kérése, 2026-10-08) */}
+                      <ClearableChips
+                        name="is_downloaded"
+                        options={DOWNLOADED_OPTIONS}
+                        value={form.is_downloaded ? 'yes' : null}
+                        onChange={(code) => setField('is_downloaded', code === 'yes')}
                       />
-                      Letöltve
-                    </label>
+                    </fieldset>
                   </>
                 )}
                 <fieldset className="field">
