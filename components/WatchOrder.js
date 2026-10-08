@@ -1,24 +1,13 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { DEFAULT_STATUS, DROPPED_STATUS, formatDate, restoreSeasons, setSeasonStatus, todayDate, updateTitle } from '@/lib/titles';
-import { clearOrder, itemDone, nextItem, orderedItems, saveOrder } from '@/lib/watchOrder';
+import { DEFAULT_STATUS, DROPPED_STATUS, restoreSeasons, setSeasonStatus, todayDate, updateTitle } from '@/lib/titles';
+import { clearOrder, itemDone, itemLabel, itemMeta, nextItem, orderedItems, saveOrder } from '@/lib/watchOrder';
 import { seasonRange } from '@/components/Seasons';
 import StarRating from '@/components/StarRating';
+import ShareOrder from '@/components/ShareOrder';
 
 const THUMB = 'https://image.tmdb.org/t/p/w92';
-
-// „Loki – 2. évad”, filmnél a cím
-export const itemLabel = (i) => (i.season ? `${i.title.title} – ${i.season}. évad` : i.title.title);
-
-// „2023 · Sorozat · 6 rész”, bejelentett évadnál „Hamarosan: 2026. 03. 12.” / „Bejelentve”
-function itemMeta(i) {
-  const t = i.title;
-  if (!i.season) return [t.release_year, t.media_type === 'tv' ? 'Sorozat' : 'Film'].filter(Boolean).join(' · ');
-  const s = i.seasonInfo;
-  if (!i.aired) return s.air_date ? `Hamarosan: ${formatDate(s.air_date)}` : 'Bejelentve';
-  return [s.air_date?.slice(0, 4), 'Sorozat', s.episode_count && `${s.episode_count} rész`].filter(Boolean).join(' · ');
-}
 
 // A franchise gyűjtemény-ablakának „Nézési sorrend” füle (terv-3 28): a franchise listán lévő
 // filmjei és a sorozatok évadjai egy számozott listában, a saját sorrendben (amíg nincs ilyen,
@@ -28,8 +17,19 @@ function itemMeta(i) {
 // (az ablak fölött az értesítősáv nem kattintható). „Sorrend szerkesztése”: húzás a fogantyúnál
 // (egérrel, ujjal) vagy ↑ / ↓; „Kész” egyben menti, „Megjelenés szerint” + „Kész” törli a saját
 // sorrendet. A szerkesztés állapota (editing) a gyűjtemény-ablaké: közben nem zár kikattintásra,
-// az Esc csak a szerkesztést zárja.
-export default function WatchOrder({ franchise, titles, orders, editing, onEditingChange, onOrderChanged, onUpdated }) {
+// az Esc csak a szerkesztést zárja. „Megosztás” (terv-3 41, ShareOrder): csak olvasható nyilvános
+// link a sorrendhez; onShareBusyChange – a visszavonás megerősítése alatt az ablak ne záródjon
+// kikattintásra.
+export default function WatchOrder({
+  franchise,
+  titles,
+  orders,
+  editing,
+  onEditingChange,
+  onOrderChanged,
+  onUpdated,
+  onShareBusyChange,
+}) {
   const { items, stored } = orderedItems(franchise.id, titles, orders);
   const [draft, setDraft] = useState(null); // szerkesztés közben a tételkulcsok sorrendje
   const [reset, setReset] = useState(false); // „Megjelenés szerint” után (azóta nem mozdult)
@@ -250,11 +250,14 @@ export default function WatchOrder({ franchise, titles, orders, editing, onEditi
             </button>
           </>
         ) : (
-          items.length > 1 && (
-            <button type="button" className="ghost" onClick={startEdit}>
-              Sorrend szerkesztése
-            </button>
-          )
+          <>
+            {items.length > 1 && (
+              <button type="button" className="ghost" onClick={startEdit}>
+                Sorrend szerkesztése
+              </button>
+            )}
+            <ShareOrder franchise={franchise} onBusyChange={onShareBusyChange} />
+          </>
         )}
       </div>
 

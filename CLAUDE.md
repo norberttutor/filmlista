@@ -349,8 +349,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   beágyazott ablak kattintása a külsőnek nem számít kívülnek. Használja (terv-3 24 és 32, Norbi
   kérése): `TitleEditor` (mentetlen módosításnál `onBlocked` → figyelmeztetés), `StatsDialog`
   (mindig), `FranchisesDialog` (átnevezés / törlés-megerősítés / új név gépelése és nyitott
-  gyűjtemény-ablak alatt nem), `CollectionDialog` (rész felvétele közben és a nézési sorrend
-  szerkesztése közben nem; a nyitott TMDB-gyűjtemény-keresőnél igen – Norbi kérése, 2026-10-07; a
+  gyűjtemény-ablak alatt nem), `CollectionDialog` (rész felvétele közben, a nézési sorrend
+  szerkesztése közben és a megosztás visszavonásának megerősítésekor nem; a nyitott TMDB-gyűjtemény-keresőnél igen – Norbi kérése, 2026-10-07; a
   Franchise-ok ablakból nyitva mindkét ablak bezárul – `onOutsideClose`), `BackupsDialog` (mentés / visszaállítás közben és nyitott
   megerősítésnél nem). Az importablakok (Tömeges import, IMDb import) nem (Norbi döntése)
 - `components/SiteFooter.js` – kötelező TMDB forrásmegjelölés, ne töröld; jobbra lent „sponsored by
@@ -482,7 +482,27 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   „…: 3. hely”); „Kész” egyben ment (`saveOrder` → `set_franchise_order` RPC), „Megjelenés
   szerint” + „Kész” törli a saját sorrendet (`clearOrder` – a rendezés is eltűnik), „Mégse” / Esc
   elveti. `loadOrders()` a Watchlist betöltésekor (hibánál a lista attól még működik),
-  `franchisesWithOrder()` – melyik franchise-nak van ma is érvényes sorrendje
+  `franchisesWithOrder()` – melyik franchise-nak van ma is érvényes sorrendje. A tétel feliratai
+  (`itemLabel()`, `itemMeta()`) is itt vannak (a megosztott oldal szerveroldalon használja)
+- `components/ShareOrder.js` + `lib/shares.js` + `app/sorrend/[token]/` – **megosztható nézési
+  sorrend** (terv-3 41, 2026-10-08, látványterv nélkül): a „Nézési sorrend” fül sávjában
+  „Megosztás” (élő linknél türkiz pötty a gombon) → alatta panel: link nélkül magyarázat + „Link
+  létrehozása”; utána a link (kijelölhető mező), „Link másolása” („✓ Másolva”; ha a vágólap nem
+  megy, kijelöli), „Küldés…” (csak ahol van `navigator.share` – telefon), „Megnyitás” (új lapon),
+  „Megosztás visszavonása” → helyben megerősítés (Mégse / Visszavonás). A megerősítés és a kérések
+  alatt a gyűjtemény-ablak kikattintásra nem zár (`onBusyChange` → `CollectionDialog` `sharing`;
+  `useLayoutEffect`-ben, hogy a gyors kattintást is megelőzze). Franchise-onként egy link
+  (`loadShare` / `createShare` / `revokeShare`, `shareUrl(token)` = `/sorrend/<token>`); a
+  visszavont után az új link más tokent kap. A nyilvános oldal (`page.js`, szerverkomponens,
+  `connection()` – kérésenként, így a visszavonás és a sorrend változása azonnal látszik; a
+  keresők nem indexelik): a `shared_watch_order()` adataiból a `lib/watchOrder.js`
+  `orderedItems()`-ével (ugyanaz a sorrend, mint az appban), fölül sáv („Nézési sorrend”, logó vagy
+  név, a franchise legjobb címének háttérképe, „N tétel · saját sorrend / megjelenés szerint”),
+  alatta számozott lista: borító (w154), cím / „– 2. évad” (a TMDB-adatlapra – évadnál az évadéra
+  –, új lapon), év · Film / Sorozat · N rész / „Bejelentve” (szaggatott keretű borító); a megnézett
+  állapot, értékelés, letöltve, Mama nem; alul a `SiteFooter`. Visszavont / hibás link: 404
+  (`not-found.js`: „Ez a link már nem érvényes”). A service worker nem kezeli (csak a `/`-t).
+  Teszt: `munka/e2e/test-41.mjs` (böngésző), `test-20.mjs` (adatbázis)
 - `components/TopCast.js` + `app/api/tmdb/credits/route.js` – szereplők az adatlapon (terv-3 38,
   2026-10-06, Norbi választása: „A” látványterv – `munka/terv-3/terv-38/`): a top cast első 3 tagja
   (`pickCast()`: filmnél a credits, sorozatnál az aggregate_credits sorrendje; rendező nincs; egy
@@ -812,6 +832,16 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `backup_reader` szerep: bejelentkezhet (jelszó csak a `.env.local`-ban és a GitHubon),
   csak olvas, csak a `backups` táblát látja (saját RLS-szabály). A `session_replication_role`
   itt nem állítható (nincs jog).
+- `franchise_shares (franchise_id PK → franchises on delete cascade, user_id default auth.uid(),
+  token text unique – 32 hexa jegy, `gen_random_uuid()`-ból –, created_at)`, RLS (a sajátját; a
+  franchise is a felhasználóé) – `20_franchise_share.sql` (terv-3 41, 2026-10-08): a megosztott
+  nézési sorrend linkje; visszavonás = a sor törlése. Nincs a mentésben (beállítás – mint a
+  `list_viewers`); visszaállításkor a franchise-ok újratöltése miatt a linkek megszűnnek.
+  **`shared_watch_order(token)`** (security definer, `anon` is hívhatja): a franchise neve,
+  `logo_path`, `backdrop_path` (a legjobb IMDb-értékelésű, háttérképes címé), `titles` (id,
+  media_type, tmdb_id, cím, év, borító, mozis / digitális dátum, `seasons`: szám, dátum,
+  epizódszám) és `order` (a `franchise_order` sorai); állapot, értékelés, letöltve, Mama,
+  megjegyzés, user_id soha; hibás / visszavont tokenre null. Teszt: `munka/e2e/test-20.mjs`
 - `list_viewers (viewer_id uuid PK → auth.users, owner_id → auth.users, created_at)` – ki kinek a
   listáját nézi (terv-3 13, `17_mama_access.sql`): Mama (néző) → Norbi (gazda). RLS: a néző a saját
   sorát látja (ebből tudja az app, hogy Mama lépett be); írni csak SQL-ből (`munka/e2e/mama-kapcsolas.mjs`).
@@ -986,7 +1016,8 @@ visszavonható – 2026-10-07). Franchise-javaslat felvételkor és „Javasolt 
 Franchise-ok ablakban (terv-3 35, csak felajánlja), „Neked ajánlott” sor a Felfedezésben (terv-3 37,
 2026-10-07). Offline indulás (terv-3 44, 2026-10-08): service worker + a legutóbbi lista helyben –
 azonnal megnyílik, net nélkül csak olvasható, utána magától frissül. Felhasználói leírás az appon
-belül, a ⋮ menüből (terv-3 48, 2026-10-08).
+belül, a ⋮ menüből (terv-3 48, 2026-10-08). Megosztható nézési sorrend: csak olvasható nyilvános link
+egy franchise sorrendjéhez (`/sorrend/<token>`), visszavonható (terv-3 41, 2026-10-08).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -1011,17 +1042,15 @@ látszik nála, ebből 24 „Érdekel”; napló: `munka/terv-3/13-mama/ALLAPOT.
 37-es – „Neked ajánlott” – kész, 2026-10-07):
 2. **36 – új rész egy franchise-od TMDB-gyűjteményében → harang** (~2,5–3 óra) (hetente, az első feltöltés nem
    szól; kattintva előnézet).
-**Norbi kérései (2026-10-06, javaslatokból)** – a 36-os után; a kinézeti pontoknál (45–47) **előbb
-látványterv képekkel**, beépítés Norbi elfogadása után:
-3. **41 – megosztható nézési sorrend** (~3 óra): egy franchise nézési sorrendjéhez csak olvasható
-   nyilvános link (belépés nélkül, borítókkal, a megnézett állapot nélkül); visszavonható.
+**Norbi kérései (2026-10-06, javaslatokból)** – mind kész: a 41-es – megosztható nézési sorrend –
+2026-10-08-án.
 (A 39-es – „Nem érdekel” – és a 40-es – kihúzás – kész, 2026-10-06; a „Neked ajánlott” sorban is
 van ×. A 46-os – kiemelt sáv –, a 43-as – gyorsindítók – és a 42-es – ízlésprofil – kész, 2026-10-07; a
 44-es – offline indulás – kész, 2026-10-08. A 48-as – felhasználói leírás a ⋮ menüből – kész,
 2026-10-08.)
 **Norbi kérése (2026-10-08, Claude kinézeti javaslataiból)** – utána; mindegyik alpontnál **előbb
 látványterv** (Norbi kéri, amelyikhez akarja), beépítés csak jóváhagyás után; részletek a TERV.md-ben:
-4. **49 – látványosabb felület** (hátra ~2–2,5 óra; a 49.8 és a 49.10 kész, a 49.1 elvetve):
+3. **49 – látványosabb felület** (hátra ~2–2,5 óra; a 49.8 és a 49.10 kész, a 49.1 elvetve):
    - ~~49.1 – logó a cím helyett az adatlapon~~ – **elvetve** (Norbi, 2026-10-08: elkészült, de
      kipróbálás után visszavonatta – nem kell);
    - **49.3 – animált átrendeződés szűréskor / rendezéskor** (~2–2,5 óra): a kártyák és sorok a
@@ -1055,7 +1084,7 @@ Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a ta
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
 nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
 29 – Marvel betöltve a sorrenddel (szkripttel, 2026-10-06); 39 – „Nem érdekel” az ajánlásokon, 40 –
-kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 27, 36, 41, 49 (kinézeti újítások, látványtervvel) („Következő feladat”; a 25 és a 26 lekerült – Norbi, 2026-10-08); 48 – felhasználói leírás a ⋮ menüből kész (2026-10-08, belső ablakban); 44 – offline indulás kész (2026-10-08); 35 – franchise-javaslat és 37 – „Neked ajánlott” kész (2026-10-07); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
+kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 27, 36, 49 (kinézeti újítások, látványtervvel) („Következő feladat”; a 25 és a 26 lekerült – Norbi, 2026-10-08); 41 – megosztható nézési sorrend kész (2026-10-08, látványterv nélkül); 48 – felhasználói leírás a ⋮ menüből kész (2026-10-08, belső ablakban); 44 – offline indulás kész (2026-10-08); 35 – franchise-javaslat és 37 – „Neked ajánlott” kész (2026-10-07); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
 (B – vezérlősáv, 2026-10-05).
 **Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
 appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,

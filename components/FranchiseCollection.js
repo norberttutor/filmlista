@@ -199,6 +199,7 @@ export function CollectionDialog({
   const [searching, setSearching] = useState(false); // a „+ TMDB-gyűjtemény” kereső nyitva
   const [tab, setTab] = useState('collection');
   const [ordering, setOrdering] = useState(false); // a nézési sorrend szerkesztése folyik
+  const [sharing, setSharing] = useState(false); // a megosztás visszavonásának megerősítése / kérése
   const tabRefs = useRef({});
   const missing = [
     ...new Map(sections.flatMap((s) => s.parts.filter((p) => !p.own)).map((p) => [p.tmdb_id, p])).values(),
@@ -239,7 +240,8 @@ export function CollectionDialog({
   }
 
   const busyAny = Object.values(state).some((s) => s.busy);
-  // asztalon kikattintásra bezárul – felvétel közben és a nézési sorrend szerkesztése közben nem.
+  // asztalon kikattintásra bezárul – felvétel közben, a nézési sorrend szerkesztése közben és a
+  // megosztás visszavonásának megerősítésekor nem.
   // A nyitott TMDB-gyűjtemény-kereső nem tartja nyitva (Norbi kérése, 2026-10-07: a beírt keresés
   // elvesztése nem baj). onOutsideClose: a Franchise-ok ablakból nyitva az is bezárul
   const outsideClose = useBackdropClose(dialogRef, {
@@ -247,7 +249,7 @@ export function CollectionDialog({
       dialogRef.current.close();
       onOutsideClose?.();
     },
-    canClose: () => !busyAny && !ordering,
+    canClose: () => !busyAny && !ordering && !sharing,
   });
 
   // a fülek között nyilakkal is (Home / End: az első / az utolsó)
@@ -336,6 +338,7 @@ export function CollectionDialog({
           onEditingChange={setOrdering}
           onOrderChanged={onOrderChanged}
           onUpdated={onUpdated}
+          onShareBusyChange={setSharing}
         />
       </div>
 
