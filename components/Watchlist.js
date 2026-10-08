@@ -24,6 +24,7 @@ import {
   refreshBackdrops,
   refreshReleases,
   refreshTitleCollections,
+  refreshCollectionParts,
   DEFAULT_STATUS,
   DROPPED_STATUS,
   MAMA_OPTIONS,
@@ -328,7 +329,7 @@ export default function Watchlist({ session }) {
       const [titlesRes, statusesRes, franchisesRes] = await Promise.all([
         loadTitles(),
         supabase.from('statuses').select('*').order('sort_order'),
-        supabase.from('franchises').select('id, name, logo_path, tmdb_collection_ids'),
+        supabase.from('franchises').select('id, name, logo_path, tmdb_collection_ids, collections_checked_at'),
       ]);
       if (cancelled) return;
 
@@ -428,6 +429,12 @@ export default function Watchlist({ session }) {
             console.warn('Megjelenési dátumok frissítése sikertelen:', err.message);
             reloadNotifications();
           }
+        );
+
+        // új rész a franchise-ok TMDB-gyűjteményeiben (terv-3 36): hetente; ha jött új, a harang szól
+        refreshCollectionParts(franchisesRes.data).then(
+          (count) => count > 0 && reloadNotifications(),
+          (err) => console.warn('A gyűjtemények új részeinek ellenőrzése sikertelen:', err.message)
         );
       }
       setLoading(false);
@@ -565,7 +572,7 @@ export default function Watchlist({ session }) {
   async function reloadAfterRestore() {
     const [titlesRes, franchisesRes] = await Promise.all([
       loadTitles(),
-      supabase.from('franchises').select('id, name, logo_path, tmdb_collection_ids'),
+      supabase.from('franchises').select('id, name, logo_path, tmdb_collection_ids, collections_checked_at'),
     ]);
     const error = titlesRes.error || franchisesRes.error;
     if (error) {
@@ -1124,6 +1131,7 @@ export default function Watchlist({ session }) {
             <NotificationBell
               notifications={notifications}
               titles={titles}
+              franchiseName={franchiseName}
               onOpenTitle={(t) => openEditor(t)}
               onRead={readNotifications}
               onRemove={removeNotifications}

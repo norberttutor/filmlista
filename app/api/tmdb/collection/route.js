@@ -1,5 +1,6 @@
 import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
-import { cached, tmdbFetch, tmdbErrorResponse, yearOf, cachedResponse, DAY_S } from '@/lib/server/tmdb';
+import { cached, tmdbFetch, tmdbErrorResponse, cachedResponse, DAY_S } from '@/lib/server/tmdb';
+import { loadCollection } from '@/lib/server/collections';
 
 const DAY = 24 * 60 * 60 * 1000;
 const MAX_MOVIES = 60; // ennyi filmnél nézzük meg, melyik TMDB-gyűjteménybe tartozik
@@ -10,29 +11,6 @@ const ids = (value) =>
     .split(',')
     .map(Number)
     .filter((n) => Number.isInteger(n) && n > 0);
-
-// egy TMDB-gyűjtemény részei megjelenési sorrendben (a dátum nélküli – bejelentett – a végén)
-const loadCollection = (id) =>
-  cached(`collection:${id}`, DAY, async () => {
-    const c = await tmdbFetch(`/collection/${id}`, { language: 'hu-HU' });
-    return {
-      id: c.id,
-      name: c.name,
-      backdrop_path: c.backdrop_path ?? null,
-      parts: (c.parts ?? [])
-        .filter((p) => !p.adult)
-        .sort((a, b) => (a.release_date || '9999').localeCompare(b.release_date || '9999'))
-        .map((p) => ({
-          media_type: 'movie',
-          tmdb_id: p.id,
-          title: p.title,
-          original_title: p.original_title,
-          release_year: yearOf(p.release_date),
-          release_date: p.release_date || null,
-          poster_path: p.poster_path ?? null,
-        })),
-    };
-  });
 
 // GET /api/tmdb/collection?movies=76341,786892&extra=10
 // Egy franchise TMDB-gyűjteményei: a filmjei (TMDB film-azonosítók) mind, amelyik gyűjteménybe

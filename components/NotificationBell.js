@@ -9,7 +9,13 @@ const THUMB_BASE = 'https://image.tmdb.org/t/p/w92';
 
 // "Megjelent az 5. évad" / "Bejelentették a 4. évadot – várható: 2026. 12. 01." /
 // filmnél: "Digitálisan is megjelent – már letölthető"
-function describe(n) {
+function describe(n, franchiseName) {
+  if (n.kind === 'collection_new') {
+    // új rész a franchise TMDB-gyűjteményében (terv-3 36); a még meg nem jelentnél a várható dátum
+    const name = franchiseName.get(n.franchise_id);
+    const soon = n.air_date && n.air_date > new Date().toISOString().slice(0, 10);
+    return `Új rész a gyűjteményben – ${name}${soon ? ` · várható: ${formatDate(n.air_date)}` : ''}`;
+  }
   if (n.kind === 'movie_digital') return 'Digitálisan is megjelent – már letölthető';
   if (n.kind === 'mama_interested') return 'Mamát érdekli'; // Mama jelölte a saját oldalán (terv-3 13)
   const nth = `${article(n.season_number)} ${n.season_number}.`;
@@ -23,10 +29,13 @@ function describe(n) {
 // ablaka nyílik. Törlés (Norbi kérése, 2026-10-07): soronként × (egérrel rámutatva / fókusznál
 // látszik, érintőképernyőn mindig), fölül „Összes törlése”; a Watchlist onRemove-ja azonnal elveszi,
 // az értesítősávban „Visszavonás”.
+// Új rész egy franchise TMDB-gyűjteményében (terv-3 36): a rész nincs a listán – a sorban a saját
+// címe, éve és borítója (az értesítés tárolja), kattintva az előnézete nyílik (onOpenTitle egy
+// TMDB-tétellel; a TitleEditor a TMDB-azonosító szerint dönti el, listán van-e már).
 // Fajtánként saját szín (terv-3 51.5, 2026-10-09): megjelent évad zsálya, bejelentett évad indigó,
-// digitális megjelenés égkék, Mama borostyán – a borító sarkán ikon, a leírás színe (CSS: data-kind).
+// digitális megjelenés égkék, Mama borostyán, új rész korall – a borító sarkán ikon, a leírás színe (CSS: data-kind).
 // Kattintás kívül / Esc: bezár.
-export default function NotificationBell({ notifications, titles, onOpenTitle, onRead, onRemove }) {
+export default function NotificationBell({ notifications, titles, franchiseName, onOpenTitle, onRead, onRemove }) {
   const [open, setOpen] = useState(false);
   const [side, setSide] = useState('left'); // a lista a harang melyik széléhez igazodik
   const [fresh, setFresh] = useState(() => new Set()); // a kinyitáskor még olvasatlanok
@@ -46,7 +55,10 @@ export default function NotificationBell({ notifications, titles, onOpenTitle, o
   }
 
   const byId = useMemo(() => new Map(titles.map((t) => [t.id, t])), [titles]);
-  const items = notifications.filter((n) => byId.has(n.title_id)); // törölt sorozat nélkül
+  // törölt cím / franchise nélkül
+  const items = notifications.filter((n) =>
+    n.kind === 'collection_new' ? franchiseName.has(n.franchise_id) : byId.has(n.title_id)
+  );
   const unread = items.filter((n) => !n.read_at).length;
 
   useEffect(() => {
@@ -152,7 +164,18 @@ export default function NotificationBell({ notifications, titles, onOpenTitle, o
           ) : (
             <ul className="notif-list" ref={listRef}>
               {items.map((n, index) => {
-                const t = byId.get(n.title_id);
+                // a gyűjtemény új része nincs a listán: az értesítés adataiból (TMDB-tétel – előnézet)
+                const t =
+                  n.kind === 'collection_new'
+                    ? {
+                        media_type: 'movie',
+                        tmdb_id: n.part_tmdb_id,
+                        title: n.part_title,
+                        poster_path: n.part_poster_path,
+                        release_year: n.part_year,
+                      }
+                    : byId.get(n.title_id);
+                const label = n.kind === 'collection_new' && n.part_year ? `${t.title} (${n.part_year})` : t.title;
                 const isNew = fresh.has(n.id);
                 return (
                   <li key={n.id}>
@@ -175,10 +198,10 @@ export default function NotificationBell({ notifications, titles, onOpenTitle, o
                       </span>
                       <span className="notif-text">
                         <span className="notif-title">
-                          {t.title}
+                          {label}
                           {isNew && <span className="sr-only"> (új)</span>}
                         </span>
-                        <span className="notif-what">{describe(n)}</span>
+                        <span className="notif-what">{describe(n, franchiseName)}</span>
                         <time className="notif-when" dateTime={n.created_at}>
                           {formatDate(n.created_at)}
                         </time>
@@ -187,7 +210,7 @@ export default function NotificationBell({ notifications, titles, onOpenTitle, o
                     <button
                       type="button"
                       className="notif-del"
-                      aria-label={`Értesítés törlése: ${t.title}`}
+                      aria-label={`Értesítés törlése: ${label}`}
                       title="Törlés"
                       onClick={() => remove(n, index)}
                     >
