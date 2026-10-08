@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { addTitle, setFranchiseCollections, updateTitle } from '@/lib/titles';
 import { useBackdropClose } from '@/lib/useBackdropClose';
+import { usePosterColor, ambientProps, franchisePosterPath } from '@/lib/posterColor';
 import WatchOrder from '@/components/WatchOrder';
 
 const IMG = 'https://image.tmdb.org/t/p/';
@@ -205,6 +206,8 @@ export function CollectionDialog({
     ...new Map(sections.flatMap((s) => s.parts.filter((p) => !p.own)).map((p) => [p.tmdb_id, p])).values(),
   ];
   const backdrop = franchiseBackdrop(franchise, titles, sections);
+  // az ablak a franchise színében dereng (terv-3 51.10) – ugyanaz a szín, mint a Franchise-ok csempéjén
+  const ambient = usePosterColor(franchisePosterPath(franchise.id, titles));
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
@@ -268,6 +271,7 @@ export function CollectionDialog({
       ref={dialogRef}
       className="editor collection-dialog"
       aria-labelledby="collection-title"
+      {...ambientProps(ambient)}
       onClose={onClose}
       // sorrend-szerkesztés közben az Esc csak a szerkesztést zárja (a vázlat elvész)
       onCancel={(e) => {

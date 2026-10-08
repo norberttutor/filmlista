@@ -161,7 +161,7 @@ export default function Discover({ existingKeys, seeds = [], rowState, onAdd, on
         );
         if (results?.length === 0) return null;
         return (
-          <section key={s.list} className="discover-row" aria-labelledby={`discover-${s.list}`}>
+          <section key={s.list} className="discover-row" data-list={s.list} aria-labelledby={`discover-${s.list}`}>
             <h3 id={`discover-${s.list}`}>{s.title}</h3>
             <p className="discover-sub">{s.sub}</p>
             {data?.error ? (

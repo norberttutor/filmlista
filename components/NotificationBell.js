@@ -23,6 +23,8 @@ function describe(n) {
 // ablaka nyílik. Törlés (Norbi kérése, 2026-10-07): soronként × (egérrel rámutatva / fókusznál
 // látszik, érintőképernyőn mindig), fölül „Összes törlése”; a Watchlist onRemove-ja azonnal elveszi,
 // az értesítősávban „Visszavonás”.
+// Fajtánként saját szín (terv-3 51.5, 2026-10-09): megjelent évad zsálya, bejelentett évad indigó,
+// digitális megjelenés égkék, Mama borostyán – a borító sarkán ikon, a leírás színe (CSS: data-kind).
 // Kattintás kívül / Esc: bezár.
 export default function NotificationBell({ notifications, titles, onOpenTitle, onRead, onRemove }) {
   const [open, setOpen] = useState(false);
@@ -158,13 +160,18 @@ export default function NotificationBell({ notifications, titles, onOpenTitle, o
                       type="button"
                       className="notif-item"
                       data-new={isNew ? '' : undefined}
+                      data-kind={n.kind}
                       onClick={() => {
                         setOpen(false);
                         onOpenTitle(t);
                       }}
                     >
-                      <span className="notif-thumb">
-                        {t.poster_path && <img src={THUMB_BASE + t.poster_path} alt="" loading="lazy" />}
+                      {/* a fajta színe és ikonja a borító sarkán (terv-3 51.5); a szöveg mondja ki */}
+                      <span className="notif-pic">
+                        <span className="notif-thumb">
+                          {t.poster_path && <img src={THUMB_BASE + t.poster_path} alt="" loading="lazy" />}
+                        </span>
+                        <span className="notif-kind" aria-hidden="true" />
                       </span>
                       <span className="notif-text">
                         <span className="notif-title">

@@ -12,7 +12,7 @@ import {
 } from '@/components/FranchiseCollection';
 import { mapLimit } from '@/lib/bulkImport';
 import { useBackdropClose } from '@/lib/useBackdropClose';
-import { usePosterColor, ambientProps } from '@/lib/posterColor';
+import { usePosterColor, ambientProps, franchisePosterPath } from '@/lib/posterColor';
 import { franchiseSuggestions } from '@/lib/franchiseSuggest';
 import FranchiseSuggestions from '@/components/FranchiseSuggestions';
 
@@ -323,11 +323,9 @@ export default function FranchisesDialog({
 // A csempe hangulatszíne (terv-3 47, 2026-10-06, Norbi kérésére látványterv nélkül): a franchise
 // legjobb IMDb-értékelésű, borítós címének borítójából (lib/posterColor.js, mint az adatlapé) – a
 // keret, a logó háttere és a csempe teteje halványan ebben a színben (CSS: .fr-tile[data-ambient]).
+// A választás közös (franchisePosterPath): a Statisztika és a gyűjtemény-ablak is ezt használja.
 function tintPoster(franchise, titles) {
-  const best = titles
-    .filter((t) => t.franchise_id === franchise.id && t.poster_path)
-    .sort((a, b) => (b.imdb_rating ?? -1) - (a.imdb_rating ?? -1) || (b.imdb_votes ?? 0) - (a.imdb_votes ?? 0))[0];
-  return best?.poster_path ?? null;
+  return franchisePosterPath(franchise.id, titles);
 }
 
 function FranchiseTile({ posterPath, children, ...rest }) {

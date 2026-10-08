@@ -28,6 +28,14 @@
   --st-watched: oklch(77.21% 0.0957 160.07);  /* #7cc8a0 */
   --st-dropped: oklch(71.49% 0.1204 295.38);  /* #a993e6 Abbahagyva (sorozat): halvány lila, 6,6:1 */
 
+  /* tartalomfajták színei (terv-3 51): egyforma világosság, mérsékelt telítettség; mindig ugyanazt
+     jelentik, és soha nem gombszínek (a gomboké a türkiz, a saját jelöléseké a borostyán) */
+  --c-coral: oklch(76% 0.115 35);   /* #f0967f mozi */
+  --c-indigo: oklch(74% 0.105 272); /* #94a7ed bejelentett / hamarosan */
+  --c-sky: oklch(77% 0.095 238);    /* #78bdea digitális / letöltve */
+  --c-sage: var(--st-watched);      /* megjelent / megnézve */
+  --c-rose: oklch(75% 0.11 355);    /* #e590b1 ajánlás */
+
   /* árnyalatok */
   --bg-top: oklch(24.94% 0.024 256.44);         /* #1a222d a lap teteje egy árnyalattal világosabb */
   --line-soft: oklch(29% 0.0254 255.73);        /* #232c38 halk vonal a táblázat sorai között */
@@ -110,6 +118,10 @@
   --danger-ink: oklch(99% 0 0);
   --st-watched: oklch(55% 0.11 158);          /* #2a8558 */
   --st-dropped: oklch(52% 0.15 295);          /* #7152b5 */
+  --c-coral: oklch(53% 0.15 35);              /* #b14328 */
+  --c-indigo: oklch(50% 0.14 272);            /* #495ab2 */
+  --c-sky: oklch(50% 0.12 245);               /* #0f68a2 */
+  --c-rose: oklch(52% 0.15 355);              /* #a73b6d */
   --watched-text: oklch(51% 0.02 65);         /* #6e645a */
   --watched-accent: oklch(51% 0.07 210);      /* #2c717c */
   --control-border: color-mix(in srgb, var(--muted) 70%, var(--bg));
@@ -510,6 +522,52 @@ body:has(> main.login) {
   background: var(--bg);
 }
 
+/* vetítőfény (terv-3 51.11, Norbi választása, 2026-10-08 – látványterv: munka/terv-3/terv-51/):
+   felülről álló, puha fénykúp a cím és az űrlap mögé, türkizből lilába (borostyán széllel), fölül a
+   „lencse” fénye; nem mozog. A kártya felső élén türkiz fényél (lent) */
+main.login {
+  position: relative;
+  isolation: isolate;
+}
+
+main.login::before {
+  content: '';
+  position: fixed;
+  z-index: -1;
+  left: 50%;
+  top: -6vh;
+  width: min(130vw, 1500px);
+  height: 92vh;
+  translate: -50% 0;
+  pointer-events: none;
+  background: conic-gradient(
+    at 50% 0%,
+    transparent 150deg,
+    color-mix(in oklab, var(--accent) 30%, transparent) 166deg,
+    color-mix(in oklab, var(--st-dropped) 28%, transparent) 180deg,
+    color-mix(in oklab, var(--accent-2) 20%, transparent) 194deg,
+    transparent 210deg
+  );
+  -webkit-mask: radial-gradient(80% 100% at 50% 0%, #000 30%, transparent 85%);
+  mask: radial-gradient(80% 100% at 50% 0%, #000 30%, transparent 85%);
+  filter: blur(22px);
+}
+
+main.login::after {
+  content: '';
+  position: fixed;
+  z-index: -1;
+  left: 50%;
+  top: -3rem;
+  width: 22rem;
+  height: 7rem;
+  translate: -50% 0;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--accent) 45%, transparent), transparent);
+  filter: blur(10px);
+}
+
 .login-form {
   display: grid;
   gap: 1rem;
@@ -524,9 +582,11 @@ body:has(> main.login) {
     padding: 1.75rem;
     background: var(--surface);
     border-radius: 14px;
+    /* a felső élen a vetítő türkiz fénye, alatta halvány lila derengés (terv-3 51.11) */
     box-shadow:
-      inset 0 1px 0 rgb(var(--tint) / 0.05),
+      inset 0 1px 0 color-mix(in oklab, var(--accent) 35%, transparent),
       0 0 0 1px var(--edge),
+      0 30px 80px -20px color-mix(in oklab, var(--st-dropped) 30%, transparent),
       0 40px 80px -20px rgb(var(--shade) / calc(0.6 * var(--shade-k)));
   }
 
@@ -913,9 +973,43 @@ body:has(> main.login) {
   background-color: var(--hover-tint);
 }
 
-/* a kinyitáskor még olvasatlan: halvány türkiz háttér, türkiz pötty a cím előtt */
+/* fajtánként saját szín (terv-3 51.5, Norbi választása, 2026-10-08 – látványterv:
+   munka/terv-3/terv-51/): megjelent évad zsálya (lejátszás), bejelentett évad indigó (naptár),
+   digitális megjelenés égkék (letöltés), Mama borostyán („M” – saját jelölés). A leírás ebben a
+   színben, a borító jobb alsó sarkán kis kerek ikon */
+.notif-item {
+  --kind: var(--accent);
+  --kind-icon: none;
+}
+
+.notif-item[data-kind='season_aired'] {
+  --kind: var(--c-sage);
+  --kind-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M7 4.5v15l12.5-7.5z'/%3E%3C/svg%3E");
+}
+
+.notif-item[data-kind='season_announced'] {
+  --kind: var(--c-indigo);
+  --kind-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='5' width='17' height='15' rx='2.5'/%3E%3Cpath d='M3.5 10h17M8 3v4M16 3v4'/%3E%3C/svg%3E");
+}
+
+.notif-item[data-kind='movie_digital'] {
+  --kind: var(--c-sky);
+  --kind-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v12M7 10l5 5 5-5M5 21h14'/%3E%3C/svg%3E");
+}
+
+.notif-item[data-kind='mama_interested'] {
+  --kind: var(--accent-2);
+  --kind-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 19V5l7 9 7-9v14'/%3E%3C/svg%3E");
+}
+
+/* a kinyitáskor még olvasatlan: leheletnyi háttér, a cím előtt pötty a fajta színében (korábban az
+   egész sor türkiz volt – a harang listája így egyszínű lett) */
 .notif-item[data-new] {
-  background: var(--accent-soft);
+  background: rgb(var(--tint) / 0.04);
+}
+
+.notif-item[data-new]:hover {
+  background-color: var(--hover-tint);
 }
 
 .notif-item[data-new] .notif-title::before {
@@ -925,8 +1019,40 @@ body:has(> main.login) {
   height: 0.45rem;
   margin-right: 0.4rem;
   vertical-align: 0.1em;
-  background: var(--accent);
+  background: var(--kind);
   border-radius: 50%;
+}
+
+/* a borító és a sarkán a fajta ikonja (a borító levágja a kilógót, ezért külön burkolóban) */
+.notif-pic {
+  position: relative;
+  flex: none;
+  display: flex;
+}
+
+.notif-kind {
+  position: absolute;
+  right: -0.45rem;
+  bottom: -0.3rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  background: var(--kind);
+  box-shadow: 0 0 0 2px var(--surface-raised);
+}
+
+.notif-kind::before {
+  content: '';
+  position: absolute;
+  inset: 0.25rem;
+  background: var(--bg);
+  -webkit-mask: var(--kind-icon) center / contain no-repeat;
+  mask: var(--kind-icon) center / contain no-repeat;
+}
+
+/* világosban a fajta színe sötét: rajta fehér ikon */
+:root[data-theme='light'] .notif-kind::before {
+  background: var(--surface);
 }
 
 .notif-thumb {
@@ -961,7 +1087,7 @@ body:has(> main.login) {
 
 .notif-what {
   font-size: 0.8rem;
-  color: var(--text);
+  color: var(--kind);
 }
 
 .notif-when {
@@ -1775,16 +1901,16 @@ fieldset.lock:disabled .stars {
 
 /* a műfajok színes pöttye is szürke */
 .titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .genre::before,
-.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) /* az adatlapon a cím adatai alatt, pötty nélkül (mint Mama adatlapján) */
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .genre::before {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+
+/* az adatlapon a cím adatai alatt, pötty nélkül (mint Mama adatlapján) */
 .editor-genres {
   margin: 0.35rem 0 0;
   font-size: 0.85rem;
   color: var(--muted);
-}
-
-.genre::before {
-  filter: grayscale(1);
-  opacity: 0.55;
 }
 
 /* nézési sorrendben (terv-3 28) a sorozat évadonként külön tétel: „2. évad” a cím alatt / a soron
@@ -1910,28 +2036,39 @@ fieldset.lock:disabled .stars {
 }
 
 /* ---------- Még meg nem jelent film (releaseState): szaggatott keret + dátumos jelvény ---------- */
+/* a színe a fajtájától függ (terv-3 51.4): „Hamarosan” indigó, „Moziban” (digitálisan még nem) korall */
 .card[data-release] .poster {
-  outline: 2px dashed rgb(var(--tint) / 0.32);
+  outline: 2px dashed color-mix(in oklab, var(--c-indigo) 70%, transparent);
   outline-offset: 4px;
 }
 
 .titles-table tr[data-release] .thumb {
-  outline: 1.5px dashed rgb(var(--tint) / 0.36);
+  outline: 1.5px dashed color-mix(in oklab, var(--c-indigo) 70%, transparent);
   outline-offset: 3px;
 }
 
+.card[data-release='cinema'] .poster,
+.titles-table tr[data-release='cinema'] .thumb {
+  outline-color: color-mix(in oklab, var(--c-coral) 70%, transparent);
+}
+
 .release-badge {
+  --release: var(--c-indigo);
   display: inline-flex;
   align-items: center;
   padding: 0.1rem 0.55rem;
   font-size: 0.74rem;
   font-weight: 650;
   line-height: 1.5;
-  color: var(--text);
-  background: rgb(var(--tint) / 0.07);
-  border: 1px dashed rgb(var(--tint) / 0.32);
+  color: var(--release);
+  background: color-mix(in oklab, var(--release) 12%, transparent);
+  border: 1px dashed color-mix(in oklab, var(--release) 60%, transparent);
   border-radius: 999px;
   white-space: nowrap;
+}
+
+.release-badge[data-kind='cinema'] {
+  --release: var(--c-coral);
 }
 
 .release-badge svg {
@@ -1948,7 +2085,7 @@ fieldset.lock:disabled .stars {
   grid-template-columns: auto minmax(0, 1fr);
   max-width: calc(100% - 1rem);
   padding: 0.15rem 0.6rem;
-  background: rgb(var(--glass) / 0.82);
+  background: color-mix(in oklab, var(--release) 14%, rgb(var(--glass) / 0.82));
   border-radius: 0.75rem;
 }
 
@@ -3308,13 +3445,76 @@ button.season:hover {
   margin-top: 0.2rem;
 }
 
+/* soronként saját szín (terv-3 51.4, Norbi választása, 2026-10-08 – látványterv:
+   munka/terv-3/terv-51/): a cím előtt kerek ikonjelvény a sor színében – Most a mozikban korall
+   (filmcsapó), Hamarosan indigó (naptár), Új digitálisan égkék (letöltés), Népszerű sorozatok zsálya
+   (tévé), Neked ajánlott rózsa (szív). A szín a tartalomfajta jele, nem gomb */
+.discover-row {
+  --row: var(--accent);
+  --row-icon: none;
+}
+
+.discover-row[data-list='cinema'] {
+  --row: var(--c-coral);
+  --row-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 11h16v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z'/%3E%3Cpath d='m4 11-.6-3.2a1 1 0 0 1 .8-1.2l13.8-2.5a1 1 0 0 1 1.2.8L19.6 7 4 11'/%3E%3Cpath d='m8.5 6 2 3.4M13.5 5.1l2 3.4'/%3E%3C/svg%3E");
+}
+
+.discover-row[data-list='upcoming'] {
+  --row: var(--c-indigo);
+  --row-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='5' width='17' height='15' rx='2.5'/%3E%3Cpath d='M3.5 10h17M8 3v4M16 3v4'/%3E%3C/svg%3E");
+}
+
+.discover-row[data-list='digital'] {
+  --row: var(--c-sky);
+  --row-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v12M7 10l5 5 5-5M5 21h14'/%3E%3C/svg%3E");
+}
+
+.discover-row[data-list='tv'] {
+  --row: var(--c-sage);
+  --row-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='7' width='18' height='13' rx='2.5'/%3E%3Cpath d='m8 3 4 4 4-4'/%3E%3C/svg%3E");
+}
+
+.discover-row[data-list='foryou'] {
+  --row: var(--c-rose);
+  --row-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M12 20.5s-7.5-4.6-9.2-9.3C1.6 7.8 3.8 4.5 7.2 4.5c2 0 3.6 1.1 4.8 2.8 1.2-1.7 2.8-2.8 4.8-2.8 3.4 0 5.6 3.3 4.4 6.7-1.7 4.7-9.2 9.3-9.2 9.3z'/%3E%3C/svg%3E");
+}
+
 .discover-row h3 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   margin: 0;
   font-size: 1.05rem;
 }
 
+/* a kör: halvány háttér a sor színében, vékony gyűrű; benne az ikon (maszk) a sor színében */
+.discover-row h3::before {
+  content: '';
+  flex: none;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--row) 18%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--row) 45%, transparent);
+}
+
+.discover-row h3::after {
+  content: '';
+  position: absolute;
+  left: 0.425rem;
+  top: 50%;
+  width: 1.05rem;
+  height: 1.05rem;
+  translate: 0 -50%;
+  background: var(--row);
+  -webkit-mask: var(--row-icon) center / contain no-repeat;
+  mask: var(--row-icon) center / contain no-repeat;
+}
+
 .discover-sub {
   margin: 0.1rem 0 0.7rem;
+  padding-left: 2.5rem; /* a cím szövegéhez igazodik (az ikon mellett) */
   font-size: 0.8rem;
   color: var(--muted);
 }
@@ -3538,8 +3738,9 @@ button.season:hover {
   color: var(--muted);
 }
 
+/* mozi: korall (terv-3 51.4, a tartalomfajták színei) */
 .featured-when {
-  color: var(--accent);
+  color: var(--c-coral);
 }
 
 .featured-overview {
@@ -4100,6 +4301,41 @@ button.season:hover {
 .editor.collection-dialog {
   width: min(62rem, calc(100vw - 2rem));
   overflow-x: hidden;
+}
+
+/* a franchise színében (terv-3 51.10, Norbi választása, 2026-10-08 – látványterv:
+   munka/terv-3/terv-51/): ugyanaz a szín, mint a Franchise-ok csempéjén (franchisePosterPath); az
+   ablak halványan átdereng, a mögötte lévő sötétítés is kicsit ezt veszi fel, a szakaszcímek előtt
+   jelölővonal. A mérő zöld marad (Norbi döntése, 2026-10-06), a fülek türkizek */
+.editor.collection-dialog[data-ambient] {
+  border-color: color-mix(in oklab, var(--ambient) 42%, rgb(var(--tint) / 0.09));
+  background:
+    radial-gradient(70rem 34rem at 0% 12rem, color-mix(in oklab, var(--ambient) 20%, transparent), transparent 72%),
+    radial-gradient(50rem 30rem at 100% 100%, color-mix(in oklab, var(--ambient) 13%, transparent), transparent 70%),
+    var(--surface);
+  box-shadow:
+    inset 0 1px 0 rgb(var(--tint) / 0.05),
+    0 28px 70px -12px rgb(var(--shade) / calc(0.65 * var(--shade-k))),
+    0 0 160px -30px color-mix(in oklab, var(--ambient) 50%, transparent);
+}
+
+.editor.collection-dialog[data-ambient]::backdrop {
+  background: color-mix(in oklab, var(--ambient) 16%, rgb(var(--scrim) / calc(0.66 * var(--scrim-k))));
+}
+
+.collection-dialog[data-ambient] .collection-section-head h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.collection-dialog[data-ambient] .collection-section-head h3::before {
+  content: '';
+  flex: none;
+  width: 0.9rem;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--ambient);
 }
 
 /* fejléc a gyűjtemény széles képével, balról és alulról sötétedve */
@@ -6166,6 +6402,59 @@ a.wo-share-open {
   }
 }
 
+/* az adatlap belseje is a film színét veszi fel (terv-3 51.8, Norbi választása, 2026-10-08 –
+   látványterv: munka/terv-3/terv-51/): a szakaszcímek (Hol nézhető?, Szereplők, Hasonló címek)
+   előtt rövid jelölővonal, a vezérlősáv kerete és teteje, a mezőcímkék és az „Előzetes megnézése”
+   gomb halványan ebben a színben. A címkéknél a szín csak keverve (a kontraszt marad) */
+.title-editor {
+  --ambient-label: 55%;
+}
+
+:root[data-theme='light'] .title-editor {
+  --ambient-label: 30%; /* világosban a hangulatszín világos: kevesebb, hogy a felirat olvasható maradjon */
+}
+
+.title-editor[data-ambient] :is(.watch-title, .similar-toggle) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.title-editor[data-ambient] :is(.watch-title, .similar-toggle)::before {
+  content: '';
+  flex: none;
+  order: -1;
+  width: 0.9rem;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--ambient);
+}
+
+.title-editor[data-ambient] .editor-controls {
+  border-color: color-mix(in oklab, var(--ambient) 38%, var(--line));
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--ambient) 7%, transparent), transparent),
+    color-mix(in oklab, var(--bg) 55%, var(--surface));
+}
+
+.title-editor[data-ambient] .field > legend,
+.title-editor[data-ambient] .field > span:first-child {
+  color: color-mix(in oklab, var(--ambient) var(--ambient-label), var(--muted));
+}
+
+.title-editor[data-ambient] .trailer-btn {
+  border-color: color-mix(in oklab, var(--ambient) 50%, transparent);
+  background-color: color-mix(in oklab, var(--ambient) 10%, transparent);
+}
+
+.title-editor[data-ambient] .trailer-btn:hover {
+  background-color: color-mix(in oklab, var(--ambient) 18%, transparent);
+}
+
+.title-editor[data-ambient] .trailer-btn svg {
+  color: var(--ambient);
+}
+
 /* kártya: rámutatáskor a borító a saját színében fénylik */
 .card .poster {
   transition: box-shadow 0.2s ease-out;
@@ -6788,6 +7077,56 @@ input[type='checkbox']:checked {
   color: var(--muted);
 }
 
+/* csempénként saját, halk szín (terv-3 51.9, Norbi választása, 2026-10-08 – látványterv:
+   munka/terv-3/terv-51/): a tetején derengés, a kerete és a címe ebben a színben. Megnézve zsálya,
+   műfajok rózsa, értékelések borostyán (saját jelölés), te és az IMDb indigó, letöltve égkék,
+   franchise korall, folyamatban lévő sorozatok türkiz (az állapot színe) */
+.tile[data-tile] {
+  --tile: var(--accent);
+  border-color: color-mix(in oklab, var(--tile) 28%, var(--line-soft));
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--tile) 11%, transparent), transparent 62%),
+    color-mix(in oklab, var(--bg) 60%, var(--surface));
+}
+
+.tile[data-tile] h3 {
+  color: color-mix(in oklab, var(--tile) 70%, var(--text));
+}
+
+.tile[data-tile='watched'],
+.tile[data-tile='months'] {
+  --tile: var(--c-sage);
+}
+
+.tile[data-tile='genres'] {
+  --tile: var(--c-rose);
+}
+
+.tile[data-tile='ratings'],
+.tile[data-tile='favorites'] {
+  --tile: var(--accent-2);
+}
+
+.tile[data-tile='deviation'] {
+  --tile: var(--c-indigo);
+}
+
+.tile[data-tile='backlog'] {
+  --tile: var(--c-sky);
+}
+
+.tile[data-tile='franchise'] {
+  --tile: var(--c-coral);
+}
+
+.tile[data-tile='series'] {
+  --tile: var(--st-watching);
+}
+
+.tile[data-tile='backlog'] .big {
+  color: var(--c-sky);
+}
+
 .tile-2 {
   grid-column: span 2;
 }
@@ -6839,7 +7178,12 @@ input[type='checkbox']:checked {
   fill: var(--text);
 }
 
+/* a korábbi hónapok halványabbak, a mostani (az utolsó) teljes erővel (terv-3 51.9) */
 .tile svg .bar {
+  fill: color-mix(in oklab, var(--st-watched) 72%, transparent);
+}
+
+.tile svg .bar.current {
   fill: var(--st-watched);
 }
 
@@ -6933,7 +7277,7 @@ input[type='checkbox']:checked {
 }
 
 .tile-bars .meter i {
-  background: var(--accent);
+  background: var(--fr, var(--accent)); /* franchise-sáv: a franchise borítószíne (terv-3 51.9) */
 }
 
 .tile-bars.series .meter i {

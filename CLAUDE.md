@@ -106,7 +106,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   „Mama oldala” szakasz (nagyobb betűk, `.mama-*`). E2e: „Mama oldala (terv-3 13)…” (Mama-tesztfiók,
   külön böngészőablak, telefonméret)
 - `components/LoginForm.js` – e-mail + jelszó belépés (regisztráció nincs, ki van kapcsolva);
-  minden középen: cím, alatta az űrlap (nagyobb kijelzőn kártyán, felülről halvány türkiz fény)
+  minden középen: cím, alatta az űrlap (nagyobb kijelzőn kártyán, felülről halvány türkiz fény);
+  **vetítőfény** (terv-3 51.11, 2026-10-09): álló, puha fénykúp felülről a cím és az űrlap mögé
+  (türkizből lilába, borostyán széllel – `main.login::before`, `conic-gradient`), fölül a „lencse”
+  (`::after`), a kártya felső élén türkiz fényél; nem mozog
 - `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből (`loadTitles()`:
   ezres adagokban – `lib/fetchAll.js`; a háttérfrissítések csak akkor hívják a szervert, ha a
   betöltött listában van esedékes cím – `lib/refreshDue.js`). **Offline** (terv-3 44): induláskor
@@ -227,7 +230,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   keretű pirula): „Hamarosan · okt. 15.” / „Hamarosan · 2027” / „Moziban · digitálisan: nov.
   20.” vagy „… még nincs dátum”; a kártyán, a táblázat sorában (a cím adatai között) és a
   szerkesztő ablakban. Norbi döntése (2026-10-04): szűrőgomb nem kell, csak a szaggatott
-  megjelenítés (+ a harang)
+  megjelenítés (+ a harang). Színe a fajtája szerint (terv-3 51.4, `data-kind`): „Hamarosan” indigó
+  (`--c-indigo`), „Moziban” korall (`--c-coral`) – a jelvény és a borító szaggatott kerete is
 - `components/GenreList.js` + `lib/genreColors.js` – műfajok, mindegyik előtt kis színes pötty
   (`genreColor(név)`: OKLCH, egyforma világosság, a rokon műfajok rokon színt kapnak; ismeretlen
   műfaj szürke; a kulcs a TMDB magyar műfajneve); felolvasónak vesszővel elválasztva (`sr-only`).
@@ -241,7 +245,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   szövegek olvashatósága nem változik; borítónként egyszer számol (`Map`). `ambientProps(szín)`:
   `--ambient` CSS-változó + `data-ambient` jelző; a CSS („Hangulatszín a borítóból” szakasz)
   csak ilyenkor színez: a szerkesztő ablak a borító mögül dereng (színezett keret, árnyék,
-  háttér), a kártya rámutatva fénylik, a táblázat rámutatott sora halványan színeződik
+  háttér), a kártya rámutatva fénylik, a táblázat rámutatott sora halványan színeződik; az adatlap
+  belseje is (terv-3 51.8, 2026-10-09): a szakaszcímek (Hol nézhető?, Szereplők, Hasonló címek)
+  előtt jelölővonal, a vezérlősáv kerete és teteje, a mezőcímkék (keverve – `--ambient-label`: 55%,
+  világosban 30%, a kontraszt miatt) és az „Előzetes megnézése” gomb. `franchisePosterPath(id,
+  titles)`: a franchise színének borítója (a legjobb IMDb-értékelésű, borítós címé) – a Franchise-ok
+  csempéje, a Statisztika franchise-sávja és a gyűjtemény-ablak közös forrása
 - `components/TitleEditor.js` – natív `<dialog>` (fejlécben a leírás; a cím adatai – `.meta` – alatt a
   műfajok sima szövegként, „Akció · Sci-Fi”, **pötty nélkül**, mint Mama adatlapján – `.editor-genres`,
   Norbi kérése, 2026-10-08; előnézetnél a TMDB-adatokból, amint megjöttek; próba: `munka/e2e/test-mufaj.mjs`). **Adatlapok egymás mögött**
@@ -397,7 +406,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   előnézet – a listán lévőé szerkeszthető), a Felfedezésben a borító (`.discover-poster`)
 - `components/Discover.js` + `app/api/tmdb/discover/route.js` – Felfedezés: „Most a
   mozikban” (`cinema`), „Hamarosan a mozikban” (`upcoming`, dátummal), „Új digitálisan”
-  (`digital`), „Népszerű sorozatok” (`tv`), vízszintes borítósorok, „+ Hozzáadás” / „✓ A
+  (`digital`), „Népszerű sorozatok” (`tv`), vízszintes borítósorok (soronként saját szín –
+  terv-3 51.4, 2026-10-09, `section[data-list]`: a cím előtt kerek ikonjelvény – mozi korall
+  filmcsapó, hamarosan indigó naptár, digitális égkék letöltés, sorozatok zsálya tévé, „Neked
+  ajánlott” rózsa szív; a kiemelt sáv „moziban … óta” korall), „+ Hozzáadás” / „✓ A
   listán” (a `.discover` oszlopa `minmax(0, 1fr)`: a sorok a helyükön görögnek – enélkül a
   rács a 16 borító szélességére nőtt, és telefonon az egész lap kicsinyedett, 2026-10-05). A
   borítók türkiz kerete rámutatásra csak `@media (hover: hover)` alatt (telefonon az érintés
@@ -433,7 +445,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   „The” nem számít, a név kiírva változatlan), csempénként (asztalon 4, 900 px alatt 3, telefonon 2
   oszlop): logó sötét alapon (`FranchiseLogo`; ha nincs, a név), név, mérő; a csempe hangulatszínt
   kap a franchise legjobb IMDb-értékelésű, borítós címének borítójából (terv-3 47, 2026-10-06,
-  látványterv nélkül – `FranchiseTile` + `usePosterColor`, `.fr-tile[data-ambient]`: halvány keret,
+  látványterv nélkül – `FranchiseTile` + `usePosterColor` + `franchisePosterPath`, `.fr-tile[data-ambient]`: halvány keret,
   derengő csempetető, színezett logóháttér), „x/y megnézve · m hiányzik” (y = a listán lévők
   száma, mint a mérőben – Norbi kérése, 2026-10-06) – a hiányzók a TMDB-gyűjteményekből (a `FranchiseCollection` közös
   függvényeivel; 3-asával töltve, franchise-onként a lekérés kulcsával – `paramsKey` –
@@ -494,7 +506,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `summarizeCollection()` (szakaszok, további címek, számok + `missing`), `CollectionMeter` (egy zöld
   szakasz: megnézve / listán; `flex: none`. 2026-10-06-ig a második, „listán” szakasz a közös
   `.on-list` címke stílusát örökölte – a margója miatt nem látszott, és teli mérő sem telt meg),
-  `CollectionDialog`. A gyűjtemény-ablak két fülön (terv-3 28, Norbi döntése; `role="tablist"`,
+  `CollectionDialog` – a franchise színében dereng (terv-3 51.10, 2026-10-09: ugyanaz a szín, mint
+  a Franchise-ok csempéjén – `franchisePosterPath`; az ablak háttere, kerete, a mögötte lévő
+  sötétítés, a szakaszcímek előtt jelölővonal; a mérő zöld, a fülek türkizek maradnak). A gyűjtemény-ablak két fülön (terv-3 28, Norbi döntése; `role="tablist"`,
   nyilakkal is; a panelek rejtve megmaradnak): „Gyűjtemény” (a fenti) és „Nézési sorrend”
   (`WatchOrder`); sorrend-szerkesztés közben kikattintásra nem zár, az Esc csak a szerkesztést zárja
 - `components/WatchOrder.js` + `lib/watchOrder.js` – nézési sorrend (terv-3 28, 2026-10-06, Norbi
@@ -648,6 +662,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   hónapban, havonta megnézett címek (saját SVG-oszlopdiagram, `watched_at`), műfajok (a
   műfajszínekkel), saját és IMDb-átlag, letöltve de még nem látott (az abbahagyottak nélkül),
   legtöbb cím franchise-onként, folyamatban lévő sorozatok évadhaladása; telefonon egy oszlop.
+  Csempénként saját, halk szín (terv-3 51.9, 2026-10-09, `.tile[data-tile]`: felső derengés, keret,
+  cím): megnézve / havonta zsálya, műfajok rózsa, értékelések / kedvenc műfajok borostyán, te és
+  az IMDb indigó, letöltve égkék (a nagy szám is), franchise korall, sorozatok türkiz; a havi
+  oszlopok közül a mostani hónapé teljes erővel (`bar current`), a korábbiak 72%-on; a
+  franchise-sávok a franchise saját színében (`FranchiseBar`, `franchisePosterPath`).
   **Ízlésprofil** (terv-3 42, 2026-10-07; `tasteProfile()` a `listStats`-ban): két csempe az
   „Értékelések” után – „Kedvenc műfajaid” (a saját csillagok átlaga műfajonként, a legjobb 5,
   borostyán sáv, „8,8 · 6” = átlag · értékelt címek) és „Te és az IMDb műfajonként” (saját − IMDb
@@ -712,7 +731,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/NotificationBell.js` + `lib/notifications.js` – harang a fejlécben: a nem olvasott
   értesítések száma borostyán jelvényben (`--accent-2`); kinyitva a legutóbbi 30 (új évad bejelentése / megjelenése,
   film digitális megjelenése – „Digitálisan is megjelent – már letölthető”, Mama jelölése – „Mamát
-  érdekli”, terv-3 13; borítóval); kinyitáskor mind olvasott (az adatbázisban is, `markNotificationsRead()`; a
+  érdekli”, terv-3 13; borítóval; fajtánként saját szín – terv-3 51.5, 2026-10-09, `data-kind`: megjelent
+  évad zsálya / lejátszás, bejelentett évad indigó / naptár, digitális égkék / letöltés, Mama borostyán /
+  „M” – a leírás ebben a színben, a borító sarkán kis kerek ikon – `.notif-pic` > `.notif-kind`; az
+  olvasatlant a cím előtti pötty – a fajta színében – és leheletnyi háttér jelzi, nem türkiz sor); kinyitáskor mind olvasott (az adatbázisban is, `markNotificationsRead()`; a
   közben beérkező régi lekérdezés sem írja vissza – `readIds` a Watchlistben); elemre
   kattintva a sorozat szerkesztő ablaka; kívülre kattintás / Esc bezár. A lista a harang bal széléhez igazodik, ha ott
   kilógna, a jobbhoz (`lib/popupSide.js`, nyitáskor mérve – a ⋮ menü is így); telefonon teljes
@@ -933,8 +955,14 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   Új állapotnál ide is kell egy szín, és a `[data-status=...]` szabály (kártya és táblázatsor is használja).
 - Második kiemelőszín (`--accent-2`, borostyán `#ffb547`, `-ink`, `-soft`, `-line`): **csak a
   saját jelöléseken** – saját értékelés csillagai, Mama (szerkesztő chip, táblázat lenyíló,
-  kártya), a harang száma. Soha nem gombszín; a türkiz marad a gomboké, az állapotoké, a
+  kártya, a harang Mama-értesítése – terv-3 51.5), a harang száma, a Statisztika értékelés-csempéi
+  (terv-3 51.9). Soha nem gombszín; a türkiz marad a gomboké, az állapotoké, a
   kiválasztott szűrőké és a fókuszkereté.
+- Tartalomfajták színei (terv-3 51, 2026-10-08): `--c-coral` mozi, `--c-indigo` bejelentett /
+  hamarosan, `--c-sky` digitális / letöltve, `--c-sage` megjelent (= `--st-watched`), `--c-rose`
+  ajánlás – egyforma világosság, mérsékelt telítettség, világos témás értékkel. Mindig ugyanazt
+  jelentik, **soha nem gombszínek**; teljes erővel csak apró jelölésen, nagy felületen halvány
+  árnyalatként.
 - A színtokenek OKLCH-ban (`oklch(L% C h)`), mellettük megjegyzésben a hex: hagyományos (sRGB)
   kijelzőn pontosan az a szín. Széles színterű (P3) kijelzőn a `@media (color-gamut: p3)` szabály
   élénkebb `--accent` / `--accent-2`-t ad (ugyanaz a világosság és árnyalat, nagyobb
@@ -1071,6 +1099,11 @@ egy franchise sorrendjéhez (`/sorrend/<token>`), visszavonható (terv-3 41, 202
 (terv-3 50, 2026-10-08): váltógomb a ⋮ mellett, a világos „B – meleg papír”, Mama alapja világos.
 Animált átrendeződés szűréskor / rendezéskor: a kártyák és sorok a helyükre csúsznak, a kiesők
 elhalványulnak, az újak beúsznak (terv-3 49.3, 2026-10-08) – ezzel a 49-es kinézeti kör lezárult.
+Színesebb felület (terv-3 51, 2026-10-08–09, Norbi választása látványterv után): a tartalomfajták
+színei (korall mozi, indigó hamarosan, égkék digitális, zsálya megjelent, rózsa ajánlás) a Felfedezés
+soraiban, a „Hamarosan” / „Moziban” jelvényen és a harang értesítésfajtáin; a film színe az adatlap
+belsejében, a franchise színe a gyűjtemény-ablakban és a Statisztika franchise-sávjain; színes
+Statisztika-csempék; vetítőfény a belépési oldalon.
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -1082,6 +1115,15 @@ az 1000 soros korlát kezelése); a C2 / C3 (látható változással járó kön
 szerint nem kell. A vizsgálat: `munka/optimalizalas/VIZSGALAT.md`.
 **Becsült idő** (Norbi kérése, 2026-10-06: a roadmap listázásakor mindig írd mellé; teszttel és
 doksival együtt; ha egy pont tartalma változik, frissítsd): a pontok mellett „~… óra”.
+**51: színesebb felület – kész** (Norbi kérése és döntései, 2026-10-08–09; látványterv:
+https://claude.ai/artifact/EvrrxJcn68Gvars1m6NqDZ; részletek: `munka/terv-3/TERV.md` 51-es pont, napló:
+`munka/terv-3/terv-51/ALLAPOT.md`; a próba-stílusok: `terv-51/javaslatok.css`). **Kész (2026-10-09,
+commitra vár; teszt: `munka/e2e/test-51.mjs`):** az 1-es színtokenjei (`--c-*`), 51.4 – a Felfedezés sorai saját
+színnel, 51.5 – színes értesítésfajták, 51.8 – hangulatszín az adatlapon, 51.9 – színesebb
+Statisztika, 51.10 – a gyűjtemény-ablak a franchise színében, 51.11 – vetítőfény a belépési oldalon. **Elengedve** (Norbi, 2026-10-09 – magadtól ne
+javasold újra): 51.6 – borító-visszfény / „halk padlófény” a borítófalon (beépítve, de a borítók
+betöltésekor a kártya szövege és képe apró moccanást mutatott) és 51.7 – élő aurora a borítók
+színéből; nem kellett: 51.2 – a türkiz tehermentesítése, 51.3 – állapotszín a kiválasztásban.
 **Norbi kérései (2026-10-04)** – utána, ebben a sorrendben; a részletek
 (megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
 1. **27 – jelszó módosítása** (~1,5 óra): csak bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”:
@@ -1139,7 +1181,7 @@ Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a ta
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
 nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
 29 – Marvel betöltve a sorrenddel (szkripttel, 2026-10-06); 39 – „Nem érdekel” az ajánlásokon, 40 –
-kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 27, 36; 49 – kinézeti újítások kész (2026-10-08: 49.3, 49.8, 49.10; a 49.1 elvetve) („Következő feladat”; a 25 és a 26 lekerült – Norbi, 2026-10-08); 50 – világos / sötét téma kész (2026-10-08, „B – meleg papír”, Mama alapja világos); 41 – megosztható nézési sorrend kész (2026-10-08, látványterv nélkül); 48 – felhasználói leírás a ⋮ menüből kész (2026-10-08, belső ablakban); 44 – offline indulás kész (2026-10-08); 35 – franchise-javaslat és 37 – „Neked ajánlott” kész (2026-10-07); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
+kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). 51 – színesebb felület kész (2026-10-09: 4, 5, 8–11; a 6–7 elengedve, a 2–3 nem kellett). Vár még: 27, 36; 49 – kinézeti újítások kész (2026-10-08: 49.3, 49.8, 49.10; a 49.1 elvetve) („Következő feladat”; a 25 és a 26 lekerült – Norbi, 2026-10-08); 50 – világos / sötét téma kész (2026-10-08, „B – meleg papír”, Mama alapja világos); 41 – megosztható nézési sorrend kész (2026-10-08, látványterv nélkül); 48 – felhasználói leírás a ⋮ menüből kész (2026-10-08, belső ablakban); 44 – offline indulás kész (2026-10-08); 35 – franchise-javaslat és 37 – „Neked ajánlott” kész (2026-10-07); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
 (B – vezérlősáv, 2026-10-05).
 **Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
 appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,
