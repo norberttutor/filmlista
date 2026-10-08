@@ -85,8 +85,9 @@
    sötétbarna szöveg (látványterv: munka/terv-3/terv-50/). A <html data-theme="light"> kapcsolja be
    (lib/theme.js; a kirajzolás előtt az app/layout.js szkriptje). A neon türkiz fehéren olvashatatlan
    (~1,6:1): itt mélyebb türkiz, a teli gombokon fehér felirattal; a borostyán is sötétebb (felirat is:
-   Mama „Érdekel”). Kontraszt (mérve, munka/terv-3/terv-50/kontraszt.mjs): szöveg 14,5:1, halvány 5,8:1,
-   türkiz 4,7:1, borostyán 4,7:1, megnézett 5,2:1. Új színtokennél ide is kell világos érték. */
+   Mama „Érdekel”). Kontraszt (mérve, munka/terv-3/terv-50/kontraszt.mjs): szöveg 14,5:1, halvány 7,7:1,
+   türkiz 4,7:1, borostyán 6,1:1, megnézett 5,2:1 (a halvány és a borostyán Norbi kérésére sötétebb:
+   az 5,8:1 / 4,7:1 olvashatatlannak tűnt, 2026-10-08). Új színtokennél ide is kell világos érték. */
 :root[data-theme='light'] {
   --bg: oklch(96.6% 0.012 85);                /* #f7f3eb krémes papír */
   --bg-top: oklch(98.4% 0.008 85);            /* #fcf9f4 */
@@ -95,14 +96,14 @@
   --line: oklch(87.5% 0.018 80);              /* #dcd5c9 */
   --line-soft: oklch(92.5% 0.013 82);         /* #ebe6dd */
   --text: oklch(25% 0.022 60);                /* #2a1f17 meleg sötétbarna */
-  --muted: oklch(48.5% 0.026 65);             /* #6a5c50 */
+  --muted: oklch(42% 0.024 62);               /* #574a40 */
   --accent: oklch(52% 0.105 212);             /* #00788c mély türkiz */
   --accent-ink: oklch(99% 0 0);               /* fehér felirat a teli türkizen */
   --accent-hover: color-mix(in srgb, var(--accent) 88%, black);
   --accent-press: color-mix(in srgb, var(--accent) 78%, black);
   --accent-soft: color-mix(in oklab, var(--accent) 11%, transparent);
   --accent-line: color-mix(in oklab, var(--accent) 50%, transparent);
-  --accent-2: oklch(54% 0.13 60);             /* #a45900 mély borostyán */
+  --accent-2: oklch(48% 0.12 58);             /* #8e4900 mély borostyán */
   --accent-2-ink: oklch(99% 0 0);             /* a harang száma */
   --accent-2-soft: color-mix(in oklab, var(--accent-2) 14%, transparent);
   --danger: oklch(52% 0.17 27);               /* #b6322d */
@@ -121,17 +122,17 @@
   --scrim: 20 28 42;   /* az ablakok mögött enyhe sötétítés */
   --scrim-k: 0.5;
   --edge: rgb(var(--tint) / 0.1);
-  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%236a5c50' stroke-width='1.6'/%3E%3C/svg%3E");
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23574a40' stroke-width='1.6'/%3E%3C/svg%3E");
   --chevron-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%2300788c' stroke-width='1.6'/%3E%3C/svg%3E");
   --check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.75 8.25l2.75 2.75 5.75-6' fill='none' stroke='%23ffffff' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236a5c50' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23574a40' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
   color-scheme: light;
 }
 
 @media (color-gamut: p3) {
   :root[data-theme='light'] {
     --accent: oklch(52% 0.13 212);
-    --accent-2: oklch(54% 0.155 60);
+    --accent-2: oklch(48% 0.145 58);
   }
 }
 

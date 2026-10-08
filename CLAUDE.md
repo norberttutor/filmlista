@@ -901,7 +901,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   minden teljes színű.
 - **Két téma** (terv-3 50, 2026-10-08): a sötét az alap (`:root`), a világos („B – meleg papír”) a
   `globals.css` „Világos téma” szakaszában, `:root[data-theme='light']` alatt (mély türkiz `#00788c`
-  fehér gombfelirattal, mély borostyán `#a45900`, krémes háttér). **Új színtokennél a világos
+  fehér gombfelirattal, mély borostyán `#8e4900`, halvány szöveg `#574a40` – Norbi kérésére sötétebb, mint a látványtervben –, krémes háttér). **Új színtokennél a világos
   szakaszba is kell érték**, és a kontrasztot mérd (`munka/terv-3/terv-50/kontraszt.mjs`, `VEGLEGES=1`).
   **Beégetett színt ne használj**: a fátylak, keretek, árnyékok, üvegek RGB-csatorna tokenekkel mennek
   – `rgb(var(--tint) / 0.05)` (világos fátyol sötéten – világosban sötét fátyol), `rgb(var(--shade) /
