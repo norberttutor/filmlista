@@ -41,7 +41,24 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 ## Fájlszerkezet
 - `app/layout.js` – Bricolage Grotesque betűtípus (`--font-main`) az optikai méret
   (`axes: ['opsz']`) tengellyel is (a nagy főcím a nagy méretre rajzolt formát kapja), `lang="hu"`;
-  a böngészőfül címe „Megnézendő filmek”; a címsor színe (`viewport.themeColor`) `#1a222d` (`--bg-top`)
+  a böngészőfül címe „Megnézendő filmek”; a címsor színe (`viewport.themeColor`) `#1a222d` (`--bg-top`;
+  világos témában a `lib/theme.js` cseréli `#fcf9f4`-re). A `<head>`-ben a téma kirajzolás előtti
+  szkriptje (`THEME_BOOT_SCRIPT`, `lib/themeBoot.js`), ezért a `<html>`-en `suppressHydrationWarning`
+- `lib/theme.js` + `lib/themeBoot.js` + `components/ThemeToggle.js` – **világos / sötét téma**
+  (terv-3 50, 2026-10-08; Norbi döntései, látványterv: https://claude.ai/artifact/3vsvTnTQ27NnjErSb3CYYn,
+  `munka/terv-3/terv-50/`): az alap a sötét; a világos a „B – meleg papír”, a `<html
+  data-theme="light">` kapcsolja (sötétnél nincs jelző). A választást a böngésző jegyzi meg
+  felhasználónként (`filmlista-tema:<userId>`); ha nincs, a szerep dönt: **Mama (néző) világos**, a
+  többiek sötét (`initUserTheme(userId, viewer)` – a `page.js` hívja, amint tudja, néző-e;
+  `useLayoutEffect`). Az utoljára használt külön is (`filmlista-tema`): ezzel indul a lap – a
+  `THEME_BOOT_SCRIPT` a kirajzolás előtt állítja, nincs villanás –, és ezt mutatja a belépési oldal
+  (kilépéskor a téma marad: `forgetThemeUser`). A megosztott sorrend (`/sorrend/…`) a látogató gépét
+  követi (`prefers-color-scheme`, váltáskor is; a tárolt téma ott nem számít). `setTheme()`,
+  `useTheme()` (`useSyncExternalStore`). A `themeBoot.js` React nélkül van, mert a `layout.js`
+  (szerverkomponens) is használja. `ThemeToggle`: Norbinál kerek ikongomb a „Kilépés” után, a ⋮ előtt
+  (`.theme-toggle`, a `.more-btn` mintájára; sötétben nap – „Világos téma”, világosban hold – „Sötét
+  téma”, `aria-label` + `title`); Mama oldalán `labeled` – „Világos” / „Sötét” felirattal a „Kilépés”
+  előtt (`.theme-toggle-labeled` a `.mama-head-actions`-ben). Teszt: `munka/e2e/test-50.mjs`
 - `app/icon.svg` – az app ikonja (böngészőfül): sötét, lekerekített négyzeten neon türkiz
   filmcsapó. PNG-változatai: `app/apple-icon.png` (iPhone, 180 px), `public/icon-192.png`,
   `public/icon-512.png` (telepített app), `public/icon-maskable-512.png` (Android: teljes négyzet,
@@ -62,7 +79,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   vár rá, net nélkül is tudja. Regisztrálja a service workert (`registerServiceWorker()`). Net nélkül,
   lejárt tokennel (vagy ha a `getSession()` 4 mp – net nélkül 0,3 mp – alatt nem válaszol: a Supabase
   ilyenkor sokáig újrapróbál) a tárolt munkamenettel (`storedSession()`, `offline: true`) a `Watchlist`
-  nyílik; kilépéskor (`SIGNED_OUT`) a helyben tárolt lista törlődik (`clearSnapshots()`)
+  nyílik; kilépéskor (`SIGNED_OUT`) a helyben tárolt lista törlődik (`clearSnapshots()`). A téma (terv-3 50):
+  amint tudja, néző-e, `initUserTheme(userId, néző)` (`useLayoutEffect`); kilépéskor `forgetThemeUser()`
 - `public/sw.js` + `lib/offline.js` – **offline indulás** (terv-3 44, 2026-10-08): service worker (csak a
   kiadott változatban; `next.config.mjs`: `/sw.js` `no-cache`): az oldal előbb a hálózatról (3 mp-es
   időkorláttal, utána / net nélkül a tárolt), a `/_next/static/` és a TMDB-képek (CORS-szal, legfeljebb
@@ -72,7 +90,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   felhasználónként (`loadSnapshot` / `saveSnapshot` / `clearSnapshots`); `useOnline()`. Mama oldala
   (`MamaView`) nem tárol helyben: net nélkül elindul, de üres / hibát mutat
 - `components/MamaView.js` + `components/MamaDetail.js` – **Mama oldala** (terv-3 13, Norbi választása:
-  „B” látványterv – `munka/terv-3/terv-13/`): „Norbi filmjei”, „Kilépés”; rendezés, kereső,
+  „B” látványterv – `munka/terv-3/terv-13/`): „Norbi filmjei”, „Világos” / „Sötét” (téma, terv-3 50 – Mamánál a világos az alap), „Kilépés”
+  (`.mama-head-actions`; telefonon a cím fölött, jobbra); rendezés, kereső,
   menü, harang nincs. Egy szűrő (Norbi kérése, 2026-10-07; `.mama-tabs`, darabszámmal): „Filmek” (a
   jelöletlenek – eldöntendők, alapból) / „Érdekel”; a most jelölt / visszavont sor a szűrő váltásáig a
   helyén marad (`kept`). A `mama_list()` filmjei (a legutóbb hozzáadott elöl), 24-esével „További filmek”;
@@ -102,7 +121,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   visszatérésekor és félpercenként újrapróbálja (`reloadKey`). A borítófalon nincs mit tiltani (a
   kártya csak az adatlapot nyitja). Teszt: `munka/e2e/test-44.mjs`; fejléc:
   „Megnézendő filmek és sorozatok”; mellette (jobbra) „Cím hozzáadása”, harang (`NotificationBell`),
-  e-mail, Kilépés, a sor végén a „További műveletek” (⋮) menü (`MoreMenu`, Norbi kérése, mint a
+  e-mail (telefonon – ≤ 640 px – nem látszik, terv-3 50), Kilépés, a téma váltógombja (`ThemeToggle`,
+  terv-3 50; asztalon – ≥ 900 px – a sor nem törik: `flex-wrap: nowrap`), a sor végén a „További műveletek” (⋮) menü (`MoreMenu`, Norbi kérése, mint a
   Chrome-ban): „Statisztika” (`StatsDialog`), „Franchise-ok” (`FranchisesDialog`, telefonon is), „IMDb import” (telefonon – `PHONE_QUERY`, ≤ 640 px –
   nincs, Norbi kérése), asztali nézetben „Tömeges
   import” (`BulkImport`) és „Mentés letöltése” (`downloadListCsv`), utána „Mentések”
@@ -879,6 +899,20 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   tompított, de olvasható szöveg (`--watched-text`, ≥ 4,5:1), halványabb vezérlők, szürke
   műfajpötty, szürke „M” (Mama) – nem az egész sor átlátszó. Rámutatáskor és fókusznál
   minden teljes színű.
+- **Két téma** (terv-3 50, 2026-10-08): a sötét az alap (`:root`), a világos („B – meleg papír”) a
+  `globals.css` „Világos téma” szakaszában, `:root[data-theme='light']` alatt (mély türkiz `#00788c`
+  fehér gombfelirattal, mély borostyán `#a45900`, krémes háttér). **Új színtokennél a világos
+  szakaszba is kell érték**, és a kontrasztot mérd (`munka/terv-3/terv-50/kontraszt.mjs`, `VEGLEGES=1`).
+  **Beégetett színt ne használj**: a fátylak, keretek, árnyékok, üvegek RGB-csatorna tokenekkel mennek
+  – `rgb(var(--tint) / 0.05)` (világos fátyol sötéten – világosban sötét fátyol), `rgb(var(--shade) /
+  calc(0.6 * var(--shade-k)))` (árnyék – világosban halványabb), `rgb(var(--glass) / 0.8)` (sötét üveg
+  – világosban világos), `::backdrop`-ban `rgb(var(--scrim) / calc(0.62 * var(--scrim-k)))`; a teli
+  piros gomb felirata `--danger-ink`. **Sötét szigetek**: a képes sávok világosban is sötétek (a
+  filmlogók fehérek) – `.featured-slide`, `.featured-sk`, `.collection-banner[data-backdrop]`,
+  `.share-hero[data-backdrop]`, `.fr-logo`: a sötét tokeneket a `:root` szabály kiválasztója adja
+  nekik (és a P3-asé); áttetsző sötét alapjuk világosban tömör (`var(--bg)`). Új képes sávnál ide
+  is fel kell venni. A franchise-logók világos felületen sötét sziluettet kapnak (a `FranchiseLogo`
+  `.dark` mérése alapján), a szigeteken a sötét téma szabálya marad.
 - Design: sötét téma a `:root` változókkal; kiemelőszín (`--accent`) neon türkiz `#33e0ef`
   (nem sárga), a „Folyamatban” is ez (`--st-watching: var(--accent)`); állapotszínek
   `--st-<kód>` változókban (Abbahagyva: halvány lila `--st-dropped`).
@@ -929,8 +963,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - Új dizájnötletnél: előbb előtte–utána képek (`munka/dizajn-2/eszkozok/`: pillanatkép,
   előnézet, kontrasztmérés), beépítés csak Norbi jóváhagyása után.
 - A két megjelenési kör (2026-10-03–04) lezárult. Amit Norbi nem kért (magadtól ne
-  javasold újra): álló betűs eredeti cím, színskálás IMDb-jelvény, választható színtéma / OLED
-  fekete, 3D billenés a borítókon, plakátszerű tipográfia, számláló a fejlécben, „Ma este”
+  javasold újra): álló betűs eredeti cím, színskálás IMDb-jelvény, OLED fekete (a világos / sötét
+  téma váltását viszont Norbi 2026-10-08-án maga kérte – 50-es pont), 3D billenés a borítókon, plakátszerű tipográfia, számláló a fejlécben, „Ma este”
   kiemelt sáv, haladásgyűrű a sorozatoknál, egyedi helykitöltő a hiányzó borítóhoz; a kurzort
   követő fénylő kártyaélt beépítés után visszavonatta.
 - **Új ablak (`<dialog>`) esetén mindig vizsgáld a kikattintásos bezárást** (Norbi kérése,
@@ -1017,7 +1051,8 @@ Franchise-ok ablakban (terv-3 35, csak felajánlja), „Neked ajánlott” sor a
 2026-10-07). Offline indulás (terv-3 44, 2026-10-08): service worker + a legutóbbi lista helyben –
 azonnal megnyílik, net nélkül csak olvasható, utána magától frissül. Felhasználói leírás az appon
 belül, a ⋮ menüből (terv-3 48, 2026-10-08). Megosztható nézési sorrend: csak olvasható nyilvános link
-egy franchise sorrendjéhez (`/sorrend/<token>`), visszavonható (terv-3 41, 2026-10-08).
+egy franchise sorrendjéhez (`/sorrend/<token>`), visszavonható (terv-3 41, 2026-10-08). Világos / sötét téma
+(terv-3 50, 2026-10-08): váltógomb a ⋮ mellett, a világos „B – meleg papír”, Mama alapja világos.
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -1057,6 +1092,8 @@ látványterv** (Norbi kéri, amelyikhez akarja), beépítés csak jóváhagyás
      helyükre csúsznak, a kiesők elhalványulnak, az újak beúsznak;
    - ~~49.8 – lépcsőzetes beúszás lapozáskor~~ – **kész (2026-10-08, látványterv nélkül – Norbi kérése)**;
    - ~~49.10 – saját görgetősáv~~ – **kész (2026-10-08, látványterv nélkül)**.
+(Az 50-es – világos / sötét téma, Norbi kérésére előrehozva – kész, 2026-10-08: látványterv után a
+„B – meleg papír”; napló: `munka/terv-3/terv-50/ALLAPOT.md`.)
 **Lekerült a roadmapről** (Norbi döntése, 2026-10-08: a közeljövőben nincs tervben; magadtól ne
 javasold újra): **25 – admin jogosultság**, **26 – regisztráció** (a meglévőkön kívül más felhasználó
 nem lesz, Mama fiókja pedig a 13-as óta korlátozott). A részletes tervük a TERV.md-ben megmaradt.
@@ -1084,7 +1121,7 @@ Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a ta
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
 nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
 29 – Marvel betöltve a sorrenddel (szkripttel, 2026-10-06); 39 – „Nem érdekel” az ajánlásokon, 40 –
-kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 27, 36, 49 (kinézeti újítások, látványtervvel) („Következő feladat”; a 25 és a 26 lekerült – Norbi, 2026-10-08); 41 – megosztható nézési sorrend kész (2026-10-08, látványterv nélkül); 48 – felhasználói leírás a ⋮ menüből kész (2026-10-08, belső ablakban); 44 – offline indulás kész (2026-10-08); 35 – franchise-javaslat és 37 – „Neked ajánlott” kész (2026-10-07); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
+kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 27, 36, 49 (kinézeti újítások, látványtervvel) („Következő feladat”; a 25 és a 26 lekerült – Norbi, 2026-10-08); 50 – világos / sötét téma kész (2026-10-08, „B – meleg papír”, Mama alapja világos); 41 – megosztható nézési sorrend kész (2026-10-08, látványterv nélkül); 48 – felhasználói leírás a ⋮ menüből kész (2026-10-08, belső ablakban); 44 – offline indulás kész (2026-10-08); 35 – franchise-javaslat és 37 – „Neked ajánlott” kész (2026-10-07); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
 (B – vezérlősáv, 2026-10-05).
 **Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
 appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,

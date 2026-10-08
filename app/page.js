@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { clearSnapshots, registerServiceWorker, storedSession } from '@/lib/offline';
+import { forgetThemeUser, initUserTheme } from '@/lib/theme';
 import LoginForm from '@/components/LoginForm';
 import Watchlist from '@/components/Watchlist';
 import MamaView from '@/components/MamaView';
@@ -57,7 +58,10 @@ export default function Home() {
 
     const { data } = supabase.auth.onAuthStateChange((event, newSession) => {
       // kilépéskor a helyben tárolt lista is törlődik
-      if (event === 'SIGNED_OUT') clearSnapshots();
+      if (event === 'SIGNED_OUT') {
+        clearSnapshots();
+        forgetThemeUser(); // a téma marad: a belépési oldal az utoljára használtat mutatja (terv-3 50)
+      }
       // a net nélküli munkamenetet csak a valódi kilépés vagy egy új munkamenet váltja le
       setSession((cur) => (!newSession && cur?.offline && event !== 'SIGNED_OUT' ? cur : newSession));
     });
@@ -93,6 +97,13 @@ export default function Home() {
     };
   }, [userId]);
   const viewerRow = !userId ? undefined : viewer.userId === userId ? viewer.row : cachedViewer(userId);
+
+  // a felhasználó témája (terv-3 50): a mentett, ha nincs, néző (Mama) világos, a többieknek sötét –
+  // még a kirajzolás előtt, ha már tudjuk, néző-e
+  const isViewer = viewerRow === undefined ? undefined : !!viewerRow;
+  useLayoutEffect(() => {
+    if (userId && isViewer !== undefined) initUserTheme(userId, isViewer);
+  }, [userId, isViewer]);
 
   if (session === undefined || (session && viewerRow === undefined)) {
     return (

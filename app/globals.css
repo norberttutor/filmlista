@@ -1,8 +1,11 @@
 /* ---------- Színek és alapértékek ---------- */
 /* A színek OKLCH-ban (érzékelt világosság, telítettség, árnyalat): az egyforma világosságú
    színek egyformán olvashatók. Mellettük a régi hex érték – a hagyományos (sRGB) kijelzőn
-   pontosan ez látszik. A széles színterű (P3) kijelzőn a két kiemelőszín élénkebb (lent). */
-:root {
+   pontosan ez látszik. A széles színterű (P3) kijelzőn a két kiemelőszín élénkebb (lent).
+   Ez a sötét téma (az alap); a világos lent, „Világos téma”. A felsorolt elemek a „sötét szigetek”:
+   világos témában is ezekkel a színekkel rajzolódnak (lent). */
+:root,
+:root[data-theme='light'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo) {
   --bg: oklch(22.04% 0.0199 258.35);          /* #151b24 vetítőterem-kék háttér */
   --surface: oklch(26.97% 0.0259 255.74);     /* #1e2733 */
   --line: oklch(33.59% 0.0296 252.57);        /* #2c3846 */
@@ -29,15 +32,16 @@
   --bg-top: oklch(24.94% 0.024 256.44);         /* #1a222d a lap teteje egy árnyalattal világosabb */
   --line-soft: oklch(29% 0.0254 255.73);        /* #232c38 halk vonal a táblázat sorai között */
   --surface-raised: oklch(28.97% 0.0277 255.17); /* #222c39 felugró elemek (lenyíló lista, súgó) */
-  --edge: rgb(255 255 255 / 0.08);   /* vékony világos keret a felugró elemeken */
-  --shadow-pop: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 20px -6px rgb(0 0 0 / 0.4),
-    0 28px 56px -14px rgb(0 0 0 / 0.6);
+  --edge: rgb(var(--tint) / 0.08);   /* vékony világos keret a felugró elemeken */
+  --shadow-pop: 0 1px 2px rgb(var(--shade) / calc(0.3 * var(--shade-k))),
+    0 10px 20px -6px rgb(var(--shade) / calc(0.4 * var(--shade-k))),
+    0 28px 56px -14px rgb(var(--shade) / calc(0.6 * var(--shade-k)));
   --accent-soft: color-mix(in oklab, var(--accent) 16%, transparent); /* kiválasztott háttér */
   --accent-line: color-mix(in oklab, var(--accent) 55%, transparent); /* kiválasztott keret */
   --accent-hover: color-mix(in srgb, var(--accent) 82%, white);
   --accent-press: color-mix(in srgb, var(--accent) 86%, black);
-  --hover-tint: rgb(255 255 255 / 0.05);
-  --press-tint: rgb(255 255 255 / 0.09);
+  --hover-tint: rgb(var(--tint) / 0.05);
+  --press-tint: rgb(var(--tint) / 0.09);
   --control-border: color-mix(in srgb, var(--muted) 60%, var(--bg)); /* 3:1 a háttéren */
   --star-empty: color-mix(in srgb, var(--muted) 60%, var(--bg));     /* 3:1 a háttéren */
   --watched-text: oklch(62.46% 0.0273 252.02);   /* #7c8998 megnézett cím szövegei: 4,85:1 */
@@ -52,6 +56,16 @@
   --icon-download: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v12M7 10l5 5 5-5M5 21h14'/%3E%3C/svg%3E");
   --placeholder-bg: linear-gradient(160deg, #26313f 0%, #1a222d 100%); /* hiányzó borító */
 
+  /* fátylak, árnyékok, üveg (terv-3 50): RGB-csatornák, az átlátszóság a felhasználás helyén
+     (rgb(var(--tint) / 0.05)) – a világos téma ezeket cseréli, így a beégetett színek is váltanak */
+  --tint: 255 255 255;   /* világos fátyol / keret a sötét felületen */
+  --shade: 0 0 0;        /* árnyék */
+  --shade-k: 1;          /* az árnyékok erőssége (világosban halványabb) */
+  --glass: 10 13 18;     /* sötét üveg / fátyol (letapadt sávok, a képek alja) */
+  --scrim: 7 10 15;      /* az ablakok mögötti sötétítés (::backdrop) */
+  --scrim-k: 1;          /* a sötétítés erőssége */
+  --danger-ink: #2a0d09; /* felirat a teli piros gombon */
+
   --gutter: clamp(1rem, 4vw, 3rem);
   color-scheme: dark;
 }
@@ -59,10 +73,123 @@
 /* széles színterű (P3) kijelzőn a két kiemelőszín élénkebb: ugyanaz a világosság és árnyalat,
    nagyobb telítettség (a P3 határának 90%-a), így az olvashatóság nem változik */
 @media (color-gamut: p3) {
-  :root {
+  :root,
+  :root[data-theme='light'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo) {
     --accent: oklch(83.05% 0.1832 204.05);
     --accent-2: oklch(82.45% 0.1819 73.35);
   }
+}
+
+/* ---------- Világos téma (terv-3 50) ---------- */
+/* Norbi választása (2026-10-08): „B – meleg papír” – krémes háttér, törtfehér felületek, meleg
+   sötétbarna szöveg (látványterv: munka/terv-3/terv-50/). A <html data-theme="light"> kapcsolja be
+   (lib/theme.js; a kirajzolás előtt az app/layout.js szkriptje). A neon türkiz fehéren olvashatatlan
+   (~1,6:1): itt mélyebb türkiz, a teli gombokon fehér felirattal; a borostyán is sötétebb (felirat is:
+   Mama „Érdekel”). Kontraszt (mérve, munka/terv-3/terv-50/kontraszt.mjs): szöveg 14,5:1, halvány 5,8:1,
+   türkiz 4,7:1, borostyán 4,7:1, megnézett 5,2:1. Új színtokennél ide is kell világos érték. */
+:root[data-theme='light'] {
+  --bg: oklch(96.6% 0.012 85);                /* #f7f3eb krémes papír */
+  --bg-top: oklch(98.4% 0.008 85);            /* #fcf9f4 */
+  --surface: oklch(99.4% 0.005 85);           /* #fffdf9 */
+  --surface-raised: oklch(99.6% 0.004 85);    /* #fffefb */
+  --line: oklch(87.5% 0.018 80);              /* #dcd5c9 */
+  --line-soft: oklch(92.5% 0.013 82);         /* #ebe6dd */
+  --text: oklch(25% 0.022 60);                /* #2a1f17 meleg sötétbarna */
+  --muted: oklch(48.5% 0.026 65);             /* #6a5c50 */
+  --accent: oklch(52% 0.105 212);             /* #00788c mély türkiz */
+  --accent-ink: oklch(99% 0 0);               /* fehér felirat a teli türkizen */
+  --accent-hover: color-mix(in srgb, var(--accent) 88%, black);
+  --accent-press: color-mix(in srgb, var(--accent) 78%, black);
+  --accent-soft: color-mix(in oklab, var(--accent) 11%, transparent);
+  --accent-line: color-mix(in oklab, var(--accent) 50%, transparent);
+  --accent-2: oklch(54% 0.13 60);             /* #a45900 mély borostyán */
+  --accent-2-ink: oklch(99% 0 0);             /* a harang száma */
+  --accent-2-soft: color-mix(in oklab, var(--accent-2) 14%, transparent);
+  --danger: oklch(52% 0.17 27);               /* #b6322d */
+  --danger-ink: oklch(99% 0 0);
+  --st-watched: oklch(55% 0.11 158);          /* #2a8558 */
+  --st-dropped: oklch(52% 0.15 295);          /* #7152b5 */
+  --watched-text: oklch(51% 0.02 65);         /* #6e645a */
+  --watched-accent: oklch(51% 0.07 210);      /* #2c717c */
+  --control-border: color-mix(in srgb, var(--muted) 70%, var(--bg));
+  --star-empty: color-mix(in srgb, var(--muted) 72%, var(--bg));
+  --placeholder-bg: linear-gradient(160deg, #ede7de 0%, #ded6cb 100%);
+  --tint: 18 28 44;    /* a „világos fátyol” itt sötét: halvány sötétítés */
+  --shade: 24 36 58;   /* kékesszürke, halvány árnyék */
+  --shade-k: 0.32;
+  --glass: 250 251 253; /* világos üveg */
+  --scrim: 20 28 42;   /* az ablakok mögött enyhe sötétítés */
+  --scrim-k: 0.5;
+  --edge: rgb(var(--tint) / 0.1);
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%236a5c50' stroke-width='1.6'/%3E%3C/svg%3E");
+  --chevron-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%2300788c' stroke-width='1.6'/%3E%3C/svg%3E");
+  --check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.75 8.25l2.75 2.75 5.75-6' fill='none' stroke='%23ffffff' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236a5c50' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
+  color-scheme: light;
+}
+
+@media (color-gamut: p3) {
+  :root[data-theme='light'] {
+    --accent: oklch(52% 0.13 212);
+    --accent-2: oklch(54% 0.155 60);
+  }
+}
+
+/* a háttér anyaga világosban: halványabb aurora, sötét (nem fehér) filmszemcse */
+:root[data-theme='light'] body::before {
+  opacity: 0.55;
+}
+
+:root[data-theme='light'] body::after {
+  filter: invert(1);
+  opacity: 0.05;
+}
+
+/* sötét szigetek: a képes sávok (kiemelt sáv, háttérképes franchise-sáv, a megosztott oldal képes
+   fejléce, a Franchise-ok logódoboza) világosban is sötétek, mint egy mozivászon – a filmlogók fehérek,
+   és a franchise-logókat sötét alapra fehérítjük (Norbi döntése, 2026-10-08). A sötét tokeneket a fenti
+   :root szabály adja nekik; a szöveg színe innen öröklődik */
+:root[data-theme='light'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo) {
+  color: var(--text);
+}
+
+/* a képes sávok alapja sötétben áttetsző sötét üveg – világos lapon ettől szürke lenne: itt tömör */
+:root[data-theme='light'] :is(.collection-banner[data-backdrop], .share-hero[data-backdrop]) {
+  background: var(--bg);
+}
+
+/* franchise-logók világos felületen (a franchise-szűrő, a háttérkép nélküli franchise-sáv): a világos
+   (fehér) logó sötét sziluett lesz, a sötét marad; a szigeteken (Franchise-ok logódoboza) a sötét
+   témáé (lent a .franchise-logo.dark) */
+:root[data-theme='light'] .franchise-logo:not(.dark),
+:root[data-theme='light'] .collection-banner:not([data-backdrop]) .collection-logo {
+  filter: brightness(0) opacity(0.82);
+}
+
+:root[data-theme='light'] .franchise-logo.dark {
+  filter: none;
+}
+
+:root[data-theme='light'] .fr-logo .franchise-logo:not(.dark) {
+  filter: none;
+}
+
+:root[data-theme='light'] .fr-logo .franchise-logo.dark {
+  filter: brightness(0) invert(1);
+}
+
+/* a Franchise-ok logódoboza: sötétben áttetsző sötétítés a sötét csempén – világos csempén ettől
+   szürke lenne, ezért itt tömör sötét (a sziget --bg-je, a csempe hangulatszínével keverve) */
+:root[data-theme='light'] .fr-logo {
+  background: var(--bg);
+}
+
+:root[data-theme='light'] .fr-main:hover .fr-logo {
+  background: var(--surface);
+}
+
+:root[data-theme='light'] .fr-tile[data-ambient] .fr-logo {
+  background: color-mix(in oklab, var(--ambient) 22%, var(--bg));
 }
 
 *,
@@ -271,7 +398,7 @@ input[type='checkbox']:focus-visible {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: oklch(100% 0 0 / 0.16) padding-box;
+  background: rgb(var(--tint) / 0.16) padding-box;
   border: 2px solid transparent; /* a látható fogantyú 6 px, a megfogható rész 10 px */
   border-radius: 999px;
 }
@@ -287,7 +414,7 @@ input[type='checkbox']:focus-visible {
 @supports not selector(::-webkit-scrollbar) {
   * {
     scrollbar-width: thin;
-    scrollbar-color: oklch(100% 0 0 / 0.16) transparent;
+    scrollbar-color: rgb(var(--tint) / 0.16) transparent;
   }
 }
 
@@ -397,9 +524,9 @@ body:has(> main.login) {
     background: var(--surface);
     border-radius: 14px;
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.05),
+      inset 0 1px 0 rgb(var(--tint) / 0.05),
       0 0 0 1px var(--edge),
-      0 40px 80px -20px rgb(0 0 0 / 0.6);
+      0 40px 80px -20px rgb(var(--shade) / calc(0.6 * var(--shade-k)));
   }
 
   .login-form input {
@@ -459,7 +586,9 @@ body:has(> main.login) {
   position: relative;
 }
 
-.more-btn {
+/* a téma váltógombja (terv-3 50, ThemeToggle) ugyanilyen kerek gomb, a ⋮ előtt */
+.more-btn,
+.theme-toggle {
   display: grid;
   place-items: center;
   width: 2.45rem;
@@ -472,10 +601,38 @@ body:has(> main.login) {
 }
 
 .more-btn:hover,
-.more-btn[aria-expanded='true'] {
+.more-btn[aria-expanded='true'],
+.theme-toggle:hover {
   color: var(--text);
   border-color: var(--muted);
   background-color: var(--hover-tint);
+}
+
+/* Mama oldalán felirattal (a „Kilépés” előtt) */
+.theme-toggle-labeled {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+/* a fejléc jobb oldala asztalon egy sorban (a váltógombbal sem törik el) */
+@media (min-width: 900px) {
+  .top > .account {
+    flex-wrap: nowrap;
+  }
+}
+
+/* telefonon az e-mail-cím nem látszik (Norbi döntése, terv-3 50): így a harang, a Kilépés, a
+   váltógomb és a ⋮ egy sorban elfér */
+@media (max-width: 640px) {
+  .top > .account {
+    flex-wrap: nowrap;
+    gap: 0.6rem;
+  }
+
+  .top > .account > .muted.small {
+    display: none;
+  }
 }
 
 .more-menu {
@@ -623,7 +780,7 @@ body:has(> main.login) {
   background: var(--surface-raised);
   border: 1px solid var(--edge);
   border-radius: 10px;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), var(--shadow-pop);
+  box-shadow: inset 0 1px 0 rgb(var(--tint) / 0.05), var(--shadow-pop);
 }
 
 /* ha a harang bal széléhez igazítva kilógna (a fejléc a szélességtől függően átrendeződik), a
@@ -851,11 +1008,11 @@ body:has(> main.login) {
   margin: 0 var(--gutter) 1.5rem;
   padding: 1.25rem;
   background: var(--surface);
-  border: 1px solid rgb(255 255 255 / 0.07);
+  border: 1px solid rgb(var(--tint) / 0.07);
   border-radius: 12px;
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.04),
-    0 18px 40px -24px rgb(0 0 0 / 0.7);
+    inset 0 1px 0 rgb(var(--tint) / 0.04),
+    0 18px 40px -24px rgb(var(--shade) / calc(0.7 * var(--shade-k)));
 }
 
 .search-row {
@@ -906,7 +1063,7 @@ body:has(> main.login) {
 }
 
 .result:hover {
-  background: rgb(255 255 255 / 0.045);
+  background: rgb(var(--tint) / 0.045);
 }
 
 /* kis borító (táblázat, kereső): szürke keret helyett hajszálvékony világos gyűrű a kép
@@ -920,8 +1077,8 @@ body:has(> main.login) {
   border-radius: 6px;
   background: var(--surface);
   box-shadow:
-    0 1px 2px rgb(0 0 0 / 0.45),
-    0 6px 16px -6px rgb(0 0 0 / 0.6);
+    0 1px 2px rgb(var(--shade) / calc(0.45 * var(--shade-k))),
+    0 6px 16px -6px rgb(var(--shade) / calc(0.6 * var(--shade-k)));
 }
 
 .thumb::after {
@@ -929,7 +1086,7 @@ body:has(> main.login) {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
+  box-shadow: inset 0 0 0 1px rgb(var(--tint) / 0.1);
   pointer-events: none;
   transition: box-shadow 0.15s;
 }
@@ -950,7 +1107,7 @@ body:has(> main.login) {
 
 .titles-table tbody tr:hover .thumb::after,
 .result:hover .thumb::after {
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.22);
+  box-shadow: inset 0 0 0 1px rgb(var(--tint) / 0.22);
 }
 
 /* a táblázat sorában a borító gomb: a szerkesztő ablakot nyitja (részletek, hasonló címek);
@@ -1086,8 +1243,8 @@ body:has(> main.login) {
   -webkit-backdrop-filter: blur(18px) saturate(1.5);
   backdrop-filter: blur(18px) saturate(1.5);
   border-image: none;
-  border-bottom-color: rgb(255 255 255 / 0.07);
-  box-shadow: 0 12px 28px -16px rgb(0 0 0 / 0.75);
+  border-bottom-color: rgb(var(--tint) / 0.07);
+  box-shadow: 0 12px 28px -16px rgb(var(--shade) / calc(0.75 * var(--shade-k)));
 }
 
 /* telefonon kinyitva se takarja el az egész képernyőt: legfeljebb 70%, belül görgethető */
@@ -1298,7 +1455,7 @@ body:has(> main.login) {
   background: var(--surface-raised);
   border: 1px solid var(--edge);
   border-radius: 8px;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), var(--shadow-pop);
+  box-shadow: inset 0 1px 0 rgb(var(--tint) / 0.05), var(--shadow-pop);
 }
 
 .franchise-listbox:focus {
@@ -1682,8 +1839,8 @@ fieldset.lock:disabled .stars {
   border-radius: 8px;
   background: linear-gradient(165deg, color-mix(in srgb, var(--surface), white 4%), var(--bg));
   box-shadow:
-    0 1px 2px rgb(0 0 0 / 0.35),
-    0 12px 24px -12px rgb(0 0 0 / 0.8);
+    0 1px 2px rgb(var(--shade) / calc(0.35 * var(--shade-k))),
+    0 12px 24px -12px rgb(var(--shade) / calc(0.8 * var(--shade-k)));
 }
 
 .poster::after {
@@ -1691,7 +1848,7 @@ fieldset.lock:disabled .stars {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+  box-shadow: inset 0 0 0 1px rgb(var(--tint) / 0.08);
   pointer-events: none;
 }
 
@@ -1746,12 +1903,12 @@ fieldset.lock:disabled .stars {
 
 /* ---------- Még meg nem jelent film (releaseState): szaggatott keret + dátumos jelvény ---------- */
 .card[data-release] .poster {
-  outline: 2px dashed rgb(255 255 255 / 0.32);
+  outline: 2px dashed rgb(var(--tint) / 0.32);
   outline-offset: 4px;
 }
 
 .titles-table tr[data-release] .thumb {
-  outline: 1.5px dashed rgb(255 255 255 / 0.36);
+  outline: 1.5px dashed rgb(var(--tint) / 0.36);
   outline-offset: 3px;
 }
 
@@ -1763,8 +1920,8 @@ fieldset.lock:disabled .stars {
   font-weight: 650;
   line-height: 1.5;
   color: var(--text);
-  background: rgb(255 255 255 / 0.07);
-  border: 1px dashed rgb(255 255 255 / 0.32);
+  background: rgb(var(--tint) / 0.07);
+  border: 1px dashed rgb(var(--tint) / 0.32);
   border-radius: 999px;
   white-space: nowrap;
 }
@@ -1783,7 +1940,7 @@ fieldset.lock:disabled .stars {
   grid-template-columns: auto minmax(0, 1fr);
   max-width: calc(100% - 1rem);
   padding: 0.15rem 0.6rem;
-  background: rgb(13 17 23 / 0.82);
+  background: rgb(var(--glass) / 0.82);
   border-radius: 0.75rem;
 }
 
@@ -1859,9 +2016,9 @@ fieldset.lock:disabled .stars {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--text);
-  background: rgb(13 17 23 / 0.8);
+  background: rgb(var(--glass) / 0.8);
   border-radius: 999px;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
+  box-shadow: inset 0 0 0 1px rgb(var(--tint) / 0.1);
 }
 
 .badge::before {
@@ -1886,10 +2043,10 @@ fieldset.lock:disabled .stars {
   height: 2rem;
   padding: 0;
   color: var(--text);
-  background: rgb(13 17 23 / 0.8);
-  border: 1px solid rgb(255 255 255 / 0.14);
+  background: rgb(var(--glass) / 0.8);
+  border: 1px solid rgb(var(--tint) / 0.14);
   border-radius: 50%;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.35); /* világos borítón is kiváljon */
+  box-shadow: 0 2px 8px rgb(var(--shade) / calc(0.35 * var(--shade-k))); /* világos borítón is kiváljon */
 }
 
 .edit-btn:hover {
@@ -1996,7 +2153,7 @@ fieldset.lock:disabled .stars {
   border: 1px solid transparent;
   border-radius: 4px;
   color: var(--muted);
-  background: rgb(255 255 255 / 0.065);
+  background: rgb(var(--tint) / 0.065);
   font-weight: 600;
   letter-spacing: 0.01em;
   white-space: nowrap;
@@ -2163,7 +2320,7 @@ fieldset.lock:disabled .stars {
 /* rámutatáskor és billentyűzettel is látszik, melyik sorban vagyunk */
 .titles-table tbody tr:hover > td,
 .titles-table tbody tr:has(:focus-visible) > td {
-  background: rgb(255 255 255 / 0.04);
+  background: rgb(var(--tint) / 0.04);
 }
 
 /* állapotszín a sor bal szélén: a borító magasságában álló, lekerekített pálca (helyet nem
@@ -2533,16 +2690,16 @@ fieldset.lock:disabled .stars {
   font-weight: 800;
   line-height: 1;
   color: var(--accent-2);
-  background: rgb(13 17 23 / 0.8);
+  background: rgb(var(--glass) / 0.8);
   border-radius: 50%;
   box-shadow:
     inset 0 0 0 1px var(--accent-2-line),
-    0 2px 8px rgb(0 0 0 / 0.35);
+    0 2px 8px rgb(var(--shade) / calc(0.35 * var(--shade-k)));
 }
 
 .card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .mama-mark {
   color: var(--muted);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.14);
+  box-shadow: inset 0 0 0 1px rgb(var(--tint) / 0.14);
 }
 
 .icon-btn {
@@ -2687,7 +2844,7 @@ button.season:hover {
   background: var(--surface-raised);
   border: 1px solid var(--edge);
   border-radius: 10px;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), var(--shadow-pop);
+  box-shadow: inset 0 1px 0 rgb(var(--tint) / 0.05), var(--shadow-pop);
 }
 
 .season-list {
@@ -2789,7 +2946,7 @@ button.season:hover {
   padding: 0.75rem 1rem 0.6rem;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: rgb(255 255 255 / 0.02);
+  background: rgb(var(--tint) / 0.02);
 }
 
 .tl-track {
@@ -2835,7 +2992,7 @@ button.season:hover {
   top: 2.1rem;
   bottom: 1.25rem;
   width: 0;
-  border-left: 1.5px dashed rgb(255 255 255 / 0.45);
+  border-left: 1.5px dashed rgb(var(--tint) / 0.45);
 }
 
 .tl-today span {
@@ -2955,7 +3112,7 @@ button.season:hover {
   height: 5px;
   border: 0;
   border-radius: 0;
-  background: rgb(255 255 255 / 0.22);
+  background: rgb(var(--tint) / 0.22);
 }
 
 .poster .season[data-status='watching'] {
@@ -2968,7 +3125,7 @@ button.season:hover {
 
 .poster .season[data-upcoming] {
   opacity: 1;
-  background: repeating-linear-gradient(90deg, rgb(255 255 255 / 0.3) 0 3px, transparent 3px 6px);
+  background: repeating-linear-gradient(90deg, rgb(var(--tint) / 0.3) 0 3px, transparent 3px 6px);
 }
 
 /* ---------- IMDb-értékelések betöltése (ablak) ---------- */
@@ -3182,7 +3339,7 @@ button.season:hover {
   aspect-ratio: 2 / 3;
   object-fit: cover;
   border-radius: 13px;
-  box-shadow: 0 6px 16px -6px rgb(0 0 0 / 0.6);
+  box-shadow: 0 6px 16px -6px rgb(var(--shade) / calc(0.6 * var(--shade-k)));
 }
 
 /* a borító az adatlapot nyitja (előnézet): rámutatva / fókusznál türkiz gyűrű */
@@ -3203,14 +3360,14 @@ button.season:hover {
 .discover-poster:focus-visible img {
   box-shadow:
     0 0 0 2px var(--accent),
-    0 6px 16px -6px rgb(0 0 0 / 0.6);
+    0 6px 16px -6px rgb(var(--shade) / calc(0.6 * var(--shade-k)));
 }
 
 @media (hover: hover) {
   .discover-poster:hover img {
     box-shadow:
       0 0 0 2px var(--accent),
-      0 6px 16px -6px rgb(0 0 0 / 0.6);
+      0 6px 16px -6px rgb(var(--shade) / calc(0.6 * var(--shade-k)));
   }
 }
 
@@ -3257,14 +3414,14 @@ button.season:hover {
   height: 1.65rem;
   padding: 0;
   color: var(--text);
-  background: rgb(8 11 16 / 0.75);
-  border: 1px solid rgb(255 255 255 / 0.18);
+  background: rgb(var(--glass) / 0.75);
+  border: 1px solid rgb(var(--tint) / 0.18);
   border-radius: 999px;
 }
 
 .hide-btn:hover {
   color: var(--accent);
-  background: rgb(8 11 16 / 0.92);
+  background: rgb(var(--glass) / 0.92);
   border-color: var(--accent-line);
 }
 
@@ -3330,7 +3487,7 @@ button.season:hover {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(0deg, rgb(11 15 21 / 0.85), transparent 45%);
+  background: linear-gradient(0deg, rgb(var(--glass) / 0.85), transparent 45%);
 }
 
 .featured-slide .hide-btn {
@@ -3358,7 +3515,7 @@ button.season:hover {
   max-height: 5.5rem;
   object-fit: contain;
   object-position: left bottom;
-  filter: drop-shadow(0 2px 10px rgb(0 0 0 / 0.6));
+  filter: drop-shadow(0 2px 10px rgb(var(--shade) / calc(0.6 * var(--shade-k))));
 }
 
 .featured-name {
@@ -3432,7 +3589,7 @@ button.season:hover {
   content: "";
   width: 0.5rem;
   height: 0.5rem;
-  background: rgb(255 255 255 / 0.28);
+  background: rgb(var(--tint) / 0.28);
   border-radius: 999px;
 }
 
@@ -3454,8 +3611,8 @@ button.season:hover {
   font-size: 1.3rem;
   line-height: 1;
   color: #fff;
-  background: rgb(10 14 20 / 0.55);
-  border: 1px solid rgb(255 255 255 / 0.18);
+  background: rgb(var(--glass) / 0.55);
+  border: 1px solid rgb(var(--tint) / 0.18);
   border-radius: 50%;
   backdrop-filter: blur(8px);
 }
@@ -3601,7 +3758,7 @@ button.season:hover {
   padding: 0.7rem 1rem;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: rgb(255 255 255 / 0.025);
+  background: rgb(var(--tint) / 0.025);
 }
 
 .collection-logo {
@@ -3617,7 +3774,7 @@ button.season:hover {
   height: 6px;
   overflow: hidden;
   border-radius: 3px;
-  background: rgb(255 255 255 / 0.1);
+  background: rgb(var(--tint) / 0.1);
 }
 
 /* zöld: a listán lévők közül a megnézettek aránya (Norbi döntése, 2026-10-06: türkiz nincs, a
@@ -3678,7 +3835,7 @@ button.season:hover {
 }
 
 .fr-tile[data-ambient] .fr-logo {
-  background: color-mix(in oklab, var(--ambient) 22%, rgb(0 0 0 / 0.32));
+  background: color-mix(in oklab, var(--ambient) 22%, rgb(var(--shade) / calc(0.32 * var(--shade-k))));
 }
 
 .fr-main {
@@ -3704,13 +3861,13 @@ button.season:hover {
   place-items: center;
   height: 5rem;
   padding: 0.6rem;
-  background: rgb(0 0 0 / 0.28);
+  background: rgb(var(--shade) / calc(0.28 * var(--shade-k)));
   border-radius: 12px;
   transition: background-color 0.15s;
 }
 
 .fr-main:hover .fr-logo {
-  background: rgb(255 255 255 / 0.06);
+  background: rgb(var(--tint) / 0.06);
 }
 
 .fr-logo .franchise-logo {
@@ -3891,8 +4048,8 @@ button.season:hover {
   overflow: hidden;
   min-height: 8rem;
   padding: 1rem 1.25rem;
-  border-color: rgb(255 255 255 / 0.1);
-  background: rgb(10 13 18 / 0.55);
+  border-color: rgb(var(--tint) / 0.1);
+  background: rgb(var(--glass) / 0.55);
 }
 
 .collection-banner[data-backdrop]::before {
@@ -3921,7 +4078,7 @@ button.season:hover {
 .collection-banner[data-backdrop] .collection-logo {
   height: 2.6rem;
   max-width: 12rem;
-  filter: drop-shadow(0 2px 6px rgb(0 0 0 / 0.6));
+  filter: drop-shadow(0 2px 6px rgb(var(--shade) / calc(0.6 * var(--shade-k))));
 }
 
 .collection-banner[data-backdrop] .collection-count {
@@ -3929,7 +4086,7 @@ button.season:hover {
 }
 
 .collection-banner[data-backdrop] .ghost {
-  background: rgb(10 13 18 / 0.45);
+  background: rgb(var(--glass) / 0.45);
 }
 
 .editor.collection-dialog {
@@ -3951,7 +4108,7 @@ button.season:hover {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgb(10 13 18 / 0.9), rgb(10 13 18 / 0.35) 70%),
+    linear-gradient(90deg, rgb(var(--glass) / 0.9), rgb(var(--glass) / 0.35) 70%),
     linear-gradient(transparent 40%, var(--surface));
 }
 
@@ -4018,7 +4175,7 @@ button.season:hover {
   font-size: 0.75rem;
   font-weight: 750;
   border-radius: 7px;
-  background: rgb(8 11 16 / 0.72);
+  background: rgb(var(--glass) / 0.72);
 }
 
 .collection-poster img,
@@ -4037,7 +4194,7 @@ button.season:hover {
 
 /* a listáról hiányzó rész: szaggatott keret, halványabb borító */
 .collection-parts li[data-state='missing'] .collection-poster {
-  outline: 2px dashed rgb(255 255 255 / 0.22);
+  outline: 2px dashed rgb(var(--tint) / 0.22);
   outline-offset: 4px;
   border-radius: 16px;
 }
@@ -4568,7 +4725,7 @@ button.season:hover {
   overflow: hidden;
   border-radius: 6px;
   background: var(--placeholder-bg);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+  box-shadow: inset 0 0 0 1px rgb(var(--tint) / 0.08);
 }
 
 .similar-poster img {
@@ -4696,7 +4853,7 @@ button.season:hover {
   font-size: 0.75rem;
   border-radius: 999px;
   color: var(--muted);
-  background: rgb(255 255 255 / 0.06);
+  background: rgb(var(--tint) / 0.06);
 }
 
 .bulk-row[data-status='sure'] .bulk-tag {
@@ -4870,8 +5027,8 @@ body:has(.pagination.docked) .site-footer {
   bottom: var(--docked-footer-h);
   margin-top: auto;
   padding: 0.65rem var(--gutter);
-  border-top: 1px solid rgb(255 255 255 / 0.07);
-  box-shadow: 0 -12px 28px -16px rgb(0 0 0 / 0.75);
+  border-top: 1px solid rgb(var(--tint) / 0.07);
+  box-shadow: 0 -12px 28px -16px rgb(var(--shade) / calc(0.75 * var(--shade-k)));
 }
 
 body:has(.pagination.docked) .site-footer {
@@ -4953,16 +5110,16 @@ body:has(.pagination.docked) .toaster {
   padding: 0;
   color: var(--text);
   background: var(--surface);
-  border: 1px solid rgb(255 255 255 / 0.09);
+  border: 1px solid rgb(var(--tint) / 0.09);
   border-radius: 14px;
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.05),
-    0 2px 6px rgb(0 0 0 / 0.3),
-    0 28px 70px -12px rgb(0 0 0 / 0.65);
+    inset 0 1px 0 rgb(var(--tint) / 0.05),
+    0 2px 6px rgb(var(--shade) / calc(0.3 * var(--shade-k))),
+    0 28px 70px -12px rgb(var(--shade) / calc(0.65 * var(--shade-k)));
 }
 
 .editor::backdrop {
-  background: rgb(7 10 15 / 0.62);
+  background: rgb(var(--scrim) / calc(0.62 * var(--scrim-k)));
   -webkit-backdrop-filter: blur(5px);
   backdrop-filter: blur(5px);
 }
@@ -4983,7 +5140,7 @@ body:has(.pagination.docked) .toaster {
   }
 
   .editor[open]::backdrop {
-    background-color: rgb(7 10 15 / 0);
+    background-color: rgb(var(--scrim) / calc(0 * var(--scrim-k)));
     backdrop-filter: blur(0);
   }
 }
@@ -5051,7 +5208,7 @@ body:has(.editor[open]) {
   width: 3.5rem;
   height: 3.5rem;
   border-radius: 12px;
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1);
+  box-shadow: 0 0 0 1px rgb(var(--tint) / 0.1);
 }
 
 .watch-source {
@@ -5089,7 +5246,7 @@ body:has(.editor[open]) {
   overflow: hidden;
   border-radius: 50%;
   background: var(--placeholder-bg);
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.12);
+  box-shadow: 0 0 0 1px rgb(var(--tint) / 0.12);
 }
 
 .cast-photo img {
@@ -5175,8 +5332,8 @@ body:has(.editor[open]) {
     border-radius: 10px;
     background: var(--placeholder-bg);
     box-shadow:
-      inset 0 0 0 1px rgb(255 255 255 / 0.08),
-      0 12px 28px -10px rgb(0 0 0 / 0.7);
+      inset 0 0 0 1px rgb(var(--tint) / 0.08),
+      0 12px 28px -10px rgb(var(--shade) / calc(0.7 * var(--shade-k)));
   }
 
   .editor-poster img {
@@ -5298,7 +5455,7 @@ body:has(.editor[open]) {
   overflow: hidden;
   background: #000;
   border-radius: 14px;
-  box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.7);
+  box-shadow: 0 10px 30px -12px rgb(var(--shade) / calc(0.7 * var(--shade-k)));
 }
 
 .trailer iframe {
@@ -5496,7 +5653,7 @@ body:has(.editor[open]) {
 
 .danger {
   background: var(--danger);
-  color: #2a0d09;
+  color: var(--danger-ink);
   border: 0;
   border-radius: 999px;
   padding: 0.6rem 1rem;
@@ -5556,7 +5713,7 @@ body:has(.editor[open]) {
   padding: 0.8rem 1rem;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: rgb(255 255 255 / 0.025);
+  background: rgb(var(--tint) / 0.025);
 }
 
 .wo-share p {
@@ -5629,12 +5786,12 @@ a.wo-share-open {
   padding: 1.5rem 1.75rem;
   border: 1px solid var(--line);
   border-radius: 22px;
-  background: rgb(255 255 255 / 0.025);
+  background: rgb(var(--tint) / 0.025);
 }
 
 .share-hero[data-backdrop] {
-  border-color: rgb(255 255 255 / 0.1);
-  background: rgb(10 13 18 / 0.55);
+  border-color: rgb(var(--tint) / 0.1);
+  background: rgb(var(--glass) / 0.55);
 }
 
 .share-hero[data-backdrop]::before {
@@ -5675,7 +5832,7 @@ a.wo-share-open {
   height: 4rem;
   object-fit: contain;
   object-position: left center;
-  filter: drop-shadow(0 2px 6px rgb(0 0 0 / 0.6));
+  filter: drop-shadow(0 2px 6px rgb(var(--shade) / calc(0.6 * var(--shade-k))));
 }
 
 .share-sub {
@@ -5843,7 +6000,7 @@ a.wo-share-open {
 /* a forrásmegjelölés linkjei visszafogottak: halvány aláhúzás, rámutatva türkiz */
 .site-footer a {
   color: var(--text);
-  text-decoration-color: rgb(233 237 242 / 0.35);
+  text-decoration-color: color-mix(in srgb, var(--text) 35%, transparent);
 }
 
 .site-footer a:hover {
@@ -5969,17 +6126,17 @@ a.wo-share-open {
 }
 
 .editor.title-editor[data-ambient] {
-  border-color: color-mix(in oklab, var(--ambient) 45%, rgb(255 255 255 / 0.09));
+  border-color: color-mix(in oklab, var(--ambient) 45%, rgb(var(--tint) / 0.09));
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.05),
-    0 2px 6px rgb(0 0 0 / 0.3),
-    0 28px 70px -12px rgb(0 0 0 / 0.65),
+    inset 0 1px 0 rgb(var(--tint) / 0.05),
+    0 2px 6px rgb(var(--shade) / calc(0.3 * var(--shade-k))),
+    0 28px 70px -12px rgb(var(--shade) / calc(0.65 * var(--shade-k))),
     0 0 160px -20px color-mix(in oklab, var(--ambient) 55%, transparent);
 }
 
 /* a háttér (elsötétített lista) is kicsit a film színét kapja */
 .title-editor[data-ambient][open]::backdrop {
-  background-color: color-mix(in oklab, var(--ambient, rgb(7 10 15)) 18%, rgb(7 10 15 / 0.66));
+  background-color: color-mix(in oklab, var(--ambient, rgb(var(--scrim))) 18%, rgb(var(--scrim) / calc(0.66 * var(--scrim-k))));
 }
 
 /* telefonon (nincs nagy borító): az ablak teteje dereng */
@@ -5996,7 +6153,7 @@ a.wo-share-open {
 
   .title-editor[data-ambient] .editor-poster {
     box-shadow:
-      inset 0 0 0 1px rgb(255 255 255 / 0.08),
+      inset 0 0 0 1px rgb(var(--tint) / 0.08),
       0 20px 60px -10px color-mix(in oklab, var(--ambient) 80%, transparent);
   }
 }
@@ -6020,7 +6177,7 @@ a.wo-share-open {
 
 .titles-table tbody tr[data-ambient]:hover .thumb {
   box-shadow:
-    0 1px 2px rgb(0 0 0 / 0.45),
+    0 1px 2px rgb(var(--shade) / calc(0.45 * var(--shade-k))),
     0 6px 20px -6px color-mix(in oklab, var(--ambient) 75%, transparent);
 }
 
@@ -6406,7 +6563,7 @@ input[type='checkbox']:checked {
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgb(0 0 0 / 0.15) 0%,
+    rgb(var(--shade) / calc(0.15 * var(--shade-k))) 0%,
     transparent 35%,
     color-mix(in oklab, var(--surface) 70%, transparent) 75%,
     var(--surface) 100%
@@ -6421,8 +6578,8 @@ input[type='checkbox']:checked {
 
   .editor-page.has-backdrop .editor-poster {
     box-shadow:
-      inset 0 0 0 1px rgb(255 255 255 / 0.1),
-      0 22px 50px -12px rgb(0 0 0 / 0.85);
+      inset 0 0 0 1px rgb(var(--tint) / 0.1),
+      0 22px 50px -12px rgb(var(--shade) / calc(0.85 * var(--shade-k)));
   }
 
   .editor-page.has-backdrop form {
@@ -6485,7 +6642,7 @@ input[type='checkbox']:checked {
     height: 5px;
     border-radius: 999px;
     background: color-mix(in oklab, var(--muted) 60%, transparent);
-    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.25);
+    box-shadow: 0 0 0 1px rgb(var(--shade) / calc(0.25 * var(--shade-k)));
   }
 
   .editor-page:not(.has-backdrop) form {
@@ -6520,8 +6677,8 @@ input[type='checkbox']:checked {
     border: 0;
     border-radius: 50%;
     box-shadow:
-      0 6px 16px -4px rgb(0 0 0 / 0.6),
-      inset 0 0 0 1px rgb(255 255 255 / 0.12),
+      0 6px 16px -4px rgb(var(--shade) / calc(0.6 * var(--shade-k))),
+      inset 0 0 0 1px rgb(var(--tint) / 0.12),
       0 0 24px -4px color-mix(in oklab, var(--accent) 60%, transparent);
     transition: translate 0.2s ease-out, background-color 0.15s;
   }
@@ -7025,6 +7182,14 @@ input[type='checkbox']:checked {
   line-height: 1.1;
 }
 
+/* a téma váltógombja és a Kilépés (terv-3 50); telefonon a cím fölött, jobbra (lent) */
+.mama-head-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.6rem;
+}
+
 .mama-head p {
   margin: 0.4rem 0 0;
   font-size: 1.05rem;
@@ -7187,7 +7352,7 @@ input[type='checkbox']:checked {
   top: 0.8rem;
   right: 0.8rem;
   z-index: 2;
-  background: rgb(10 14 20 / 0.55);
+  background: rgb(var(--glass) / 0.55);
 }
 
 .mama-backdrop {
@@ -7222,7 +7387,7 @@ input[type='checkbox']:checked {
   overflow: hidden;
   background: var(--placeholder-bg) var(--icon-film) center / 40% no-repeat;
   border-radius: 20px;
-  box-shadow: 0 12px 30px rgb(0 0 0 / 0.5);
+  box-shadow: 0 12px 30px rgb(var(--shade) / calc(0.5 * var(--shade-k)));
 }
 
 .mama-detail-poster img {
@@ -7278,6 +7443,20 @@ input[type='checkbox']:checked {
 @media (max-width: 640px) {
   .mama-page {
     padding: 1.2rem 1rem 2rem;
+  }
+
+  .mama-head {
+    flex-wrap: wrap;
+    gap: 0.75rem 0;
+  }
+
+  .mama-head > div:first-child {
+    order: 2;
+    flex-basis: 100%;
+  }
+
+  .mama-head-actions {
+    margin-left: auto;
   }
 
   .mama-head h1 {

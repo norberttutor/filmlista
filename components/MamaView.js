@@ -6,6 +6,7 @@ import { toast } from '@/lib/toast';
 import Toaster from '@/components/Toaster';
 import ImdbBadge from '@/components/ImdbBadge';
 import MamaDetail from '@/components/MamaDetail';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const POSTER = 'https://image.tmdb.org/t/p/w185';
 const PAGE = 24; // ennyi film látszik, utána „További filmek”
@@ -113,9 +114,13 @@ export default function MamaView() {
           <h1>Norbi filmjei</h1>
           <p>Jelöld meg, melyik érdekel – a filmre kattintva többet is megtudhatsz róla.</p>
         </div>
-        <button type="button" className="ghost" onClick={() => supabase.auth.signOut()}>
-          Kilépés
-        </button>
+        {/* világos / sötét téma (terv-3 50): Mamánál felirattal, az alapja a világos */}
+        <div className="mama-head-actions">
+          <ThemeToggle labeled />
+          <button type="button" className="ghost" onClick={() => supabase.auth.signOut()}>
+            Kilépés
+          </button>
+        </div>
       </header>
 
       {list && !loadError && (

@@ -37,6 +37,7 @@ import StatsDialog from '@/components/StatsDialog';
 import ManualDialog from '@/components/ManualDialog';
 import BackupsDialog from '@/components/BackupsDialog';
 import MoreMenu from '@/components/MoreMenu';
+import ThemeToggle from '@/components/ThemeToggle';
 import FranchisesDialog from '@/components/FranchisesDialog';
 import Toaster from '@/components/Toaster';
 import EmptyState from '@/components/EmptyState';
@@ -1130,6 +1131,8 @@ export default function Watchlist({ session }) {
           <button type="button" className="ghost" onClick={() => supabase.auth.signOut()}>
             Kilépés
           </button>
+          {/* világos / sötét téma (terv-3 50, Norbi kérése: a ⋮ menü mellett) */}
+          <ThemeToggle />
           {/* a ritkábban használt műveletek a ⋮ menüben (mint a Chrome-ban); a tömeges import és
               a mentés csak asztali nézetben */}
           {!loading && !loadError && (
