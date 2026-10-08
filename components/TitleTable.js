@@ -18,6 +18,7 @@ import GenreList from '@/components/GenreList';
 import ReleaseBadge from '@/components/ReleaseBadge';
 import { hasSeasons, SeasonCell, SeasonDownloads } from '@/components/Seasons';
 import { useStrike } from '@/lib/useStrike';
+import Reflow from '@/components/Reflow';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w154';
@@ -37,9 +38,12 @@ export default function TitleTable({
   onDelete,
   readOnly, // net nélkül (terv-3 44): a vezérlők letiltva
   paging, // lapozás után: a sorok egymás után úsznak be (terv-3 49.8)
+  reflowKey, // ha változik (szűrés / rendezés): a sorok a helyükre csúsznak (terv-3 49.3)
 }) {
+  const wrapRef = useRef(null);
+  const bodyRef = useRef(null);
   return (
-    <div className="table-wrap">
+    <div className="table-wrap" ref={wrapRef}>
       <table className="titles-table">
         <thead>
           <tr>
@@ -61,24 +65,27 @@ export default function TitleTable({
             </th>
           </tr>
         </thead>
-        <tbody data-paging={paging ? '' : undefined}>
-          {entries.map((e) => (
-            <TitleRow
-              key={e.key}
-              title={e.title}
-              item={e.item}
-              statuses={statuses}
-              franchises={franchises}
-              onCreateFranchise={onCreateFranchise}
-              onDeleteFranchise={onDeleteFranchise}
-              onRenameFranchise={onRenameFranchise}
-              onEdit={onEdit}
-              onUpdated={onUpdated}
-              onDelete={onDelete}
-              readOnly={readOnly}
-            />
-          ))}
-        </tbody>
+        <Reflow trigger={reflowKey} boxRef={bodyRef} layerRef={wrapRef}>
+          <tbody ref={bodyRef} data-paging={paging ? '' : undefined}>
+            {entries.map((e) => (
+              <TitleRow
+                key={e.key}
+                flipKey={e.key}
+                title={e.title}
+                item={e.item}
+                statuses={statuses}
+                franchises={franchises}
+                onCreateFranchise={onCreateFranchise}
+                onDeleteFranchise={onDeleteFranchise}
+                onRenameFranchise={onRenameFranchise}
+                onEdit={onEdit}
+                onUpdated={onUpdated}
+                onDelete={onDelete}
+                readOnly={readOnly}
+              />
+            ))}
+          </tbody>
+        </Reflow>
       </table>
     </div>
   );
@@ -95,6 +102,7 @@ export function Lock({ on, children }) {
 }
 
 function TitleRow({
+  flipKey, // a sor kulcsa az animált átrendeződéshez (Reflow)
   title: t,
   item,
   statuses,
@@ -155,6 +163,7 @@ function TitleRow({
 
   return (
     <tr
+      data-flip={flipKey}
       data-status={item ? item.status : t.status}
       data-release={release ? release.kind : undefined}
       onPointerEnter={() => setPointed(true)}

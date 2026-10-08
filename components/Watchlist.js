@@ -10,6 +10,7 @@ import TitleSearch from '@/components/TitleSearch';
 import { recommendSeeds } from '@/components/Discover';
 import TitleEditor from '@/components/TitleEditor';
 import TitleTable from '@/components/TitleTable';
+import Reflow from '@/components/Reflow';
 import {
   titleKey,
   updateTitle,
@@ -715,6 +716,7 @@ export default function Watchlist({ session }) {
   const page = Math.min(Math.floor(first / pageSize) + 1, pageCount);
   const paged = visible.slice((page - 1) * pageSize, page * pageSize);
   const filtersRef = useRef(null);
+  const gridRef = useRef(null); // a borítófal (animált átrendeződés, terv-3 49.3)
   // a szűrősor eredeti helye: lapozáskor ide görget (a letapadt szűrősorhoz nem lehetne)
   const filtersAnchorRef = useRef(null);
   const [filtersStuck, setFiltersStuck] = useState(false);
@@ -1604,20 +1606,23 @@ export default function Watchlist({ session }) {
               onDelete={requestDelete}
               readOnly={readOnly}
               paging={pageAnim > 0}
+              reflowKey={filterKey}
             />
           ) : (
-            <ul className="grid" data-paging={pageAnim > 0 ? '' : undefined}>
-              {paged.map((e) => (
-                <li key={e.key}>
-                  <PosterCard
-                    title={e.title}
-                    item={e.item}
-                    franchise={franchiseName.get(e.title.franchise_id)}
-                    onEdit={openEditor}
-                  />
-                </li>
-              ))}
-            </ul>
+            <Reflow trigger={filterKey} boxRef={gridRef}>
+              <ul ref={gridRef} className="grid" data-paging={pageAnim > 0 ? '' : undefined}>
+                {paged.map((e) => (
+                  <li key={e.key} data-flip={e.key}>
+                    <PosterCard
+                      title={e.title}
+                      item={e.item}
+                      franchise={franchiseName.get(e.title.franchise_id)}
+                      onEdit={openEditor}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </Reflow>
           )}
 
           {ofType.length > 0 && (

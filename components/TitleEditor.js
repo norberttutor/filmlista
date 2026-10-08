@@ -494,6 +494,11 @@ function TitlePage({
               {/* előnézetnél csak a TMDB-adatokkal (a találatban nincs megjelenési dátum) */}
               {(!preview || details) && <ReleaseBadge state={releaseState(t)} />}
             </p>
+            {/* műfajok, pötty nélkül (mint Mama adatlapján; Norbi kérése, 2026-10-08) – előnézetnél a
+                TMDB-adatokból ({ id, name }), amint megjöttek */}
+            {t.genres?.length > 0 && (
+              <p className="editor-genres">{t.genres.map((g) => (typeof g === 'string' ? g : g.name)).join(' · ')}</p>
+            )}
             {entry.added && (
               <p className="added-note" role="status">
                 ✓ Felkerült a listádra – itt beállíthatod az állapotát és az értékelését.

@@ -242,7 +242,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `--ambient` CSS-változó + `data-ambient` jelző; a CSS („Hangulatszín a borítóból” szakasz)
   csak ilyenkor színez: a szerkesztő ablak a borító mögül dereng (színezett keret, árnyék,
   háttér), a kártya rámutatva fénylik, a táblázat rámutatott sora halványan színeződik
-- `components/TitleEditor.js` – natív `<dialog>` (fejlécben a leírás). **Adatlapok egymás mögött**
+- `components/TitleEditor.js` – natív `<dialog>` (fejlécben a leírás; a cím adatai – `.meta` – alatt a
+  műfajok sima szövegként, „Akció · Sci-Fi”, **pötty nélkül**, mint Mama adatlapján – `.editor-genres`,
+  Norbi kérése, 2026-10-08; előnézetnél a TMDB-adatokból, amint megjöttek; próba: `munka/e2e/test-mufaj.mjs`). **Adatlapok egymás mögött**
   (terv-3 31-es pont, 2026-10-05): az ablak (`TitleEditor`) lapokat tart (`stack`: `{ id, rowId, item,
   added }`), mindig az utolsó látszik, a többi rejtve megmarad (`.editor-page[hidden]`, a görgetési
   helyével); a lap sora a `titles` propból jön (a listáról nyitottnál `rowId` szerint, különben
@@ -355,6 +357,18 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/ListSkeleton.js` – csontváz-betöltés a lista helyén, amíg tölt (asztali
   listanézetben 6 sor, egyébként 12 kártya körvonala, csillogó áthúzással; felolvasónak „Lista
   betöltése…”); a `SimilarTitles` betöltése is borító-körvonalakkal (`.similar-sk`)
+- `components/Reflow.js` – **animált átrendeződés szűréskor / rendezéskor** (terv-3 49.3, 2026-10-08,
+  látványterv nélkül – Norbi kérése): `<Reflow trigger boxRef layerRef>` a borítófal `ul.grid`-je (a
+  `Watchlist`-ben) és a táblázat `tbody`-ja (`TitleTable`, `reflowKey`) körül; a trigger a `filterKey`
+  (szűrés, rendezés, keresés – a lapozás nem). Saját FLIP (Web Animations), nem View Transitions (az a
+  lap fölé rajzolna – a mozgó kártyák a letapadt szűrősor fölé kerülnének –, és közben a lap nem
+  kattintható): a DOM-módosítás előtt (`getSnapshotBeforeUpdate`, ezért osztálykomponens) megméri a
+  `data-flip="<kulcs>"` tételeket; utána a megmaradók a régi helyükről csúsznak (0,32 s, `composite:
+  add` – a görgetéses beúszás alatta marad), az újak beúsznak (0,28 s, 90 ms késéssel), a kiesők
+  klónja (`.reflow-ghost`, `aria-hidden`, `inert`, azonosítók nélkül; sornál saját `<table>`-ben a
+  fejléc oszlopszélességeivel) a régi helyén 0,2 s alatt elhalványul – a `.grid` / `.table-wrap` ezért
+  `position: relative`. Csak a képernyőn látszókat mozgatja; félbehagyott mozgásból a látható helyről
+  folytat; „kevesebb mozgás” módban nem mozog (maga nézi). Teszt: `munka/e2e/test-49-3.mjs`
 - `lib/viewTransition.js` – `canMorph(elem)` (támogatott böngésző, ≥ 900 px, nincs „kevesebb
   mozgás”, az elem a lapon van) és `MORPH_NAME` (`editor-poster`); `trackTransition(t)` (a
   `Watchlist.openEditor` hívja) és `afterTransition()` – a megnyitás közben érkező, nem sürgős
@@ -942,7 +956,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   kártyáinak beúszása (a görgetés vezérli: `animation-timeline: view()`); lapozáskor a kártyák /
   táblázatsorok lépcsőzetes beúszása (terv-3 49.8, 2026-10-08: 0,3 s + elemenként 22 ms,
   `sibling-index()`; a `Watchlist` ~1,2 s-ig `data-paging` jelzőt ad a rácsra / a `tbody`-ra –
-  `pageAnim` –, addig ez váltja a görgetéses beúszást); a csillagok
+  `pageAnim` –, addig ez váltja a görgetéses beúszást); szűréskor / rendezéskor az animált
+  átrendeződés (terv-3 49.3, 2026-10-08: csúszás 0,32 s, beúszás 0,28 s, halványulás 0,2 s –
+  `components/Reflow.js`, JS-ből, ezért a „kevesebb mozgás”-t maga nézi); a csillagok
   pattanása (0,34 s, egymás után); a pipa bepattanása (átmenet, betöltéskor nem mozog); a harang
   rezzenése (0,9 s, egyszer); a csontváz csillogása (1,4 s, ismétlődik); az értesítősáv
   fogyó csíkja (a sáv ideje, 8 s, lineáris – a hátralévő időt mutatja); a kihúzás (terv-3 40,
@@ -1053,6 +1069,8 @@ azonnal megnyílik, net nélkül csak olvasható, utána magától frissül. Fel
 belül, a ⋮ menüből (terv-3 48, 2026-10-08). Megosztható nézési sorrend: csak olvasható nyilvános link
 egy franchise sorrendjéhez (`/sorrend/<token>`), visszavonható (terv-3 41, 2026-10-08). Világos / sötét téma
 (terv-3 50, 2026-10-08): váltógomb a ⋮ mellett, a világos „B – meleg papír”, Mama alapja világos.
+Animált átrendeződés szűréskor / rendezéskor: a kártyák és sorok a helyükre csúsznak, a kiesők
+elhalványulnak, az újak beúsznak (terv-3 49.3, 2026-10-08) – ezzel a 49-es kinézeti kör lezárult.
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -1083,13 +1101,13 @@ látszik nála, ebből 24 „Érdekel”; napló: `munka/terv-3/13-mama/ALLAPOT.
 van ×. A 46-os – kiemelt sáv –, a 43-as – gyorsindítók – és a 42-es – ízlésprofil – kész, 2026-10-07; a
 44-es – offline indulás – kész, 2026-10-08. A 48-as – felhasználói leírás a ⋮ menüből – kész,
 2026-10-08.)
-**Norbi kérése (2026-10-08, Claude kinézeti javaslataiból)** – utána; mindegyik alpontnál **előbb
-látványterv** (Norbi kéri, amelyikhez akarja), beépítés csak jóváhagyás után; részletek a TERV.md-ben:
-3. **49 – látványosabb felület** (hátra ~2–2,5 óra; a 49.8 és a 49.10 kész, a 49.1 elvetve):
+**Norbi kérése (2026-10-08, Claude kinézeti javaslataiból)** – **kész** (a 49.3 is, 2026-10-08):
+- ~~49 – látványosabb felület~~ (a 49.3, a 49.8 és a 49.10 kész, a 49.1 elvetve):
    - ~~49.1 – logó a cím helyett az adatlapon~~ – **elvetve** (Norbi, 2026-10-08: elkészült, de
      kipróbálás után visszavonatta – nem kell);
-   - **49.3 – animált átrendeződés szűréskor / rendezéskor** (~2–2,5 óra): a kártyák és sorok a
-     helyükre csúsznak, a kiesők elhalványulnak, az újak beúsznak;
+   - ~~49.3 – animált átrendeződés szűréskor / rendezéskor~~ – **kész (2026-10-08, látványterv
+     nélkül – Norbi kérése)**: a kártyák és sorok a helyükre csúsznak, a kiesők elhalványulnak, az
+     újak beúsznak;
    - ~~49.8 – lépcsőzetes beúszás lapozáskor~~ – **kész (2026-10-08, látványterv nélkül – Norbi kérése)**;
    - ~~49.10 – saját görgetősáv~~ – **kész (2026-10-08, látványterv nélkül)**.
 (Az 50-es – világos / sötét téma, Norbi kérésére előrehozva – kész, 2026-10-08: látványterv után a
@@ -1121,7 +1139,7 @@ Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a ta
 Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
 nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
 29 – Marvel betöltve a sorrenddel (szkripttel, 2026-10-06); 39 – „Nem érdekel” az ajánlásokon, 40 –
-kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 27, 36, 49 (kinézeti újítások, látványtervvel) („Következő feladat”; a 25 és a 26 lekerült – Norbi, 2026-10-08); 50 – világos / sötét téma kész (2026-10-08, „B – meleg papír”, Mama alapja világos); 41 – megosztható nézési sorrend kész (2026-10-08, látványterv nélkül); 48 – felhasználói leírás a ⋮ menüből kész (2026-10-08, belső ablakban); 44 – offline indulás kész (2026-10-08); 35 – franchise-javaslat és 37 – „Neked ajánlott” kész (2026-10-07); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
+kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). Vár még: 27, 36; 49 – kinézeti újítások kész (2026-10-08: 49.3, 49.8, 49.10; a 49.1 elvetve) („Következő feladat”; a 25 és a 26 lekerült – Norbi, 2026-10-08); 50 – világos / sötét téma kész (2026-10-08, „B – meleg papír”, Mama alapja világos); 41 – megosztható nézési sorrend kész (2026-10-08, látványterv nélkül); 48 – felhasználói leírás a ⋮ menüből kész (2026-10-08, belső ablakban); 44 – offline indulás kész (2026-10-08); 35 – franchise-javaslat és 37 – „Neked ajánlott” kész (2026-10-07); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
 (B – vezérlősáv, 2026-10-05).
 **Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
 appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,

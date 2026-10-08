@@ -1775,7 +1775,14 @@ fieldset.lock:disabled .stars {
 
 /* a műfajok színes pöttye is szürke */
 .titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .genre::before,
-.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .genre::before {
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) /* az adatlapon a cím adatai alatt, pötty nélkül (mint Mama adatlapján) */
+.editor-genres {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.genre::before {
   filter: grayscale(1);
   opacity: 0.55;
 }
@@ -6389,6 +6396,22 @@ a.wo-share-open {
     opacity: 1;
     transform: none;
   }
+}
+
+/* animált átrendeződés szűréskor / rendezéskor (terv-3 49.3, Norbi kérése, 2026-10-08): a
+   components/Reflow.js mozgatja a kártyákat / sorokat (Web Animations, 0,32 s); a kiesők másolata
+   (.reflow-ghost) a régi helyén halványul el – a rács / a táblázat burkolója a helyük alapja */
+.grid,
+.table-wrap {
+  position: relative;
+}
+
+.reflow-ghost,
+.grid > li.reflow-ghost {
+  position: absolute;
+  margin: 0;
+  pointer-events: none;
+  animation: none;
 }
 
 /* csillag: kattintáskor a kitöltött csillagok egymás után "pattannak" (a StarRating adja a
