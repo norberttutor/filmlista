@@ -254,7 +254,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   színt adja OKLCH-ban, rögzített világossággal (0,72) és telítettséggel (0,04–0,13) – így a
   szövegek olvashatósága nem változik; borítónként egyszer számol (`Map`). `ambientProps(szín)`:
   `--ambient` CSS-változó + `data-ambient` jelző; a CSS („Hangulatszín a borítóból” szakasz)
-  csak ilyenkor színez: a szerkesztő ablak a borító mögül dereng (színezett keret, árnyék,
+  csak ilyenkor színez (világosban erősebben – `--ambient-k`, `--ambient-ink`, terv-3 52.6): a szerkesztő ablak a borító mögül dereng (színezett keret, árnyék,
   háttér), a kártya rámutatva fénylik, a táblázat rámutatott sora halványan színeződik; az adatlap
   belseje is (terv-3 51.8, 2026-10-09): a szakaszcímek (Hol nézhető?, Szereplők, Hasonló címek)
   előtt jelölővonal, a vezérlősáv kerete és teteje, a mezőcímkék (keverve – `--ambient-label`: 55%,
@@ -1006,7 +1006,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   – `rgb(var(--tint) / 0.05)` (világos fátyol sötéten – világosban sötét fátyol), `rgb(var(--shade) /
   calc(0.6 * var(--shade-k)))` (árnyék – világosban halványabb), `rgb(var(--glass) / 0.8)` (sötét üveg
   – világosban világos), `::backdrop`-ban `rgb(var(--scrim) / calc(0.62 * var(--scrim-k)))`; a teli
-  piros gomb felirata `--danger-ink`. **Sötét szigetek**: a képes sávok világosban is sötétek (a
+  piros gomb felirata `--danger-ink`. **A film / franchise színe (`--ambient`) világosban** (terv-3 52.6,
+  „A”): a keverési arány `min(100%, calc(N% * var(--ambient-k)))` (sötétben 1, világosban 1,7 – a
+  pasztell a krémes papíron különben csak ~58%-os erővel üt el), a teli színnel rajzolt vonal / ikon
+  `var(--ambient-ink)` (világosban a mélyebb árnyalat, L 0,58: 4–4,5:1; sötétben = `--ambient`); a
+  Statisztika franchise-sávja (`--fr`) ugyanígy. **Új `--ambient`-es szabálynál is így**; a mezőcímke
+  (`--ambient-label`) és a `::backdrop` kivétel. **Sötét szigetek**: a képes sávok világosban is sötétek (a
   filmlogók fehérek) – `.featured-slide`, `.featured-sk`, `.collection-banner[data-backdrop]`,
   `.share-hero[data-backdrop]`, `.fr-logo`: a sötét tokeneket a `:root` szabály kiválasztója adja
   nekik (és a P3-asé); áttetsző sötét alapjuk világosban tömör (`var(--bg)`). Új képes sávnál ide
@@ -1170,7 +1175,8 @@ belsejében, a franchise színe a gyűjtemény-ablakban és a Statisztika franch
 Statisztika-csempék; vetítőfény a belépési oldalon. Új rész egy franchise TMDB-gyűjteményében →
 harang, kattintva előnézet (terv-3 36, 2026-10-09). A „bejelentett” (még meg nem jelent évad / rész)
 mindenhol indigó (terv-3 52.1, 2026-10-09). Mama adatlapja a film színében dereng, mint Norbié (terv-3
-52.4, „A” változat, 2026-10-09).
+52.4, „A” változat, 2026-10-09). Világos témában a film- és franchise-színek ugyanolyan erősek, mint
+sötétben, a jelölővonalak / ikonok jól láthatók (terv-3 52.6, „A” változat, 2026-10-09).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -1196,11 +1202,13 @@ került – részletek: `munka/terv-3/TERV.md` 52-es pont): **52.1 – a „beje
 Norbi kérésére látványterv nélkül) – kész (2026-10-09; teszt: `munka/e2e/test-52-1.mjs`, előtte
 `seed-52-1.mjs`). **52.4 – Mama adatlapja a film színében** – kész (2026-10-09, Norbi választása a
 látványterv után: „A” – mint Norbi adatlapja; https://claude.ai/artifact/UUMAk1iGQk1cdvEc9JGK18; teszt:
-`munka/e2e/test-52-4.mjs`). **Látványtervre vár (Norbi kéri, beépítés csak a döntése után):** 52.2 – a lista fölötti
-franchise-sáv a franchise színében (~0,5–1 óra), 52.3 – a megosztott nézési sorrend a franchise színében
-(~1–1,5 óra), 52.5 – az értesítősáv a fajtája szerint
-(törlés piros, „Hogy tetszett?” borostyán csík; ~1 óra), 52.6 – a világos téma színeinek átnézése (~1–1,5
-óra), 52.7 – a leírásban a ①②③ jelek borostyán körben (~0,5 óra).
+`munka/e2e/test-52-4.mjs`). **52.6 – a világos téma színei** – kész (2026-10-09, Norbi választása: „A” –
+kiegyenlített; https://claude.ai/artifact/YDFYeYGMTxdmKfN16QJv38; teszt: `munka/e2e/test-52-6.mjs`; a
+mérés és az átalakító szkript: `munka/terv-3/terv-52-6/`). **Látványtervre vár (Norbi kéri, beépítés csak
+a döntése után):** 52.2 – a lista fölötti franchise-sáv a franchise színében (~0,5–1 óra), 52.3 – a
+megosztott nézési sorrend a franchise színében (~1–1,5 óra), 52.5 – az értesítősáv a fajtája szerint
+(törlés piros, „Hogy tetszett?” borostyán csík; ~1 óra), 52.7 – a leírásban a ①②③ jelek borostyán
+körben (~0,5 óra).
 **Norbi kérései (2026-10-04)** – utána, ebben a sorrendben; a részletek
 (megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
 1. **27 – jelszó módosítása** (~1,5 óra): csak bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”:

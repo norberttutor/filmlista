@@ -72,6 +72,7 @@
   --glass: 10 13 18;     /* sötét üveg / fátyol (letapadt sávok, a képek alja) */
   --scrim: 7 10 15;      /* az ablakok mögötti sötétítés (::backdrop) */
   --scrim-k: 1;          /* a sötétítés erőssége */
+  --ambient-k: 1;        /* a film / franchise színével kevert derengések erőssége (terv-3 52.6) */
   --danger-ink: #2a0d09; /* felirat a teli piros gombon */
 
   --gutter: clamp(1rem, 4vw, 3rem);
@@ -133,6 +134,9 @@
   --glass: 250 251 253; /* világos üveg */
   --scrim: 20 28 42;   /* az ablakok mögött enyhe sötétítés */
   --scrim-k: 0.5;
+  /* a hangulatszín (L 0,72) a krémes papíron csak ~58%-os erővel üt el: ×1,7, így ugyanolyan erős,
+     mint sötétben (terv-3 52.6, „A”, mérés: munka/terv-3/terv-52-6/meres.mjs) */
+  --ambient-k: 1.7;
   --edge: rgb(var(--tint) / 0.1);
   --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23574a40' stroke-width='1.6'/%3E%3C/svg%3E");
   --chevron-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%2300788c' stroke-width='1.6'/%3E%3C/svg%3E");
@@ -202,7 +206,7 @@
 }
 
 :root[data-theme='light'] .fr-tile[data-ambient] .fr-logo {
-  background: color-mix(in oklab, var(--ambient) 22%, var(--bg));
+  background: color-mix(in oklab, var(--ambient) min(100%, calc(22% * var(--ambient-k))), var(--bg));
 }
 
 *,
@@ -4051,14 +4055,14 @@ button.season:hover {
 /* hangulatszín (terv-3 47): a franchise legjobb címének borítójából – halvány keret, a csempe
    tetején finom derengés, a logó háttere enyhén színezett; amíg nincs kiszámolva, a megszokott */
 .fr-tile[data-ambient] {
-  border-color: color-mix(in oklab, var(--ambient) 45%, var(--line-soft));
+  border-color: color-mix(in oklab, var(--ambient) min(100%, calc(45% * var(--ambient-k))), var(--line-soft));
   background:
-    linear-gradient(180deg, color-mix(in oklab, var(--ambient) 20%, transparent), transparent 70%),
+    linear-gradient(180deg, color-mix(in oklab, var(--ambient) min(100%, calc(20% * var(--ambient-k))), transparent), transparent 70%),
     color-mix(in oklab, var(--bg) 60%, var(--surface));
 }
 
 .fr-tile[data-ambient] .fr-logo {
-  background: color-mix(in oklab, var(--ambient) 22%, rgb(var(--shade) / calc(0.32 * var(--shade-k))));
+  background: color-mix(in oklab, var(--ambient) min(100%, calc(22% * var(--ambient-k))), rgb(var(--shade) / calc(0.32 * var(--shade-k))));
 }
 
 .fr-main {
@@ -4322,15 +4326,15 @@ button.season:hover {
    ablak halványan átdereng, a mögötte lévő sötétítés is kicsit ezt veszi fel, a szakaszcímek előtt
    jelölővonal. A mérő zöld marad (Norbi döntése, 2026-10-06), a fülek türkizek */
 .editor.collection-dialog[data-ambient] {
-  border-color: color-mix(in oklab, var(--ambient) 42%, rgb(var(--tint) / 0.09));
+  border-color: color-mix(in oklab, var(--ambient) min(100%, calc(42% * var(--ambient-k))), rgb(var(--tint) / 0.09));
   background:
-    radial-gradient(70rem 34rem at 0% 12rem, color-mix(in oklab, var(--ambient) 20%, transparent), transparent 72%),
-    radial-gradient(50rem 30rem at 100% 100%, color-mix(in oklab, var(--ambient) 13%, transparent), transparent 70%),
+    radial-gradient(70rem 34rem at 0% 12rem, color-mix(in oklab, var(--ambient) min(100%, calc(20% * var(--ambient-k))), transparent), transparent 72%),
+    radial-gradient(50rem 30rem at 100% 100%, color-mix(in oklab, var(--ambient) min(100%, calc(13% * var(--ambient-k))), transparent), transparent 70%),
     var(--surface);
   box-shadow:
     inset 0 1px 0 rgb(var(--tint) / 0.05),
     0 28px 70px -12px rgb(var(--shade) / calc(0.65 * var(--shade-k))),
-    0 0 160px -30px color-mix(in oklab, var(--ambient) 50%, transparent);
+    0 0 160px -30px color-mix(in oklab, var(--ambient) min(100%, calc(50% * var(--ambient-k))), transparent);
 }
 
 .editor.collection-dialog[data-ambient]::backdrop {
@@ -4349,7 +4353,7 @@ button.season:hover {
   width: 0.9rem;
   height: 3px;
   border-radius: 2px;
-  background: var(--ambient);
+  background: var(--ambient-ink);
 }
 
 /* fejléc a gyűjtemény széles képével, balról és alulról sötétedve */
@@ -6381,7 +6385,26 @@ a.wo-share-open {
 
 /* ---------- Hangulatszín a borítóból ---------- */
 /* a borító legjellemzőbb élénk színe (lib/posterColor.js → --ambient, rögzített világossággal);
-   csak ha már ki van számolva ([data-ambient]) – addig és borító nélkül minden a megszokott */
+   csak ha már ki van számolva ([data-ambient]) – addig és borító nélkül minden a megszokott.
+   Világos témában (terv-3 52.6, Norbi választása: „A”): a keverési arányok ×--ambient-k (1,7 – a
+   sötét erejével azonos), a teli színnel rajzolt jelölővonal / ikon a mélyebb --ambient-ink (L 0,58,
+   4–4,5:1 a felületen; a pasztell 2,3–2,6:1 volt, a grafikára előírt 3:1 alatt). Sötétben a kettő
+   a régi (k = 1, ink = --ambient). Új --ambient-es szabálynál is így: `min(100%, calc(N% *
+   var(--ambient-k)))`, teli színnél `var(--ambient-ink)` */
+[data-ambient] {
+  --ambient-ink: var(--ambient);
+}
+
+@supports (color: oklch(from red l c h)) {
+  :root[data-theme='light'] [data-ambient] {
+    --ambient-ink: oklch(from var(--ambient) 0.58 calc(c * 1.1) h);
+  }
+
+  /* a Statisztika franchise-sávja (--fr, a franchise színe – terv-3 51.9): ugyanígy */
+  :root[data-theme='light'] .tile-bars li[style] .meter i {
+    background: oklch(from var(--fr) 0.58 calc(c * 1.1) h);
+  }
+}
 
 /* szerkesztő ablak: a borító mögül színes fény árad (beúszik), színezett keret és árnyék */
 .title-editor::before {
@@ -6392,8 +6415,8 @@ a.wo-share-open {
   pointer-events: none;
   border-radius: inherit;
   background:
-    radial-gradient(60rem 38rem at 8% 0%, color-mix(in oklab, var(--ambient, transparent) 30%, transparent), transparent 70%),
-    radial-gradient(40rem 28rem at 100% 100%, color-mix(in oklab, var(--ambient, transparent) 12%, transparent), transparent 70%);
+    radial-gradient(60rem 38rem at 8% 0%, color-mix(in oklab, var(--ambient, transparent) min(100%, calc(30% * var(--ambient-k))), transparent), transparent 70%),
+    radial-gradient(40rem 28rem at 100% 100%, color-mix(in oklab, var(--ambient, transparent) min(100%, calc(12% * var(--ambient-k))), transparent), transparent 70%);
   opacity: 0;
   transition: opacity 0.2s ease-out;
 }
@@ -6407,12 +6430,12 @@ a.wo-share-open {
 }
 
 .editor.title-editor[data-ambient] {
-  border-color: color-mix(in oklab, var(--ambient) 45%, rgb(var(--tint) / 0.09));
+  border-color: color-mix(in oklab, var(--ambient) min(100%, calc(45% * var(--ambient-k))), rgb(var(--tint) / 0.09));
   box-shadow:
     inset 0 1px 0 rgb(var(--tint) / 0.05),
     0 2px 6px rgb(var(--shade) / calc(0.3 * var(--shade-k))),
     0 28px 70px -12px rgb(var(--shade) / calc(0.65 * var(--shade-k))),
-    0 0 160px -20px color-mix(in oklab, var(--ambient) 55%, transparent);
+    0 0 160px -20px color-mix(in oklab, var(--ambient) min(100%, calc(55% * var(--ambient-k))), transparent);
 }
 
 /* a háttér (elsötétített lista) is kicsit a film színét kapja */
@@ -6423,7 +6446,7 @@ a.wo-share-open {
 /* telefonon (nincs nagy borító): az ablak teteje dereng */
 @media (max-width: 899px) {
   .title-editor::before {
-    background: radial-gradient(30rem 18rem at 50% -4rem, color-mix(in oklab, var(--ambient, transparent) 34%, transparent), transparent 75%);
+    background: radial-gradient(30rem 18rem at 50% -4rem, color-mix(in oklab, var(--ambient, transparent) min(100%, calc(34% * var(--ambient-k))), transparent), transparent 75%);
   }
 }
 
@@ -6435,7 +6458,7 @@ a.wo-share-open {
   .title-editor[data-ambient] .editor-poster {
     box-shadow:
       inset 0 0 0 1px rgb(var(--tint) / 0.08),
-      0 20px 60px -10px color-mix(in oklab, var(--ambient) 80%, transparent);
+      0 20px 60px -10px color-mix(in oklab, var(--ambient) min(100%, calc(80% * var(--ambient-k))), transparent);
   }
 }
 
@@ -6464,13 +6487,13 @@ a.wo-share-open {
   width: 0.9rem;
   height: 3px;
   border-radius: 2px;
-  background: var(--ambient);
+  background: var(--ambient-ink);
 }
 
 .title-editor[data-ambient] .editor-controls {
-  border-color: color-mix(in oklab, var(--ambient) 38%, var(--line));
+  border-color: color-mix(in oklab, var(--ambient) min(100%, calc(38% * var(--ambient-k))), var(--line));
   background:
-    linear-gradient(180deg, color-mix(in oklab, var(--ambient) 7%, transparent), transparent),
+    linear-gradient(180deg, color-mix(in oklab, var(--ambient) min(100%, calc(7% * var(--ambient-k))), transparent), transparent),
     color-mix(in oklab, var(--bg) 55%, var(--surface));
 }
 
@@ -6480,16 +6503,16 @@ a.wo-share-open {
 }
 
 .title-editor[data-ambient] .trailer-btn {
-  border-color: color-mix(in oklab, var(--ambient) 50%, transparent);
-  background-color: color-mix(in oklab, var(--ambient) 10%, transparent);
+  border-color: color-mix(in oklab, var(--ambient) min(100%, calc(50% * var(--ambient-k))), transparent);
+  background-color: color-mix(in oklab, var(--ambient) min(100%, calc(10% * var(--ambient-k))), transparent);
 }
 
 .title-editor[data-ambient] .trailer-btn:hover {
-  background-color: color-mix(in oklab, var(--ambient) 18%, transparent);
+  background-color: color-mix(in oklab, var(--ambient) min(100%, calc(18% * var(--ambient-k))), transparent);
 }
 
 .title-editor[data-ambient] .trailer-btn svg {
-  color: var(--ambient);
+  color: var(--ambient-ink);
 }
 
 /* kártya: rámutatáskor a borító a saját színében fénylik */
@@ -6499,20 +6522,20 @@ a.wo-share-open {
 
 .card[data-ambient]:hover .poster {
   box-shadow:
-    0 0 0 1px color-mix(in oklab, var(--ambient) 70%, transparent),
-    0 18px 50px -8px color-mix(in oklab, var(--ambient) 85%, transparent);
+    0 0 0 1px color-mix(in oklab, var(--ambient) min(100%, calc(70% * var(--ambient-k))), transparent),
+    0 18px 50px -8px color-mix(in oklab, var(--ambient) min(100%, calc(85% * var(--ambient-k))), transparent);
 }
 
 /* táblázat: a rámutatott (fókuszban lévő) sor halványan a borító színét veszi fel; a törlés
    megerősítésének pirosa marad */
 .titles-table tbody tr[data-ambient]:is(:hover, :has(:focus-visible)) > td {
-  background: color-mix(in oklab, var(--ambient) 7%, transparent);
+  background: color-mix(in oklab, var(--ambient) min(100%, calc(7% * var(--ambient-k))), transparent);
 }
 
 .titles-table tbody tr[data-ambient]:hover .thumb {
   box-shadow:
     0 1px 2px rgb(var(--shade) / calc(0.45 * var(--shade-k))),
-    0 6px 20px -6px color-mix(in oklab, var(--ambient) 75%, transparent);
+    0 6px 20px -6px color-mix(in oklab, var(--ambient) min(100%, calc(75% * var(--ambient-k))), transparent);
 }
 
 /* ---------- Squircle sarkok ---------- */
@@ -7849,8 +7872,8 @@ input[type='checkbox']:checked {
   pointer-events: none;
   border-radius: inherit;
   background:
-    radial-gradient(56rem 36rem at 10% 0%, color-mix(in oklab, var(--ambient, transparent) 30%, transparent), transparent 70%),
-    radial-gradient(40rem 26rem at 100% 100%, color-mix(in oklab, var(--ambient, transparent) 12%, transparent), transparent 70%);
+    radial-gradient(56rem 36rem at 10% 0%, color-mix(in oklab, var(--ambient, transparent) min(100%, calc(30% * var(--ambient-k))), transparent), transparent 70%),
+    radial-gradient(40rem 26rem at 100% 100%, color-mix(in oklab, var(--ambient, transparent) min(100%, calc(12% * var(--ambient-k))), transparent), transparent 70%);
   opacity: 0;
   transition: opacity 0.2s ease-out;
 }
@@ -7860,12 +7883,12 @@ input[type='checkbox']:checked {
 }
 
 .editor.mama-detail[data-ambient] {
-  border-color: color-mix(in oklab, var(--ambient) 45%, rgb(var(--tint) / 0.09));
+  border-color: color-mix(in oklab, var(--ambient) min(100%, calc(45% * var(--ambient-k))), rgb(var(--tint) / 0.09));
   box-shadow:
     inset 0 1px 0 rgb(var(--tint) / 0.05),
     0 2px 6px rgb(var(--shade) / calc(0.3 * var(--shade-k))),
     0 28px 70px -12px rgb(var(--shade) / calc(0.65 * var(--shade-k))),
-    0 0 160px -20px color-mix(in oklab, var(--ambient) 55%, transparent);
+    0 0 160px -20px color-mix(in oklab, var(--ambient) min(100%, calc(55% * var(--ambient-k))), transparent);
 }
 
 .mama-detail[data-ambient][open]::backdrop {
@@ -7875,7 +7898,7 @@ input[type='checkbox']:checked {
 .mama-detail[data-ambient] .mama-detail-poster {
   box-shadow:
     inset 0 0 0 1px rgb(var(--tint) / 0.08),
-    0 20px 60px -10px color-mix(in oklab, var(--ambient) 80%, transparent);
+    0 20px 60px -10px color-mix(in oklab, var(--ambient) min(100%, calc(80% * var(--ambient-k))), transparent);
 }
 
 .mama-detail[data-ambient] .watch-title {
@@ -7890,26 +7913,26 @@ input[type='checkbox']:checked {
   width: 0.9rem;
   height: 3px;
   border-radius: 2px;
-  background: var(--ambient);
+  background: var(--ambient-ink);
 }
 
 .mama-detail[data-ambient] .trailer-btn {
-  border-color: color-mix(in oklab, var(--ambient) 50%, transparent);
-  background-color: color-mix(in oklab, var(--ambient) 10%, transparent);
+  border-color: color-mix(in oklab, var(--ambient) min(100%, calc(50% * var(--ambient-k))), transparent);
+  background-color: color-mix(in oklab, var(--ambient) min(100%, calc(10% * var(--ambient-k))), transparent);
 }
 
 .mama-detail[data-ambient] .trailer-btn:hover {
-  background-color: color-mix(in oklab, var(--ambient) 18%, transparent);
+  background-color: color-mix(in oklab, var(--ambient) min(100%, calc(18% * var(--ambient-k))), transparent);
 }
 
 .mama-detail[data-ambient] .trailer-btn svg {
-  color: var(--ambient);
+  color: var(--ambient-ink);
 }
 
 /* keskenyebben (telefonon nincs nagy borító): az ablak teteje dereng */
 @media (max-width: 899px) {
   .mama-detail::before {
-    background: radial-gradient(30rem 18rem at 50% -4rem, color-mix(in oklab, var(--ambient, transparent) 34%, transparent), transparent 75%);
+    background: radial-gradient(30rem 18rem at 50% -4rem, color-mix(in oklab, var(--ambient, transparent) min(100%, calc(34% * var(--ambient-k))), transparent), transparent 75%);
   }
 }
 
