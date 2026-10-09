@@ -14,7 +14,8 @@ const MAX_COLLECTIONS = 15; // franchise-onként (mint a gyűjtemény-ablakban)
 //   részeket (nem szól – különben a meglévő franchise-ok minden része „új” lenne);
 // - utána az új rész → collection_new értesítés, ha nincs a listán (film, TMDB-azonosító szerint)
 //   és nem rejtette el („Nem érdekel” – hidden_suggestions); franchise-onként egyszer (egyedi kulcs).
-// Ha egy gyűjtemény most nem tölthető le, a franchise-t nem jelöli ellenőrzöttnek (legközelebb újra).
+// Ha egy gyűjtemény most nem tölthető le, a franchise-t nem jelöli ellenőrzöttnek (legközelebb újra);
+// a TMDB-n már nem létező (404) gyűjtemény üresnek számít.
 // Válasz: { notified: az új értesítések száma, remaining: maradt-e esedékes franchise }
 export async function POST(request) {
   if (!(await getUserFromRequest(request))) return unauthorized();
@@ -62,7 +63,11 @@ export async function POST(request) {
   const checked = [];
   for (const f of batch) {
     const collections = [...collectionsOf.get(f.id)].slice(0, MAX_COLLECTIONS);
-    const loaded = await Promise.all(collections.map((id) => loadCollection(id).catch(() => null)));
+    // a TMDB-n már nem létező (törölt / összevont) gyűjtemény (404) üresnek számít – különben a
+    // franchise örökre esedékes maradna, és soha nem szólna (kódaudit #4)
+    const loaded = await Promise.all(
+      collections.map((id) => loadCollection(id).catch((err) => (err.status === 404 ? { id, parts: [] } : null)))
+    );
     if (loaded.some((c) => c === null)) continue; // a TMDB most nem érhető el: legközelebb újra
     const knownHere = known.get(f.id) ?? new Map();
     for (const c of loaded) {
@@ -96,16 +101,10 @@ export async function POST(request) {
     notify = [...once.values()].filter((c) => !skip.has(c.part.tmdb_id));
   }
 
-  if (newParts.length > 0) {
-    const { error: partsError } = await db
-      .from('franchise_collection_parts')
-      .upsert(newParts, { onConflict: 'franchise_id,collection_id,tmdb_id', ignoreDuplicates: true });
-    if (partsError) {
-      console.error(partsError);
-      return Response.json({ error: 'Nem sikerült menteni a gyűjtemények részeit.' }, { status: 500 });
-    }
-  }
-
+  // előbb az értesítés, utána az ismert részek: ha a kettő között hiba van, a rész nem lesz ismert,
+  // és a következő ellenőrzés újra próbálja – fordítva az értesítés végleg elmaradna (kódaudit #3).
+  // Az újrapróbálás nem duplikál: az egyedi kulcs (franchise_id, part_tmdb_id) a harangból törölt
+  // (dismissed_at) sort is megtartja.
   let notified = 0;
   if (notify.length > 0) {
     const rows = notify.map(({ franchise_id, part }) => ({
@@ -128,6 +127,16 @@ export async function POST(request) {
       return Response.json({ error: 'Nem sikerült menteni az értesítést.' }, { status: 500 });
     }
     notified = inserted.length;
+  }
+
+  if (newParts.length > 0) {
+    const { error: partsError } = await db
+      .from('franchise_collection_parts')
+      .upsert(newParts, { onConflict: 'franchise_id,collection_id,tmdb_id', ignoreDuplicates: true });
+    if (partsError) {
+      console.error(partsError);
+      return Response.json({ error: 'Nem sikerült menteni a gyűjtemények részeit.' }, { status: 500 });
+    }
   }
 
   if (checked.length > 0) {

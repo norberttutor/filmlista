@@ -22,18 +22,24 @@ function logoOf(logos = []) {
   return pickLogo(logos);
 }
 
+// { results, complete }: complete = minden részlet lejött (a 404 – már nincs a TMDB-n – nem hiba);
+// a hiányosat sem a szerver, sem a böngésző nem tárolja (kódaudit #5)
 async function loadFeatured() {
   const list = (await discoverList('cinema')).slice(0, CANDIDATES);
+  let complete = true;
   const details = await Promise.all(
     list.map((r) =>
       tmdbFetch(`/movie/${r.tmdb_id}`, {
         language: 'hu-HU',
         append_to_response: 'images,release_dates',
         include_image_language: 'hu,en,null',
-      }).catch(() => null)
+      }).catch((err) => {
+        if (err.status !== 404) complete = false;
+        return null;
+      })
     )
   );
-  return list
+  const results = list
     .map((r, i) => {
       const d = details[i];
       if (!d?.backdrop_path) return null;
@@ -48,20 +54,22 @@ async function loadFeatured() {
       };
     })
     .filter(Boolean);
+  return { results, complete };
 }
 
 // GET /api/tmdb/featured
 // Kiemelt sáv a Felfedezés tetején (terv-3 46, Norbi választása: „A” látványterv): a „Most a
 // mozikban” lista első címei széles jelenetképpel, logóval, leírással, műfajjal, játékidővel és a
-// mozis bemutató napjával. Egy óráig gyorsítótárazva (a szerveren és a böngészőben is).
+// mozis bemutató napjával. Egy óráig gyorsítótárazva (a szerveren és a böngészőben is) – ha
+// valamelyik részlet nem jött le, a hiányos listát egyik sem tárolja.
 // Válasz: { results: [{ media_type, tmdb_id, title, …, backdrop_path, overview, genres, runtime,
 // cinema_date, logo_path }] }
 export async function GET(request) {
   if (!(await getUserFromRequest(request))) return unauthorized();
   try {
     const day = new Date().toISOString().slice(0, 10);
-    const results = await cached(`featured:${day}`, HOUR, loadFeatured);
-    return cachedResponse({ results }, HOUR_S);
+    const { results, complete } = await cached(`featured:${day}`, HOUR, loadFeatured, (v) => v.complete);
+    return complete ? cachedResponse({ results }, HOUR_S) : Response.json({ results });
   } catch (err) {
     return tmdbErrorResponse(err);
   }

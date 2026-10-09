@@ -30,6 +30,13 @@ export async function GET(request) {
   }
 
   try {
+    // egy-egy film / gyűjtemény hibája nem buktatja el a választ; a 404 (már nincs a TMDB-n) nem
+    // hiba, a többi (pl. 429, 5xx) igen: akkor a hiányos választ a böngésző ne tárolja (kódaudit #5)
+    let failed = 0;
+    const skip = (err) => {
+      if (err.status !== 404) failed++;
+      return null;
+    };
     // melyik gyűjteménybe tartoznak a filmek (filmenként egy napig tárolva), tízesével
     const found = [];
     for (let i = 0; i < movies.length; i += 10) {
@@ -38,16 +45,16 @@ export async function GET(request) {
           cached(`movie-collection:${id}`, DAY, async () => {
             const d = await tmdbFetch(`/movie/${id}`, { language: 'hu-HU' });
             return d.belongs_to_collection?.id ?? null;
-          }).catch(() => null)
+          }).catch(skip)
         )
       );
       found.push(...batch);
     }
     const unique = [...new Set([...found.filter(Boolean), ...extra])].slice(0, MAX_COLLECTIONS);
-    const collections = (await Promise.all(unique.map((id) => loadCollection(id).catch(() => null))))
+    const collections = (await Promise.all(unique.map((id) => loadCollection(id).catch(skip))))
       .filter((c) => c && c.parts.length > 0)
       .sort((a, b) => (a.parts[0].release_date || '9999').localeCompare(b.parts[0].release_date || '9999'));
-    return cachedResponse({ collections }, DAY_S);
+    return failed ? Response.json({ collections }) : cachedResponse({ collections }, DAY_S);
   } catch (err) {
     return tmdbErrorResponse(err);
   }

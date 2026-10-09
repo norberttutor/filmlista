@@ -486,7 +486,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   is ezt használja), összevetve az ismert részekkel (`franchise_collection_parts`): a franchise első
   ellenőrzésekor és egy újonnan hozzá került gyűjteménynél csak megjegyzi a részeket (nem szól), utána
   az új rész → `collection_new` értesítés – ha nincs a listán és nincs elrejtve („Nem érdekel”);
-  részenként egyszer. Ha egy gyűjtemény nem tölthető le, a franchise-t nem jelöli ellenőrzöttnek. A
+  részenként egyszer. Előbb az értesítést írja, csak utána az ismert részeket (kódaudit #3,
+  2026-10-09: fordítva egy közbeni hibánál az értesítés végleg elmaradna; az újrapróbálást az egyedi
+  kulcs nem duplikálja). Ha egy gyűjtemény nem tölthető le, a franchise-t nem jelöli ellenőrzöttnek;
+  a TMDB-n már nem létező (404 – törölt / összevont) gyűjtemény üresnek számít (kódaudit #4). A
   `Watchlist` betöltéskor hívja (`refreshCollectionParts(franchises)`, legfeljebb 10 kör; ha jött új,
   az értesítések újratöltődnek). Teszt: `munka/e2e/test-36.mjs`
 - `components/FranchiseCollection.js` + `app/api/tmdb/collection/route.js` +
@@ -627,9 +630,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `lib/server/tmdb.js` – `cachedResponse(body, másodperc)` (`Cache-Control: private, max-age` –
   a böngésző tárolja a nyilvános TMDB-adatot adó GET-válaszokat; terv-3 34, 2026-10-05: providers,
   videos, similar, collection, find 1 nap – `DAY_S`; discover, details 1 óra – `HOUR_S`; search 10
-  perc; hibaválasz soha), `tmdbFetch()`, `tmdbErrorResponse()`, `yearOf()`, `pickReleaseDates()`
+  perc; hibaválasz soha – a részben hiányos sem: ha egy-egy tétel lekérése nem-404-es hibával
+  elbukott, a válasz `Response.json` tárolási jelölés nélkül; a collection és a featured route, kódaudit
+  #5, 2026-10-09, teszt: `munka/e2e/test-audit-5.mjs` + `fail-tmdb.mjs`), `tmdbFetch()`,
+  `tmdbErrorResponse()`, `yearOf()`, `pickReleaseDates()`
   (mozi: 3, ha nincs 2; digitális: 4; előbb HU, ha nincs US; országon belül a legkorábbi), `cached(kulcs, ms,
-  betöltő)` (memóriában, a szerverpéldány élete alatt, legfeljebb 500 elem; a hibát nem tárolja;
+  betöltő, keep?)` (memóriában, a szerverpéldány élete alatt, legfeljebb 500 elem; a hibát nem tárolja,
+  és amire a `keep(érték)` hamis – pl. a hiányos kiemelt sávot – azt sem;
   a videos és a similar 1 napig, a details TMDB-része és az OMDb-érték – `omdb:` kulcs – 1 óráig), `pickSeasons()`
   (a TMDB évadjai a „0. évad” – különkiadások – nélkül) (csak route handlerben)
 - `app/api/tmdb/search/route.js` – `GET ?q=` → `search/multi`, csak film/sorozat
@@ -749,7 +756,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   érdekli”, terv-3 13; borítóval; fajtánként saját szín – terv-3 51.5, 2026-10-09, `data-kind`: megjelent
   évad zsálya / lejátszás, bejelentett évad indigó / naptár, digitális égkék / letöltés, Mama borostyán /
   „M” – a leírás ebben a színben, a borító sarkán kis kerek ikon – `.notif-pic` > `.notif-kind`; az
-  olvasatlant a cím előtti pötty – a fajta színében – és leheletnyi háttér jelzi, nem türkiz sor); kinyitáskor mind olvasott (az adatbázisban is, `markNotificationsRead()`; a
+  olvasatlant a cím előtti pötty – a fajta színében – és leheletnyi háttér jelzi, nem türkiz sor); kinyitáskor a betöltöttek olvasottak (az adatbázisban is, `markNotificationsRead(ids)` – csak azonosító
+  szerint, a közben keletkezett, még be nem töltött – pl. Mama jelölése – olvasatlan marad; kódaudit #2,
+  2026-10-09; teszt: `munka/e2e/test-audit-2.mjs`; a
   közben beérkező régi lekérdezés sem írja vissza – `readIds` a Watchlistben); elemre
   kattintva a sorozat szerkesztő ablaka; kívülre kattintás / Esc bezár. A lista a harang bal széléhez igazodik, ha ott
   kilógna, a jobbhoz (`lib/popupSide.js`, nyitáskor mérve – a ⋮ menü is így); telefonon teljes

@@ -524,12 +524,15 @@ export default function Watchlist({ session }) {
     }
   }, [unreadCount]);
 
-  // a harang kinyitásakor minden olvasott (az adatbázisban is)
+  // a harang kinyitásakor a betöltött olvasatlanok olvasottak (az adatbázisban is – csak ezek, a
+  // közben keletkezett, még nem látott értesítés olvasatlan marad)
   function readNotifications() {
     const now = new Date().toISOString();
-    for (const n of notifications) if (!n.read_at) readIds.current.add(n.id);
-    setNotifications((ns) => ns.map((n) => (n.read_at ? n : { ...n, read_at: now })));
-    markNotificationsRead();
+    const ids = notifications.filter((n) => !n.read_at).map((n) => n.id);
+    for (const id of ids) readIds.current.add(id);
+    const read = new Set(ids);
+    setNotifications((ns) => ns.map((n) => (read.has(n.id) && !n.read_at ? { ...n, read_at: now } : n)));
+    markNotificationsRead(ids);
   }
 
   // törlés a harangból (egy vagy mind): azonnal eltűnik, az értesítősávban „Visszavonás”
