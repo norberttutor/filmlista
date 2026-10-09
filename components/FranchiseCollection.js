@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
-import { addTitle, setFranchiseCollections, updateTitle } from '@/lib/titles';
+import { addTitle, setFranchiseCollections, todayDate, updateTitle } from '@/lib/titles';
 import { useBackdropClose } from '@/lib/useBackdropClose';
 import { usePosterColor, ambientProps, franchisePosterPath } from '@/lib/posterColor';
 import WatchOrder from '@/components/WatchOrder';
@@ -212,6 +212,7 @@ export function CollectionDialog({
   const backdrop = franchiseBackdrop(franchise, titles, sections);
   // az ablak a franchise színében dereng (terv-3 51.10) – ugyanaz a szín, mint a Franchise-ok csempéjén
   const ambient = usePosterColor(franchisePosterPath(franchise.id, titles));
+  const today = todayDate();
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
@@ -377,14 +378,16 @@ export function CollectionDialog({
             {s.parts.map((p) => {
               const st = state[p.tmdb_id] ?? {};
               const status = p.own ? p.own.status : 'missing';
+              // még meg nem jelent rész (dátum nélkül vagy jövőbeli): indigó jelölés (terv-3 52.1)
+              const upcoming = !p.release_date || p.release_date > today;
               return (
-                <li key={p.tmdb_id} data-state={status}>
+                <li key={p.tmdb_id} data-state={status} data-upcoming={upcoming || undefined}>
                   <div className="collection-poster">
                     <Poster path={p.poster_path} />
                     {p.own?.is_downloaded && <span className="badge">Letöltve</span>}
                   </div>
                   <b>{p.title}</b>
-                  <span className="muted small">{p.release_year ?? 'Bejelentve'}</span>
+                  <span className="muted small part-year">{p.release_year ?? 'Bejelentve'}</span>
                   {p.own ? (
                     <OwnState t={p.own} />
                   ) : (

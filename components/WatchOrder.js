@@ -299,6 +299,7 @@ export default function WatchOrder({
               data-done={done || undefined}
               data-next={(!editing && next?.key === i.key) || undefined}
               data-status={i.status}
+              data-upcoming={!i.aired || undefined}
               data-dragging={dragging === i.key || undefined}
               data-strike={struck === i.key || undefined}
             >

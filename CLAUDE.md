@@ -214,7 +214,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   lebegő „+” fölött), `aria-live="polite"`; `toast({ text, image, content, action: { label,
   onClick }, hideClose, duration = 8000, onExpire })` → id, `dismissToast(id, how)`; az
   `onExpire` lejáratkor és a × gombra fut (az action-re nem); legfeljebb 3 egyszerre (a
-  legrégebbi lejártként tűnik el); rámutatáskor / fókusznál megáll (a fogyó csík is)
+  legrégebbi lejártként tűnik el); rámutatáskor / fókusznál megáll (a fogyó csík is); kilépéskor
+  `clearToasts()` – a függő törlés elmarad (kódaudit #11)
 - `components/EmptyState.js` – üres állapot: kis vonalrajz (filmkocka + nagyító, türkiz), cím,
   szöveg, a hívó gombjai
 - `components/PosterCard.js` – borító (`https://image.tmdb.org/t/p/w342` + `poster_path`),
@@ -606,7 +607,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `removeLastSeason()`,
   `refreshSeasons()` (háttér), `seasonAired()`, `NEXT_SEASON_STATUS`.
   Az `addTitle(item, details)` második paramétere a már lekérdezett `/api/tmdb/details` válasz
-  (az előnézeti adatlapé), ha van.
+  (az előnézeti adatlapé), ha van. A 8 mp-es visszavonási idő alatt újra felvett cím: az `addTitle`
+  a törlést vonja vissza (`registerPendingDelete`, kódaudit #22).
   Megjelenés: `refreshReleases()` (háttér), `releaseState(t)` – `{ kind: 'soon', date | year }`
   (a moziba sem került még, vagy csak digitálisan jön; dátum nélkül jövőbeli / hiányzó év),
   `{ kind: 'cinema', digital }` (moziban, digitálisan még nem; a mozis bemutató után 120 napig,
@@ -1017,7 +1019,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (terv-3 51.9). Soha nem gombszín; a türkiz marad a gomboké, az állapotoké, a
   kiválasztott szűrőké és a fókuszkereté.
 - Tartalomfajták színei (terv-3 51, 2026-10-08): `--c-coral` mozi, `--c-indigo` bejelentett /
-  hamarosan, `--c-sky` digitális / letöltve, `--c-sage` megjelent (= `--st-watched`), `--c-rose`
+  hamarosan (terv-3 52.1: a még meg nem jelent évad / rész mindenhol indigó szaggatott – évadcsík,
+  idővonal, évadlista, nézési sorrend, gyűjtemény-ablak, megosztott oldal; az elem `data-upcoming`), `--c-sky` digitális / letöltve, `--c-sage` megjelent (= `--st-watched`), `--c-rose`
   ajánlás – egyforma világosság, mérsékelt telítettség, világos témás értékkel. Mindig ugyanazt
   jelentik, **soha nem gombszínek**; teljes erővel csak apró jelölésen, nagy felületen halvány
   árnyalatként.
@@ -1162,7 +1165,8 @@ színei (korall mozi, indigó hamarosan, égkék digitális, zsálya megjelent, 
 soraiban, a „Hamarosan” / „Moziban” jelvényen és a harang értesítésfajtáin; a film színe az adatlap
 belsejében, a franchise színe a gyűjtemény-ablakban és a Statisztika franchise-sávjain; színes
 Statisztika-csempék; vetítőfény a belépési oldalon. Új rész egy franchise TMDB-gyűjteményében →
-harang, kattintva előnézet (terv-3 36, 2026-10-09).
+harang, kattintva előnézet (terv-3 36, 2026-10-09). A „bejelentett” (még meg nem jelent évad / rész)
+mindenhol indigó (terv-3 52.1, 2026-10-09).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -1183,6 +1187,14 @@ Statisztika, 51.10 – a gyűjtemény-ablak a franchise színében, 51.11 – ve
 javasold újra): 51.6 – borító-visszfény / „halk padlófény” a borítófalon (beépítve, de a borítók
 betöltésekor a kártya szövege és képe apró moccanást mutatott) és 51.7 – élő aurora a borítók
 színéből; nem kellett: 51.2 – a türkiz tehermentesítése, 51.3 – állapotszín a kiválasztásban.
+**52: színhasználat, 2. kör** (Norbi kérése, 2026-10-09; Claude írásos javaslataiból mind a hét a roadmapre
+került – részletek: `munka/terv-3/TERV.md` 52-es pont): **52.1 – a „bejelentett” mindenhol indigó** (~1 óra,
+Norbi kérésére látványterv nélkül) – kész (2026-10-09; teszt: `munka/e2e/test-52-1.mjs`, előtte
+`seed-52-1.mjs`). **Látványtervre vár (Norbi kéri, beépítés csak a döntése után):** 52.2 – a lista fölötti
+franchise-sáv a franchise színében (~0,5–1 óra), 52.3 – a megosztott nézési sorrend a franchise színében
+(~1–1,5 óra), 52.4 – Mama adatlapja a film színében (~1 óra), 52.5 – az értesítősáv a fajtája szerint
+(törlés piros, „Hogy tetszett?” borostyán csík; ~1 óra), 52.6 – a világos téma színeinek átnézése (~1–1,5
+óra), 52.7 – a leírásban a ①②③ jelek borostyán körben (~0,5 óra).
 **Norbi kérései (2026-10-04)** – utána, ebben a sorrendben; a részletek
 (megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
 1. **27 – jelszó módosítása** (~1,5 óra): csak bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”:

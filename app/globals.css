@@ -2882,7 +2882,9 @@ fieldset.lock:disabled .stars {
 
 /* ---------- Évadok (sorozatok) ---------- */
 /* évadcsík: szakaszonként egy évad az állapotszínével (a még nem nézett üres keret, mint az
-   üres alapállapot); a bejelentett, még meg nem jelent évad szaggatott */
+   üres alapállapot); a bejelentett, még meg nem jelent évad szaggatott, indigó (terv-3 52.1: a
+   „bejelentett” mindenhol indigó – évadcsík, idővonal, évadlista, nézési sorrend, gyűjtemény,
+   megosztott oldal; mint a harang „bejelentett évad” értesítése és a „Hamarosan” jelvény) */
 .season-strip {
   display: flex;
   gap: 3px;
@@ -2912,7 +2914,7 @@ fieldset.lock:disabled .stars {
 
 .season[data-upcoming] {
   border-style: dashed;
-  opacity: 0.6;
+  border-color: color-mix(in oklab, var(--c-indigo) 80%, transparent);
 }
 
 button.season {
@@ -3039,6 +3041,10 @@ button.season:hover {
 
 .season-list li[data-upcoming] .season-title {
   color: var(--muted);
+}
+
+.season-list li[data-upcoming] .season-info {
+  color: var(--c-indigo);
 }
 
 .season-list .segmented {
@@ -3179,6 +3185,7 @@ button.season:hover {
 .tl-dot[data-upcoming] {
   background: var(--surface);
   border-style: dashed;
+  border-color: var(--c-indigo);
 }
 
 .tl-dot:hover {
@@ -3227,6 +3234,7 @@ button.season:hover {
 
 .tl-legend [data-upcoming]::before {
   border-style: dashed;
+  border-color: var(--c-indigo);
 }
 
 /* a Letöltve cellában sorozatnál a letöltött évadok, kis letöltés-ikonnal */
@@ -3276,7 +3284,7 @@ button.season:hover {
 
 .poster .season[data-upcoming] {
   opacity: 1;
-  background: repeating-linear-gradient(90deg, rgb(var(--tint) / 0.3) 0 3px, transparent 3px 6px);
+  background: repeating-linear-gradient(90deg, var(--c-indigo) 0 3px, transparent 3px 6px);
 }
 
 /* ---------- IMDb-értékelések betöltése (ablak) ---------- */
@@ -4453,6 +4461,15 @@ button.season:hover {
   opacity: 0.55;
 }
 
+/* a még meg nem jelent hiányzó rész (terv-3 52.1): indigó keret, az éve / „Bejelentve” indigó */
+.collection-parts li[data-state='missing'][data-upcoming] .collection-poster {
+  outline-color: color-mix(in oklab, var(--c-indigo) 70%, transparent);
+}
+
+.collection-parts li[data-upcoming] .part-year {
+  color: var(--c-indigo);
+}
+
 .collection-parts .ghost {
   justify-self: start;
   padding: 0.25rem 0.7rem;
@@ -4645,6 +4662,16 @@ button.season:hover {
 .wo-meta {
   font-size: 0.82rem;
   color: var(--muted);
+}
+
+/* bejelentett évad (terv-3 52.1): indigó szaggatott keret a borítón, „Hamarosan: …” / „Bejelentve” indigó */
+.wo-list li[data-upcoming] .thumb {
+  outline: 1.5px dashed color-mix(in oklab, var(--c-indigo) 70%, transparent);
+  outline-offset: 2px;
+}
+
+.wo-list li[data-upcoming] .wo-meta {
+  color: var(--c-indigo);
 }
 
 .wo-tags {
@@ -6130,8 +6157,12 @@ a.wo-share-open {
 /* bejelentett (még meg nem jelent) évad: szaggatott keret, halványabb borító */
 .share-list li[data-upcoming] .share-thumb::after {
   box-shadow: none;
-  outline: 1px dashed var(--muted);
-  outline-offset: -1px;
+  outline: 1.5px dashed color-mix(in oklab, var(--c-indigo) 80%, transparent);
+  outline-offset: -1.5px;
+}
+
+.share-list li[data-upcoming] .share-meta {
+  color: var(--c-indigo);
 }
 
 .share-list li[data-upcoming] .share-thumb img {
