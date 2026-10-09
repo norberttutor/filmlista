@@ -47,8 +47,13 @@ export default function BulkImport({ existingKeys, onAdded, ref }) {
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [error, setError] = useState('');
   const [result, setResult] = useState(null); // { added, failed: [{ line, message }] }
+  // a futás azonosítója: megnyitáskor és bezáráskor változik – a háttérben tovább futó régi keresés /
+  // felvétel (pl. két Esc után bezárt ablaknál) már nem írja felül az újranyitott ablakot (kódaudit
+  // #38). A felvétel ettől még végigfut, a címek felkerülnek.
+  const runRef = useRef(0);
 
   function openDialog() {
+    runRef.current++;
     setPhase('input');
     setError('');
     setResult(null);
@@ -69,6 +74,8 @@ export default function BulkImport({ existingKeys, onAdded, ref }) {
     setError('');
     setPhase('searching');
     setProgress({ done: 0, total: entries.length });
+    const run = runRef.current;
+    const current = () => runRef.current === run;
     const found = await mapLimit(
       entries,
       PARALLEL,
@@ -81,8 +88,9 @@ export default function BulkImport({ existingKeys, onAdded, ref }) {
           return { ...entry, status: 'error', message: err.message, candidates: [], choice: null };
         }
       },
-      (done) => setProgress((p) => ({ ...p, done }))
+      (done) => current() && setProgress((p) => ({ ...p, done }))
     );
+    if (!current()) return;
     setRows(found);
     setPhase('review');
   }
@@ -102,6 +110,8 @@ export default function BulkImport({ existingKeys, onAdded, ref }) {
   async function addAll() {
     setPhase('adding');
     setProgress({ done: 0, total: chosen.length });
+    const run = runRef.current;
+    const current = () => runRef.current === run;
     const failed = [];
     let added = 0;
     await mapLimit(
@@ -115,8 +125,9 @@ export default function BulkImport({ existingKeys, onAdded, ref }) {
           failed.push({ line: row.line, message: err.message });
         }
       },
-      (done) => setProgress((p) => ({ ...p, done }))
+      (done) => current() && setProgress((p) => ({ ...p, done }))
     );
+    if (!current()) return;
     setResult({ added, failed });
     // a sikertelenek maradnak a szövegmezőben (újrapróbálhatók), a többi kikerül
     setText(failed.map((f) => f.line).join('\n'));
@@ -130,6 +141,7 @@ export default function BulkImport({ existingKeys, onAdded, ref }) {
         className="editor import-dialog bulk-dialog"
         aria-labelledby="bulk-title"
         onCancel={(e) => phase === 'adding' && e.preventDefault()} // felvétel közben ne záródjon
+        onClose={() => runRef.current++}
       >
         <div className="import-body">
           <h2 id="bulk-title">Tömeges import</h2>

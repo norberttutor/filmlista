@@ -298,7 +298,10 @@ export default function FranchisesDialog({
         </div>
       </div>
 
-      {open?.ready && (
+      {/* az első betöltés után nyitva marad: felvételkor / gyűjtemény hozzárendelésekor (a kulcs
+          változik) az újratöltés alatt a korábbi gyűjteményekkel – mint a lista fölötti sáv –,
+          így a fül, a görgetés, a kereső és a folyamatjelzés megmarad (kódaudit #6) */}
+      {open && loaded.has(open.f.id) && (
         <CollectionDialog
           franchise={open.f}
           sections={open.summary.sections}

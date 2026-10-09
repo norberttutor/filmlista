@@ -22,6 +22,11 @@ export default function ImdbRatingsImport({ titles, onApplied, onAdded, ref }) {
   // { plan } (értékelések) | { watch } (figyelőlista) | { error } | { done }
   const [view, setView] = useState(null);
   const [busy, setBusy] = useState(false);
+  // a futás azonosítója: bezáráskor és új fájlnál változik – a háttérben tovább futó régi keresés /
+  // felvétel már nem nyúl az ablakhoz (különben bezárás után null állapotot olvasna, és az app
+  // összeomlana; kódaudit #7). A felvétel ettől még végigfut, a címek felkerülnek.
+  const runRef = useRef(0);
+  const updater = (run) => (fn) => setView((v) => (runRef.current === run && v?.watch ? fn(v) : v));
 
   function show(next) {
     setView(next);
@@ -32,6 +37,7 @@ export default function ImdbRatingsImport({ titles, onApplied, onAdded, ref }) {
     const file = event.target.files?.[0];
     event.target.value = ''; // ugyanaz a fájl később újra kiválasztható legyen
     if (!file) return;
+    runRef.current++;
     let parsed;
     try {
       parsed = parseImdbExport(await file.text());
@@ -55,6 +61,7 @@ export default function ImdbRatingsImport({ titles, onApplied, onAdded, ref }) {
       setView({ watch: { ...watch, phase: 'review' } });
       return;
     }
+    const update = updater(runRef.current);
     const keys = new Set(titles.map(titleKey));
     const found = await mapLimit(
       plan.missing,
@@ -67,7 +74,7 @@ export default function ImdbRatingsImport({ titles, onApplied, onAdded, ref }) {
           return { item, result: null, error: err.message };
         }
       },
-      (done) => setView((v) => v?.watch && { watch: { ...v.watch, progress: { ...v.watch.progress, done } } })
+      (done) => update((v) => ({ watch: { ...v.watch, progress: { ...v.watch.progress, done } } }))
     );
     const rows = [];
     const notFound = [];
@@ -81,7 +88,7 @@ export default function ImdbRatingsImport({ titles, onApplied, onAdded, ref }) {
         rows.push({ ...result, key: titleKey(result), checked: true });
       }
     }
-    setView({ watch: { ...watch, onList, phase: 'review', rows, notFound } });
+    update(() => ({ watch: { ...watch, onList, phase: 'review', rows, notFound } }));
   }
 
   const setRowChecked = (key, checked) =>
@@ -89,7 +96,8 @@ export default function ImdbRatingsImport({ titles, onApplied, onAdded, ref }) {
 
   async function addChosen() {
     const chosen = view.watch.rows.filter((r) => r.checked);
-    setView((v) => ({ watch: { ...v.watch, phase: 'adding', progress: { done: 0, total: chosen.length } } }));
+    const update = updater(runRef.current);
+    update((v) => ({ watch: { ...v.watch, phase: 'adding', progress: { done: 0, total: chosen.length } } }));
     const failed = [];
     let added = 0;
     await mapLimit(
@@ -103,9 +111,9 @@ export default function ImdbRatingsImport({ titles, onApplied, onAdded, ref }) {
           failed.push({ title: r.title, message: err.message });
         }
       },
-      (done) => setView((v) => ({ watch: { ...v.watch, progress: { ...v.watch.progress, done } } }))
+      (done) => update((v) => ({ watch: { ...v.watch, progress: { ...v.watch.progress, done } } }))
     );
-    setView((v) => ({ watch: { ...v.watch, phase: 'done', added, failed } }));
+    update((v) => ({ watch: { ...v.watch, phase: 'done', added, failed } }));
   }
 
   async function apply() {
@@ -140,7 +148,10 @@ export default function ImdbRatingsImport({ titles, onApplied, onAdded, ref }) {
         ref={dialogRef}
         className="editor import-dialog bulk-dialog"
         aria-labelledby="imdb-import-title"
-        onClose={() => setView(null)}
+        onClose={() => {
+          runRef.current++;
+          setView(null);
+        }}
         onCancel={(e) => watch?.phase === 'adding' && e.preventDefault()} // felvétel közben ne záródjon
       >
         <div className="import-body">

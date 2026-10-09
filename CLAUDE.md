@@ -451,7 +451,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   függvényeivel; 3-asával töltve, franchise-onként a lekérés kulcsával – `paramsKey` –
   megjegyezve, ha a címek / kézi gyűjtemények változnak, újra; betöltés alatt „· …”, `aria-busy`),
   „· nincs TMDB-gyűjtemény”, üresen „Még nincs címe”. A csempére kattintva a gyűjtemény-ablak
-  (`CollectionDialog`, a Franchise-ok ablakon belül nyílik); a csempe alatt „Szűrés erre” (üres
+  (`CollectionDialog`, a Franchise-ok ablakon belül nyílik; az első betöltés után nyitva marad – felvételkor,
+  gyűjtemény hozzárendelésekor az újratöltés alatt a korábbi gyűjteményekkel, így a fül, a görgetés, a
+  kereső megmarad; kódaudit #6, 2026-10-09, teszt: `munka/e2e/test-audit-6.mjs`); a csempe alatt „Szűrés erre” (üres
   franchise-nál tiltva; `Watchlist.showFranchise`: a keresés törlődik, minden más szűrő elenged –
   `SEARCH_FILTERS` + a franchise –, az ablak bezárul), „Átnevezés” (helyben, Enter / Esc – az Esc
   a mezőben csak a szerkesztést zárja), „Törlés” (megerősítéssel; a címek maradnak). Felül kereső
@@ -742,6 +744,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
     listán lévők is kimaradnak), kipipálható lista (borító, magyar cím, év, típus, eredeti cím;
     alapból mind kipipálva), a TMDB-n nem találtak felsorolva → „N cím felvétele” (`addTitle()`
     2-esével, Megnézendő; a sikertelenek hibaüzenettel). Terv-3 20-as pont, 2026-10-04.
+    Felvétel közben az Esc-et megfogja, de a Chrome a második Esc-re (kattintás nélkül) mindenképp
+    bezárja az ablakot: ilyenkor a felvétel a háttérben végigfut, az ablakhoz már nem nyúl (`runRef` –
+    futásazonosító, bezáráskor / új fájlnál változik; kódaudit #7, 2026-10-09: korábban összeomlott az
+    app; teszt: `munka/e2e/test-audit-7.mjs`). A Tömeges import ugyanígy (#38).
   Teljesen automatikus szinkron nincs (az IMDb-nek nincs API-ja, az oldal gépi olvasása tiltott).
   A párhuzamos feldolgozás (`mapLimit`) a `lib/bulkImport.js`-ben (a tömeges import is ezt használja).
 - `app/api/tmdb/find/route.js` – `GET ?imdb=tt…` → `{ result: { media_type, tmdb_id, title,
