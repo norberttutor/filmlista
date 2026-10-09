@@ -89,6 +89,13 @@ html = html
   .replace(/href="#([^"]+)"/g, (_, id) => `href="#${PREFIX}${decodeURIComponent(id)}"`)
   .replace(/<a href="(https?:[^"]+)"/g, '<a href="$1" target="_blank" rel="noopener noreferrer"');
 
+// a szövegbeli számozott jelölők (①–⑳) borostyán körben, a számjeggyel – mint a képeken (terv-3
+// 52.7). Csak a szövegben: a HTML-jelölők (pl. alt, id) érintetlenek.
+html = html
+  .split(/(<[^>]*>)/)
+  .map((part) => (part.startsWith('<') ? part : part.replace(/[①-⑳]/g, (c) => `<span class="jel">${c.codePointAt(0) - 0x245f}</span>`)))
+  .join('');
+
 // minden belső hivatkozásnak legyen célja (a hibás csak figyelmeztet, a buildet nem állítja meg)
 const ids = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]));
 const broken = [...new Set([...html.matchAll(/href="#([^"]+)"/g)].map((m) => m[1]))].filter((id) => !ids.has(id));

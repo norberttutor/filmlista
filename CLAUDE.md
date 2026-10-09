@@ -838,7 +838,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `public/leiras/leiras.html` + a `docs/kepek/` képei a `public/leiras/kepek/`-be (a mappa git-ből
   kizárva). A főcím és a VS Code-os tipp kimarad; a fejlécek azonosítója a GitHub szabálya szerint,
   `leiras-` előtaggal (a `#…` hivatkozások is); a képek lusta betöltéssel, méretezve (`width` /
-  `height` a JPEG-ből – a hivatkozásra ugráskor ne csússzon a lap); külső link új lapon. A cél
+  `height` a JPEG-ből – a hivatkozásra ugráskor ne csússzon a lap); külső link új lapon; a szövegbeli
+  ①–⑳ jelek borostyán körben a számjeggyel (`span.jel`, a képek jelölőivel azonos szín mindkét
+  témában – `--marker-bg` / `--marker-ink`; terv-3 52.7, teszt: `munka/e2e/test-52-7.mjs`). A cél
   nélküli belső hivatkozásra / hiányzó képre a szkript figyelmeztet. A belső hivatkozásokat a
   `ManualDialog` kezeli (az ablakon belül görget, a fókusz a szakaszcímre, az URL nem változik).
   Net nélkül a service worker tárolójából jön, ha már egyszer megnyílt, különben hibaüzenet +
@@ -1176,7 +1178,8 @@ Statisztika-csempék; vetítőfény a belépési oldalon. Új rész egy franchis
 harang, kattintva előnézet (terv-3 36, 2026-10-09). A „bejelentett” (még meg nem jelent évad / rész)
 mindenhol indigó (terv-3 52.1, 2026-10-09). Mama adatlapja a film színében dereng, mint Norbié (terv-3
 52.4, „A” változat, 2026-10-09). Világos témában a film- és franchise-színek ugyanolyan erősek, mint
-sötétben, a jelölővonalak / ikonok jól láthatók (terv-3 52.6, „A” változat, 2026-10-09).
+sötétben, a jelölővonalak / ikonok jól láthatók (terv-3 52.6, „A” változat, 2026-10-09). Az appon
+belüli leírásban a ①②③ jelek borostyán körben, mint a képeken (terv-3 52.7, 2026-10-09).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -1204,11 +1207,11 @@ Norbi kérésére látványterv nélkül) – kész (2026-10-09; teszt: `munka/e
 látványterv után: „A” – mint Norbi adatlapja; https://claude.ai/artifact/UUMAk1iGQk1cdvEc9JGK18; teszt:
 `munka/e2e/test-52-4.mjs`). **52.6 – a világos téma színei** – kész (2026-10-09, Norbi választása: „A” –
 kiegyenlített; https://claude.ai/artifact/YDFYeYGMTxdmKfN16QJv38; teszt: `munka/e2e/test-52-6.mjs`; a
-mérés és az átalakító szkript: `munka/terv-3/terv-52-6/`). **Látványtervre vár (Norbi kéri, beépítés csak
-a döntése után):** 52.2 – a lista fölötti franchise-sáv a franchise színében (~0,5–1 óra), 52.3 – a
-megosztott nézési sorrend a franchise színében (~1–1,5 óra), 52.5 – az értesítősáv a fajtája szerint
-(törlés piros, „Hogy tetszett?” borostyán csík; ~1 óra), 52.7 – a leírásban a ①②③ jelek borostyán
-körben (~0,5 óra).
+mérés és az átalakító szkript: `munka/terv-3/terv-52-6/`). **52.7 – a leírásban a ①②③ jelek borostyán
+körben** – kész (2026-10-09, Norbi kérésére látványterv nélkül; teszt: `munka/e2e/test-52-7.mjs`).
+**Látványtervre vár (Norbi kéri, beépítés csak a döntése után):** 52.2 – a lista fölötti franchise-sáv a
+franchise színében (~0,5–1 óra), 52.3 – a megosztott nézési sorrend a franchise színében (~1–1,5 óra),
+52.5 – az értesítősáv a fajtája szerint (törlés piros, „Hogy tetszett?” borostyán csík; ~1 óra).
 **Norbi kérései (2026-10-04)** – utána, ebben a sorrendben; a részletek
 (megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
 1. **27 – jelszó módosítása** (~1,5 óra): csak bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”:

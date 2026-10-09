@@ -73,6 +73,10 @@
   --scrim: 7 10 15;      /* az ablakok mögötti sötétítés (::backdrop) */
   --scrim-k: 1;          /* a sötétítés erőssége */
   --ambient-k: 1;        /* a film / franchise színével kevert derengések erőssége (terv-3 52.6) */
+  /* a felhasználói leírás számozott jelölője (terv-3 52.7): a képek jelölőivel azonos, ezért mindkét
+     témában ugyanaz (munka/terv-3/33-leiras/leiras-kepek.mjs) */
+  --marker-bg: oklch(82.45% 0.1486 73.35);  /* #ffb547 */
+  --marker-ink: oklch(18.89% 0.026 77.5);   /* #1a1206 */
   --danger-ink: #2a0d09; /* felirat a teli piros gombon */
 
   --gutter: clamp(1rem, 4vw, 3rem);
@@ -7523,6 +7527,29 @@ input[type='checkbox']:checked {
 
 .manual blockquote > :last-child {
   margin-bottom: 0;
+}
+
+/* a szövegbeli ①②③ (terv-3 52.7): borostyán kör sötét számmal, mint a képek jelölői
+   (scripts/leiras.mjs: <span class="jel">1</span>) */
+.manual .jel {
+  display: inline-grid;
+  place-items: center;
+  width: 1.4em;
+  height: 1.4em;
+  margin-inline: 0.06em;
+  font-size: 0.8em;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  vertical-align: 0.1em;
+  color: var(--marker-ink);
+  background: var(--marker-bg);
+  border-radius: 50%;
+}
+
+/* a krémes papíron a világos borostyánnak kell egy halk perem */
+:root[data-theme='light'] .manual .jel {
+  box-shadow: 0 0 0 1px var(--accent-2-line);
 }
 
 .manual code {
