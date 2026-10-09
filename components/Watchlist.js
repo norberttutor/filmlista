@@ -15,6 +15,8 @@ import {
   titleKey,
   updateTitle,
   deleteTitle,
+  registerPendingDelete,
+  unregisterPendingDelete,
   createFranchise,
   deleteFranchise,
   renameFranchise,
@@ -500,10 +502,13 @@ export default function Watchlist({ session }) {
 
   // a szűrőben a listán ténylegesen használt franchise-ok – típustól függetlenül, mert a
   // kiválasztásuk úgyis a filmeket és a sorozatokat is mutatja
+  // a szűrő lehetőségei: a listán használt franchise-ok – és a kiválasztott akkor is, ha az utolsó
+  // címe épp kikerült belőle (különben a szűrő „Összes”-t mutatna, miközben még rá szűr; a most
+  // szerkesztett sor a helyén marad, a szűrő kézzel váltható; kódaudit #18)
   const usedFranchises = useMemo(() => {
     const used = new Set(titles.map((t) => t.franchise_id));
-    return franchises.filter((f) => used.has(f.id));
-  }, [titles, franchises]);
+    return franchises.filter((f) => used.has(f.id) || String(f.id) === franchise);
+  }, [titles, franchises, franchise]);
 
   const franchiseName = useMemo(
     () => new Map(franchises.map((f) => [f.id, f.name])),
@@ -924,18 +929,32 @@ export default function Watchlist({ session }) {
   function requestDelete(t) {
     setTitles((ts) => ts.filter((x) => x.id !== t.id));
     const restore = () => setTitles((ts) => (ts.some((x) => x.id === t.id) ? ts : [t, ...ts]));
-    toast({
+    const toastId = toast({
       text: (
         <>
           „<b>{t.title}</b>” lekerült a listáról
         </>
       ),
-      action: { label: 'Visszavonás', onClick: restore },
-      onExpire: () =>
+      action: {
+        label: 'Visszavonás',
+        onClick: () => {
+          unregisterPendingDelete(t);
+          restore();
+        },
+      },
+      onExpire: () => {
+        unregisterPendingDelete(t);
         deleteTitle(t.id).catch((err) => {
           restore();
           toast({ text: `Nem sikerült törölni: „${t.title}”. ${err.message}` });
-        }),
+        });
+      },
+    });
+    // ha közben újra felveszed (kereső, Felfedezés…): a törlés elmarad, a sávot eltüntetjük, a
+    // sort a felvétel (handleAdded) teszi vissza (kódaudit #22)
+    registerPendingDelete(t, () => {
+      unregisterPendingDelete(t);
+      dismissToast(toastId);
     });
   }
 
@@ -973,8 +992,9 @@ export default function Watchlist({ session }) {
   flushSuggestRef.current = flushSuggestions;
 
   function handleAdded(row) {
-    titlesRef.current = [row, ...titlesRef.current];
-    setTitles((ts) => [row, ...ts]);
+    // (a visszavont törlésnél a sor esetleg már a listán van – nem kerül fel kétszer)
+    titlesRef.current = [row, ...titlesRef.current.filter((x) => x.id !== row.id)];
+    setTitles((ts) => [row, ...ts.filter((x) => x.id !== row.id)]);
     if (row.media_type !== 'movie' || row.franchise_id != null || row.tmdb_collection_id == null) return;
     pendingSuggest.current.push(row.id);
     clearTimeout(suggestTimer.current);

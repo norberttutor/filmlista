@@ -34,8 +34,11 @@ export async function POST(request) {
     await Promise.all(
       batch.slice(i, i + PARALLEL).map(async (t) => {
         try {
+          const rating = await fetchImdbRating(t.imdb_id);
+          // ha most nincs adat (a cím hibája, kódaudit #10), a meglévő értékelés marad; csak az
+          // időbélyeg frissül, hogy a cím 14 napig ne legyen újra esedékes
           const fields = {
-            ...(await fetchImdbRating(t.imdb_id)),
+            ...(rating.imdb_rating != null || rating.imdb_votes != null ? rating : {}),
             imdb_rating_updated_at: new Date().toISOString(),
           };
           const { error: updateError } = await db.from('titles').update(fields).eq('id', t.id);

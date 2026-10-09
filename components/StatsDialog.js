@@ -76,7 +76,7 @@ export default function StatsDialog({ titles, franchiseName, onClose }) {
   const frMax = Math.max(1, ...s.franchises.map(([, n]) => n));
   // franchise neve → azonosító (a nevek felhasználónként egyediek), a sáv színéhez
   const franchiseId = useMemo(() => new Map([...franchiseName].map(([id, name]) => [name, id])), [franchiseName]);
-  const diff = s.ratings.mine != null && s.ratings.imdb != null ? s.ratings.mine - s.ratings.imdb : null;
+  const diff = s.ratings.diff;
   // ízlésprofil: az eltérés-sávok léptéke (legalább 1 pont, hogy a kis eltérés kicsinek látsszon)
   const devMax = Math.max(1, ...[...s.taste.above, ...s.taste.below].map((d) => Math.abs(d.diff)));
 
@@ -145,7 +145,8 @@ export default function StatsDialog({ titles, franchiseName, onClose }) {
             </div>
             {diff != null && Math.abs(diff) >= 0.05 && (
               <p className="sub">
-                Átlagosan {formatDecimal(Math.abs(diff))} ponttal értékelsz {diff > 0 ? 'magasabbra' : 'alacsonyabbra'}, mint az IMDb.
+                Ugyanazokon a címeken ({s.ratings.diffCount}) átlagosan {formatDecimal(Math.abs(diff))} ponttal értékelsz{' '}
+                {diff > 0 ? 'magasabbra' : 'alacsonyabbra'}, mint az IMDb.
               </p>
             )}
           </section>

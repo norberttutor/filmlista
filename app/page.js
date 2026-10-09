@@ -4,6 +4,8 @@ import { useEffect, useLayoutEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { clearSnapshots, registerServiceWorker, storedSession } from '@/lib/offline';
 import { forgetThemeUser, initUserTheme } from '@/lib/theme';
+import { clearToasts } from '@/lib/toast';
+import { clearPendingDeletes } from '@/lib/titles';
 import LoginForm from '@/components/LoginForm';
 import Watchlist from '@/components/Watchlist';
 import MamaView from '@/components/MamaView';
@@ -60,6 +62,8 @@ export default function Home() {
       // kilépéskor a helyben tárolt lista is törlődik
       if (event === 'SIGNED_OUT') {
         clearSnapshots();
+        clearToasts(); // a sávok (függő törléssel együtt) sem élik túl a kilépést
+        clearPendingDeletes();
         forgetThemeUser(); // a téma marad: a belépési oldal az utoljára használtat mutatja (terv-3 50)
       }
       // a net nélküli munkamenetet csak a valódi kilépés vagy egy új munkamenet váltja le

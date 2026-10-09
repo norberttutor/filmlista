@@ -279,7 +279,7 @@ function TitlePage({
   const t = row ?? { ...entry.item, ...details };
 
   // a megnyitáskori értékek (ehhez képest van-e mentetlen módosítás)
-  const [initial] = useState(() => ({
+  const [initial, setInitial] = useState(() => ({
     status: t.status,
     is_downloaded: t.is_downloaded,
     mama_status: t.mama_status ?? null,
@@ -292,6 +292,16 @@ function TitlePage({
   const [error, setError] = useState('');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const seasonal = hasSeasons(t);
+  // az utolsó évad törlése után (vagy az első felvételekor) az állapotot, a „Letöltve” jelet és a
+  // dátumot az adatbázis friss sorából vesszük – különben a megnyitáskori, azóta elavult értéket
+  // mutatná, és egy későbbi Mentés azt írná vissza (kódaudit #24)
+  const [wasSeasonal, setWasSeasonal] = useState(seasonal);
+  if (wasSeasonal !== seasonal) {
+    setWasSeasonal(seasonal);
+    const fresh = { status: t.status, is_downloaded: t.is_downloaded, watched_at: t.watched_at ?? '' };
+    setInitial((i) => ({ ...i, ...fresh }));
+    setForm((f) => ({ ...f, ...fresh }));
+  }
   // mentetlen módosítás: amit a "Mentés" küldene, eltér a megnyitáskoritól (az évadok azonnal
   // mentődnek, azok nem számítanak; a dátum csak megnézett címnél kerül mentésre)
   const dirty =
@@ -415,7 +425,7 @@ function TitlePage({
     setBusy(true);
     setError('');
     try {
-      const saved = await updateTitle(t.id, {
+      let saved = await updateTitle(t.id, {
         // sorozatnál az állapotot, a "Letöltve" jelzőt és a dátumot az évadokból számolja
         // az adatbázis
         ...(!seasonal && {
@@ -428,6 +438,12 @@ function TitlePage({
         franchise_id: form.franchise_id,
         my_rating: form.my_rating,
       });
+      // Megnézettre váltáskor az adatbázis-trigger leveszi a „Letöltve” jelet – ha ugyanebben a
+      // mentésben újra bepipáltad, egy második mentés visszateszi (a később, külön bepipált jel
+      // amúgy is megmarad; kódaudit #17)
+      if (!seasonal && form.is_downloaded && !saved.is_downloaded) {
+        saved = await updateTitle(t.id, { is_downloaded: true });
+      }
       onSaved(saved);
       close();
     } catch (err) {
