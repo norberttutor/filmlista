@@ -6,7 +6,7 @@
 -- böngésző a betöltött listából, további lekérés nélkül tudja, hogy egy franchise nélküli film
 -- egy franchise-od gyűjteményébe tartozik-e (a franchise filmjeinek gyűjteményei + a kézzel
 -- hozzárendeltek). Az új filmek felvételkor kapják meg (a details route adja), a meglévőket a
--- /api/tmdb/collections tölti ki a háttérben.
+-- /api/tmdb/title-collections tölti ki a háttérben.
 --   tmdb_collection_id       – a TMDB-gyűjtemény azonosítója (null: nincs / még nem néztük)
 --   collection_checked_at    – mikor néztük meg a TMDB-n
 --   franchise_suggestion_off – a felajánlott franchise-t elutasította („Nem kell”): többé nem

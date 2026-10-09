@@ -558,7 +558,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   sorrend** (terv-3 41, 2026-10-08, látványterv nélkül): a „Nézési sorrend” fül sávjában
   „Megosztás” (élő linknél türkiz pötty a gombon) → alatta panel: link nélkül magyarázat + „Link
   létrehozása”; utána a link (kijelölhető mező), „Link másolása” („✓ Másolva”; ha a vágólap nem
-  megy, kijelöli), „Küldés…” (csak ahol van `navigator.share` – telefon), „Megnyitás” (új lapon),
+  megy, kijelöli), „Küldés…” (csak ahol van `navigator.share` – telefon, de Windowson az asztali Chrome / Edge is), „Megnyitás” (új lapon),
   „Megosztás visszavonása” → helyben megerősítés (Mégse / Visszavonás). A megerősítés és a kérések
   alatt a gyűjtemény-ablak kikattintásra nem zár (`onBusyChange` → `CollectionDialog` `sharing`;
   `useLayoutEffect`-ben, hogy a gyors kattintást is megelőzze). Franchise-onként egy link
@@ -646,7 +646,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   betöltő, keep?)` (memóriában, a szerverpéldány élete alatt, legfeljebb 500 elem; a hibát nem tárolja,
   és amire a `keep(érték)` hamis – pl. a hiányos kiemelt sávot – azt sem;
   a videos és a similar 1 napig, a details TMDB-része és az OMDb-érték – `omdb:` kulcs – 1 óráig), `pickSeasons()`
-  (a TMDB évadjai a „0. évad” – különkiadások – nélkül) (csak route handlerben)
+  (a TMDB évadjai a „0. évad” – különkiadások – nélkül) (csak route handlerben). A `tmdbFetch` és az
+  OMDb-hívás 10 mp után feladja (kódaudit #43). A `lib/server/` modulok `import 'server-only'`-t
+  kapnak (kódaudit #45): kliens-komponensből importálva a build hibával leáll – új szerveroldali
+  modulnál is tedd bele
 - `app/api/tmdb/search/route.js` – `GET ?q=` → `search/multi`, csak film/sorozat
 - `app/api/tmdb/details/route.js` – `GET ?type=movie|tv&id=` → a `titles` oszlopainak
   megfelelő objektum + `genres [{id, name}]`, sorozatnál `seasons` is; magyar leírás híján
@@ -968,7 +971,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `title_genres (title_id, genre_id)` – kapcsolótábla
 - `titles_with_genres` nézet (`security_invoker`): `titles.*` + `status_name` + `genres text[]`
   + `seasons jsonb` (az évadok évadszám szerint; filmnél / évad nélkül `[]`)
-- Minden táblán RLS: a felhasználó csak a saját címeit látja/módosítja.
+- Minden táblán RLS: a felhasználó csak a saját címeit látja/módosítja. A `titles` írásakor a
+  `franchise_id` is csak saját franchise lehet (`22_titles_franchise_check.sql`, kódaudit #41).
 - Sémamódosításnál új számozott SQL fájlt írj a `supabase/` mappába (pl. `05_...sql`).
   Ha a nézet oszlopai változnak (a `t.*` is!), újra kell létrehozni (`drop view` + `create view`).
 - Futtatás: Claude a `SUPABASE_DB_URL`-lel (`.env.local`, Session pooler; teljes admin jog,

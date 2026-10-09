@@ -588,6 +588,10 @@ export default function Watchlist({ session }) {
       .then(setOrders)
       .catch((err) => console.warn(err.message));
     loadHidden().catch((err) => console.warn(err.message));
+    // a visszaállítás előtt olvasottnak jelölt / törölt értesítések már nem érvényesek: a
+    // visszaállított állapot számít, egy késő lekérdezés se rejtse el őket (kódaudit #50)
+    readIds.current.clear();
+    dismissedIds.current.clear();
     loadNotifications()
       .then(setNotifications)
       .catch((err) => console.warn(err.message));
@@ -876,9 +880,17 @@ export default function Watchlist({ session }) {
     setBeforeSearch((b) => (b?.franchise === String(id) ? { ...b, franchise: '' } : b));
   }
 
+  // a legutóbbi renderelés szűrése és bejegyzései: a mentés (await) után hívott replaceTitle ne a
+  // kattintáskori – azóta talán megváltozott – szűrést lássa (kódaudit #50)
+  const listRef = useRef({ filterKey, visible });
+  useEffect(() => {
+    listRef.current = { filterKey, visible };
+  }, [filterKey, visible]);
+
   // a nyitott szerkesztő ablak is a friss sort kapja (pl. évadok változása után); a sor a
   // szűrés változásáig a helyén marad
   function replaceTitle(row) {
+    const { filterKey, visible } = listRef.current;
     setTitles((ts) => ts.map((x) => (x.id === row.id ? row : x)));
     // nézési sorrendben a cím most látható tételei maradnak a helyükön
     const items = visible.filter((e) => e.item && e.title.id === row.id).map((e) => e.key);

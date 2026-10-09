@@ -96,5 +96,52 @@ if (broken.length) console.warn(`leiras: cél nélküli hivatkozás: ${broken.jo
 const missing = [...html.matchAll(/src="\/leiras\/kepek\/([^"]+)"/g)].map((m) => m[1]).filter((n) => !(n in sizes));
 if (missing.length) console.warn(`leiras: hiányzó kép: ${missing.join(', ')}`);
 
+// Biztonsági ellenőrzés (kódaudit #44): a HTML szűretlenül kerül a lapra (ManualDialog,
+// dangerouslySetInnerHTML), ezért csak ismert, ártalmatlan elem és jellemző lehet benne – a
+// Markdownbe írt nyers HTML-ből sem kerülhet a lapra szkript, eseménykezelő vagy javascript:-link.
+// Ha mégis, a build leáll (nem javít csendben). A szövegbeli „<”-t a marked „&lt;”-ként írja ki,
+// így minden „<” valódi elem (vagy megjegyzés).
+const SAFE_TAGS = new Set([
+  'p', 'br', 'hr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'b', 'em', 'i', 'del', 's', 'code', 'pre',
+  'kbd', 'sub', 'sup', 'mark', 'blockquote', 'ul', 'ol', 'li', 'a', 'img', 'table', 'thead', 'tbody', 'tr',
+  'th', 'td', 'span', 'div', 'details', 'summary', 'figure', 'figcaption',
+]);
+const SAFE_ATTRS = new Set([
+  'href', 'src', 'alt', 'title', 'id', 'class', 'tabindex', 'width', 'height', 'loading', 'decoding',
+  'target', 'rel', 'align', 'colspan', 'rowspan', 'start',
+]);
+// a linkek / képek címe: csak http(s), mailto, lapon belüli (#…) vagy relatív (séma nélküli)
+function safeUrl(value) {
+  const plain = value
+    .replace(/&#x([0-9a-f]+);?/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);?/g, (_, d) => String.fromCodePoint(Number(d)))
+    .replace(/&colon;/gi, ':')
+    .replace(/&amp;/gi, '&')
+    .replace(/[\s\u0000-\u001f]/g, '');
+  const scheme = plain.match(/^([a-z][\w+.-]*):/i)?.[1].toLowerCase();
+  return !scheme || ['http', 'https', 'mailto'].includes(scheme);
+}
+const unsafe = [];
+for (const m of html.matchAll(/<(?!!--)(\/?)([a-zA-Z][\w-]*)?([^>]*)>?/g)) {
+  const [whole, , rawTag, rest] = m;
+  const tag = rawTag?.toLowerCase();
+  if (!tag || !SAFE_TAGS.has(tag)) {
+    unsafe.push(whole.slice(0, 40));
+    continue;
+  }
+  for (const a of rest.matchAll(/([^\s=/>]+)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s>]+))?/g)) {
+    const name = a[1].toLowerCase();
+    const value = (a[2] ?? '').replace(/^["']|["']$/g, '');
+    if (!SAFE_ATTRS.has(name) || ((name === 'href' || name === 'src') && !safeUrl(value))) {
+      unsafe.push(`<${tag} ${a[0].slice(0, 40)}`);
+    }
+  }
+}
+if (unsafe.length) {
+  throw new Error(
+    `leiras: nem engedélyezett HTML a FELHASZNALOI-LEIRAS.md-ben (szkript, eseménykezelő, ismeretlen elem / jellemző vagy nem http(s)-link): ${[...new Set(unsafe)].join(' | ')}`
+  );
+}
+
 writeFileSync(join(OUT, 'leiras.html'), html);
 console.log(`leiras: public/leiras/leiras.html (${Math.round(html.length / 1024)} KB, ${Object.keys(sizes).length} kép)`);

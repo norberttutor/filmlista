@@ -146,7 +146,7 @@ export default function FranchiseCollection({ franchise, titles, orders, onAdded
 // A franchise képe (a sáv háttere és a gyűjtemény-ablak fejléce – terv-3 45, 2026-10-06): a
 // franchise legjobb IMDb-értékelésű, háttérképes címének jelenetképe (mint a logónál), ha nincs, a
 // TMDB-gyűjteményé.
-export function franchiseBackdrop(franchise, titles, sections) {
+function franchiseBackdrop(franchise, titles, sections) {
   const best = titles
     .filter((t) => t.franchise_id === franchise.id && t.backdrop_path)
     .sort((a, b) => (b.imdb_rating ?? -1) - (a.imdb_rating ?? -1) || (b.imdb_votes ?? 0) - (a.imdb_votes ?? 0))[0];

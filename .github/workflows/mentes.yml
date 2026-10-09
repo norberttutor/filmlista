@@ -18,10 +18,11 @@ jobs:
   mentes:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    env:
-      BACKUP_DB_URL: ${{ secrets.BACKUP_DB_URL }}
+    # a BACKUP_DB_URL titok csak a két psql-es lépésé (a feltöltő action nem látja – kódaudit #45)
     steps:
       - name: Legfrissebb mentés kiolvasása
+        env:
+          BACKUP_DB_URL: ${{ secrets.BACKUP_DB_URL }}
         run: |
           if [ -z "$BACKUP_DB_URL" ]; then
             echo "::error::Hiányzik a BACKUP_DB_URL titok (Settings → Secrets and variables → Actions)."
@@ -40,7 +41,8 @@ jobs:
           echo "Fájl: $(du -h mentes/filmlista-mentes.json | cut -f1)"
 
       - name: Feltöltés (56 napig megmarad)
-        uses: actions/upload-artifact@v4
+        # commitra rögzítve (v4.6.2): a címke később sem mutathat más kódra
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: filmlista-mentes-${{ env.DATUM }}
           path: mentes/filmlista-mentes.json
@@ -50,6 +52,8 @@ jobs:
       # ha az adatbázis heti mentése elmaradt (8 napnál régebbi a legfrissebb), a futás hibával
       # áll le – erről a GitHub e-mailt küld
       - name: Friss-e az adatbázis mentése
+        env:
+          BACKUP_DB_URL: ${{ secrets.BACKUP_DB_URL }}
         run: |
           fresh=$(psql "$BACKUP_DB_URL" -X -v ON_ERROR_STOP=1 -At -c \
             "select count(*) from public.backups where created_at > now() - interval '8 days'")

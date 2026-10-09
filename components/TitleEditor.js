@@ -690,7 +690,7 @@ function TitlePage({
                   Mégse
                 </button>
                 <button type="button" className="danger" disabled={busy} onClick={handleDelete}>
-                  {busy ? 'Törlés…' : 'Igen, törlés'}
+                  Igen, törlés
                 </button>
               </>
             ) : (
