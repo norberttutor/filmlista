@@ -18,6 +18,7 @@ import GenreList from '@/components/GenreList';
 import ReleaseBadge from '@/components/ReleaseBadge';
 import { hasSeasons, SeasonCell, SeasonDownloads } from '@/components/Seasons';
 import { useStrike } from '@/lib/useStrike';
+import { saveRow } from '@/lib/rowSaves';
 import Reflow from '@/components/Reflow';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
 
@@ -126,24 +127,22 @@ function TitleRow({
   const release = releaseState(t);
   const strike = useStrike(item ? item.status : t.status); // megnézettre váltáskor kihúzás a címen
 
-  // Mentés azonnal: a sor rögtön az új értéket mutatja, hiba esetén visszaáll.
+  // Mentés azonnal: a sor rögtön az új értéket mutatja, hiba esetén csak ez a módosítás áll
+  // vissza (a soron közben tett másik megmarad – saveRow, kódaudit #9).
   async function save(changes) {
-    const before = t;
-    const status = changes.status ?? t.status;
-    onUpdated({
-      ...t,
+    const apply = (row) => ({
+      ...row,
       ...changes,
-      status_name: statuses.find((s) => s.code === status)?.name ?? t.status_name,
+      status_name: statuses.find((s) => s.code === (changes.status ?? row.status))?.name ?? row.status_name,
     });
     setError('');
     setSaveState('saving');
     clearTimeout(savedTimer.current);
     try {
-      onUpdated(await updateTitle(t.id, changes));
+      await saveRow(t, apply, () => updateTitle(t.id, changes), onUpdated);
       setSaveState('saved');
       savedTimer.current = setTimeout(() => setSaveState(''), 2000);
     } catch (err) {
-      onUpdated(before);
       setSaveState('');
       setError(err.message);
     }

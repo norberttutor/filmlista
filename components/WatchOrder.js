@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { DEFAULT_STATUS, DROPPED_STATUS, restoreSeasons, setSeasonStatus, todayDate, updateTitle } from '@/lib/titles';
 import { clearOrder, itemDone, itemLabel, itemMeta, nextItem, orderedItems, saveOrder } from '@/lib/watchOrder';
 import { seasonRange } from '@/components/Seasons';
+import { saveRow } from '@/lib/rowSaves';
 import StarRating from '@/components/StarRating';
 import ShareOrder from '@/components/ShareOrder';
 
@@ -180,16 +181,22 @@ export default function WatchOrder({
     setAsking(null);
     setStruck(status === 'watched' ? i.key : null);
     setBusy((b) => ({ ...b, [i.key]: true }));
+    // saveRow (kódaudit #9): ugyanannak a címnek két gyors pipája (két évad) egymás után megy, és
+    // hibánál csak a sikertelen áll vissza
     try {
       let row;
       if (i.season) {
-        onUpdated({
-          ...t,
-          seasons: t.seasons.map((s) =>
-            s.season_number === i.season ? { ...s, status, ...(status === 'watched' && { is_downloaded: false }) } : s
-          ),
-        });
-        const result = await setSeasonStatus(t, i.season, status);
+        const result = await saveRow(
+          t,
+          (r) => ({
+            ...r,
+            seasons: r.seasons.map((s) =>
+              s.season_number === i.season ? { ...s, status, ...(status === 'watched' && { is_downloaded: false }) } : s
+            ),
+          }),
+          () => setSeasonStatus(t, i.season, status),
+          onUpdated
+        );
         row = result.row;
         if (result.filled.length) showNote(`${t.title}: ${seasonRange(result.filled)} évad is megnézve.`, t.id, result.previous);
       } else {
@@ -198,13 +205,10 @@ export default function WatchOrder({
           watched_at: status === 'watched' ? t.watched_at ?? todayDate() : null,
           ...(status === 'watched' && { is_downloaded: false }),
         };
-        onUpdated({ ...t, ...changes });
-        row = await updateTitle(t.id, changes);
+        row = await saveRow(t, (r) => ({ ...r, ...changes }), () => updateTitle(t.id, changes), onUpdated);
       }
-      onUpdated(row);
       if (t.status !== 'watched' && row.status === 'watched' && !row.my_rating) setAsking(i.key);
     } catch (err) {
-      onUpdated(t);
       setError(err.message);
     } finally {
       setBusy((b) => ({ ...b, [i.key]: false }));

@@ -318,7 +318,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   sorozatnál az állapot / letöltve / dátum helyett „Évadok” lista (`SeasonList`), ami azonnal
   ment (`onChanged`); a „Mentés” ilyenkor nem küld `status` / `is_downloaded` / `watched_at`-et
 - `components/Seasons.js` – évadok (sorozatoknál): `hasSeasons()`, `seasonCounts()`,
-  `seasonRange()` („1–3., 5.”), `useSeasonActions()` (optimista mentés, hibánál visszaáll;
+  `seasonRange()` („1–3., 5.”), `useSeasonActions()` (optimista mentés `saveRow`-val, hibánál visszaáll;
   megnézettre állításkor az előtte lévő üres évadok is megnézettek lesznek, 10 mp-ig
   „Visszavonás”), `SeasonStrip` (évadonként egy szakasz az állapotszínnel; a bejelentett –
   jövőbeli / dátum nélküli – szaggatott, nem jelölhető; táblázatban kattintásra lépteti:
@@ -357,8 +357,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   hangulatszínét, és rámutatva halványan felveszi. Az üres
   Állapot / Mama lenyíló és a kuka csak a sorra mutatva (vagy fókusznál) látszik teljesen
   (`@media (hover: hover)`). Fejléc: kis, ritkított nagybetűs címkék; állapotcsík: lekerekített
-  pálca a borító mellett (`td:first-child::before`). Azonnali, optimista mentés (hibánál
-  visszaáll). Megjegyzés mező nincs a felületen (Norbi kérésére; a `notes` oszlop megmaradt).
+  pálca a borító mellett (`td:first-child::before`). Azonnali, optimista mentés (`saveRow`, hibánál
+  csak a sikertelen módosítás áll vissza). Megjegyzés mező nincs a felületen (Norbi kérésére; a `notes` oszlop megmaradt).
   Évados sorozatnál a Letöltve cellában a letöltött évadok, az Állapot cellában az évadcsík
   (`SeasonDownloads`, `SeasonCell`); a borítókártyán a borító alján évadcsík + „x/y évad”
 - `components/FranchiseSelect.js` – franchise lenyíló (üres / meglévők / „+ Új franchise…”
@@ -715,6 +715,15 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (× a borító jobb felső sarkában; egérrel csak rámutatáskor / fókusznál látszik), `HideNote` +
   `useHideSuggestion()`: „„…” elrejtve – többé nem ajánljuk. Visszavonás” helyben, a szakasz tetején,
   10 mp-ig (a szerkesztő ablakban az értesítősáv nem kattintható)
+- `lib/rowSaves.js` – `saveRow(sor, apply, kérés, show)`: egy sor gyors egymás utáni optimista
+  mentései (kódaudit #9, 2026-10-09). Soronként (cím-id) nyilvántartja a függő módosításokat: a
+  képernyőn az utolsó szerversor + a még függő módosítások (`apply(row)` – a sorból számol, nem a
+  kattintáskori pillanatképből); a kérések soronként egymás után mennek (a válaszok nem
+  cserélődhetnek fel), hibánál csak a sikertelen módosítás esik ki. Korábban egy elbukott mentés a
+  saját előtti állapotára állt vissza, és a közben tett másikat is eltüntette a képernyőről.
+  Használja: a táblázat soron belüli mentése (`TitleTable`), az évadműveletek (`useSeasonActions`
+  – táblázat és adatlap), a nézési sorrend pipája (`WatchOrder`). **Új optimista mentésnél ezt
+  használd.** Teszt: `munka/e2e/test-audit-9.mjs`
 - `lib/useStrike.js` – kihúzás (terv-3 40): `useStrike(status)` → hányszor vált megnézettre, amióta
   látszik; a cím köré tett `.strike` span kulcsa és `data-strike` jelzője (PosterCard, TitleTable
   sora – nézési sorrendben a tétel állapota): váltáskor a span újraépül, a CSS-animáció lefut,
@@ -1259,6 +1268,9 @@ magadtól ne javasold újra.
   vissza és ellenőrzi. Újratöltéskor előbb a helyben tárolt lista látszik (terv-3 44): a teszt
   `page.reload`-ja megvárja a frisset (`main[data-list]`: `loading` | `stale` | `live`), a
   `plainReload` nem vár; a `clearSnapshot()` törli a tárolt listát (pl. a csontváz próbájához).
+  Fix várakozás (`waitForTimeout`) helyett a teszt a mentés utáni friss sorra (`rowRefetched`) vagy két
+  képkockára (`settle`) vár – „kevesebb mozgás” módban az átmenetek úgyis kikapcsolnak; képernyőkép csak
+  `SHOTS=1`-gyel készül; a futás végén kiírja a leglassabb lépéseket (kb. 2¼ perc, 115 lépés, 2026-10-09).
   Képernyőkép / videó a tesztfiókról: a fejléc e-mail-címét mintacímre kell cserélni
   (`munka/dizajn-2/eszkozok/mask.mjs`); videóhoz a Playwright ffmpeg-je a scratchpadbe kerül
   (`PLAYWRIGHT_BROWSERS_PATH`), lásd `munka/dizajn-2/eszkozok/video*.mjs`.

@@ -17,6 +17,7 @@ import {
   DEFAULT_STATUS,
   DROPPED_STATUS,
 } from '@/lib/titles';
+import { saveRow } from '@/lib/rowSaves';
 
 // Évadok a sorozatoknál: évadcsík (táblázat, kártya), évadlista (a sorból lenyíló panelben és a
 // szerkesztő ablakban) és a közös műveletek. A sorozat állapotát az adatbázis számolja, kivéve
@@ -66,28 +67,25 @@ function seasonInfo(s, aired) {
 }
 
 // Évadműveletek: azonnal látszanak (optimista), a szerver friss sora (a sorozat új
-// állapotával) felülírja, hibánál visszaáll. A kitöltött / tömegesen jelölt évadok egy
-// ideig visszavonhatók (note).
+// állapotával) felülírja, hibánál csak a sikertelen művelet áll vissza (saveRow – a soron
+// közben tett másik módosítás megmarad, kódaudit #9). Az optimista változás a sorból számol
+// (apply(row)), mert közben függő mentések után kerülhet rá. A kitöltött / tömegesen jelölt
+// évadok egy ideig visszavonhatók (note).
 export function useSeasonActions(title, onUpdated, onError) {
   const [note, setNote] = useState(null); // { text, previous }
   const noteTimer = useRef(null);
   useEffect(() => () => clearTimeout(noteTimer.current), []);
 
-  const withSeasons = (numbers, changes) => ({
-    ...title,
-    seasons: title.seasons.map((s) => (numbers.includes(s.season_number) ? { ...s, ...changes } : s)),
+  const withSeasons = (numbers, changes) => (row) => ({
+    ...row,
+    seasons: row.seasons.map((s) => (numbers.includes(s.season_number) ? { ...s, ...changes } : s)),
   });
 
-  async function run(optimistic, action) {
-    const before = title;
-    if (optimistic) onUpdated(optimistic);
+  async function run(apply, action) {
     onError('');
     try {
-      const result = await action();
-      onUpdated(result.row ?? result);
-      return result;
+      return await saveRow(title, apply, action, onUpdated);
     } catch (err) {
-      onUpdated(before);
       onError(err.message);
       return null;
     }
@@ -124,7 +122,12 @@ export function useSeasonActions(title, onUpdated, onError) {
     if (numbers.length === 0 && !dropped) return;
     const marked = withSeasons(numbers, { status: 'watched', is_downloaded: false });
     const result = await run(
-      dropped ? { ...marked, status: statusFromSeasons(marked) } : marked,
+      dropped
+        ? (row) => {
+            const m = marked(row);
+            return { ...m, status: statusFromSeasons(m) };
+          }
+        : marked,
       async () => {
         const done = await markAllSeasonsWatched(title);
         return dropped
@@ -146,11 +149,11 @@ export function useSeasonActions(title, onUpdated, onError) {
     setNote(null);
     const restore = new Map(previous.map((p) => [p.season_number, p]));
     await run(
-      {
-        ...title,
-        seasons: title.seasons.map((s) => ({ ...s, ...restore.get(s.season_number) })),
+      (row) => ({
+        ...row,
+        seasons: row.seasons.map((s) => ({ ...s, ...restore.get(s.season_number) })),
         ...(dropped && { status: DROPPED_STATUS }),
-      },
+      }),
       async () => {
         const row = await restoreSeasons(title.id, previous);
         return dropped ? updateTitle(title.id, { status: DROPPED_STATUS }) : row;
@@ -162,7 +165,7 @@ export function useSeasonActions(title, onUpdated, onError) {
   // újra a sorozat állapotát (bármit küldünk, ami nem "Abbahagyva").
   function setDropped(dropped) {
     return run(
-      { ...title, status: dropped ? DROPPED_STATUS : statusFromSeasons(title) },
+      (row) => ({ ...row, status: dropped ? DROPPED_STATUS : statusFromSeasons(row) }),
       () => updateTitle(title.id, { status: dropped ? DROPPED_STATUS : DEFAULT_STATUS })
     );
   }
@@ -179,7 +182,7 @@ export function useSeasonActions(title, onUpdated, onError) {
       ),
     add: () => run(null, () => addSeason(title)),
     removeLast: () =>
-      run({ ...title, seasons: title.seasons.slice(0, -1) }, () => removeLastSeason(title)),
+      run((row) => ({ ...row, seasons: row.seasons.slice(0, -1) }), () => removeLastSeason(title)),
   };
 }
 
