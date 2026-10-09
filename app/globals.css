@@ -7836,11 +7836,89 @@ input[type='checkbox']:checked {
   font-size: 1.15rem;
 }
 
+/* az adatlap a borító színében (terv-3 52.4, Norbi választása: „A” – mint Norbi adatlapja, az 51.8
+   megfelelője; látványterv: munka/terv-3/terv-52-4/): a borító mögül dereng, színezett keret és
+   árnyék, a háttér sötétítése is kap egy árnyalatot, a nagy borító a film színében fénylik, a „Hol
+   nézhető?” előtt jelölővonal, az „Előzetes megnézése” gomb a film színében. A két nagy gomb és a
+   szövegek nem változnak; borító nélkül (nincs [data-ambient]) minden a megszokott */
+.mama-detail::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1; /* az ablak háttere fölött, a tartalom alatt */
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(56rem 36rem at 10% 0%, color-mix(in oklab, var(--ambient, transparent) 30%, transparent), transparent 70%),
+    radial-gradient(40rem 26rem at 100% 100%, color-mix(in oklab, var(--ambient, transparent) 12%, transparent), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+}
+
+.mama-detail[data-ambient]::before {
+  opacity: 1;
+}
+
+.editor.mama-detail[data-ambient] {
+  border-color: color-mix(in oklab, var(--ambient) 45%, rgb(var(--tint) / 0.09));
+  box-shadow:
+    inset 0 1px 0 rgb(var(--tint) / 0.05),
+    0 2px 6px rgb(var(--shade) / calc(0.3 * var(--shade-k))),
+    0 28px 70px -12px rgb(var(--shade) / calc(0.65 * var(--shade-k))),
+    0 0 160px -20px color-mix(in oklab, var(--ambient) 55%, transparent);
+}
+
+.mama-detail[data-ambient][open]::backdrop {
+  background-color: color-mix(in oklab, var(--ambient) 18%, rgb(var(--scrim) / calc(0.66 * var(--scrim-k))));
+}
+
+.mama-detail[data-ambient] .mama-detail-poster {
+  box-shadow:
+    inset 0 0 0 1px rgb(var(--tint) / 0.08),
+    0 20px 60px -10px color-mix(in oklab, var(--ambient) 80%, transparent);
+}
+
+.mama-detail[data-ambient] .watch-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mama-detail[data-ambient] .watch-title::before {
+  content: '';
+  flex: none;
+  width: 0.9rem;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--ambient);
+}
+
+.mama-detail[data-ambient] .trailer-btn {
+  border-color: color-mix(in oklab, var(--ambient) 50%, transparent);
+  background-color: color-mix(in oklab, var(--ambient) 10%, transparent);
+}
+
+.mama-detail[data-ambient] .trailer-btn:hover {
+  background-color: color-mix(in oklab, var(--ambient) 18%, transparent);
+}
+
+.mama-detail[data-ambient] .trailer-btn svg {
+  color: var(--ambient);
+}
+
+/* keskenyebben (telefonon nincs nagy borító): az ablak teteje dereng */
+@media (max-width: 899px) {
+  .mama-detail::before {
+    background: radial-gradient(30rem 18rem at 50% -4rem, color-mix(in oklab, var(--ambient, transparent) 34%, transparent), transparent 75%);
+  }
+}
+
 @supports (corner-shape: squircle) {
   .mama-rows li,
   .mama-poster,
   .mama-detail-poster,
-  .editor.mama-detail {
+  .editor.mama-detail,
+  .mama-detail::before {
     corner-shape: squircle;
   }
 }
@@ -7903,6 +7981,10 @@ input[type='checkbox']:checked {
     margin: auto 0 0;
     border-bottom: 0;
     border-radius: 24px 24px 0 0;
+    corner-shape: round;
+  }
+
+  .mama-detail::before {
     corner-shape: round;
   }
 

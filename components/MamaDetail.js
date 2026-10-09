@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { useBackdropClose } from '@/lib/useBackdropClose';
+import { usePosterColor, ambientProps } from '@/lib/posterColor';
 import ImdbBadge from '@/components/ImdbBadge';
 import WatchProviders from '@/components/WatchProviders';
 
@@ -10,7 +11,8 @@ const IMG = 'https://image.tmdb.org/t/p/';
 const PHONE_QUERY = '(max-width: 640px)';
 
 // Mama adatlapja (terv-3 13): háttérkép, borító, cím, év, műfajok, IMDb-érték, előzetes, leírás,
-// „Hol nézhető?” – szerkesztő mezők nélkül –, alul „Érdekel” / „Nem érdekel”. Asztalon ablak
+// „Hol nézhető?” – szerkesztő mezők nélkül –, alul „Érdekel” / „Nem érdekel”. A borító színében
+// dereng (terv-3 52.4). Asztalon ablak
 // (kikattintásra bezárul – nincs benne bevitel), telefonon alulról felcsúszó lap (a fogantyút
 // lefelé húzva bezárul, mint Norbi adatlapja). A „Nem érdekel” a listából is kiveszi (a hívó zárja).
 export default function MamaDetail({ item: t, onMark, onClose }) {
@@ -69,9 +71,11 @@ export default function MamaDetail({ item: t, onMark, onClose }) {
 
   const yes = t.mama_status === 'interested';
   const genres = (t.genres ?? []).join(' · ');
+  // az adatlap a borító színében dereng, mint Norbié (terv-3 52.4, „A” változat)
+  const ambient = usePosterColor(t.poster_path);
 
   return (
-    <dialog ref={dialogRef} className="editor mama-detail" aria-labelledby="mama-detail-title" onClose={onClose} {...backdrop}>
+    <dialog ref={dialogRef} className="editor mama-detail" aria-labelledby="mama-detail-title" onClose={onClose} {...backdrop} {...ambientProps(ambient)}>
       <div
         className="sheet-handle"
         aria-hidden="true"

@@ -101,7 +101,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   Optimista mentés a `mama_mark()`-kal, hibánál visszaáll és üzen. A borítóra / címre kattintva
   **adatlap** (`MamaDetail`, `dialog.editor.mama-detail`): háttérkép, borító, cím, év, műfajok, IMDb,
   „Előzetes megnézése” (`/api/tmdb/videos`), leírás, „Hol nézhető?” (`WatchProviders`), alul a két
-  nagy gomb; „Nem érdekel”-re bezárul. Kikattintásra (asztalon) / „Bezárás” (×) / Esc zár; telefonon
+  nagy gomb; „Nem érdekel”-re bezárul. A borító színében dereng (terv-3 52.4, „A” – mint Norbi
+  adatlapja, 51.8: `usePosterColor` + `ambientProps` a `dialog`-on; derengés, keret, árnyék, a háttér
+  sötétítése, a borító fénye, „Hol nézhető?” jelölővonal, „Előzetes megnézése”; a gombok és a szövegek
+  nem változnak; CSS: `.mama-detail[data-ambient]`). Kikattintásra (asztalon) / „Bezárás” (×) / Esc zár; telefonon
   alsó lap fogantyúval (lehúzva zár). Üres „Filmek”-nél „Most nincs új film, amiről kérdeznénk.”. CSS: a
   „Mama oldala” szakasz (nagyobb betűk, `.mama-*`). E2e: „Mama oldala (terv-3 13)…” (Mama-tesztfiók,
   külön böngészőablak, telefonméret)
@@ -1166,7 +1169,8 @@ soraiban, a „Hamarosan” / „Moziban” jelvényen és a harang értesítés
 belsejében, a franchise színe a gyűjtemény-ablakban és a Statisztika franchise-sávjain; színes
 Statisztika-csempék; vetítőfény a belépési oldalon. Új rész egy franchise TMDB-gyűjteményében →
 harang, kattintva előnézet (terv-3 36, 2026-10-09). A „bejelentett” (még meg nem jelent évad / rész)
-mindenhol indigó (terv-3 52.1, 2026-10-09).
+mindenhol indigó (terv-3 52.1, 2026-10-09). Mama adatlapja a film színében dereng, mint Norbié (terv-3
+52.4, „A” változat, 2026-10-09).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -1190,9 +1194,11 @@ színéből; nem kellett: 51.2 – a türkiz tehermentesítése, 51.3 – állap
 **52: színhasználat, 2. kör** (Norbi kérése, 2026-10-09; Claude írásos javaslataiból mind a hét a roadmapre
 került – részletek: `munka/terv-3/TERV.md` 52-es pont): **52.1 – a „bejelentett” mindenhol indigó** (~1 óra,
 Norbi kérésére látványterv nélkül) – kész (2026-10-09; teszt: `munka/e2e/test-52-1.mjs`, előtte
-`seed-52-1.mjs`). **Látványtervre vár (Norbi kéri, beépítés csak a döntése után):** 52.2 – a lista fölötti
+`seed-52-1.mjs`). **52.4 – Mama adatlapja a film színében** – kész (2026-10-09, Norbi választása a
+látványterv után: „A” – mint Norbi adatlapja; https://claude.ai/artifact/UUMAk1iGQk1cdvEc9JGK18; teszt:
+`munka/e2e/test-52-4.mjs`). **Látványtervre vár (Norbi kéri, beépítés csak a döntése után):** 52.2 – a lista fölötti
 franchise-sáv a franchise színében (~0,5–1 óra), 52.3 – a megosztott nézési sorrend a franchise színében
-(~1–1,5 óra), 52.4 – Mama adatlapja a film színében (~1 óra), 52.5 – az értesítősáv a fajtája szerint
+(~1–1,5 óra), 52.5 – az értesítősáv a fajtája szerint
 (törlés piros, „Hogy tetszett?” borostyán csík; ~1 óra), 52.6 – a világos téma színeinek átnézése (~1–1,5
 óra), 52.7 – a leírásban a ①②③ jelek borostyán körben (~0,5 óra).
 **Norbi kérései (2026-10-04)** – utána, ebben a sorrendben; a részletek
