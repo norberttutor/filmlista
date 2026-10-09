@@ -31,7 +31,8 @@ function storedOpen() {
 // (onPreview; a listán lévőé szerkeszthető), a címre kattintva a TMDB-oldala (Norbi döntése,
 // 2026-10-05). Nyitva tölt be; ha becsukja, azt a böngésző megjegyzi (telefonon mindig csukva
 // indul). A borítón × („Nem érdekel”, terv-3 39): az elrejtett címek nem látszanak.
-export default function SimilarTitles({ title, existingKeys, onAdded, onPreview }) {
+// readOnly: net nélkül (terv-3 44) csak nézni lehet – nincs „+ Hozzáadás” és × (kódaudit #8)
+export default function SimilarTitles({ title, existingKeys, onAdded, onPreview, readOnly }) {
   const bodyId = useId();
   const [open, setOpen] = useState(storedOpen);
   const [load, setLoad] = useState({ status: 'idle', results: [], error: '' });
@@ -151,7 +152,7 @@ export default function SimilarTitles({ title, existingKeys, onAdded, onPreview 
                     >
                       <img src={POSTER_BASE + r.poster_path} alt="" loading="lazy" />
                     </button>
-                    {!onList && <HideButton item={r} onHide={hide} />}
+                    {!onList && !readOnly && <HideButton item={r} onHide={hide} />}
                     <a
                       className="similar-title"
                       href={`https://www.themoviedb.org/${r.media_type}/${r.tmdb_id}`}
@@ -170,6 +171,7 @@ export default function SimilarTitles({ title, existingKeys, onAdded, onPreview 
                     {onList ? (
                       <span className="on-list">✓ A listán</span>
                     ) : (
+                      !readOnly && (
                       <button
                         type="button"
                         className="ghost mini"
@@ -179,6 +181,7 @@ export default function SimilarTitles({ title, existingKeys, onAdded, onPreview 
                       >
                         {adding === key ? 'Hozzáadás…' : '+ Hozzáadás'}
                       </button>
+                      )
                     )}
                     {errors[key] && <span className="error small">{errors[key]}</span>}
                   </li>

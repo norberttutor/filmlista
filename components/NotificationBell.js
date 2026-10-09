@@ -35,7 +35,9 @@ function describe(n, franchiseName) {
 // Fajtánként saját szín (terv-3 51.5, 2026-10-09): megjelent évad zsálya, bejelentett évad indigó,
 // digitális megjelenés égkék, Mama borostyán, új rész korall – a borító sarkán ikon, a leírás színe (CSS: data-kind).
 // Kattintás kívül / Esc: bezár.
-export default function NotificationBell({ notifications, titles, franchiseName, onOpenTitle, onRead, onRemove }) {
+// readOnly: net nélkül (terv-3 44) csak olvasni lehet – nincs törlés, és a kinyitás sem jelöli
+// olvasottnak (az adatbázisba úgysem jutna el; kódaudit #8)
+export default function NotificationBell({ notifications, titles, franchiseName, onOpenTitle, onRead, onRemove, readOnly }) {
   const [open, setOpen] = useState(false);
   const [side, setSide] = useState('left'); // a lista a harang melyik széléhez igazodik
   const [fresh, setFresh] = useState(() => new Set()); // a kinyitáskor még olvasatlanok
@@ -86,7 +88,7 @@ export default function NotificationBell({ notifications, titles, franchiseName,
     setFresh(new Set(items.filter((n) => !n.read_at).map((n) => n.id)));
     setSide(popupSide(buttonRef.current, 400, 'left'));
     setOpen(true);
-    if (unread > 0) onRead();
+    if (unread > 0 && !readOnly) onRead();
   }
 
   return (
@@ -143,7 +145,7 @@ export default function NotificationBell({ notifications, titles, franchiseName,
         >
           <div className="notif-head">
             <p>Értesítések</p>
-            {items.length > 0 && (
+            {items.length > 0 && !readOnly && (
               <button
                 type="button"
                 className="notif-clear"
@@ -207,17 +209,19 @@ export default function NotificationBell({ notifications, titles, franchiseName,
                         </time>
                       </span>
                     </button>
-                    <button
-                      type="button"
-                      className="notif-del"
-                      aria-label={`Értesítés törlése: ${label}`}
-                      title="Törlés"
-                      onClick={() => remove(n, index)}
-                    >
-                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-                        <path d="M6 6l12 12M18 6L6 18" />
-                      </svg>
-                    </button>
+                    {!readOnly && (
+                      <button
+                        type="button"
+                        className="notif-del"
+                        aria-label={`Értesítés törlése: ${label}`}
+                        title="Törlés"
+                        onClick={() => remove(n, index)}
+                      >
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+                          <path d="M6 6l12 12M18 6L6 18" />
+                        </svg>
+                      </button>
+                    )}
                   </li>
                 );
               })}

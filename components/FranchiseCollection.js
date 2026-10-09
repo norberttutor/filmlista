@@ -65,7 +65,7 @@ export function summarizeCollection(franchise, titles, collections) {
 //   gyűjtemény nélküli filmek);
 // - „+ TMDB-gyűjtemény hozzáadása”: keresés a TMDB gyűjteményei között (pl. Star Wars).
 // A sáv akkor is megjelenik, ha nincs TMDB-gyűjtemény (a saját címekkel).
-export default function FranchiseCollection({ franchise, titles, orders, onAdded, onUpdated, onOrderChanged, onFranchiseUpdated }) {
+export default function FranchiseCollection({ franchise, titles, orders, onAdded, onUpdated, onOrderChanged, onFranchiseUpdated, readOnly }) {
   const params = collectionParams(franchise, titles);
   const { movies, extra } = params;
   const needsFetch = Boolean(movies || extra);
@@ -136,6 +136,7 @@ export default function FranchiseCollection({ franchise, titles, orders, onAdded
           onOrderChanged={onOrderChanged}
           onFranchiseUpdated={onFranchiseUpdated}
           onClose={() => setOpen(false)}
+          readOnly={readOnly}
         />
       )}
     </>
@@ -192,6 +193,9 @@ export function CollectionDialog({
   onFranchiseUpdated,
   onClose,
   onOutsideClose,
+  // net nélkül (terv-3 44): csak nézni lehet – felvétel, gyűjtemény hozzárendelése / eltávolítása
+  // nincs, a nézési sorrend csak olvasható (kódaudit #8)
+  readOnly,
 }) {
   const dialogRef = useRef(null);
   const headingRef = useRef(null);
@@ -292,7 +296,9 @@ export function CollectionDialog({
         <p className="collection-sub">
           {sections.length
             ? `${sections.length} TMDB-gyűjtemény, a részek megjelenési sorrendben`
-            : 'Nincs hozzá TMDB-gyűjtemény – lent kézzel hozzárendelhetsz egyet'}
+            : readOnly
+              ? 'Nincs hozzá TMDB-gyűjtemény'
+              : 'Nincs hozzá TMDB-gyűjtemény – lent kézzel hozzárendelhetsz egyet'}
           {' · '}
           {counts.total} cím
         </p>
@@ -343,6 +349,7 @@ export function CollectionDialog({
           onOrderChanged={onOrderChanged}
           onUpdated={onUpdated}
           onShareBusyChange={setSharing}
+          readOnly={readOnly}
         />
       </div>
 
@@ -354,13 +361,15 @@ export function CollectionDialog({
             {s.manual && (
               <>
                 <span className="muted small">kézzel hozzárendelve</span>
-                <button
-                  type="button"
-                  className="link small"
-                  onClick={() => changeManual(manual.filter((id) => id !== s.id))}
-                >
-                  Eltávolítás
-                </button>
+                {!readOnly && (
+                  <button
+                    type="button"
+                    className="link small"
+                    onClick={() => changeManual(manual.filter((id) => id !== s.id))}
+                  >
+                    Eltávolítás
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -376,12 +385,14 @@ export function CollectionDialog({
                   </div>
                   <b>{p.title}</b>
                   <span className="muted small">{p.release_year ?? 'Bejelentve'}</span>
-                  {!p.own ? (
-                    <button type="button" className="ghost" disabled={st.busy} onClick={() => add(p)}>
-                      {st.busy ? 'Hozzáadás…' : '+ Hozzáadás'}
-                    </button>
-                  ) : (
+                  {p.own ? (
                     <OwnState t={p.own} />
+                  ) : (
+                    !readOnly && (
+                      <button type="button" className="ghost" disabled={st.busy} onClick={() => add(p)}>
+                        {st.busy ? 'Hozzáadás…' : '+ Hozzáadás'}
+                      </button>
+                    )
                   )}
                   {st.error && (
                     <p className="error small" role="alert">
@@ -423,6 +434,7 @@ export function CollectionDialog({
         </section>
       )}
 
+      {!readOnly && (
       <section className="collection-section collection-manual">
         {searching ? (
           <CollectionSearch
@@ -441,10 +453,11 @@ export function CollectionDialog({
           </p>
         )}
       </section>
+      )}
       </div>
 
       <div className="editor-actions">
-        {tab === 'collection' && missing.length > 1 && (
+        {tab === 'collection' && missing.length > 1 && !readOnly && (
           <button type="button" className="ghost" disabled={busyAny} onClick={addMissing}>
             A hiányzó {missing.length} felvétele
           </button>

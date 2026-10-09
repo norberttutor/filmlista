@@ -1138,6 +1138,7 @@ export default function Watchlist({ session }) {
               onOpenTitle={(t) => openEditor(t)}
               onRead={readNotifications}
               onRemove={removeNotifications}
+              readOnly={readOnly}
             />
           )}
           <span className="muted small">{session.user.email}</span>
@@ -1543,18 +1544,22 @@ export default function Watchlist({ session }) {
               onUpdated={(row) => handleRowUpdated(row, false)}
               onOrderChanged={handleOrderChanged}
               onFranchiseUpdated={(f) => setFranchises((fs) => fs.map((x) => (x.id === f.id ? { ...x, ...f } : x)))}
+              readOnly={readOnly}
             />
           )}
 
+          {/* üres állapot: net nélkül (readOnly) a hozzáadó gombok nem látszanak (kódaudit #8) */}
           {titles.length === 0 ? (
             <EmptyState
               title="A listád még üres"
               text="Keress rá egy filmre vagy sorozatra, vagy válassz a népszerűek közül."
             >
-              <button type="button" className="primary" onClick={() => openAdd()}>
-                Első cím hozzáadása
-              </button>
-              {isDesktop && (
+              {!readOnly && (
+                <button type="button" className="primary" onClick={() => openAdd()}>
+                  Első cím hozzáadása
+                </button>
+              )}
+              {isDesktop && !readOnly && (
                 <button type="button" className="ghost" onClick={() => bulkImportRef.current?.open()}>
                   Tömeges import
                 </button>
@@ -1565,9 +1570,11 @@ export default function Watchlist({ session }) {
               title={`Még nincs ${type === 'tv' ? 'sorozat' : 'film'} a listádon`}
               text="Váltsd át a típust, vagy adj hozzá egyet."
             >
-              <button type="button" className="primary" onClick={() => openAdd()}>
-                {type === 'tv' ? 'Sorozat' : 'Film'} hozzáadása
-              </button>
+              {!readOnly && (
+                <button type="button" className="primary" onClick={() => openAdd()}>
+                  {type === 'tv' ? 'Sorozat' : 'Film'} hozzáadása
+                </button>
+              )}
               <button type="button" className="ghost" onClick={() => changeType(type === 'tv' ? 'movie' : 'tv')}>
                 {type === 'tv' ? 'Filmek' : 'Sorozatok'} mutatása
               </button>
@@ -1582,9 +1589,11 @@ export default function Watchlist({ session }) {
                   : `A címekben és az eredeti címekben kerestem, ezzel a szűréssel: ${filterSummary}.`
               }
             >
-              <button type="button" className="primary" onClick={() => openAdd(query.trim())}>
-                Keresés a TMDB-n: „{query.trim()}”
-              </button>
+              {!readOnly && (
+                <button type="button" className="primary" onClick={() => openAdd(query.trim())}>
+                  Keresés a TMDB-n: „{query.trim()}”
+                </button>
+              )}
               {sameFilters(filters, SEARCH_FILTERS) ? (
                 <button type="button" className="ghost" onClick={() => changeQuery('')}>
                   Keresés törlése
@@ -1600,9 +1609,11 @@ export default function Watchlist({ session }) {
               <button type="button" className="primary" onClick={clearFilters}>
                 Szűrők törlése
               </button>
-              <button type="button" className="ghost" onClick={() => openAdd()}>
-                Felfedezés
-              </button>
+              {!readOnly && (
+                <button type="button" className="ghost" onClick={() => openAdd()}>
+                  Felfedezés
+                </button>
+              )}
             </EmptyState>
           ) : isDesktop && view === 'list' ? (
             <TitleTable
@@ -1663,6 +1674,7 @@ export default function Watchlist({ session }) {
           onOrderChanged={handleOrderChanged}
           onFranchiseUpdated={(f) => setFranchises((fs) => fs.map((x) => (x.id === f.id ? { ...x, ...f } : x)))}
           onClose={() => setShowFranchises(false)}
+          readOnly={readOnly}
         />
       )}
       {showStats && (

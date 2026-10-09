@@ -661,7 +661,7 @@ function TitlePage({
           )}
 
           {/* a TMDB ajánlásai: egy kattintással a listára, a borítóra kattintva az adatlapjuk */}
-          <SimilarTitles title={t} existingKeys={existingKeys} onAdded={onAdded} onPreview={onPreview} />
+          <SimilarTitles title={t} existingKeys={existingKeys} onAdded={onAdded} onPreview={onPreview} readOnly={readOnly} />
 
           {!preview && errorMessage}
 

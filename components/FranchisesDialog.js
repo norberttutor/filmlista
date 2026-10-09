@@ -38,6 +38,9 @@ export default function FranchisesDialog({
   onOrderChanged,
   onFranchiseUpdated,
   onClose,
+  // net nélkül (terv-3 44): csak nézni lehet – nincs új franchise, átnevezés, törlés, javaslat; a
+  // csempe a gyűjtemény-ablakot csak olvashatóan nyitja, a „Szűrés erre” marad (kódaudit #8)
+  readOnly,
 }) {
   const dialogRef = useRef(null);
   const headingRef = useRef(null);
@@ -186,7 +189,9 @@ export default function FranchisesDialog({
         />
 
         {/* javasolt hozzárendelések (terv-3 35) – keresés közben nem */}
-        {!q && <FranchiseSuggestions suggestions={franchiseSuggestions(titles, franchises)} onUpdated={onUpdated} />}
+        {!q && !readOnly && (
+          <FranchiseSuggestions suggestions={franchiseSuggestions(titles, franchises)} onUpdated={onUpdated} />
+        )}
 
         {shown.length === 0 && (
           <p className="muted">{q ? `Nincs ilyen franchise: „${query.trim()}”.` : 'Még nincs franchise-od.'}</p>
@@ -249,12 +254,16 @@ export default function FranchisesDialog({
                     <button type="button" className="link small" disabled={ownCount === 0} onClick={() => onShow(f.id)}>
                       Szűrés erre
                     </button>
-                    <button type="button" className="link small" onClick={() => setEdit({ id: f.id, mode: 'rename', name: f.name, error: '' })}>
-                      Átnevezés
-                    </button>
-                    <button type="button" className="danger-link small" onClick={() => setEdit({ id: f.id, mode: 'delete', error: '' })}>
-                      Törlés
-                    </button>
+                    {!readOnly && (
+                      <>
+                        <button type="button" className="link small" onClick={() => setEdit({ id: f.id, mode: 'rename', name: f.name, error: '' })}>
+                          Átnevezés
+                        </button>
+                        <button type="button" className="danger-link small" onClick={() => setEdit({ id: f.id, mode: 'delete', error: '' })}>
+                          Törlés
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
                 {editing?.error && (
@@ -291,9 +300,11 @@ export default function FranchisesDialog({
               )}
             </form>
           ) : (
-            <button type="button" className="ghost" onClick={() => setCreating({ name: '', error: '' })}>
-              + Új franchise
-            </button>
+            !readOnly && (
+              <button type="button" className="ghost" onClick={() => setCreating({ name: '', error: '' })}>
+                + Új franchise
+              </button>
+            )
           )}
         </div>
       </div>
@@ -317,6 +328,7 @@ export default function FranchisesDialog({
           onClose={() => setOpenId(null)}
           // a gyűjtemény-ablak mellé kattintva a Franchise-ok ablak is bezárul (Norbi kérése, 2026-10-07)
           onOutsideClose={() => dialogRef.current?.close()}
+          readOnly={readOnly}
         />
       )}
     </dialog>

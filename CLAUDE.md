@@ -119,7 +119,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (`readOnly`): nincs „Cím hozzáadása” / „+” / gyorsgomb, a ⋮ menüből kimarad az IMDb import, a
   Tömeges import és a Mentések (`ONLINE_ONLY`), a táblázat vezérlői és az adatlap mezői tiltva (`Lock`
   – `fieldset.lock`, `display: contents`; az adatlapon csak „Bezárás”), a háttérfrissítések nem
-  indulnak; net nélkül / sikertelen betöltésnél sáv (`.offline-note`): „Nincs internetkapcsolat. A lista
+  indulnak; a `readOnly` a többi írási helyre is eljut (kódaudit #8, 2026-10-09): a Hasonló címeknél
+  nincs „+ Hozzáadás” / ×, a gyűjtemény-ablakban nincs felvétel / TMDB-gyűjtemény hozzárendelése /
+  eltávolítása, a nézési sorrend pipái tiltva, „Sorrend szerkesztése” és „Megosztás” nincs, a
+  Franchise-ok ablakban nincs Átnevezés / Törlés / „+ Új franchise” / Javasolt hozzárendelések (a
+  „Szűrés erre” marad), a harangban nincs × / „Összes törlése”, és a kinyitás nem jelöli olvasottnak,
+  az üres állapotból a hozzáadó gombok (Első cím, Keresés a TMDB-n, Felfedezés, Tömeges import)
+  kimaradnak. **Új írási gombnál a `readOnly`-t is kezeld**; net nélkül / sikertelen betöltésnél sáv (`.offline-note`): „Nincs internetkapcsolat. A lista
   a … -kor elmentett állapotot mutatja; most csak nézelődni lehet…”. Sikertelen betöltésnél a net
   visszatérésekor és félpercenként újrapróbálja (`reloadKey`). A borítófalon nincs mit tiltani (a
   kártya csak az adatlapot nyitja). Teszt: `munka/e2e/test-44.mjs`; fejléc:

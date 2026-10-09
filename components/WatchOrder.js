@@ -29,6 +29,7 @@ export default function WatchOrder({
   onOrderChanged,
   onUpdated,
   onShareBusyChange,
+  readOnly, // net nélkül (terv-3 44): csak nézni lehet – a pipák tiltva, szerkesztés / megosztás nincs
 }) {
   const { items, stored } = orderedItems(franchise.id, titles, orders);
   const [draft, setDraft] = useState(null); // szerkesztés közben a tételkulcsok sorrendje
@@ -250,14 +251,16 @@ export default function WatchOrder({
             </button>
           </>
         ) : (
-          <>
-            {items.length > 1 && (
-              <button type="button" className="ghost" onClick={startEdit}>
-                Sorrend szerkesztése
-              </button>
-            )}
-            <ShareOrder franchise={franchise} onBusyChange={onShareBusyChange} />
-          </>
+          !readOnly && (
+            <>
+              {items.length > 1 && (
+                <button type="button" className="ghost" onClick={startEdit}>
+                  Sorrend szerkesztése
+                </button>
+              )}
+              <ShareOrder franchise={franchise} onBusyChange={onShareBusyChange} />
+            </>
+          )
         )}
       </div>
 
@@ -307,7 +310,7 @@ export default function WatchOrder({
                   type="checkbox"
                   className="wo-check"
                   checked={done}
-                  disabled={!i.aired || busy[i.key]}
+                  disabled={readOnly || !i.aired || busy[i.key]}
                   aria-label={`${label} – megnézve`}
                   title={i.aired ? undefined : 'Még nem jelent meg'}
                   onChange={() => toggle(i)}
