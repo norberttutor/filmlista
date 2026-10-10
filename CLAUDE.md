@@ -1226,7 +1226,7 @@ franchise színében (~0,5–1 óra), 52.3 – a megosztott nézési sorrend a f
 53-as pont): a gyűjtemény-ablak „+ TMDB-gyűjtemény hozzáadása” gombjára gépelés nélkül is javaslatok (a
 franchise nevével magyarul és angolul keresve, a már hozzárendeltek nélkül); a kereső megmarad. A
 javasolt és a keresett gyűjtemények neve / borítója új lapon a TMDB-oldalukra visz.
-**55 – pontos dátum szerinti rendezés – kész** (2026-10-10, commitra vár; `23_release_date.sql` élesben, a
+**55 – pontos dátum szerinti rendezés – kész** (2026-10-10, `f4be52b`; `23_release_date.sql` élesben, a
 meglévő 918 cím dátuma feltöltve; teszt: `munka/e2e/test-55.mjs`; részletek: TERV.md 55-ös pont).
 **54 – gazdagabb franchise-szűrő** (Norbi kérése, 2026-10-10; látványtervre vár, ~1,5–2,5 óra; részletek:
 TERV.md 54-es pont): a lenyílóban látsszon, melyik franchise-ban van még megnézendő és melyik „mind
