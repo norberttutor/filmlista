@@ -162,8 +162,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   gépeléskor az egész listán keres: a szűrők félreállnak – `SEARCH_FILTERS`, keresés közben
   szűkíthetők –, a keresés törlésekor a keresés előtti szűrők állnak vissza),
   mellette felirat nélkül (`aria-label`) a Rendezés (`SORTS`:
-  legutóbb / legkorábban hozzáadott, legjobb értékelés, legújabb / legrégebbi megjelenés;
-  üres érték a végére; franchise-ra szűrve, ha annak van saját nézési sorrendje – terv-3 28 –, elöl
+  legutóbb / legkorábban hozzáadott, legjobb értékelés, legújabb / legrégebbi megjelenés – pontos
+  dátummal, `releaseKey(t)` (terv-3 55, 2026-10-10: korábban csak az év számított, a Marvel egy évének
+  címei összekeveredtek); üres érték a végére; franchise-ra szűrve, ha annak van saját nézési sorrendje – terv-3 28 –, elöl
   „Nézési sorrend” (`WATCH_ORDER`): Norbi döntése, 2026-10-06, csak ilyenkor kínálja, és a franchise
   kiválasztásakor magától erre áll – `orderSort`; nézési sorrend nélküli franchise-nál magától
   „Legrégebbi megjelenés” – `FRANCHISE_SORT` –; franchise kiválasztásakor – nézési sorrendtől függetlenül – az állapotszűrő magától „Mind” – a franchise-szűrő
@@ -542,8 +543,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (`franchiseItems()`; évad nélküli sorozat egy tétel; tételkulcs `címId:évad`, 0 = film),
   számozott listában: jelölőnégyzet, sorszám, kis borító, „Loki – 2. évad”, év / „Bejelentve”.
   `orderedItems()`: a tárolt sorrend (`franchise_order`), a benne nem szereplők (új cím / évad)
-  **a végére**, egymás közt megjelenés szerint (film: mozis / digitális dátum, különben az év;
-  évad: `air_date`); amíg nincs tárolt sorrend, megjelenés szerint. A megnézett tétel **kihúzva a
+  **a végére**, egymás közt megjelenés szerint (`releaseKey` – lib/titles.js; évad: `air_date`); amíg nincs tárolt sorrend, megjelenés szerint. A megnézett tétel **kihúzva a
   helyén marad** (`data-done`), az első meg nem nézett, megjelent, nem abbahagyott „Következik”
   (`nextItem()`); abbahagyott sorozat meg nem nézett évadja „Abbahagyva”, kihagyva; bejelentett
   évad nem jelölhető. A pipa filmnél `updateTitle(status)` (vissza: Megnézendő), évadnál
@@ -618,6 +618,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   ha nincs digitális dátum), `null` (megjelent / sorozat / megnézett); `formatReleaseDate()`
   („okt. 15.”, más évben „2027. márc. 3.”), `releaseLabel(state)` → `{ word, when, sub }`
   („Hamarosan” / „Moziban”, a dátum, „digitálisan: …”).
+  `releaseKey(t, évad?)` (terv-3 55): a megjelenés szerinti rendezési kulcs (ISO szöveg) – előbb a
+  `release_date`, aztán a mozis / digitális dátum, sorozatnál az 1. évadé; csak évvel `"2008-12-32"` (az
+  év végén), semmi: null; évadnál az évad `air_date`-je. A fő lista rendezése és a nézési sorrend is ezt
+  használja. `DETAILS_V`: a `/api/tmdb/details` kérés `v` paramétere (a böngésző egy óráig tárolja a
+  választ) – a válasz mezőinek változásakor emeld.
   Közös segédek: `externalLink()`, `formatDate()`, `todayDate()`, `DEFAULT_STATUS`,
   `DROPPED_STATUS` („Abbahagyva”, csak sorozatnál), `MAMA_OPTIONS`, `mamaLabel()`
 - `lib/server/auth.js` – `getUserFromRequest()`, `supabaseAsUser()` (a felhasználó nevében,
@@ -659,7 +664,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `app/api/tmdb/details/route.js` – `GET ?type=movie|tv&id=` → a `titles` oszlopainak
   megfelelő objektum + `genres [{id, name}]`, sorozatnál `seasons` is; magyar leírás híján
   angol; az IMDb-értékelést is lekéri (OMDb), ha nem sikerül, a cím attól még felvehető;
-  filmnél a TMDB-gyűjtemény is (`tmdb_collection_id`, `collection_checked_at` – terv-3 35)
+  filmnél a TMDB-gyűjtemény is (`tmdb_collection_id`, `collection_checked_at` – terv-3 35); a pontos
+  dátum (`release_date`: film `release_date`, sorozat `first_air_date` – terv-3 55)
 - `app/api/tmdb/seasons/route.js` – `POST`: a még nem vagy 7 napnál régebben ellenőrzött
   sorozatok évadait frissíti a TMDB-ről (új – megjelent vagy bejelentett – évad, név,
   epizódszám, dátum; az állapothoz / letöltve jelzőhöz nem nyúl), 10-esével; a frissített
@@ -873,7 +879,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `digital_release` (digitális, letölthető megjelenés), `release_checked_at` (mikor néztük a
   TMDB-n) – `14_release_dates.sql`, NULL-t engedők, filmnél `tmdb_collection_id` (a TMDB-gyűjtemény),
   `collection_checked_at`, `franchise_suggestion_off` (a felajánlott franchise-t elutasította) –
-  `19_title_collection.sql` (terv-3 35), NULL-t engedők,
+  `19_title_collection.sql` (terv-3 35), NULL-t engedők, `release_date` (a TMDB elsődleges dátuma – film:
+  `release_date`, sorozat: `first_air_date`; a rendezéshez – `23_release_date.sql`, terv-3 55, NULL-t enged;
+  felvételkor a details route adja, a meglévőket 2026-10-10-én egyszer, szkripttel töltöttük fel –
+  `munka/terv-3/terv-55/release-date-feltoltes.mjs`; háttérfrissítése nincs),
   `created_at`, `updated_at` (trigger); egyedi: `(user_id, media_type, tmdb_id)`
 - `title_seasons (title_id FK → titles on delete cascade, season_number ≥ 1, user_id default
   auth.uid(), name, episode_count, air_date, status FK → statuses, is_downloaded, watched_at,
@@ -1179,7 +1188,8 @@ harang, kattintva előnézet (terv-3 36, 2026-10-09). A „bejelentett” (még 
 mindenhol indigó (terv-3 52.1, 2026-10-09). Mama adatlapja a film színében dereng, mint Norbié (terv-3
 52.4, „A” változat, 2026-10-09). Világos témában a film- és franchise-színek ugyanolyan erősek, mint
 sötétben, a jelölővonalak / ikonok jól láthatók (terv-3 52.6, „A” változat, 2026-10-09). Az appon
-belüli leírásban a ①②③ jelek borostyán körben, mint a képeken (terv-3 52.7, 2026-10-09).
+belüli leírásban a ①②③ jelek borostyán körben, mint a képeken (terv-3 52.7, 2026-10-09). A
+„Legrégebbi / Legújabb megjelenés” rendezés pontos dátum szerint (terv-3 55, 2026-10-10, hibajavítás).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -1212,6 +1222,15 @@ körben** – kész (2026-10-09, Norbi kérésére látványterv nélkül; teszt
 **Látványtervre vár (Norbi kéri, beépítés csak a döntése után):** 52.2 – a lista fölötti franchise-sáv a
 franchise színében (~0,5–1 óra), 52.3 – a megosztott nézési sorrend a franchise színében (~1–1,5 óra),
 52.5 – az értesítősáv a fajtája szerint (törlés piros, „Hogy tetszett?” borostyán csík; ~1 óra).
+**53 – javasolt TMDB-gyűjtemények** (Norbi kérése, 2026-10-10; ~1,25–1,75 óra; részletek: `munka/terv-3/TERV.md`
+53-as pont): a gyűjtemény-ablak „+ TMDB-gyűjtemény hozzáadása” gombjára gépelés nélkül is javaslatok (a
+franchise nevével magyarul és angolul keresve, a már hozzárendeltek nélkül); a kereső megmarad. A
+javasolt és a keresett gyűjtemények neve / borítója új lapon a TMDB-oldalukra visz.
+**55 – pontos dátum szerinti rendezés – kész** (2026-10-10, commitra vár; `23_release_date.sql` élesben, a
+meglévő 918 cím dátuma feltöltve; teszt: `munka/e2e/test-55.mjs`; részletek: TERV.md 55-ös pont).
+**54 – gazdagabb franchise-szűrő** (Norbi kérése, 2026-10-10; látványtervre vár, ~1,5–2,5 óra; részletek:
+TERV.md 54-es pont): a lenyílóban látsszon, melyik franchise-ban van még megnézendő és melyik „mind
+megnézve”, és a logókon túl legyen benne valami extra (pl. franchise-szín, mérő, borítóköteg, „Következik”).
 **Norbi kérései (2026-10-04)** – utána, ebben a sorrendben; a részletek
 (megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
 1. **27 – jelszó módosítása** (~1,5 óra): csak bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”:

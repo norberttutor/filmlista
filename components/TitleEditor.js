@@ -11,6 +11,7 @@ import {
   DEFAULT_STATUS,
   DROPPED_STATUS,
   MAMA_OPTIONS,
+  DETAILS_V,
 } from '@/lib/titles';
 import StarRating from '@/components/StarRating';
 import FranchiseSelect from '@/components/FranchiseSelect';
@@ -271,7 +272,7 @@ function TitlePage({
   useEffect(() => {
     if (!preview) return;
     const controller = new AbortController();
-    apiGet('/api/tmdb/details', { type: media_type, id: tmdb_id }, { signal: controller.signal })
+    apiGet('/api/tmdb/details', { type: media_type, id: tmdb_id, v: DETAILS_V }, { signal: controller.signal })
       .then((data) => afterTransition().then(() => !controller.signal.aborted && setDetails(data)))
       .catch((err) => err.name !== 'AbortError' && setDetailsError(err.message));
     return () => controller.abort();

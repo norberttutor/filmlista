@@ -31,6 +31,7 @@ import {
   DROPPED_STATUS,
   MAMA_OPTIONS,
   mamaLabel,
+  releaseKey,
 } from '@/lib/titles';
 import FranchiseFilter from '@/components/FranchiseFilter';
 import FranchiseCollection from '@/components/FranchiseCollection';
@@ -147,12 +148,22 @@ const loadTitles = () =>
       .order('id', { ascending: false })
   );
 
-// üres érték (nincs értékelés / megjelenési év) mindig a lista végére kerül;
+// üres érték (nincs értékelés) mindig a lista végére kerül;
 // dir: -1 = csökkenő, 1 = növekvő
 function nullsLast(x, y, dir) {
   if (x == null) return y == null ? 0 : 1;
   if (y == null) return -1;
   return dir * (x - y);
+}
+
+// megjelenés szerint, pontos dátummal (terv-3 55: korábban csak az év számított, így egy év címei –
+// pl. a Marvelben – összekeveredtek); dátum és év nélkül a végére
+function byRelease(a, b, dir) {
+  const x = releaseKey(a);
+  const y = releaseKey(b);
+  if (x == null) return y == null ? 0 : 1;
+  if (y == null) return -1;
+  return dir * x.localeCompare(y);
 }
 
 // egyezésnél a legutóbb hozzáadott van elöl
@@ -172,12 +183,12 @@ const SORTS = [
   {
     code: 'year_desc',
     name: 'Legújabb megjelenés',
-    compare: (a, b) => nullsLast(a.release_year, b.release_year, -1) || byAddedDesc(a, b),
+    compare: (a, b) => byRelease(a, b, -1) || byAddedDesc(a, b),
   },
   {
     code: 'year_asc',
     name: 'Legrégebbi megjelenés',
-    compare: (a, b) => nullsLast(a.release_year, b.release_year, 1) || byAddedDesc(a, b),
+    compare: (a, b) => byRelease(a, b, 1) || byAddedDesc(a, b),
   },
 ];
 

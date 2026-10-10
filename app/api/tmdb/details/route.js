@@ -69,6 +69,8 @@ async function loadDetails(type, id) {
     title: data.title ?? data.name,
     original_title: data.original_title ?? data.original_name,
     release_year: yearOf(data.release_date ?? data.first_air_date),
+    // pontos dátum a megjelenés szerinti rendezéshez (terv-3 55; a TMDB üres szöveget is adhat)
+    release_date: (data.release_date ?? data.first_air_date) || null,
     overview: pickOverview(data),
     poster_path: data.poster_path,
     // a szerkesztő ablak háttérképe (a felvétellel együtt mentődik; "megnézve", hogy a háttérben
