@@ -45,7 +45,7 @@ async function loadForYou(seeds, exclude, signal) {
     3,
     async (s) => {
       try {
-        const { results } = await apiGet('/api/tmdb/similar', { type: s.media_type, id: s.tmdb_id, v: 2 }, { signal });
+        const { results } = await apiGet('/api/tmdb/similar', { type: s.media_type, id: s.tmdb_id, v: 3 }, { signal });
         results.forEach((r, pos) => {
           const key = titleKey(r);
           if (exclude.has(key)) return;
@@ -137,6 +137,7 @@ export default function Discover({ existingKeys, seeds = [], rowState, onAdd, on
     <div className="discover">
       <p className="muted small">
         Csak Magyarországon megjelent, angol vagy magyar nyelvű címek – ezek többnyire szinkronosak.
+        Animációs címeket nem ajánlunk.
       </p>
       <HideNote note={note} onUndo={undo} />
       {featured === undefined ? (

@@ -1,10 +1,19 @@
 import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
-import { tmdbFetch, tmdbErrorResponse, yearOf, cached, cachedResponse, DAY_S } from '@/lib/server/tmdb';
+import {
+  tmdbFetch,
+  tmdbErrorResponse,
+  yearOf,
+  cached,
+  cachedResponse,
+  DAY_S,
+  ANIMATION_GENRE,
+} from '@/lib/server/tmdb';
 
 const LIMIT = 12; // ennyi ajánlás a szerkesztő ablakban
 // csak a 2000-es vagy újabb, legalább 6,0-s TMDB-értékelésű (legalább 50 szavazatos) címek – Norbi
 // kérése, 2026-10-07; filmre és sorozatra is (sorozatnál az első évad éve). A TMDB-értékelés az
-// IMDb-é helyett: az a lista adataiban benne van, az IMDb-é címenként egy OMDb-kérés lenne
+// IMDb-é helyett: az a lista adataiban benne van, az IMDb-é címenként egy OMDb-kérés lenne.
+// Animációs címet sem ajánl (terv-3 60, Norbi kérése, 2026-10-12)
 const MIN_YEAR = 2000;
 const MIN_RATING = 6;
 const MIN_VOTES = 50;
@@ -28,14 +37,14 @@ export async function GET(request) {
   }
 
   try {
-    const results = await cached(`similar2:${type}:${id}`, DAY_S * 1000, () => loadSimilar(type, id));
+    const results = await cached(`similar3:${type}:${id}`, DAY_S * 1000, () => loadSimilar(type, id));
     return cachedResponse({ results }, DAY_S);
   } catch (err) {
     return tmdbErrorResponse(err);
   }
 }
 
-// megfelel-e a szűrésnek (film / sorozat, borítóval, nem maga a cím, elég új és elég jó)
+// megfelel-e a szűrésnek (film / sorozat, borítóval, nem maga a cím, nem animáció, elég új és elég jó)
 function wanted(r, type, id) {
   const year = yearOf(r.release_date ?? r.first_air_date);
   return (
@@ -43,6 +52,7 @@ function wanted(r, type, id) {
     !r.adult &&
     r.poster_path &&
     !(r.id === id && r.media_type === type) &&
+    !(r.genre_ids ?? []).includes(ANIMATION_GENRE) &&
     year >= MIN_YEAR &&
     (r.vote_average ?? 0) >= MIN_RATING &&
     (r.vote_count ?? 0) >= MIN_VOTES

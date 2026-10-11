@@ -440,7 +440,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `with_release_type` 2|3 vagy 4), sorozat = magyar előfizetéses streamingen elérhető
   (`discover/tv`, `watch_region=HU`, `flatrate`, 90 napon belül futott rész); mindkettőnél
   angol vagy magyar eredeti nyelv, van magyar leírás, és nincs dokumentum / valóságshow /
-  talkshow / hírek / szappanopera műfaj. A felület ezt egy mondatban jelzi. Listánként
+  talkshow / hírek / szappanopera / **animáció** műfaj (az animáció Norbi kérésére – terv-3 60,
+  2026-10-12; `ANIMATION_GENRE` = 16, `lib/server/tmdb.js`). A felület ezt két mondatban jelzi. Listánként
   legfeljebb 16, 5 oldalig, egy óráig gyorsítótárazva (`cached()`). A listák betöltője közös:
   `lib/server/discover.js` (`discoverList(name)`, `DISCOVER_LISTS`; csak route handlerben).
   **Kiemelt sáv** fölül (terv-3 46, 2026-10-07, Norbi választása: „A” látványterv –
@@ -456,7 +457,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   alatt csontváz (`.featured-sk`), hibánál a sáv elmarad.
   **„Neked ajánlott”** (terv-3 37, 2026-10-07) – az ötödik, utolsó sor: a 8+ saját értékelések közül a
   legjobb 10 (azon belül a legutóbb megnézettek – `recommendSeeds(titles)`, a Watchlist adja a
-  `TitleSearch`-en át) `/api/tmdb/similar` ajánlásai (ugyanaz a route és `v=2`, mint a Hasonló
+  `TitleSearch`-en át) `/api/tmdb/similar` ajánlásai (ugyanaz a route és `v=3`, mint a Hasonló
   címeknél, így gyorsítótárazva), 3-asával, a gyakoriság szerint (ami több kedvenchez is ajánlott,
   elöl), legfeljebb 16; a betöltéskor listán lévők kimaradnak (a most felvett „✓ A listán”-nal marad);
   ×-szel elrejthető. A magyar megjelenést itt nem szűri (az alcím jelzi); 8+ értékelés nélkül nincs sor
@@ -703,7 +704,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   mezőnevekkel. Szűrés (Norbi kérése, 2026-10-07): csak 2000-es vagy újabb (sorozatnál az első évad
   éve), legalább 6,0-s **TMDB**-értékelésű, legalább 50 szavazatos címek – filmnél és sorozatnál is
   (az IMDb-érték címenként egy OMDb-kérés lenne, a napi 1000-es keretből; Norbi az A változatot
-  választotta). A kliens `v=2` paraméterrel kéri (a böngésző egynapos gyorsítótára miatt; a szűrés
+  választotta); animációs cím nem (terv-3 60, 2026-10-12 – így a „Neked ajánlott” sorban sem). A kliens `v=3` paraméterrel kéri (a böngésző egynapos gyorsítótára miatt; a szűrés
   következő változásakor emeld)
 - `app/api/tmdb/backdrops/route.js` – `POST`: a még meg nem nézett címek (`backdrop_checked_at`
   üres) háttérképét lekéri a TMDB-ről és elmenti (40-esével, a felhasználó jogaival; ha nincs
@@ -1228,7 +1229,8 @@ belüli leírásban a ①②③ jelek borostyán körben, mint a képeken (terv-
 Kinézeti kör (2026-10-11): franchise-sáv és megosztott sorrend a franchise színében, színes értesítősáv
 fajtánként, franchise-szűrő csoportokkal („N hátra” / „Mind megnézve”), műfajikonok, látványosabb asztali
 listanézet 10 címmel oldalanként. Javasolt TMDB-gyűjtemények a gyűjtemény-ablakban, link a TMDB-oldalra (terv-3
-53); „Szűrés erre” / „Átnevezés” / „Törlés” a gyűjtemény-ablak fejlécében (terv-3 57).
+53); „Szűrés erre” / „Átnevezés” / „Törlés” a gyűjtemény-ablak fejlécében (terv-3 57). Az ajánlásokban
+(Felfedezés, kiemelt sáv, Hasonló címek, „Neked ajánlott”) nincs animációs cím (terv-3 60, 2026-10-12).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -1275,6 +1277,10 @@ meglévő 918 cím dátuma feltöltve; teszt: `munka/e2e/test-55.mjs`; részlete
 58-as pont): franchise-os címnél és sorozatnál az adatlapon nincs Mama-csoport (ha már van értéke, marad,
 hogy törölhető legyen), a Mama-szűrő Sorozatok típusnál és franchise-ra szűrve nem látszik – Mama oldala
 úgyis csak a franchise nélküli filmeket kínálja.
+**60 – animációs filmek kiszedése az ajánlásokból – kész** (Norbi kérése, 2026-10-11; kész 2026-10-12,
+commitra vár; teszt: `munka/e2e/test-60.mjs` 11/11): a Felfedezés sorai, a kiemelt sáv, a Hasonló címek és a
+„Neked ajánlott” nem kínál animációs címet (TMDB-műfaj 16); a kézi keresés, az importok, a listán lévők és a
+harang („Új rész a gyűjteményben”) nem változnak.
 **Norbi kérései (2026-10-04)** – utána, ebben a sorrendben; a részletek
 (megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
 1. **27 – jelszó módosítása** (~1,5 óra): csak bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”:
