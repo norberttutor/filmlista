@@ -1248,7 +1248,7 @@ látványterv után: „A” – mint Norbi adatlapja; https://claude.ai/artifac
 kiegyenlített; https://claude.ai/artifact/YDFYeYGMTxdmKfN16QJv38; teszt: `munka/e2e/test-52-6.mjs`; a
 mérés és az átalakító szkript: `munka/terv-3/terv-52-6/`). **52.7 – a leírásban a ①②③ jelek borostyán
 körben** – kész (2026-10-09, Norbi kérésére látványterv nélkül; teszt: `munka/e2e/test-52-7.mjs`).
-**Kinézeti kör, 2026-10-11 – kész** (commitra vár; Norbi választása a látványterv után –
+**Kinézeti kör, 2026-10-11 – kész** (`db63d69`; Norbi választása a látványterv után –
 https://claude.ai/artifact/C1WkebV3iwP7BzwLfbs9H7, makett: `munka/terv-3/tervek-1011/`; teszt:
 `munka/e2e/test-1011.mjs` + `test.mjs` 115/115; `24_share_ambient.sql` élesben): **52.2 B** – a lista fölötti
 franchise-sáv a franchise színében (színes keret, pálca, szám, gomb), **52.3 A** – a megosztott sorrend a
