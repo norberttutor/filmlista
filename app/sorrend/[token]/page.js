@@ -4,11 +4,13 @@ import { connection } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { itemMeta, orderedItems } from '@/lib/watchOrder';
 import SiteFooter from '@/components/SiteFooter';
+import ShareAmbient from '@/components/ShareAmbient';
 
 // Megosztott nézési sorrend (terv-3 41): csak olvasható, belépés nélkül nyíló oldal
 // (/sorrend/<token>; a link a gyűjtemény-ablak „Nézési sorrend” fülén, „Megosztás”). Az adat a
 // shared_watch_order() függvényből jön (20_franchise_share.sql): a franchise neve, logója,
-// háttérképe, címei évadokkal és a tárolt sorrend – állapot, értékelés, letöltve, Mama nélkül. A
+// háttérképe, a színének borítója (24_share_ambient.sql – a lap a franchise színében, terv-3 52.3,
+// ShareAmbient), címei évadokkal és a tárolt sorrend – állapot, értékelés, letöltve, Mama nélkül. A
 // sorba rendezés ugyanaz, mint az appban (lib/watchOrder.js). Visszavont / hibás linknél 404
 // (not-found.js). Kérésenként fut (connection()): a visszavonás és a sorrend változása azonnal
 // látszik. A keresők nem indexelik.
@@ -56,11 +58,11 @@ export default async function SharedOrderPage({ params }) {
   const { token } = await params;
   const data = await loadShared(token);
   if (!data) notFound();
-  const { name, logo_path, backdrop_path, items, stored } = data;
+  const { name, logo_path, backdrop_path, poster_path, items, stored } = data;
 
   return (
     <>
-      <main className="share-page">
+      <ShareAmbient posterPath={poster_path}>
         <header
           className="share-hero"
           data-backdrop={backdrop_path ? '' : undefined}
@@ -102,7 +104,7 @@ export default async function SharedOrderPage({ params }) {
           Megosztva a „Megnézendő filmek és sorozatok” alkalmazásból. A sorrend a megosztó saját listájából jön, és
           követi a változásait.
         </p>
-      </main>
+      </ShareAmbient>
       <SiteFooter />
     </>
   );

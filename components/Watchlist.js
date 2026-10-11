@@ -34,6 +34,7 @@ import {
   releaseKey,
 } from '@/lib/titles';
 import FranchiseFilter from '@/components/FranchiseFilter';
+import GenreIcon from '@/components/GenreIcon';
 import FranchiseCollection from '@/components/FranchiseCollection';
 import NotificationBell from '@/components/NotificationBell';
 import BulkImport from '@/components/BulkImport';
@@ -80,10 +81,12 @@ const NO_FRANCHISE = 'none';
 const DESKTOP_QUERY = '(min-width: 1400px)';
 const PHONE_QUERY = '(max-width: 640px)'; // telefonos nézet
 
-const PAGE_SIZE = 25; // ennyi cím egy oldalon (lista, telefon, keskenyebb rács)
+const PAGE_SIZE = 25; // ennyi cím egy oldalon (telefon, keskenyebb rács)
 // asztali rácsban (≥ 1400 px): 1440p-n (2560 px) 11 kártya fér egy sorba → 2 teli sor, és a
 // lapozó görgetés nélkül is látszik (Norbi kérése)
 const GRID_PAGE_SIZE = 22;
+// asztali listanézetben (táblázat, terv-3 59 – Norbi kérése): a nagyobb, kártyaszerű sorokból 10
+const TABLE_PAGE_SIZE = 10;
 
 // asztali szélességen választható nézet: 'list' (táblázat) vagy 'grid' (borítófal); a böngésző
 // megjegyzi (ha a tárhely nem érhető el, marad a lista)
@@ -521,6 +524,22 @@ export default function Watchlist({ session }) {
     return franchises.filter((f) => used.has(f.id) || String(f.id) === franchise);
   }, [titles, franchises, franchise]);
 
+  // a franchise-szűrőben (terv-3 54, Norbi választása: „A”): franchise-onként hány listán lévő cím
+  // nincs még megnézve (az abbahagyott sem számít) – „Van még megnézendő” (N hátra) / „Mind megnézve”
+  const franchiseOptions = useMemo(() => {
+    const left = new Map();
+    for (const t of titles) {
+      if (!t.franchise_id) continue;
+      const open = t.status !== 'watched' && t.status !== DROPPED_STATUS;
+      left.set(t.franchise_id, (left.get(t.franchise_id) ?? 0) + (open ? 1 : 0));
+    }
+    const opts = usedFranchises.map((f) => {
+      const n = left.get(f.id) ?? 0;
+      return { value: String(f.id), label: f.name, logo: f.logo_path, group: n > 0 ? 'open' : 'done', badge: n > 0 ? `${n} hátra` : '✓ Mind megnézve' };
+    });
+    return [...opts.filter((o) => o.group === 'open'), ...opts.filter((o) => o.group === 'done')];
+  }, [titles, usedFranchises]);
+
   const franchiseName = useMemo(
     () => new Map(franchises.map((f) => [f.id, f.name])),
     [franchises]
@@ -572,6 +591,7 @@ export default function Watchlist({ session }) {
       return;
     }
     toast({
+      kind: 'delete',
       text: ids.length === 1 ? 'Értesítés törölve.' : `${ids.length} értesítés törölve.`,
       action: {
         label: 'Visszavonás',
@@ -737,7 +757,7 @@ export default function Watchlist({ session }) {
 
   // lapozás: az oldal első címének helyét jegyezzük meg (first), így nézetváltáskor (más
   // oldalméret) az az oldal jön, amelyiken az addig látott első cím van
-  const pageSize = isDesktop && view === 'grid' ? GRID_PAGE_SIZE : PAGE_SIZE;
+  const pageSize = !isDesktop ? PAGE_SIZE : view === 'grid' ? GRID_PAGE_SIZE : TABLE_PAGE_SIZE;
   const [pageState, setPageState] = useState({ key: filterKey, first: 0 });
   // szűrés- / rendezésváltáskor 1. oldal (akkor is, ha később ugyanez a szűrés jön vissza)
   if (pageState.key !== filterKey) setPageState({ key: filterKey, first: 0 });
@@ -941,6 +961,7 @@ export default function Watchlist({ session }) {
     setTitles((ts) => ts.filter((x) => x.id !== t.id));
     const restore = () => setTitles((ts) => (ts.some((x) => x.id === t.id) ? ts : [t, ...ts]));
     const toastId = toast({
+      kind: 'delete',
       text: (
         <>
           „<b>{t.title}</b>” lekerült a listáról
@@ -1082,6 +1103,7 @@ export default function Watchlist({ session }) {
       }
     };
     id = toast({
+      kind: 'rating',
       image: t.poster_path ? TOAST_THUMB + t.poster_path : null,
       text: (
         <>
@@ -1386,17 +1408,21 @@ export default function Watchlist({ session }) {
             </div>
 
             {genres.length > 0 && (
-              <label className="inline-field">
-                Műfaj
-                <select value={genre} onChange={(e) => setGenre(e.target.value)}>
-                  <option value="">Összes</option>
-                  {genres.map((g) => (
-                    <option key={g} value={g}>
-                      {g}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              // saját lenyíló műfajikonokkal (terv-3 56, Norbi választása: „A”), a franchise-szűrő mintájára
+              <div className="inline-field">
+                <span id="genre-filter-label">Műfaj</span>
+                <FranchiseFilter
+                  labelId="genre-filter-label"
+                  className="genre-filter"
+                  lead="icon"
+                  value={genre}
+                  onChange={setGenre}
+                  options={[
+                    { value: '', label: 'Összes' },
+                    ...genres.map((g) => ({ value: g, label: g, icon: <GenreIcon name={g} /> })),
+                  ]}
+                />
+              </div>
             )}
 
             {/* csak ha van a listán Mama-jelölés */}
@@ -1426,11 +1452,7 @@ export default function Watchlist({ session }) {
                     options={[
                       { value: '', label: 'Összes' },
                       { value: NO_FRANCHISE, label: 'Franchise nélkül' },
-                      ...usedFranchises.map((f) => ({
-                        value: String(f.id),
-                        label: f.name,
-                        logo: f.logo_path,
-                      })),
+                      ...franchiseOptions,
                     ]}
                   />
                 </div>

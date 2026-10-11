@@ -22,7 +22,8 @@ import { saveRow } from '@/lib/rowSaves';
 import Reflow from '@/components/Reflow';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
 
-const THUMB_BASE = 'https://image.tmdb.org/t/p/w154';
+const THUMB_BASE = 'https://image.tmdb.org/t/p/w185'; // a 100 px-es borítóhoz (terv-3 59)
+const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w780';
 
 // Asztali nézet: egy cím soronként, a saját adatok közvetlenül a sorban szerkeszthetők.
 // entries: { key, title, item } – az item a nézési sorrend tétele (a fő lista „Nézési sorrend”
@@ -120,9 +121,9 @@ function TitleRow({
   const [error, setError] = useState('');
   const savedTimer = useRef(null);
   const link = externalLink(t);
-  // a borító hangulatszíne: az első rámutatáskor / fókusznál számolódik, a sor halványan felveszi
-  const [pointed, setPointed] = useState(false);
-  const ambient = usePosterColor(t.poster_path, pointed);
+  // a borító hangulatszíne: a sor mindig halványan felveszi (terv-3 59, „B” – oldalanként 10 sor, így
+  // nem kell az első rámutatásig várni)
+  const { style: ambientStyle, ...ambientData } = ambientProps(usePosterColor(t.poster_path));
   // még meg nem jelent film: szaggatott keret a borító körül és dátumos jelvény
   const release = releaseState(t);
   const strike = useStrike(item ? item.status : t.status); // megnézettre váltáskor kihúzás a címen
@@ -165,9 +166,9 @@ function TitleRow({
       data-flip={flipKey}
       data-status={item ? item.status : t.status}
       data-release={release ? release.kind : undefined}
-      onPointerEnter={() => setPointed(true)}
-      onFocus={() => setPointed(true)}
-      {...ambientProps(ambient)}
+      data-img={t.backdrop_path ? '' : undefined}
+      style={{ ...ambientStyle, ...(t.backdrop_path && { '--row-img': `url(${BACKDROP_BASE}${t.backdrop_path})` }) }}
+      {...ambientData}
     >
       <td className="cell-title">
         <div className="row-title">

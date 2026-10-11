@@ -71,6 +71,8 @@ export default function FranchiseCollection({ franchise, titles, orders, onAdded
   const needsFetch = Boolean(movies || extra);
   const [collections, setCollections] = useState(needsFetch ? null : []); // null: betöltés alatt
   const [open, setOpen] = useState(false);
+  // a franchise színe (terv-3 52.2, „B”; a korai visszatérés előtt – hook): ugyanaz, mint a Franchise-ok csempéjén és a gyűjtemény-ablakban
+  const { style: ambientStyle, ...ambientData } = ambientProps(usePosterColor(franchisePosterPath(franchise.id, titles)));
 
   useEffect(() => {
     if (!movies && !extra) {
@@ -99,7 +101,8 @@ export default function FranchiseCollection({ franchise, titles, orders, onAdded
       <div
         className="collection-banner"
         data-backdrop={backdrop ? '' : undefined}
-        style={backdrop ? { '--banner-img': `url(${IMG}w1280${backdrop})` } : undefined}
+        style={{ ...ambientStyle, ...(backdrop && { '--banner-img': `url(${IMG}w1280${backdrop})` }) }}
+        {...ambientData}
       >
         {franchise.logo_path ? (
           // a w185-ös képeket a hangulatszín és a logó-világosság vászonra rajzolja: csak CORS-szal

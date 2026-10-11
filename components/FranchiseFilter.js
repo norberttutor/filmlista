@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { Fragment, useEffect, useId, useRef, useState } from 'react';
 
 const LOGO_BASE = 'https://image.tmdb.org/t/p/w185';
 const DARK_LIMIT = 0.5; // ennél sötétebb logót fehérre színezünk, hogy a sötét háttéren látsszon
@@ -49,9 +49,14 @@ export function FranchiseLogo({ path }) {
   );
 }
 
+const GROUP_LABELS = { open: 'Van még megnézendő', done: 'Mind megnézve' };
+
 // Franchise-szűrő saját lenyílóval, mert a beépített <select> nem tud képet mutatni.
-// options: [{ value, label, logo }] – billentyűzet: nyilak, Home/End, Enter/Szóköz, Esc
-export default function FranchiseFilter({ labelId, value, options, onChange }) {
+// options: [{ value, label, logo, group, badge }] – billentyűzet: nyilak, Home/End, Enter/Szóköz, Esc.
+// group ('open' | 'done', terv-3 54): csoportcím a csoport első eleme előtt („Van még megnézendő” /
+// „Mind megnézve” – a kész franchise tompán); badge: címke jobbra („2 hátra” / „✓ Mind megnézve”).
+// lead="icon" (a műfajszűrő, terv-3 56): a logó helyett kis ikon (o.icon – GenreIcon) keskeny oszlopban
+export default function FranchiseFilter({ labelId, value, options, onChange, lead = 'logo', className }) {
   const id = useId();
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -113,7 +118,7 @@ export default function FranchiseFilter({ labelId, value, options, onChange }) {
   }
 
   return (
-    <div className="franchise-filter" ref={rootRef}>
+    <div className={className ? `franchise-filter ${className}` : 'franchise-filter'} ref={rootRef}>
       <button
         ref={buttonRef}
         type="button"
@@ -130,6 +135,7 @@ export default function FranchiseFilter({ labelId, value, options, onChange }) {
         }}
       >
         {selected.logo && <FranchiseLogo path={selected.logo} />}
+        {selected.icon}
         <span id={`${id}-value`}>{selected.label}</span>
         <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true">
           <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6" />
@@ -147,19 +153,36 @@ export default function FranchiseFilter({ labelId, value, options, onChange }) {
           onKeyDown={handleListKey}
         >
           {options.map((o, i) => (
-            <li
-              key={o.value}
-              id={`${id}-opt-${i}`}
-              data-index={i}
-              role="option"
-              aria-selected={o.value === value}
-              className={i === active ? 'active' : undefined}
-              onMouseEnter={() => setActive(i)}
-              onClick={() => choose(i)}
-            >
-              <span className="logo-slot">{o.logo && <FranchiseLogo path={o.logo} />}</span>
-              <span>{o.label}</span>
-            </li>
+            <Fragment key={o.value}>
+              {o.group && o.group !== options[i - 1]?.group && (
+                <li className="franchise-group" role="presentation">
+                  {GROUP_LABELS[o.group]}
+                </li>
+              )}
+              <li
+                id={`${id}-opt-${i}`}
+                data-index={i}
+                data-done={o.group === 'done' || undefined}
+                role="option"
+                aria-selected={o.value === value}
+                className={i === active ? 'active' : undefined}
+                onMouseEnter={() => setActive(i)}
+                onClick={() => choose(i)}
+              >
+                {lead === 'icon' ? (
+                  <span className="icon-slot">{o.icon}</span>
+                ) : (
+                  <span className="logo-slot">{o.logo && <FranchiseLogo path={o.logo} />}</span>
+                )}
+                <span className="franchise-name">{o.label}</span>
+                {o.badge && (
+                  <>
+                    <span className="sr-only">, </span>
+                    <span className="franchise-badge">{o.badge}</span>
+                  </>
+                )}
+              </li>
+            </Fragment>
           ))}
         </ul>
       )}

@@ -179,6 +179,13 @@
   background: var(--bg);
 }
 
+/* …a franchise színe ott is (terv-3 52.2; a szigeten a sötét téma erejével) */
+:root[data-theme='light'] .collection-banner[data-backdrop][data-ambient] {
+  background:
+    radial-gradient(28rem 10rem at 0% 50%, color-mix(in oklab, var(--ambient) min(100%, calc(36% * var(--ambient-k))), transparent), transparent 70%),
+    var(--bg);
+}
+
 /* franchise-logók világos felületen (a franchise-szűrő, a háttérkép nélküli franchise-sáv): a világos
    (fehér) logó sötét sziluett lesz, a sötét marad; a szigeteken (Franchise-ok logódoboza) a sötét
    témáé (lent a .franchise-logo.dark) */
@@ -1574,9 +1581,48 @@ main.login::after {
   background-color: var(--press-tint);
 }
 
-.franchise-filter-button svg {
+.franchise-filter-button > svg {
   margin-left: 0.25rem;
   color: var(--muted);
+}
+
+/* műfajikonok a műfajszűrőben (terv-3 56, Norbi választása: „A”): egyvonalas ikon a műfaj pöttyének
+   színében (--g = genreColor), keskeny oszlopban; a kiválasztotté a zárt mezőben is */
+.genre-icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  color: var(--g);
+}
+
+.genre-icon svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.franchise-listbox .icon-slot {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.genre-filter .franchise-listbox li {
+  gap: 0.6rem;
+  padding-block: 0.32rem;
+}
+
+.genre-filter .franchise-filter-button .genre-icon svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+/* világos témában ugyanaz az árnyalat mélyebben (a 0,78-as világosságú pötty-szín a krémes lapon halvány) */
+@supports (color: oklch(from red l c h)) {
+  :root[data-theme='light'] .genre-icon {
+    color: oklch(from var(--g) 0.56 c h);
+  }
 }
 
 .franchise-listbox {
@@ -1619,6 +1665,52 @@ main.login::after {
 
 .franchise-listbox li[aria-selected='true'] {
   color: var(--accent);
+}
+
+/* csoportok és címkék (terv-3 54, Norbi választása: „A”): „Van még megnézendő” fölül „N hátra”
+   címkével, „Mind megnézve” alul, tompán (rámutatva / kiválasztva teljes színű) */
+.franchise-listbox:has(.franchise-badge) {
+  max-width: min(28rem, 90vw);
+  max-height: 30rem;
+}
+
+.franchise-listbox .franchise-group {
+  padding: 0.6rem 0.6rem 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: default;
+}
+
+.franchise-listbox .franchise-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.franchise-badge {
+  flex: none;
+  margin-left: 0.75rem;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  border-radius: 999px;
+}
+
+.franchise-listbox li[data-done] .franchise-badge {
+  color: var(--c-sage);
+  background: color-mix(in oklab, var(--c-sage) 12%, transparent);
+  border-color: color-mix(in oklab, var(--c-sage) 40%, transparent);
+}
+
+.franchise-listbox li[data-done]:not(.active, [aria-selected='true']) :is(.franchise-name, .logo-slot) {
+  opacity: 0.55;
+  filter: grayscale(1);
 }
 
 /* a logók egy oszlopban, hogy a nevek egymás alá essenek */
@@ -1955,9 +2047,12 @@ fieldset.lock:disabled .stars {
   color: var(--watched-accent);
 }
 
-/* a vezérlők (pipa, lenyílók, csillagok, kuka) halványabbak */
+/* a vezérlők (pipa, lenyílók, csillagok, kuka) halványabbak – a cella tartalma, nem a cella: a
+   kártyaszerű sor (terv-3 59) háttere és kerete egyforma marad */
 .titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within)
-  > td:is(.col-check, .col-status, .col-mama, .col-actions),
+  > td:is(.col-check, .col-status, .col-mama, .col-actions) > :not(.lock),
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within)
+  > td:is(.col-check, .col-status, .col-mama, .col-actions) > .lock > *,
 .titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .stars,
 .card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .card-stars {
   opacity: 0.55;
@@ -2658,6 +2753,103 @@ fieldset.lock:disabled .stars {
     -webkit-line-clamp: 4;
     line-clamp: 4;
   }
+}
+
+/* Látványosabb listanézet (terv-3 59, Norbi választása: „B”, 2026-10-11): legfeljebb ~1720 px széles,
+   középre zárt táblázat, kártyaszerű sorok sorközzel, nagyobb (100 px-es) borító és cím, a leírás
+   mindig a cím alatt két sorban (a keskenyebb táblázatban oldalt túl keskeny lenne – ez felülírja a
+   fenti széles elrendezést), a film jelenetképe halványan a sor jobb felén; oldalanként 10 cím
+   (TABLE_PAGE_SIZE). A sor színe: „Hangulatszín a borítóból” szakasz. */
+.table-wrap {
+  max-width: 1720px;
+  margin-inline: auto;
+}
+
+.titles-table {
+  border-collapse: separate;
+  border-spacing: 0 0.7rem;
+}
+
+.titles-table tbody td {
+  border-bottom: 0;
+  background: rgb(var(--tint) / 0.03);
+  border-block: 1px solid rgb(var(--tint) / 0.07);
+}
+
+.titles-table tbody td:first-child {
+  padding-left: 1.4rem;
+  border-left: 1px solid rgb(var(--tint) / 0.07);
+  border-radius: 20px 0 0 20px;
+}
+
+.titles-table tbody td:last-child {
+  border-right: 1px solid rgb(var(--tint) / 0.07);
+  border-radius: 0 20px 20px 0;
+}
+
+.titles-table td:first-child::before {
+  left: 0.45rem;
+  width: 4px;
+  height: 9rem; /* = a borító magassága */
+}
+
+.row-title {
+  grid-template-columns: 6.25rem minmax(0, 1fr) var(--franchise-col);
+  column-gap: 1.25rem;
+}
+
+.row-title .thumb {
+  grid-row: span 2;
+  width: 6.25rem;
+}
+
+.row-name {
+  font-size: 1.5rem;
+}
+
+.titles-table .original {
+  font-size: 0.9rem;
+}
+
+.titles-table .meta {
+  font-size: 0.88rem;
+}
+
+.row-overview {
+  grid-column: 2 / -1;
+  max-width: 62rem;
+  margin: 0.45rem 0 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+/* a jelenetkép a leírás mögött, balra a sor színébe olvadva */
+.titles-table td.cell-title {
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.titles-table tr[data-img] td.cell-title::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  width: 58%;
+  background: var(--row-img) center 30% / cover no-repeat;
+  opacity: 0.28;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 55%);
+  mask-image: linear-gradient(90deg, transparent, #000 55%);
+  pointer-events: none;
+}
+
+/* a megnézett / abbahagyott sor képe is fakó (mint a borítója) */
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) td.cell-title::after {
+  filter: grayscale(1);
+  opacity: 0.16;
 }
 
 .row-text {
@@ -3442,6 +3634,37 @@ button.season:hover {
   to {
     transform: scaleX(0);
   }
+}
+
+/* a sáv fajtája szerint (terv-3 52.5, Norbi választása: „B”): törlés piros, „Hogy tetszett?”
+   borostyán (mint a saját értékelés) – halványan színezett háttér és keret, elöl kerek ikon, a fogyó
+   csík is ebben a színben; a többi sáv a megszokott türkiz */
+.toast[data-kind='delete'] {
+  --kind: var(--danger);
+}
+
+.toast[data-kind='rating'] {
+  --kind: var(--accent-2);
+}
+
+.toast[data-kind] {
+  background: color-mix(in oklab, var(--kind) 9%, var(--surface-raised));
+  border-color: color-mix(in oklab, var(--kind) 38%, transparent);
+}
+
+.toast[data-kind] .toast-bar {
+  background: var(--kind);
+}
+
+.toast-kind {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  color: var(--kind);
+  background: color-mix(in oklab, var(--kind) 18%, transparent);
 }
 
 @media (max-width: 640px) {
@@ -4318,6 +4541,31 @@ button.season:hover {
 
 .collection-banner[data-backdrop] .ghost {
   background: rgb(var(--glass) / 0.45);
+}
+
+/* a sáv a franchise színében (terv-3 52.2, Norbi választása: „B”): színes keret és pálca a bal
+   szélen, balról derengő szín, a logó fénye, színes szám („2/3”) és színes keretű „Gyűjtemény” gomb;
+   a mérő zöld marad */
+.collection-banner[data-ambient] {
+  border-color: color-mix(in oklab, var(--ambient) min(100%, calc(42% * var(--ambient-k))), transparent);
+  border-left: 4px solid var(--ambient-ink);
+  background:
+    radial-gradient(28rem 10rem at 0% 50%, color-mix(in oklab, var(--ambient) min(100%, calc(36% * var(--ambient-k))), transparent), transparent 70%),
+    rgb(var(--glass) / 0.55);
+  box-shadow: 0 14px 34px -22px color-mix(in oklab, var(--ambient) 80%, transparent);
+}
+
+.collection-banner[data-ambient] .collection-logo {
+  filter: drop-shadow(0 0 14px color-mix(in oklab, var(--ambient) 55%, transparent))
+    drop-shadow(0 2px 6px rgb(var(--shade) / calc(0.6 * var(--shade-k))));
+}
+
+.collection-banner[data-ambient] .collection-count b {
+  color: var(--ambient-ink);
+}
+
+.collection-banner[data-ambient] .ghost {
+  border-color: color-mix(in oklab, var(--ambient) 60%, transparent);
 }
 
 .editor.collection-dialog {
@@ -6157,6 +6405,30 @@ a.wo-share-open {
   font-variant-numeric: tabular-nums;
 }
 
+/* a lap a franchise színében (terv-3 52.3, Norbi választása: „A”; a szín a ShareAmbient-ből): a fejléc
+   kerete és derengése, a „Nézési sorrend” felirat és a sorszámok */
+.share-page[data-ambient] .share-hero {
+  border-color: color-mix(in oklab, var(--ambient) min(100%, calc(45% * var(--ambient-k))), transparent);
+  box-shadow: 0 18px 44px -26px color-mix(in oklab, var(--ambient) 85%, transparent);
+}
+
+.share-page[data-ambient] .share-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--ambient) min(100%, calc(18% * var(--ambient-k))), transparent), transparent 60%);
+}
+
+.share-page[data-ambient] :is(.share-kicker, .share-num) {
+  color: var(--ambient-ink);
+}
+
+/* a háttérképes fejléc sötét sziget: világosban is a sötét témáé (a pasztell) */
+:root[data-theme='light'] .share-page[data-ambient] .share-hero[data-backdrop] {
+  --ambient-ink: var(--ambient);
+}
+
 .share-thumb {
   width: 3.4rem;
   border-radius: 8px;
@@ -6404,6 +6676,11 @@ a.wo-share-open {
     --ambient-ink: oklch(from var(--ambient) 0.58 calc(c * 1.1) h);
   }
 
+  /* a sötét szigeten (háttérképes franchise-sáv – 52.2) a sötét témáé marad */
+  :root[data-theme='light'] .collection-banner[data-backdrop][data-ambient] {
+    --ambient-ink: var(--ambient);
+  }
+
   /* a Statisztika franchise-sávja (--fr, a franchise színe – terv-3 51.9): ugyanígy */
   :root[data-theme='light'] .tile-bars li[style] .meter i {
     background: oklch(from var(--fr) 0.58 calc(c * 1.1) h);
@@ -6530,10 +6807,15 @@ a.wo-share-open {
     0 18px 50px -8px color-mix(in oklab, var(--ambient) min(100%, calc(85% * var(--ambient-k))), transparent);
 }
 
-/* táblázat: a rámutatott (fókuszban lévő) sor halványan a borító színét veszi fel; a törlés
-   megerősítésének pirosa marad */
+/* táblázat: a kártyaszerű sor mindig halványan a borító színében (terv-3 59, „B”), a rámutatott
+   (fókuszban lévő) erősebben; a törlés megerősítésének pirosa marad */
+.titles-table tbody tr[data-ambient] > td {
+  background: color-mix(in oklab, var(--ambient) min(100%, calc(6% * var(--ambient-k))), rgb(var(--tint) / 0.02));
+  border-color: color-mix(in oklab, var(--ambient) min(100%, calc(22% * var(--ambient-k))), transparent);
+}
+
 .titles-table tbody tr[data-ambient]:is(:hover, :has(:focus-visible)) > td {
-  background: color-mix(in oklab, var(--ambient) min(100%, calc(7% * var(--ambient-k))), transparent);
+  background: color-mix(in oklab, var(--ambient) min(100%, calc(11% * var(--ambient-k))), rgb(var(--tint) / 0.02));
 }
 
 .titles-table tbody tr[data-ambient]:hover .thumb {

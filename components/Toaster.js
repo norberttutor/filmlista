@@ -5,6 +5,12 @@ import { dismissToast, getToasts, subscribeToasts } from '@/lib/toast';
 
 const NONE = [];
 
+// a sáv fajtája szerinti ikon (terv-3 52.5, Norbi választása: „B”): kuka / csillag
+const KIND_ICONS = {
+  delete: 'M4 7h16 M10 11v6 M14 11v6 M6 7l1 13h10l1-13 M9 7V4h6v3',
+  rating: 'M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z',
+};
+
 // Az értesítősávok helye (lib/toast.js): alul középen, telefonon a lebegő „+” fölött.
 export default function Toaster() {
   const toasts = useSyncExternalStore(subscribeToasts, getToasts, () => NONE);
@@ -35,6 +41,7 @@ function ToastItem({ toast: t }) {
   return (
     <div
       className="toast"
+      data-kind={t.kind}
       onPointerEnter={() => setPaused(true)}
       onPointerLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
@@ -42,6 +49,13 @@ function ToastItem({ toast: t }) {
         if (!e.currentTarget.contains(e.relatedTarget)) setPaused(false);
       }}
     >
+      {KIND_ICONS[t.kind] && (
+        <span className="toast-kind" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <path d={KIND_ICONS[t.kind]} />
+          </svg>
+        </span>
+      )}
       {t.image && <img src={t.image} alt="" />}
       <p className="toast-text">{t.text}</p>
       {t.content}

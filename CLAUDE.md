@@ -148,7 +148,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   automatikusan beáll, a franchise-szűrő megszüntetésekor vissza Filmek) – állapotgombok
   (mobilon, ≤ 640 px: lenyíló a típus mellett; az „Abbahagyva” csak Sorozatok / Filmek és
   sorozatok típusnál) + Letöltés lenyíló (Összes / Letöltött / Nem letöltött) – Műfaj (csak az
-  adott típus műfajai) – Mama (Összes / Érdekli / Nem érdekli / Megkapta; csak ha van Mama-jelölés) –
+  adott típus műfajai; saját lenyíló műfajikonokkal – terv-3 56) – Mama (Összes / Érdekli / Nem érdekli / Megkapta; csak ha van Mama-jelölés) –
   Franchise (Összes / Franchise nélkül / a listán használtak, típustól
   függetlenül) – mellette felirat nélküli ↺ gomb („Szűrők alaphelyzetbe”, rámutatva súgó;
   alapállapotban halvány, letiltott). **A szűrők alapállapota** (betöltéskor és a ↺-vel,
@@ -196,7 +196,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   gombbal (`handleRowUpdated` → `askRating`; a sor kétszer jön – azonnal és mentve –, a
   `titlesRef` miatt csak egyszer kérdez; a szerkesztő ablakból nem kérdez). Az `<Toaster />`
   a `main` végén.
-  Lapozás 25-ösével (`PAGE_SIZE`, `components/Pagination.js`); asztali rácsban (≥ 1400 px)
+  Lapozás 25-ösével (`PAGE_SIZE`, telefon / keskenyebb rács, `components/Pagination.js`); asztali
+  listanézetben 10-esével (`TABLE_PAGE_SIZE`, terv-3 59 – Norbi kérése); asztali rácsban (≥ 1400 px)
   22-esével (`GRID_PAGE_SIZE`, Norbi kérése, 2026-10-04: 1440p-n 11 oszlop × 2 teli sor), és
   ott a lapozó és alatta a lábléc az ablak alján áll (`docked` → `.pagination.docked`; a lábléc
   ilyenkor kompakt, `--docked-footer-h` = 2,75 rem magas, `sticky; bottom: 0`, a lapozó `sticky;
@@ -219,7 +220,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   onClick }, hideClose, duration = 8000, onExpire })` → id, `dismissToast(id, how)`; az
   `onExpire` lejáratkor és a × gombra fut (az action-re nem); legfeljebb 3 egyszerre (a
   legrégebbi lejártként tűnik el); rámutatáskor / fókusznál megáll (a fogyó csík is); kilépéskor
-  `clearToasts()` – a függő törlés elmarad (kódaudit #11)
+  `clearToasts()` – a függő törlés elmarad (kódaudit #11). `kind` (terv-3 52.5, „B”): 'delete' (a cím és az
+  értesítés törlése – piros) | 'rating' („Hogy tetszett?” – borostyán): halványan színezett háttér és keret,
+  elöl kerek ikon (kuka / csillag – `.toast-kind`), a fogyó csík is ebben a színben; nélküle türkiz
 - `components/EmptyState.js` – üres állapot: kis vonalrajz (filmkocka + nagyító, türkiz), cím,
   szöveg, a hívó gombjai
 - `components/PosterCard.js` – borító (`https://image.tmdb.org/t/p/w342` + `poster_path`),
@@ -342,7 +345,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (→ Megnézve, a visszavonás az Abbahagyva-t is visszaadja); a „Mégis folytatom” után az
   adatbázis az évadokból számol
 - `components/TitleTable.js` – asztali soros nézet (≥ 1400 px, `DESKTOP_QUERY` a
-  `Watchlist`-ben; `table-layout: fixed`, minden maradék hely a címoszlopé): balra borító (72 px
+  `Watchlist`-ben; `table-layout: fixed`, minden maradék hely a címoszlopé). **Kártyaszerű sorok** (terv-3 59,
+  „B”, 2026-10-11 – felülírja az alábbi méreteket): legfeljebb 1720 px széles, középre zárt táblázat, sorköz
+  (`border-spacing`), lekerekített sorok, 100 px-es borító (w185), 24 px-es cím, a leírás mindig a cím alatt
+  2 sorban, a sor mindig halványan a film színében (a szín azonnal számolódik, nem az első rámutatáskor),
+  a film jelenetképe (`backdrop_path`, w780, `--row-img`, `tr[data-img]`) halványan a címcella jobb felén
+  (megnézettnél szürkén); a megnézett sor vezérlőinek halványítása a cella tartalmán (nem a cellán). A
+  korábbi leírás: balra borító (72 px
   széles – Norbi kérése, 2026-10-04: így olyan magas, mint mellette az adatok; gomb:
   rákattintva a szerkesztő ablak – részletek, hasonló címek; rámutatva türkiz keret) +
   adatok (a cím 20 px-es, mindig egy sorban, ha így sem fér ki „…” + tooltip; a műfajok külön
@@ -512,6 +521,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   mutatja; a kép a sáv jobb felén – asztalon legfeljebb ~670 px –, elmosás nélkül, balra a sötétbe
   olvadva, mert teljes szélességben túl nagyított lett volna; telefonon teljes szélességben,
   halványan; nagyobb logó – `data-backdrop`, `--banner-img`)
+  (a sáv a franchise színében – terv-3 52.2, „B”: színes keret és 4 px-es pálca a bal szélen, balról
+  derengés, a logó fénye, színes „2/3” és „Gyűjtemény”-keret; `franchisePosterPath`, mint a csempén; a
+  háttérképes sáv sötét sziget, ott világosban is a pasztell)
   (logó vagy név, mérő: a listán lévők közül a megnézettek aránya zölden, a többi szürke – a hiányzó
   részek nem számítanak, türkiz nincs; Norbi döntése, 2026-10-06 –, „x/y megnézve · m hiányzik” –
   y a listán lévők száma, a mérővel egyezően –, gyűjtemény nélkül „· nincs hozzá TMDB-gyűjtemény”; „Gyűjtemény” gomb). Ablak,
@@ -558,6 +570,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   elveti. `loadOrders()` a Watchlist betöltésekor (hibánál a lista attól még működik),
   `franchisesWithOrder()` – melyik franchise-nak van ma is érvényes sorrendje. A tétel feliratai
   (`itemLabel()`, `itemMeta()`) is itt vannak (a megosztott oldal szerveroldalon használja)
+- `components/ShareAmbient.js` – a megosztott oldal `<main>`-je a franchise színében (terv-3 52.3, „A”):
+  `usePosterColor(poster_path)` (a `shared_watch_order` adja – `24_share_ambient.sql`); CSS: a fejléc kerete,
+  derengése, a „Nézési sorrend” felirat és a sorszámok (`.share-page[data-ambient]`; a háttérképes fejléc
+  sötét sziget, ott világosban is a pasztell)
 - `components/ShareOrder.js` + `lib/shares.js` + `app/sorrend/[token]/` – **megosztható nézési
   sorrend** (terv-3 41, 2026-10-08, látványterv nélkül): a „Nézési sorrend” fül sávjában
   „Megosztás” (élő linknél türkiz pötty a gombon) → alatta panel: link nélkül magyarázat + „Link
@@ -752,7 +768,16 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/ImdbBadge.js` – „IMDb 8,0” jelvény (rámutatva a szavazatok száma)
 - `components/FranchiseFilter.js` – a franchise-szűrő saját lenyílója (listbox: nyilak, Home/End,
   Enter, Esc) logókkal; `FranchiseLogo` betöltéskor megméri a logó világosságát (canvas, a TMDB
-  képszervere CORS-t enged), 0,5 alatt fehérre színezi (`.franchise-logo.dark`)
+  képszervere CORS-t enged), 0,5 alatt fehérre színezi (`.franchise-logo.dark`). Csoportok (terv-3 54, „A”):
+  az opció `group` ('open' | 'done') és `badge` mezője – „Van még megnézendő” (`N hátra`, türkiz címke) fölül,
+  „Mind megnézve” (zsálya címke, tompán, szürkén) alul; a csoportcím `li.franchise-group` (`role="presentation"`,
+  a nyilak átlépik); az opció neve felolvasónak „Név, 2 hátra” (a teszt: `frOption()`). A `Watchlist`
+  `franchiseOptions`-e számol (a listán lévő, nem megnézett, nem abbahagyott címek). `lead="icon"` +
+  `className="genre-filter"`: a **műfajszűrő** is ez (terv-3 56, „A”) – a logó helyett `GenreIcon` keskeny
+  oszlopban, a kiválasztotté a zárt gombon is. A gomb nyila `.franchise-filter-button > svg`.
+- `components/GenreIcon.js` – műfajikon (terv-3 56): egyvonalas SVG műfajonként (a TMDB magyar nevei + a
+  sorozatok angol nevei, ismeretlennél pötty), színe a műfaj pöttyéé (`--g` = `genreColor`), világosban
+  ugyanaz az árnyalat mélyebben (L 0,56)
 - `app/api/franchises/logos/route.js` – `POST`: a logó nélküli franchise-oknál a franchise első
   (legkorábbi) filmjének TMDB-címlogóját menti (`pickLogo()`: legfeljebb 6:1 arány, angol);
   ha nincs logó, 7 napig nem próbálja újra. A `Watchlist` hívja (`logoDue` effekt, 1,5 mp
@@ -966,7 +991,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   franchise is a felhasználóé) – `20_franchise_share.sql` (terv-3 41, 2026-10-08): a megosztott
   nézési sorrend linkje; visszavonás = a sor törlése. Nincs a mentésben (beállítás – mint a
   `list_viewers`); visszaállításkor a franchise-ok újratöltése miatt a linkek megszűnnek.
-  **`shared_watch_order(token)`** (security definer, `anon` is hívhatja): a franchise neve,
+  **`shared_watch_order(token)`** (security definer, `anon` is hívhatja; `24_share_ambient.sql`: + `poster_path` –
+  a franchise színének borítója – és a címek `release_date`-je, hogy a sorrend az appéval egyezzen): a franchise neve,
   `logo_path`, `backdrop_path` (a legjobb IMDb-értékelésű, háttérképes címé), `titles` (id,
   media_type, tmdb_id, cím, év, borító, mozis / digitális dátum, `seasons`: szám, dátum,
   epizódszám) és `order` (a `franchise_order` sorai); állapot, értékelés, letöltve, Mama,
@@ -1190,6 +1216,9 @@ mindenhol indigó (terv-3 52.1, 2026-10-09). Mama adatlapja a film színében de
 sötétben, a jelölővonalak / ikonok jól láthatók (terv-3 52.6, „A” változat, 2026-10-09). Az appon
 belüli leírásban a ①②③ jelek borostyán körben, mint a képeken (terv-3 52.7, 2026-10-09). A
 „Legrégebbi / Legújabb megjelenés” rendezés pontos dátum szerint (terv-3 55, 2026-10-10, hibajavítás).
+Kinézeti kör (2026-10-11): franchise-sáv és megosztott sorrend a franchise színében, színes értesítősáv
+fajtánként, franchise-szűrő csoportokkal („N hátra” / „Mind megnézve”), műfajikonok, látványosabb asztali
+listanézet 10 címmel oldalanként.
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -1219,18 +1248,28 @@ látványterv után: „A” – mint Norbi adatlapja; https://claude.ai/artifac
 kiegyenlített; https://claude.ai/artifact/YDFYeYGMTxdmKfN16QJv38; teszt: `munka/e2e/test-52-6.mjs`; a
 mérés és az átalakító szkript: `munka/terv-3/terv-52-6/`). **52.7 – a leírásban a ①②③ jelek borostyán
 körben** – kész (2026-10-09, Norbi kérésére látványterv nélkül; teszt: `munka/e2e/test-52-7.mjs`).
-**Látványtervre vár (Norbi kéri, beépítés csak a döntése után):** 52.2 – a lista fölötti franchise-sáv a
-franchise színében (~0,5–1 óra), 52.3 – a megosztott nézési sorrend a franchise színében (~1–1,5 óra),
-52.5 – az értesítősáv a fajtája szerint (törlés piros, „Hogy tetszett?” borostyán csík; ~1 óra).
+**Kinézeti kör, 2026-10-11 – kész** (commitra vár; Norbi választása a látványterv után –
+https://claude.ai/artifact/C1WkebV3iwP7BzwLfbs9H7, makett: `munka/terv-3/tervek-1011/`; teszt:
+`munka/e2e/test-1011.mjs` + `test.mjs` 115/115; `24_share_ambient.sql` élesben): **52.2 B** – a lista fölötti
+franchise-sáv a franchise színében (színes keret, pálca, szám, gomb), **52.3 A** – a megosztott sorrend a
+franchise színében (fejléc, felirat, sorszámok), **52.5 B** – az értesítősáv a fajtája szerint (törlés piros,
+„Hogy tetszett?” borostyán, ikonnal), **54 A** – a franchise-szűrőben „Van még megnézendő” / „Mind
+megnézve” csoport, „N hátra” címke, **56 A** – műfajikonok a műfajszűrőben (saját lenyíló), **59 B** –
+látványosabb listanézet (keskenyebb, kártyaszerű sorok a film színében, jelenetkép, 100 px-es borító,
+10 cím / oldal).
 **53 – javasolt TMDB-gyűjtemények** (Norbi kérése, 2026-10-10; ~1,25–1,75 óra; részletek: `munka/terv-3/TERV.md`
 53-as pont): a gyűjtemény-ablak „+ TMDB-gyűjtemény hozzáadása” gombjára gépelés nélkül is javaslatok (a
 franchise nevével magyarul és angolul keresve, a már hozzárendeltek nélkül); a kereső megmarad. A
 javasolt és a keresett gyűjtemények neve / borítója új lapon a TMDB-oldalukra visz.
 **55 – pontos dátum szerinti rendezés – kész** (2026-10-10, `f4be52b`; `23_release_date.sql` élesben, a
 meglévő 918 cím dátuma feltöltve; teszt: `munka/e2e/test-55.mjs`; részletek: TERV.md 55-ös pont).
-**54 – gazdagabb franchise-szűrő** (Norbi kérése, 2026-10-10; látványtervre vár, ~1,5–2,5 óra; részletek:
-TERV.md 54-es pont): a lenyílóban látsszon, melyik franchise-ban van még megnézendő és melyik „mind
-megnézve”, és a logókon túl legyen benne valami extra (pl. franchise-szín, mérő, borítóköteg, „Következik”).
+**58 – Mama jelölése csak ott, ahol értelme van** (Norbi kérése, 2026-10-10; ~1–1,5 óra; részletek: TERV.md
+58-as pont): franchise-os címnél és sorozatnál az adatlapon nincs Mama-csoport (ha már van értéke, marad,
+hogy törölhető legyen), a Mama-szűrő Sorozatok típusnál és franchise-ra szűrve nem látszik – Mama oldala
+úgyis csak a franchise nélküli filmeket kínálja.
+**57 – „Szűrés erre” / „Átnevezés” / „Törlés” a gyűjtemény-ablakban is** (Norbi kérése, 2026-10-10; ~1–1,5 óra;
+részletek: TERV.md 57-es pont): a Franchise-ok csempéjének három művelete a megnyitott gyűjtemény-ablak
+fejlécében is.
 **Norbi kérései (2026-10-04)** – utána, ebben a sorrendben; a részletek
 (megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
 1. **27 – jelszó módosítása** (~1,5 óra): csak bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”:
