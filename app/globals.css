@@ -4639,6 +4639,16 @@ button.season:hover {
   outline: none;
 }
 
+/* „Szűrés erre” / „Átnevezés” / „Törlés” a fejlécben (terv-3 57, mint a Franchise-ok csempéje alatt) */
+.collection-head .collection-actions {
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.collection-head form.collection-actions {
+  max-width: 30rem;
+}
+
 .collection-sub {
   color: var(--muted);
 }
@@ -5110,8 +5120,25 @@ button.season:hover {
   width: 2.4rem;
 }
 
-.collection-results b {
+/* a név és a borító a gyűjtemény TMDB-oldalára visz, új lapon (terv-3 53) */
+.collection-result-name {
   flex: 1;
+  min-width: 0;
+  font-weight: 650;
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: rgb(var(--tint) / 0.25);
+  text-underline-offset: 0.2em;
+}
+
+.collection-result-name:hover {
+  color: var(--accent);
+  text-decoration-color: currentColor;
+}
+
+.collection-results a.thumb {
+  display: block;
+  flex: none;
 }
 
 .collection-results .on-list {

@@ -65,7 +65,7 @@ export function summarizeCollection(franchise, titles, collections) {
 //   gyűjtemény nélküli filmek);
 // - „+ TMDB-gyűjtemény hozzáadása”: keresés a TMDB gyűjteményei között (pl. Star Wars).
 // A sáv akkor is megjelenik, ha nincs TMDB-gyűjtemény (a saját címekkel).
-export default function FranchiseCollection({ franchise, titles, orders, onAdded, onUpdated, onOrderChanged, onFranchiseUpdated, readOnly }) {
+export default function FranchiseCollection({ franchise, titles, orders, onAdded, onUpdated, onOrderChanged, onFranchiseUpdated, onRename, onDelete, readOnly }) {
   const params = collectionParams(franchise, titles);
   const { movies, extra } = params;
   const needsFetch = Boolean(movies || extra);
@@ -139,6 +139,8 @@ export default function FranchiseCollection({ franchise, titles, orders, onAdded
           onOrderChanged={onOrderChanged}
           onFranchiseUpdated={onFranchiseUpdated}
           onClose={() => setOpen(false)}
+          onRename={onRename}
+          onDelete={onDelete}
           readOnly={readOnly}
         />
       )}
@@ -196,8 +198,13 @@ export function CollectionDialog({
   onFranchiseUpdated,
   onClose,
   onOutsideClose,
-  // net nélkül (terv-3 44): csak nézni lehet – felvétel, gyűjtemény hozzárendelése / eltávolítása
-  // nincs, a nézési sorrend csak olvasható (kódaudit #8)
+  // a fejléc műveletei (terv-3 57, mint a Franchise-ok csempéje alatt): onShow – „Szűrés erre” (a
+  // lista fölötti sávból nyitva nincs, ott már erre szűr), onRename(id, név), onDelete(id)
+  onShow,
+  onRename,
+  onDelete,
+  // net nélkül (terv-3 44): csak nézni lehet – felvétel, gyűjtemény hozzárendelése / eltávolítása,
+  // átnevezés, törlés nincs, a nézési sorrend csak olvasható (kódaudit #8)
   readOnly,
 }) {
   const dialogRef = useRef(null);
@@ -208,6 +215,7 @@ export function CollectionDialog({
   const [tab, setTab] = useState('collection');
   const [ordering, setOrdering] = useState(false); // a nézési sorrend szerkesztése folyik
   const [sharing, setSharing] = useState(false); // a megosztás visszavonásának megerősítése / kérése
+  const [edit, setEdit] = useState(null); // { mode: 'rename' | 'delete', name, error, busy } – terv-3 57
   const tabRefs = useRef({});
   const missing = [
     ...new Map(sections.flatMap((s) => s.parts.filter((p) => !p.own)).map((p) => [p.tmdb_id, p])).values(),
@@ -260,8 +268,31 @@ export function CollectionDialog({
       dialogRef.current.close();
       onOutsideClose?.();
     },
-    canClose: () => !busyAny && !ordering && !sharing,
+    canClose: () => !busyAny && !ordering && !sharing && !edit,
   });
+
+  async function saveRename(event) {
+    event.preventDefault();
+    const name = edit.name.trim();
+    if (!name) return;
+    setEdit((e) => ({ ...e, busy: true, error: '' }));
+    try {
+      await onRename(franchise.id, name);
+      setEdit(null);
+    } catch (err) {
+      setEdit((e) => ({ ...e, busy: false, error: err.message }));
+    }
+  }
+
+  // törlés után a franchise eltűnik: az ablak a szülővel együtt bezárul
+  async function confirmDelete() {
+    setEdit((e) => ({ ...e, busy: true, error: '' }));
+    try {
+      await onDelete(franchise.id);
+    } catch (err) {
+      setEdit((e) => ({ ...e, busy: false, error: err.message }));
+    }
+  }
 
   // a fülek között nyilakkal is (Home / End: az első / az utolsó)
   function tabKey(e) {
@@ -286,6 +317,13 @@ export function CollectionDialog({
         if (e.target === e.currentTarget && ordering) {
           e.preventDefault();
           setOrdering(false);
+        }
+      }}
+      // az átnevezés mezőjében / a törlés megerősítésénél az Esc csak azt zárja
+      onKeyDown={(e) => {
+        if (e.key === 'Escape' && edit) {
+          e.preventDefault();
+          setEdit(null);
         }
       }}
       {...outsideClose}
@@ -316,6 +354,57 @@ export function CollectionDialog({
             {missing.length > 0 && ` · ${missing.length} hiányzik`}
           </span>
         </p>
+        {edit?.mode === 'rename' ? (
+          <form className="fr-edit collection-actions" onSubmit={saveRename}>
+            <input
+              autoFocus
+              aria-label={`„${franchise.name}” új neve`}
+              value={edit.name}
+              onChange={(e) => setEdit((x) => ({ ...x, name: e.target.value }))}
+            />
+            <button type="submit" className="primary mini" disabled={edit.busy}>
+              Mentés
+            </button>
+            <button type="button" className="ghost mini" onClick={() => setEdit(null)}>
+              Mégse
+            </button>
+          </form>
+        ) : edit?.mode === 'delete' ? (
+          <div className="fr-edit fr-confirm collection-actions">
+            <span className="confirm-text">Törlöd a franchise-t? A címekről lekerül, a címek maradnak.</span>
+            <button type="button" className="ghost mini" autoFocus onClick={() => setEdit(null)}>
+              Mégse
+            </button>
+            <button type="button" className="danger mini" disabled={edit.busy} onClick={confirmDelete}>
+              Törlés
+            </button>
+          </div>
+        ) : (
+          (onShow || (!readOnly && (onRename || onDelete))) && (
+            <div className="fr-actions collection-actions">
+              {onShow && (
+                <button type="button" className="link small" disabled={counts.onList === 0} onClick={() => onShow(franchise.id)}>
+                  Szűrés erre
+                </button>
+              )}
+              {!readOnly && onRename && (
+                <button type="button" className="link small" onClick={() => setEdit({ mode: 'rename', name: franchise.name, error: '' })}>
+                  Átnevezés
+                </button>
+              )}
+              {!readOnly && onDelete && (
+                <button type="button" className="danger-link small" onClick={() => setEdit({ mode: 'delete', error: '' })}>
+                  Törlés
+                </button>
+              )}
+            </div>
+          )
+        )}
+        {edit?.error && (
+          <p className="error small" role="alert">
+            {edit.error}
+          </p>
+        )}
       </div>
 
       <div className="dialog-tabs" role="tablist" aria-label="Nézet">
@@ -444,6 +533,8 @@ export function CollectionDialog({
       <section className="collection-section collection-manual">
         {searching ? (
           <CollectionSearch
+            franchise={franchise}
+            titles={titles}
             assigned={new Set([...manual, ...sections.map((s) => s.id)])}
             onPick={(c) => changeManual([...manual, c.id])}
             onClose={() => setSearching(false)}
@@ -490,11 +581,36 @@ function OwnState({ t }) {
   );
 }
 
-// TMDB-gyűjtemény keresése és hozzárendelése (késleltetett keresés, mint a Cím hozzáadása)
-function CollectionSearch({ assigned, onPick, onClose }) {
+// a javaslatok keresőszavai (terv-3 53): a franchise neve és a filmjei eredeti címének eleje (a
+// kettőspont / gondolatjel előtti rész, a sorszám nélkül – „Dune: Part Two” → „Dune”)
+function suggestQueries(franchise, titles) {
+  const base = (s) =>
+    (s ?? '')
+      .split(/s*:s*|s+[–-]s+/)[0]
+      .replace(/s+(d+|[IVX]+)$/, '')
+      .trim();
+  const own = titles.filter((t) => t.franchise_id === franchise.id).map((t) => base(t.original_title || t.title));
+  const seen = new Set();
+  return [franchise.name, ...own].filter((q) => q.length >= 2 && !seen.has(q.toLowerCase()) && seen.add(q.toLowerCase())).slice(0, 6);
+}
+
+// TMDB-gyűjtemény keresése és hozzárendelése (késleltetett keresés, mint a Cím hozzáadása); üres
+// keresőnél javaslatok (terv-3 53, a franchise nevéből és a filmjei eredeti címéből – a már
+// hozzárendeltek nélkül). A név és a borító új lapon a gyűjtemény TMDB-oldalára visz.
+function CollectionSearch({ franchise, titles, assigned, onPick, onClose }) {
   const [query, setQuery] = useState('');
   const [found, setFound] = useState({ q: '', results: [], error: '' });
+  const [suggested, setSuggested] = useState(null); // null: betöltés alatt
   const q = query.trim();
+  const queries = suggestQueries(franchise, titles).join('|');
+
+  useEffect(() => {
+    const controller = new AbortController();
+    apiGet('/api/tmdb/collection-search', { suggest: queries }, { signal: controller.signal })
+      .then((data) => setSuggested(data.results))
+      .catch((err) => err.name !== 'AbortError' && setSuggested([]));
+    return () => controller.abort();
+  }, [queries]);
 
   useEffect(() => {
     if (q.length < 2) return;
@@ -511,6 +627,7 @@ function CollectionSearch({ assigned, onPick, onClose }) {
   }, [q]);
 
   const done = q.length >= 2 && found.q === q;
+  const suggestions = (suggested ?? []).filter((c) => !assigned.has(c.id));
   return (
     <div className="collection-search">
       <div className="collection-search-row">
@@ -523,36 +640,60 @@ function CollectionSearch({ assigned, onPick, onClose }) {
         </button>
       </div>
       <p className="search-status" aria-live="polite">
-        {q.length >= 2 && !done
-          ? 'Keresés…'
-          : done && !found.error
-            ? found.results.length
-              ? `${found.results.length} gyűjtemény`
-              : `Nincs ilyen gyűjtemény: „${q}”. Próbáld angolul.`
-            : ''}
+        {q.length >= 2
+          ? !done
+            ? 'Keresés…'
+            : !found.error
+              ? found.results.length
+                ? `${found.results.length} gyűjtemény`
+                : `Nincs ilyen gyűjtemény: „${q}”. Próbáld angolul.`
+              : ''
+          : suggested === null
+            ? 'Javaslatok betöltése…'
+            : suggestions.length
+              ? 'Javasolt gyűjtemények'
+              : 'Nincs több javaslat – keress rá a gyűjtemény nevére.'}
       </p>
       {done && found.error && (
         <p className="error small" role="alert">
           {found.error}
         </p>
       )}
-      {done && found.results.length > 0 && (
-        <ul className="collection-results">
-          {found.results.map((c) => (
-            <li key={c.id}>
-              <span className="thumb">{c.poster_path && <img src={`${IMG}w92${c.poster_path}`} alt="" loading="lazy" />}</span>
-              <b>{c.name}</b>
-              {assigned.has(c.id) ? (
-                <span className="on-list">✓ Hozzárendelve</span>
-              ) : (
-                <button type="button" className="ghost" onClick={() => onPick(c)}>
-                  Hozzárendelés
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
+      {q.length >= 2 ? (
+        done && <CollectionResults results={found.results} assigned={assigned} onPick={onPick} />
+      ) : (
+        <CollectionResults results={suggestions} assigned={assigned} onPick={onPick} suggested />
       )}
     </div>
+  );
+}
+
+// a talált / javasolt gyűjtemények: borító és név – új lapon a TMDB-oldalra (terv-3 53) –, „Hozzárendelés”
+function CollectionResults({ results, assigned, onPick, suggested }) {
+  if (results.length === 0) return null;
+  return (
+    <ul className="collection-results" data-suggested={suggested || undefined}>
+      {results.map((c) => {
+        const url = `https://www.themoviedb.org/collection/${c.id}`;
+        return (
+          <li key={c.id}>
+            <a className="thumb" href={url} target="_blank" rel="noopener noreferrer" tabIndex={-1} aria-hidden="true">
+              {c.poster_path && <img src={`${IMG}w92${c.poster_path}`} alt="" loading="lazy" />}
+            </a>
+            <a className="collection-result-name" href={url} target="_blank" rel="noopener noreferrer">
+              {c.name}
+              <span className="sr-only"> (TMDB-oldal, új lapon)</span>
+            </a>
+            {assigned.has(c.id) ? (
+              <span className="on-list">✓ Hozzárendelve</span>
+            ) : (
+              <button type="button" className="ghost" onClick={() => onPick(c)}>
+                Hozzárendelés
+              </button>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }

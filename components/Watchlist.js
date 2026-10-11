@@ -1609,6 +1609,8 @@ export default function Watchlist({ session }) {
               onUpdated={(row) => handleRowUpdated(row, false)}
               onOrderChanged={handleOrderChanged}
               onFranchiseUpdated={(f) => setFranchises((fs) => fs.map((x) => (x.id === f.id ? { ...x, ...f } : x)))}
+              onRename={handleRenameFranchise}
+              onDelete={handleDeleteFranchise}
               readOnly={readOnly}
             />
           )}

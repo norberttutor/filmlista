@@ -413,7 +413,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   kérése): `TitleEditor` (mentetlen módosításnál `onBlocked` → figyelmeztetés), `StatsDialog`
   (mindig), `FranchisesDialog` (átnevezés / törlés-megerősítés / új név gépelése és nyitott
   gyűjtemény-ablak alatt nem), `CollectionDialog` (rész felvétele közben, a nézési sorrend
-  szerkesztése közben és a megosztás visszavonásának megerősítésekor nem; a nyitott TMDB-gyűjtemény-keresőnél igen – Norbi kérése, 2026-10-07; a
+  szerkesztése közben, a megosztás visszavonásának megerősítésekor és a fejléc átnevezése / törlés-megerősítése közben – terv-3 57 – nem; a nyitott TMDB-gyűjtemény-keresőnél igen – Norbi kérése, 2026-10-07; a
   Franchise-ok ablakból nyitva mindkét ablak bezárul – `onOutsideClose`), `BackupsDialog` (mentés / visszaállítás közben és nyitott
   megerősítésnél nem). Az importablakok (Tömeges import, IMDb import) nem (Norbi döntése)
 - `components/SiteFooter.js` – kötelező TMDB forrásmegjelölés, ne töröld; jobbra lent „sponsored by
@@ -537,7 +537,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (sorozatok – a TMDB-gyűjteményekben sosem szerepelnek –, gyűjtemény nélküli filmek), sorszám
   nélkül, megjelenés szerint. „+ TMDB-gyűjtemény hozzáadása”: késleltetett keresés
   (`search/collection`; magyarul gyakran nincs találat, angolul igen – pl. „Star Wars”) →
-  „Hozzárendelés” (`setFranchiseCollections`). A számlálás a gyűjtemények részeinek
+  „Hozzárendelés” (`setFranchiseCollections`); üres keresőnél **„Javasolt gyűjtemények”** (terv-3 53,
+  2026-10-11): a route `?suggest=` módja a franchise nevével és a filmjei eredeti címének elejével
+  („Dune: Part Two” → „Dune” – `suggestQueries()`) keres, szavanként az első 4 találat, legfeljebb 10, egy
+  napig tárolva; a már hozzárendelt / látható gyűjtemények kimaradnak. A javasolt és a talált
+  gyűjtemény neve és borítója új lapon a TMDB-oldalára visz (`CollectionResults`). A számlálás a gyűjtemények részeinek
   uniója + a további címek. Gyorsítótár: filmenként a gyűjtemény-azonosító és gyűjteményenként
   a részek egy napig. (Az első változat franchise-onként csak egy gyűjteményt mutatott, és
   Norbi 40 franchise-ából 15-nél kihagyott címeket – 2026-10-04.) Közös exportok (a Franchise-ok
@@ -549,7 +553,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   a Franchise-ok csempéjén – `franchisePosterPath`; az ablak háttere, kerete, a mögötte lévő
   sötétítés, a szakaszcímek előtt jelölővonal; a mérő zöld, a fülek türkizek maradnak). A gyűjtemény-ablak két fülön (terv-3 28, Norbi döntése; `role="tablist"`,
   nyilakkal is; a panelek rejtve megmaradnak): „Gyűjtemény” (a fenti) és „Nézési sorrend”
-  (`WatchOrder`); sorrend-szerkesztés közben kikattintásra nem zár, az Esc csak a szerkesztést zárja
+  (`WatchOrder`); sorrend-szerkesztés közben kikattintásra nem zár, az Esc csak a szerkesztést zárja.
+  A fejlécben (terv-3 57, 2026-10-11) a Franchise-ok csempéjének műveletei: „Szűrés erre” (`onShow`, csak
+  a Franchise-ok ablakból nyitva – a sáv gombjáról már erre szűr; üres franchise-nál tiltva), „Átnevezés”
+  (helyben; Enter ment, az Esc csak a szerkesztést zárja), „Törlés” (megerősítéssel; utána az ablak a
+  szülőjével bezárul, a szűrő Összes); átnevezés / megerősítés közben kikattintásra nem zár; net nélkül
+  csak a „Szűrés erre”
 - `components/WatchOrder.js` + `lib/watchOrder.js` – nézési sorrend (terv-3 28, 2026-10-06, Norbi
   döntéseivel): a franchise **listán lévő** filmjei és a sorozatok **évadjai külön tételként**
   (`franchiseItems()`; évad nélküli sorozat egy tétel; tételkulcs `címId:évad`, 0 = film),
@@ -1218,7 +1227,8 @@ belüli leírásban a ①②③ jelek borostyán körben, mint a képeken (terv-
 „Legrégebbi / Legújabb megjelenés” rendezés pontos dátum szerint (terv-3 55, 2026-10-10, hibajavítás).
 Kinézeti kör (2026-10-11): franchise-sáv és megosztott sorrend a franchise színében, színes értesítősáv
 fajtánként, franchise-szűrő csoportokkal („N hátra” / „Mind megnézve”), műfajikonok, látványosabb asztali
-listanézet 10 címmel oldalanként.
+listanézet 10 címmel oldalanként. Javasolt TMDB-gyűjtemények a gyűjtemény-ablakban, link a TMDB-oldalra (terv-3
+53); „Szűrés erre” / „Átnevezés” / „Törlés” a gyűjtemény-ablak fejlécében (terv-3 57).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -1257,19 +1267,14 @@ franchise színében (fejléc, felirat, sorszámok), **52.5 B** – az értesít
 megnézve” csoport, „N hátra” címke, **56 A** – műfajikonok a műfajszűrőben (saját lenyíló), **59 B** –
 látványosabb listanézet (keskenyebb, kártyaszerű sorok a film színében, jelenetkép, 100 px-es borító,
 10 cím / oldal).
-**53 – javasolt TMDB-gyűjtemények** (Norbi kérése, 2026-10-10; ~1,25–1,75 óra; részletek: `munka/terv-3/TERV.md`
-53-as pont): a gyűjtemény-ablak „+ TMDB-gyűjtemény hozzáadása” gombjára gépelés nélkül is javaslatok (a
-franchise nevével magyarul és angolul keresve, a már hozzárendeltek nélkül); a kereső megmarad. A
-javasolt és a keresett gyűjtemények neve / borítója új lapon a TMDB-oldalukra visz.
+**53 – javasolt TMDB-gyűjtemények** és **57 – műveletek a gyűjtemény-ablakban – kész** (2026-10-11, commitra vár;
+teszt: `munka/e2e/test-53-57.mjs`, `test.mjs` 115/115).
 **55 – pontos dátum szerinti rendezés – kész** (2026-10-10, `f4be52b`; `23_release_date.sql` élesben, a
 meglévő 918 cím dátuma feltöltve; teszt: `munka/e2e/test-55.mjs`; részletek: TERV.md 55-ös pont).
 **58 – Mama jelölése csak ott, ahol értelme van** (Norbi kérése, 2026-10-10; ~1–1,5 óra; részletek: TERV.md
 58-as pont): franchise-os címnél és sorozatnál az adatlapon nincs Mama-csoport (ha már van értéke, marad,
 hogy törölhető legyen), a Mama-szűrő Sorozatok típusnál és franchise-ra szűrve nem látszik – Mama oldala
 úgyis csak a franchise nélküli filmeket kínálja.
-**57 – „Szűrés erre” / „Átnevezés” / „Törlés” a gyűjtemény-ablakban is** (Norbi kérése, 2026-10-10; ~1–1,5 óra;
-részletek: TERV.md 57-es pont): a Franchise-ok csempéjének három művelete a megnyitott gyűjtemény-ablak
-fejlécében is.
 **Norbi kérései (2026-10-04)** – utána, ebben a sorrendben; a részletek
 (megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
 1. **27 – jelszó módosítása** (~1,5 óra): csak bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”:
