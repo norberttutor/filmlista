@@ -1278,7 +1278,7 @@ meglévő 918 cím dátuma feltöltve; teszt: `munka/e2e/test-55.mjs`; részlete
 hogy törölhető legyen), a Mama-szűrő Sorozatok típusnál és franchise-ra szűrve nem látszik – Mama oldala
 úgyis csak a franchise nélküli filmeket kínálja.
 **60 – animációs filmek kiszedése az ajánlásokból – kész** (Norbi kérése, 2026-10-11; kész 2026-10-12,
-commitra vár; teszt: `munka/e2e/test-60.mjs` 11/11): a Felfedezés sorai, a kiemelt sáv, a Hasonló címek és a
+`ec2e516`; teszt: `munka/e2e/test-60.mjs` 11/11): a Felfedezés sorai, a kiemelt sáv, a Hasonló címek és a
 „Neked ajánlott” nem kínál animációs címet (TMDB-műfaj 16); a kézi keresés, az importok, a listán lévők és a
 harang („Új rész a gyűjteményben”) nem változnak.
 **Norbi kérései (2026-10-04)** – utána, ebben a sorrendben; a részletek
