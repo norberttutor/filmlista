@@ -1267,7 +1267,7 @@ franchise színében (fejléc, felirat, sorszámok), **52.5 B** – az értesít
 megnézve” csoport, „N hátra” címke, **56 A** – műfajikonok a műfajszűrőben (saját lenyíló), **59 B** –
 látványosabb listanézet (keskenyebb, kártyaszerű sorok a film színében, jelenetkép, 100 px-es borító,
 10 cím / oldal).
-**53 – javasolt TMDB-gyűjtemények** és **57 – műveletek a gyűjtemény-ablakban – kész** (2026-10-11, commitra vár;
+**53 – javasolt TMDB-gyűjtemények** és **57 – műveletek a gyűjtemény-ablakban – kész** (2026-10-11, `64f340b`;
 teszt: `munka/e2e/test-53-57.mjs`, `test.mjs` 115/115).
 **55 – pontos dátum szerinti rendezés – kész** (2026-10-10, `f4be52b`; `23_release_date.sql` élesben, a
 meglévő 918 cím dátuma feltöltve; teszt: `munka/e2e/test-55.mjs`; részletek: TERV.md 55-ös pont).
