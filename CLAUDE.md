@@ -280,7 +280,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   kulccsal rendes adatlappá válik („✓ Felkerült a listádra”, `.added-note`; Norbi döntése: nem
   zárul be). Előnézet nyílik a Cím hozzáadása találatának borítójáról / címéről és a Felfedezés
   borítójáról (`onPreview` → `Watchlist.openEditor`), valamint a Hasonló címek borítójáról az
-  ablakon belül (új lap, a cím fölött „‹ Vissza: …”, `.back-link`); a franchise-gyűjteményből és
+  ablakon belül (új lap, a cím fölött „‹ Vissza: …”, `.back-link`) – a Szereplők nevéről a színész
+  lapja is így nyílik (`PersonPage`, `{ id, person }` a `stack`-ben, terv-3 61) –; a franchise-gyűjteményből és
   az importokból nem (Norbi döntése). Mentetlen módosítással a lap nem hagyható el (a hasonló cím
   és a Vissza is figyelmeztet, mint a kikattintás – az elöl lévő lap `apiRef`-en adja a
   `canLeave` / `nudge` függvényt); a Mentés / Mégse / Esc / kikattintás az egész ablakot zárja; a
@@ -615,7 +616,25 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (`pickCast()`: filmnél a credits, sorozatnál az aggregate_credits sorrendje; rendező nincs; egy
   napig gyorsítótárazva; a TitleEditor egyszer kéri le, `afterTransition` után). Asztalon (≥ 900 px)
   a bal oszlopban a „Hol nézhető?” alatt (`.cast.side`: kerek fotó, név, szerep), keskenyebben a
-  leírás alatt egy sor („Szereplők: …”, `.cast-line`). A név a színész TMDB-oldalára visz, új lapon
+  leírás alatt egy sor („Szereplők: …”, `.cast-line`). A névre (asztalon a fotóra is – `button.cast-person`,
+  telefonon `button.cast-name`) kattintva a színész lapja nyílik az ablakon belül (`onPerson`, terv-3 61)
+- `components/PersonPage.js` + `app/api/tmdb/person/route.js` – **a színész lapja az adatlapon belül**
+  (terv-3 61, 2026-10-12, Norbi választása a látványterv után: „kevert” –
+  https://claude.ai/artifact/NKSkigYqGq9xnCoucYQVeM, `munka/terv-3/terv-61/`): a `TitleEditor` új lapja („‹ Vissza”,
+  a nyitó film színét tartja). Asztalon balra nagy fotó (w500, a borító helyén) + „Megnyitás a TMDB-n ↗”,
+  keskenyebben kerek fotó a név mellett (`.person-photo`) és a link az életrajz sorában; „Színész”, „Született:
+  … (N éves)” / „Elhunyt: …”, születési hely, életrajz 4 sorban („Tovább” / „Kevesebb”, ha nem fér el; magyar
+  híján angolul – „angolul”). **„A listádon (N)”** borítórácsban (`.person-grid`; telefonon 3 oszlop): halványzöld
+  keret, megnézett / abbahagyott szürke + „✓ Megnézve” + saját csillag (borostyán), a még meg nem jelent indigó
+  szaggatott + „Hamarosan”; **„További filmjei és sorozatai (N)”** soronként (`.person-row`: kis borító, cím, év ·
+  típus · szerep, jobbra „+ Hozzáadás” / „✓ A listán”), ismertség (TMDB szavazatszám) szerint, 10 látszik, a többi
+  „Továbbiak mutatása (N)”-re. Norbi döntései: rendező nincs; a „további” címekből kimarad a `minor` (borító
+  nélküli, animáció / dokumentum / talkshow / hírek / valóságshow / szappanopera, sorozatban ≤ 2 rész –
+  vendégszereplés –, önmaga-szerep), a listán lévő akkor is látszik. A csoport a lap megnyitásakori listából: a
+  most felvett cím a helyén marad „✓ A listán”-nal. A borító az adatlapot nyitja (`onPreview`, újabb lap); felvétel
+  közben a lap nem hagyható el; `readOnly`-nál nincs „+ Hozzáadás”. A route: `GET ?id` → `{ person, credits }`
+  (`/person/{id}` + `combined_credits`, címenként egyszer, a szerepnevek összevonva, legfeljebb 400; egy napig
+  gyorsítótárazva; 404 → `{ person: null, credits: [] }`). Teszt: `munka/e2e/test-61.mjs`
 - `app/api/tmdb/videos/route.js` – `GET ?type&id` → `{ video: { key, name, lang } | null }`:
   YouTube, „Trailer” előbb, hivatalos előbb, legfrissebb; magyar nyelvű, ha nincs, angol (ha a
   cím már nincs a TMDB-n: `null`; a similar route is üres listát ad ilyenkor)
@@ -1253,6 +1272,8 @@ listanézet 10 címmel oldalanként. Javasolt TMDB-gyűjtemények a gyűjtemény
 (Felfedezés, kiemelt sáv, Hasonló címek, „Neked ajánlott”) nincs animációs cím (terv-3 60, 2026-10-12).
 Mama-jelölés csak a franchise nélküli filmeknél (adatlap, táblázat, Mama-szűrő – terv-3 58, 2026-10-12).
 Jelszó módosítása a fejléc e-mail-címéről és a ⋮ menüből (terv-3 27, 2026-10-12).
+A színész lapja az adatlapon belül: a Szereplők nevére kattintva adatai, a listán lévő filmjei rácsban, a többi
+soronként, egy kattintással a listára (terv-3 61, 2026-10-13, „kevert” változat).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -1332,6 +1353,12 @@ van ×. A 46-os – kiemelt sáv –, a 43-as – gyorsindítók – és a 42-es
    - ~~49.10 – saját görgetősáv~~ – **kész (2026-10-08, látványterv nélkül)**.
 (Az 50-es – világos / sötét téma, Norbi kérésére előrehozva – kész, 2026-10-08: látványterv után a
 „B – meleg papír”; napló: `munka/terv-3/terv-50/ALLAPOT.md`.)
+**Norbi kérése (2026-10-12, Claude funkciójavaslataiból):**
+- **61 – színész oldala az appon belül – kész** (2026-10-13, `ec77ce6`; teszt: `munka/e2e/test-61.mjs` 8/8,
+  `test.mjs` 115/115): a Szereplők nevére kattintva az adatlapon belül új lap („‹ Vissza”) – Norbi választása a
+  látványterv után (https://claude.ai/artifact/NKSkigYqGq9xnCoucYQVeM): „kevert” – a listáján lévők rácsban, a
+  többi soronként; rendező nincs; ismertség szerint; vendégszereplés és animáció nélkül. Terv:
+  `munka/terv-3/TERV.md` 61-es pont.
 **Lekerült a roadmapről** (Norbi döntése, 2026-10-08: a közeljövőben nincs tervben; magadtól ne
 javasold újra): **25 – admin jogosultság**, **26 – regisztráció** (a meglévőkön kívül más felhasználó
 nem lesz, Mama fiókja pedig a 13-as óta korlátozott). A részletes tervük a TERV.md-ben megmaradt.
@@ -1372,7 +1399,10 @@ Felfedezésben – magadtól ne javasold újra. A 2026-10-08-i kinézeti javasla
 borítófal a belépési oldalon, elmosottból kiélesedő borítók, kedvencek borostyán kerete, szikrák 10
 csillagnál, felpörgő számok / felnövő oszlopok a Statisztikában, feltöltődő franchise-mérők, címlogó az adatlapon
 (49.1 – beépítve, majd visszavonva) –
-magadtól ne javasold újra.
+magadtól ne javasold újra. A 2026-10-12-i funkciójavaslatokból (a 61-es mellett) nem választotta: Mama
+filmet kérhet, „Megkaptam” fül Mamánál, franchise-ugrás (Gyűjtemény / Nézési sorrend link) az adatlapról,
+Felfedezés műfaj szerint, „Kedvenceim” megosztható link, jelölés net nélkül (offline írás), automatikus
+füstteszt élesítés után – magadtól ne javasold újra.
 **Elvetve (Norbi kérésére, 2026-10-04) – nem kell, magadtól ne javasold újra:** 2 – gyorsműveletek a borítón, 3 – parancspaletta (Ctrl+K) és billentyűparancsok, 5 – „Mit nézzek ma?”, 6 – játékidő a soron és szűrő rá, 11 – saját címkék, 12 – szinkron / felirat jelölése, 17 – csoportosítás hónapok szerint, 18 – évértékelő, 19 – értesítés a telefonra (web push).
 
 ## Fejlesztői megjegyzés
