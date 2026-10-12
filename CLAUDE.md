@@ -1295,8 +1295,8 @@ látványosabb listanézet (keskenyebb, kártyaszerű sorok a film színében, j
 teszt: `munka/e2e/test-53-57.mjs`, `test.mjs` 115/115).
 **55 – pontos dátum szerinti rendezés – kész** (2026-10-10, `f4be52b`; `23_release_date.sql` élesben, a
 meglévő 918 cím dátuma feltöltve; teszt: `munka/e2e/test-55.mjs`; részletek: TERV.md 55-ös pont).
-**58 – Mama jelölése csak ott, ahol értelme van – kész** (Norbi kérése, 2026-10-10; kész 2026-10-12, commitra
-vár; teszt: `munka/e2e/test-58.mjs` 7/7, `test.mjs` 115/115): franchise-os címnél és sorozatnál az adatlapon
+**58 – Mama jelölése csak ott, ahol értelme van – kész** (Norbi kérése, 2026-10-10; kész 2026-10-12, `c5829a7`;
+teszt: `munka/e2e/test-58.mjs` 7/7, `test.mjs` 115/115): franchise-os címnél és sorozatnál az adatlapon
 nincs Mama-csoport, a táblázatban üres a Mama-cella (ha már van értéke, marad, hogy törölhető legyen –
 `mamaApplies(t)`), a Mama-szűrő Sorozatok típusnál és franchise-ra szűrve nem látszik és nem szűr (az értéke
 megmarad) – Mama oldala úgyis csak a franchise nélküli filmeket kínálja.
@@ -1305,7 +1305,7 @@ megmarad) – Mama oldala úgyis csak a franchise nélküli filmeket kínálja.
 „Neked ajánlott” nem kínál animációs címet (TMDB-műfaj 16); a kézi keresés, az importok, a listán lévők és a
 harang („Új rész a gyűjteményben”) nem változnak.
 **Norbi kérései (2026-10-04)** – mind kész; a részletek a `munka/terv-3/TERV.md`-ben:
-- **27 – jelszó módosítása – kész** (2026-10-12, commitra vár; teszt: `munka/e2e/test-27.mjs` 6/6, `test.mjs`
+- **27 – jelszó módosítása – kész** (2026-10-12, `942c3d5`; teszt: `munka/e2e/test-27.mjs` 6/6, `test.mjs`
   115/115): csak bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”: jelenlegi + új kétszer; előbb
   ellenőrző belépés külön klienssel, utána `updateUser`). Elfelejtett jelszó a belépési oldalon **nem kell**
   (Norbi döntése, 2026-10-08) – magadtól ne javasold újra; Supabase-beállítás sem kellett.
