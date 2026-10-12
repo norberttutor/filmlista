@@ -21,6 +21,7 @@ import ImdbBadge from '@/components/ImdbBadge';
 import ReleaseBadge from '@/components/ReleaseBadge';
 import WatchProviders from '@/components/WatchProviders';
 import TopCast from '@/components/TopCast';
+import PersonPage from '@/components/PersonPage';
 import { hasSeasons, SeasonList, SeasonTimeline, useSeasonActions } from '@/components/Seasons';
 import SimilarTitles from '@/components/SimilarTitles';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
@@ -60,7 +61,8 @@ function ClearableChips({ name, options, value, onChange, className }) {
 // listához” gombbal – felvétel után a lap helyben a rendes adatlapra vált (Norbi döntése).
 // Az ablakban több adatlap lehet egymás mögött: a Hasonló címek borítójára kattintva a hasonló
 // cím kerül előre, a „Vissza” az előzőre lép (az elhagyott lap rejtve megmarad, a görgetési
-// helyével együtt). A natív <dialog> elemet használja: Esc-re bezárul, a fókusz az ablakban
+// helyével együtt). A Szereplők nevére kattintva a színész lapja kerül előre (PersonPage, terv-3 61).
+// A natív <dialog> elemet használja: Esc-re bezárul, a fókusz az ablakban
 // marad; asztalon a háttérre kattintva is bezárul, ha nincs mentetlen módosítás.
 export default function TitleEditor({
   title: opened, // a megnyitott cím: a lista sora, vagy egy TMDB-találat (előnézet)
@@ -78,8 +80,10 @@ export default function TitleEditor({
   const [stack, setStack] = useState(() => [{ id: 0, rowId: opened.id ?? null, item: opened, added: false }]);
 
   // a lap sora a listából: a listáról nyitottnál azonosító szerint (ha közben lekerült – törlés –,
-  // a megnyitáskori), a többinél a TMDB-azonosító szerint (null: nincs a listán → előnézet)
+  // a megnyitáskori), a többinél a TMDB-azonosító szerint (null: nincs a listán → előnézet); a
+  // színész lapjának (person) nincs sora
   function rowOf(entry) {
+    if (entry.person) return null;
     if (entry.rowId != null) return titles.find((x) => x.id === entry.rowId) ?? entry.item;
     const { media_type, tmdb_id } = entry.item;
     return titles.find((x) => x.media_type === media_type && x.tmdb_id === tmdb_id) ?? null;
@@ -87,8 +91,10 @@ export default function TitleEditor({
   const pages = stack.map((entry) => ({ ...entry, row: rowOf(entry) }));
   const top = pages[pages.length - 1];
   const topPreview = !top.row;
-  // a borító hangulatszíne: az ablak a film színében dereng (globals.css, "Hangulatszín")
-  const ambient = usePosterColor((top.row ?? top.item).poster_path);
+  // a borító hangulatszíne: az ablak a film színében dereng (globals.css, "Hangulatszín"); a
+  // színész lapja a legutóbbi film színét tartja
+  const film = pages.findLast((page) => !page.person);
+  const ambient = usePosterColor((film.row ?? film.item).poster_path);
 
   // rajzolás előtt nyílik meg (a nézetváltás új képén már ott legyen az ablak). Lapváltáskor
   // (Vissza, hasonló cím, felvétel) a lap a régi görgetési helyére ugrik (az újak a tetejükre).
@@ -147,6 +153,14 @@ export default function TitleEditor({
     scrolls.current.set(top.id, dialogRef.current.scrollTop);
     const id = nextId.current++;
     setStack((s) => [...s, { id, rowId: null, item, added: false }]);
+  }
+
+  // a Szereplők neve: a színész lapja kerül előre (terv-3 61)
+  function openPerson(person) {
+    if (!canLeavePage()) return;
+    scrolls.current.set(top.id, dialogRef.current.scrollTop);
+    const id = nextId.current++;
+    setStack((s) => [...s, { id, person, added: false }]);
   }
 
   function goBack() {
@@ -214,6 +228,24 @@ export default function TitleEditor({
       {pages.map((page, i) => {
         const active = i === pages.length - 1;
         const prev = pages[i - 1];
+        const back = prev ? (prev.person?.name ?? (prev.row ?? prev.item).title) : null;
+        if (page.person) {
+          return (
+            <PersonPage
+              key={`${page.id}:person`}
+              person={page.person}
+              titles={titles}
+              active={active}
+              apiRef={active ? pageRef : null}
+              back={back}
+              onBack={goBack}
+              onPreview={openPreview}
+              onAdded={pageProps.onAdded}
+              close={close}
+              readOnly={pageProps.readOnly}
+            />
+          );
+        }
         return (
           // felvételkor (előnézet → sor) új lap: a szerkesztő mezők a friss sorból indulnak
           <TitlePage
@@ -221,9 +253,10 @@ export default function TitleEditor({
             entry={page}
             active={active}
             apiRef={active ? pageRef : null}
-            back={prev ? (prev.row ?? prev.item).title : null}
+            back={back}
             onBack={goBack}
             onPreview={openPreview}
+            onPerson={openPerson}
             onAddedHere={() => markAdded(page.id)}
             close={close}
             closeNow={() => dialogRef.current.close()}
@@ -245,6 +278,7 @@ function TitlePage({
   back, // az előző lap címe („Vissza: …”), vagy null
   onBack,
   onPreview,
+  onPerson, // a Szereplők neve: a színész lapja (terv-3 61)
   onAddedHere,
   close, // az ablak bezárása (nézetváltással)
   closeNow, // azonnal (törléskor: nincs hova visszasiklani)
@@ -495,7 +529,7 @@ function TitlePage({
             {t.poster_path && <img src={POSTER_BASE + t.poster_path} alt="" decoding="async" />}
           </div>
           <WatchProviders providers={providers} className="side" />
-          <TopCast cast={cast} variant="side" />
+          <TopCast cast={cast} variant="side" onPerson={onPerson} />
         </div>
         <div className="editor-main">
           <header>
@@ -569,7 +603,7 @@ function TitlePage({
               )
             )}
             {/* keskenyebben (< 900 px) a szereplők egy sorban a leírás alatt */}
-            <TopCast cast={cast} variant="inline" />
+            <TopCast cast={cast} variant="inline" onPerson={onPerson} />
           </header>
 
           {preview ? (

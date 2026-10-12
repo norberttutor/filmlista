@@ -5813,7 +5813,7 @@ body:has(.editor[open]) {
 
 /* Szereplők (TopCast, terv-3 38 – „A” változat, Norbi választása, 2026-10-06): asztalon a bal
    oszlopban kerek fotó, név, szerep egymás alatt; keskenyebben (< 900 px) egy szöveges sor a
-   leírás alatt. A név a TMDB-oldalra visz (új lapon). */
+   leírás alatt. A névre (asztalon a fotóra is) kattintva a színész lapja nyílik (terv-3 61). */
 .cast {
   display: grid;
   gap: 0.5rem;
@@ -5828,10 +5828,21 @@ body:has(.editor[open]) {
 }
 
 .cast li {
+  min-width: 0;
+}
+
+/* a szereplő egy gomb: fotó + név + szerep */
+.cast-person {
   display: flex;
   align-items: center;
   gap: 0.65rem;
+  width: 100%;
   min-width: 0;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
 }
 
 .cast-photo {
@@ -5857,19 +5868,22 @@ body:has(.editor[open]) {
   line-height: 1.2;
 }
 
-.cast-text a {
+.cast-text .cast-name {
   font-size: 0.88rem;
   font-weight: 700;
   color: var(--text);
-  text-decoration: none;
 }
 
-.cast-text a:hover,
-.cast-text a:focus-visible,
-.cast-line a:hover,
-.cast-line a:focus-visible {
+.cast-person:hover .cast-name,
+.cast-person:focus-visible .cast-name,
+.cast-line .cast-name:hover,
+.cast-line .cast-name:focus-visible {
   color: var(--accent);
   text-decoration: underline;
+}
+
+.cast-person:hover .cast-photo {
+  box-shadow: 0 0 0 2px var(--accent);
 }
 
 .cast-text small {
@@ -5888,9 +5902,309 @@ body:has(.editor[open]) {
   color: var(--text);
 }
 
-.cast-line a {
+.cast-line .cast-name {
+  padding: 0;
+  font-size: inherit;
   color: inherit;
+  background: none;
+  border: 0;
+}
+
+/* ---------- Színész lapja az adatlapon belül (PersonPage, terv-3 61) ---------- */
+/* Norbi választása (2026-10-12, a „kevert” látványterv – munka/terv-3/terv-61/): fölül az adatai,
+   alatta „A listádon” borítórácsban, a többi címe soronként. A cím adatlapjának elrendezése
+   (balra a nagy fotó a borító helyén); keskenyebben kerek fotó a név mellett. */
+.person-head {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.person-photo {
+  flex: none;
+  width: 4.25rem;
+  height: 4.25rem;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--placeholder-bg);
+  box-shadow: 0 0 0 1px rgb(var(--tint) / 0.12);
+}
+
+.person-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.person-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 1rem;
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.person-facts b {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.person-bio:not(.open) {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+
+.person-bio-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+  margin-top: 0.4rem;
+}
+
+.person-bio-row .link {
+  font-weight: 600;
   text-decoration: none;
+}
+
+.person-tmdb {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+}
+
+.person-tmdb:hover {
+  color: var(--accent);
+}
+
+/* asztalon a fotó alatt, keskenyebben az életrajz sorában */
+.person-tmdb.side {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .person-photo,
+  .person-tmdb.inline {
+    display: none;
+  }
+
+  .person-tmdb.side {
+    display: inline;
+    justify-self: start;
+  }
+}
+
+.person-section {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.person-section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.person-section-title::before {
+  content: '';
+  flex: none;
+  width: 0.9rem;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.title-editor[data-ambient] .person-section-title::before {
+  background: var(--ambient-ink);
+}
+
+.person-count {
+  padding: 0 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  border-radius: 999px;
+  background: rgb(var(--tint) / 0.07);
+  font-variant-numeric: tabular-nums;
+}
+
+.person-note {
+  margin: -0.35rem 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.person-role {
+  font-size: 0.72rem;
+  font-style: italic;
+  line-height: 1.25;
+  color: var(--muted);
+}
+
+.person-rating {
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: var(--accent-2);
+}
+
+/* a még meg nem jelent cím (terv-3 52.1: a bejelentett mindenhol indigó szaggatott) */
+.person-soon {
+  width: fit-content;
+  padding: 0 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--c-indigo);
+  border: 1px dashed var(--c-indigo);
+  border-radius: 999px;
+}
+
+:is(.person-grid .similar-item, .person-row)[data-upcoming] .similar-poster {
+  outline: 2px dashed var(--c-indigo);
+  outline-offset: 2px;
+}
+
+/* a megnézett / abbahagyott cím háttérbe húzódik (fekete-fehér, fakó borító) */
+:is(.person-grid .similar-item, .person-row):is([data-status='watched'], [data-status='dropped']) .similar-poster img {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+
+/* „A listádon”: borítórács, a borító körül halványzöld keret (a listán van) */
+.person-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.9rem, 1fr));
+  gap: 1rem 0.8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person-grid .similar-poster {
+  box-shadow:
+    inset 0 0 0 1px rgb(var(--tint) / 0.08),
+    0 0 0 2px color-mix(in oklab, var(--st-watched) 55%, transparent);
+}
+
+.person-grid .similar-item[data-upcoming] .similar-poster {
+  box-shadow: none;
+}
+
+.person-grid .similar-title {
+  text-decoration: none;
+}
+
+.person-status,
+.person-row-side {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.45rem;
+}
+
+.person-status {
+  margin-top: 0.1rem;
+}
+
+:is(.person-status, .person-row-side) .on-list {
+  margin: 0;
+  font-size: 0.72rem;
+}
+
+/* a többi címe: soronként kis borító, cím, év · típus · szerep, jobbra a gomb */
+.person-rows {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person-row {
+  display: grid;
+  grid-template-columns: 2.4rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.35rem 0.6rem 0.35rem 0.35rem;
+  border-radius: 12px;
+  background: rgb(var(--tint) / 0.03);
+  box-shadow: inset 0 0 0 1px rgb(var(--tint) / 0.06);
+}
+
+.person-row .similar-poster {
+  border-radius: 5px;
+}
+
+.person-row-text {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.person-row-title {
+  overflow: hidden;
+  font-size: 0.92rem;
+  font-weight: 650;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.person-row:is([data-status='watched'], [data-status='dropped']) .person-row-title {
+  color: var(--watched-text);
+}
+
+.person-row-meta {
+  font-size: 0.76rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.person-row-meta .person-role {
+  font-size: inherit;
+}
+
+.person-row-side {
+  justify-self: end;
+}
+
+.person-more {
+  justify-self: start;
+}
+
+.person-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+@supports (corner-shape: squircle) {
+  .person-row {
+    corner-shape: squircle;
+  }
+}
+
+@media (max-width: 640px) {
+  .person-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.9rem 0.6rem;
+  }
+
+  .person-row {
+    grid-template-columns: 2.6rem minmax(0, 1fr);
+  }
+
+  .person-row-side {
+    grid-column: 2;
+    justify-self: start;
+  }
 }
 
 /* asztalon kétoszlopos ablak: balra a borító (görgetéskor a helyén marad), jobbra az adatok */
