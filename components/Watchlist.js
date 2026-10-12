@@ -504,6 +504,10 @@ export default function Watchlist({ session }) {
     [titles, type]
   );
   const franchiseChosen = franchise !== '' && franchise !== NO_FRANCHISE;
+  // a Mama-szűrő Sorozatok típusnál és franchise-ra szűrve nem látszik és nem szűr (terv-3 58 – Mama
+  // oldala úgyis csak a franchise nélküli filmeket kínálja); az értéke megmarad, visszaváltáskor visszajön
+  const mamaOff = type === 'tv' || franchiseChosen;
+  const mamaFilter = mamaOff ? '' : mama;
 
   // csak azok a műfajok, amelyek ennél a típusnál ténylegesen előfordulnak
   const genres = useMemo(
@@ -650,14 +654,14 @@ export default function Watchlist({ session }) {
       ofType.filter(
         (t) =>
           (!genre || (t.genres ?? []).includes(genre)) &&
-          (!mama || t.mama_status === mama) &&
+          (!mamaFilter || t.mama_status === mamaFilter) &&
           (!franchise ||
             (franchise === NO_FRANCHISE
               ? t.franchise_id == null
               : String(t.franchise_id) === franchise)) &&
           words.every((w) => searchText.get(t.id).includes(w))
       ),
-    [ofType, genre, mama, franchise, words, searchText]
+    [ofType, genre, mamaFilter, franchise, words, searchText]
   );
 
   // minden szűrő az állapot kivételével – ebből jönnek az állapotgombok darabszámai
@@ -697,7 +701,7 @@ export default function Watchlist({ session }) {
   }, [itemsBeforeStatus, beforeStatus]);
 
   // ha a szűrés vagy a rendezés változik (más kulcs): 1. oldal, és a megtartott sorok elengedve
-  const filterKey = [type, status, genre, mama, franchise, downloaded, activeSort, words.join(' ')].join('|');
+  const filterKey = [type, status, genre, mamaFilter, franchise, downloaded, activeSort, words.join(' ')].join('|');
 
   // a most szerkesztett címek a helyükön maradnak, amíg a szűrés nem változik: pl. a "Nem
   // letöltött" nézetben letöltöttnek jelölt film nem tűnik el azonnal (a pipa visszavehető)
@@ -1146,7 +1150,7 @@ export default function Watchlist({ session }) {
     status === 'all' ? 'Minden állapot' : statuses.find((s) => s.code === status)?.name,
     downloaded !== 'all' && DOWNLOAD_FILTERS.find((d) => d.code === downloaded)?.name,
     genre,
-    mama && `Mama: ${mamaLabel(mama)}`,
+    mamaFilter && `Mama: ${mamaLabel(mamaFilter)}`,
     franchise === NO_FRANCHISE
       ? usedFranchises.length > 0 && 'Franchise nélkül'
       : franchise && franchiseName.get(Number(franchise)),
@@ -1425,8 +1429,8 @@ export default function Watchlist({ session }) {
               </div>
             )}
 
-            {/* csak ha van a listán Mama-jelölés */}
-            {(mamaUsed || mama) && (
+            {/* csak ha van a listán Mama-jelölés, és nem Sorozatok / franchise-ra szűrve (terv-3 58) */}
+            {(mamaUsed || mama) && !mamaOff && (
               <label className="inline-field">
                 Mama
                 <select value={mama} onChange={(e) => setMama(e.target.value)}>

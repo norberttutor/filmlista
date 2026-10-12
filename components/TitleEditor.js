@@ -12,6 +12,7 @@ import {
   DROPPED_STATUS,
   MAMA_OPTIONS,
   DETAILS_V,
+  mamaApplies,
 } from '@/lib/titles';
 import StarRating from '@/components/StarRating';
 import FranchiseSelect from '@/components/FranchiseSelect';
@@ -293,6 +294,13 @@ function TitlePage({
   const [error, setError] = useState('');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const seasonal = hasSeasons(t);
+  // Mama-csoport csak franchise nélküli filmnél (terv-3 58) – a franchise mező átállításakor azonnal,
+  // mentés előtt is; a már meglévő (mentett vagy most választott) érték mellett marad, hogy törölhető legyen
+  const showMama = mamaApplies({
+    media_type: t.media_type,
+    franchise_id: form.franchise_id,
+    mama_status: t.mama_status || form.mama_status,
+  });
   // az utolsó évad törlése után (vagy az első felvételekor) az állapotot, a „Letöltve” jelet és a
   // dátumot az adatbázis friss sorából vesszük – különben a megnyitáskori, azóta elavult értéket
   // mutatná, és egy későbbi Mentés azt írná vissza (kódaudit #24)
@@ -582,7 +590,8 @@ function TitlePage({
             <Lock on={readOnly}>
               {/* tömör elrendezés (terv-3 30, B – „vezérlősáv”, Norbi választása, 2026-10-05): fölül
                   a Franchise és a Saját értékelés egymás mellett, alatta keretes sáv: Állapot |
-                  Letöltve | Mama; sorozatnál az Évadok a sáv fölött, a sávban csak a Mama */}
+                  Letöltve | Mama; sorozatnál az Évadok a sáv fölött (a Mama sorozatnál és
+                  franchise-os címnél nincs – terv-3 58; ha így a sáv üres, el is marad) */}
               <div className="editor-pair">
                 <div className="field">
                   <span aria-hidden="true">Franchise</span>
@@ -630,50 +639,54 @@ function TitlePage({
                 </fieldset>
               )}
 
-              <div className="editor-controls">
-                {!seasonal && (
-                  <>
-                    <fieldset className="field">
-                      <legend>Állapot</legend>
-                      {/* az (üres) alapállapotnak nincs gombja: egyik sincs kiválasztva; az
-                          "Abbahagyva" csak sorozatnál */}
-                      <ClearableChips
-                        name="status"
-                        options={statuses.filter(
-                          (s) =>
-                            s.code !== DEFAULT_STATUS &&
-                            (s.code !== DROPPED_STATUS || t.media_type === 'tv' || t.status === s.code)
-                        )}
-                        value={form.status}
-                        onChange={changeStatus}
-                      />
-                    </fieldset>
+              {(!seasonal || showMama) && (
+                <div className="editor-controls">
+                  {!seasonal && (
+                    <>
+                      <fieldset className="field">
+                        <legend>Állapot</legend>
+                        {/* az (üres) alapállapotnak nincs gombja: egyik sincs kiválasztva; az
+                            "Abbahagyva" csak sorozatnál */}
+                        <ClearableChips
+                          name="status"
+                          options={statuses.filter(
+                            (s) =>
+                              s.code !== DEFAULT_STATUS &&
+                              (s.code !== DROPPED_STATUS || t.media_type === 'tv' || t.status === s.code)
+                          )}
+                          value={form.status}
+                          onChange={changeStatus}
+                        />
+                      </fieldset>
 
-                    <fieldset className="field downloaded-field">
-                      <legend>Letöltés</legend>
-                      {/* egyetlen gomb, mint az Állapotnál: újra kattintva kikapcsol ("nem
-                          letöltött" gomb nincs – Norbi kérése, 2026-10-08) */}
+                      <fieldset className="field downloaded-field">
+                        <legend>Letöltés</legend>
+                        {/* egyetlen gomb, mint az Állapotnál: újra kattintva kikapcsol ("nem
+                            letöltött" gomb nincs – Norbi kérése, 2026-10-08) */}
+                        <ClearableChips
+                          name="is_downloaded"
+                          options={DOWNLOADED_OPTIONS}
+                          value={form.is_downloaded ? 'yes' : null}
+                          onChange={(code) => setField('is_downloaded', code === 'yes')}
+                        />
+                      </fieldset>
+                    </>
+                  )}
+                  {showMama && (
+                    <fieldset className="field">
+                      <legend>Mama</legend>
+                      {/* saját jelölés: kiválasztva a második kiemelőszínnel (borostyán) */}
                       <ClearableChips
-                        name="is_downloaded"
-                        options={DOWNLOADED_OPTIONS}
-                        value={form.is_downloaded ? 'yes' : null}
-                        onChange={(code) => setField('is_downloaded', code === 'yes')}
+                        name="mama_status"
+                        className="mama-chips"
+                        options={MAMA_OPTIONS}
+                        value={form.mama_status}
+                        onChange={(code) => setField('mama_status', code)}
                       />
                     </fieldset>
-                  </>
-                )}
-                <fieldset className="field">
-                  <legend>Mama</legend>
-                  {/* saját jelölés: kiválasztva a második kiemelőszínnel (borostyán) */}
-                  <ClearableChips
-                    name="mama_status"
-                    className="mama-chips"
-                    options={MAMA_OPTIONS}
-                    value={form.mama_status}
-                    onChange={(code) => setField('mama_status', code)}
-                  />
-                </fieldset>
-              </div>
+                  )}
+                </div>
+              )}
             </Lock>
           )}
 

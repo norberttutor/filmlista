@@ -10,6 +10,7 @@ import {
   DEFAULT_STATUS,
   DROPPED_STATUS,
   MAMA_OPTIONS,
+  mamaApplies,
 } from '@/lib/titles';
 import StarRating from '@/components/StarRating';
 import FranchiseSelect from '@/components/FranchiseSelect';
@@ -281,20 +282,23 @@ function TitleRow({
         </Lock>
       </td>
       <td className="col-mama">
-        <select
-          aria-label={`Mama – ${t.title}`}
-          className={t.mama_status ? 'mama-set' : undefined}
-          disabled={readOnly}
-          value={t.mama_status ?? ''}
-          onChange={(e) => save({ mama_status: e.target.value || null })}
-        >
-          <option value=""></option>
-          {MAMA_OPTIONS.map((o) => (
-            <option key={o.code} value={o.code}>
-              {o.name}
-            </option>
-          ))}
-        </select>
+        {/* sorozatnál és franchise-os címnél üres cella, csak a meglévő érték látszik (terv-3 58) */}
+        {mamaApplies(t) && (
+          <select
+            aria-label={`Mama – ${t.title}`}
+            className={t.mama_status ? 'mama-set' : undefined}
+            disabled={readOnly}
+            value={t.mama_status ?? ''}
+            onChange={(e) => save({ mama_status: e.target.value || null })}
+          >
+            <option value=""></option>
+            {MAMA_OPTIONS.map((o) => (
+              <option key={o.code} value={o.code}>
+                {o.name}
+              </option>
+            ))}
+          </select>
+        )}
       </td>
       <td className="col-rating">
         <Lock on={readOnly}>
