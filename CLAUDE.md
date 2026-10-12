@@ -133,12 +133,14 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   visszatérésekor és félpercenként újrapróbálja (`reloadKey`). A borítófalon nincs mit tiltani (a
   kártya csak az adatlapot nyitja). Teszt: `munka/e2e/test-44.mjs`; fejléc:
   „Megnézendő filmek és sorozatok”; mellette (jobbra) „Cím hozzáadása”, harang (`NotificationBell`),
-  e-mail (telefonon – ≤ 640 px – nem látszik, terv-3 50), Kilépés, a téma váltógombja (`ThemeToggle`,
+  e-mail (telefonon – ≤ 640 px – nem látszik, terv-3 50; gomb – `.account-email`, a `muted small` osztállyal –,
+  a „Jelszó módosítása” ablakot nyitja, net nélkül sima felirat – terv-3 27), Kilépés, a téma váltógombja (`ThemeToggle`,
   terv-3 50; asztalon – ≥ 900 px – a sor nem törik: `flex-wrap: nowrap`), a sor végén a „További műveletek” (⋮) menü (`MoreMenu`, Norbi kérése, mint a
   Chrome-ban): „Statisztika” (`StatsDialog`), „Franchise-ok” (`FranchisesDialog`, telefonon is), „IMDb import” (telefonon – `PHONE_QUERY`, ≤ 640 px –
   nincs, Norbi kérése), asztali nézetben „Tömeges
   import” (`BulkImport`) és „Mentés letöltése” (`downloadListCsv`), utána „Mentések”
-  (`BackupsDialog`, telefonon is), a végén „Felhasználói leírás” (`ManualDialog`, telefonon és net
+  (`BackupsDialog`, telefonon is), „Jelszó módosítása” (`PasswordDialog`, telefonon is, net nélkül nem –
+  terv-3 27), a végén „Felhasználói leírás” (`ManualDialog`, telefonon és net
   nélkül is). Telefonon (≤ 640 px) a
   „Cím hozzáadása” helyett lebegő, kerek „+” gomb a jobb alsó sarokban (`.fab`; lefelé
   görgetéskor elhúzódik, felfelé visszajön – ugyanaz a görgetésfigyelő, mint a szűrősoré;
@@ -148,7 +150,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   automatikusan beáll, a franchise-szűrő megszüntetésekor vissza Filmek) – állapotgombok
   (mobilon, ≤ 640 px: lenyíló a típus mellett; az „Abbahagyva” csak Sorozatok / Filmek és
   sorozatok típusnál) + Letöltés lenyíló (Összes / Letöltött / Nem letöltött) – Műfaj (csak az
-  adott típus műfajai; saját lenyíló műfajikonokkal – terv-3 56) – Mama (Összes / Érdekli / Nem érdekli / Megkapta; csak ha van Mama-jelölés) –
+  adott típus műfajai; saját lenyíló műfajikonokkal – terv-3 56) – Mama (Összes / Érdekli / Nem érdekli / Megkapta; csak ha van Mama-jelölés, és nem Sorozatok típusnál /
+  franchise-ra szűrve – terv-3 58: ilyenkor nem is szűr – `mamaFilter`, az értéke visszaváltáskor visszajön) –
   Franchise (Összes / Franchise nélkül / a listán használtak, típustól
   függetlenül) – mellette felirat nélküli ↺ gomb („Szűrők alaphelyzetbe”, rámutatva súgó;
   alapállapotban halvány, letiltott). **A szűrők alapállapota** (betöltéskor és a ↺-vel,
@@ -319,7 +322,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (`.editor-controls`): Állapot | Letöltve | Mama, elválasztóvonalakkal (évados sorozatnál az
   Évadok a sáv fölött, a sávban csak a Mama; asztalon egy sorban; a csoportok – telefonon is – középre zárva); a mezők címkéi kis, ritkított nagybetűk; telefonon
   a pár egymás alatt, a sávban fent az Állapot, alatta a Letöltve és a Mama. Asztalon a
-  vezérlőblokk 341 → 168 px (látványtervek: `munka/terv-3/terv-30/`).
+  vezérlőblokk 341 → 168 px (látványtervek: `munka/terv-3/terv-30/`). A Mama-csoport csak franchise
+  nélküli filmnél (terv-3 58, `mamaApplies` – a franchise mező átállításakor azonnal; a meglévő érték
+  mellett marad); évados sorozatnál így a sáv el is marad.
   A borító hangulatszínét megnyitáskor kiszámolja (`usePosterColor`): az ablak a film színében
   dereng. A kiválasztott Mama borostyán (`.mama-chips`).
   Évados
@@ -365,7 +370,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   „Letöltve” felirat felé 120 px (`--overview-gap-end`), 4 sorban; 1440p-re (2560 px)
   optimalizálva; 1900 px alatt a franchise a cím adatai mellett, a leírás alattuk 2 sorban;
   teljes szöveg rámutatáskor),
-  jobbra sorrendben Letöltve – Állapot – Mama (kitöltve borostyán: `.mama-set`) – Értékelés
+  jobbra sorrendben Letöltve – Állapot – Mama (kitöltve borostyán: `.mama-set`; sorozatnál / franchise-os
+  címnél érték nélkül üres cella – terv-3 58) – Értékelés
   (10 másfélszeres csillag középen, mellette „8/10”), a végén kuka: megerősítés nélkül
   lekerül, 8 mp-ig visszavonható (`onDelete`). A sor az első rámutatáskor / fókusznál kiszámolja a borító
   hangulatszínét, és rámutatva halványan felveszi. Az üres
@@ -415,7 +421,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   gyűjtemény-ablak alatt nem), `CollectionDialog` (rész felvétele közben, a nézési sorrend
   szerkesztése közben, a megosztás visszavonásának megerősítésekor és a fejléc átnevezése / törlés-megerősítése közben – terv-3 57 – nem; a nyitott TMDB-gyűjtemény-keresőnél igen – Norbi kérése, 2026-10-07; a
   Franchise-ok ablakból nyitva mindkét ablak bezárul – `onOutsideClose`), `BackupsDialog` (mentés / visszaállítás közben és nyitott
-  megerősítésnél nem). Az importablakok (Tömeges import, IMDb import) nem (Norbi döntése)
+  megerősítésnél nem), `PasswordDialog` (beírt jelszóval és mentés közben nem – terv-3 27). Az
+  importablakok (Tömeges import, IMDb import) nem (Norbi döntése)
 - `components/SiteFooter.js` – kötelező TMDB forrásmegjelölés, ne töröld; jobbra lent „sponsored by
   ADERTIS” (az ADERTIS link: https://www.adertis.hu, új lapon – Norbi kérése, 2026-10-05; külön
   `span.sponsor`, nem `p` – a teszt egy bekezdést vár a láblécben)
@@ -649,6 +656,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   év végén), semmi: null; évadnál az évad `air_date`-je. A fő lista rendezése és a nézési sorrend is ezt
   használja. `DETAILS_V`: a `/api/tmdb/details` kérés `v` paramétere (a böngésző egy óráig tárolja a
   választ) – a válasz mezőinek változásakor emeld.
+  `mamaApplies(t)` (terv-3 58): van-e értelme a Mama-jelölésnek – franchise nélküli film, vagy már van
+  értéke; az adatlap (a franchise mező aktuális értékével) és a táblázat Mama-cellája használja.
   Közös segédek: `externalLink()`, `formatDate()`, `todayDate()`, `DEFAULT_STATUS`,
   `DROPPED_STATUS` („Abbahagyva”, csak sorozatnál), `MAMA_OPTIONS`, `mamaLabel()`
 - `lib/server/auth.js` – `getUserFromRequest()`, `supabaseAsUser()` (a felhasználó nevében,
@@ -723,7 +732,18 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   Home / End, Esc (a fókusz vissza a gombra), Tab és kívülre kattintás bezárja. Választáskor a
   fókusz a gombra kerül (a megnyíló ablak bezárásakor oda tér vissza). A pontok:
   `{ id, label, description, icon, onSelect }` (ikonok: star, chart, list, download, history, stack,
-  book)
+  book, key)
+- `components/PasswordDialog.js` – **„Jelszó módosítása”** (terv-3 27, 2026-10-12; a fejléc e-mail-címéről és
+  a ⋮ menüből – Norbi oldalán; Mama oldalán nincs): jelenlegi jelszó, új jelszó, még egyszer → „Jelszó
+  mentése”. Ellenőrzés: legalább 8 karakter, a kettő egyezik, nem ugyanaz; utána a jelenlegi jelszó egy
+  **külön, nem tároló Supabase-klienssel** (`checkPassword`: `persistSession: false`, saját `storageKey`;
+  utána `signOut({ scope: 'local' })`) – így a bejelentkezett munkamenet nem cserélődik –, végül
+  `supabase.auth.updateUser({ password })`; a Supabase hibakódjai magyarul (`same_password`,
+  `weak_password`, `reauthentication_needed` – a „Secure password change” ki van kapcsolva, nem kell
+  e-mail). Siker után „A jelszavad megváltozott…” + „Bezárás”; bejelentkezve marad. Kikattintásra csak
+  üresen (vagy siker után) zár, mentés közben nem; az Esc / Mégse mindig. Elfelejtett jelszó nincs
+  (Norbi döntése). Teszt: `munka/e2e/test-27.mjs` (a tesztfiók jelszavát átállítja, a végén mindenképp
+  visszaállítja – updateUser, végső esetben az adatbázisban)
 - `components/StatsDialog.js` + `lib/stats.js` – „Statisztika” ablak (a ⋮ menüből): csempék
   a betöltött listából (`listStats()`, adatbázis-lekérdezés nélkül) – megnézve az utolsó 12
   hónapban, havonta megnézett címek (saját SVG-oszlopdiagram, `watched_at`), műfajok (a
@@ -1231,6 +1251,8 @@ fajtánként, franchise-szűrő csoportokkal („N hátra” / „Mind megnézve
 listanézet 10 címmel oldalanként. Javasolt TMDB-gyűjtemények a gyűjtemény-ablakban, link a TMDB-oldalra (terv-3
 53); „Szűrés erre” / „Átnevezés” / „Törlés” a gyűjtemény-ablak fejlécében (terv-3 57). Az ajánlásokban
 (Felfedezés, kiemelt sáv, Hasonló címek, „Neked ajánlott”) nincs animációs cím (terv-3 60, 2026-10-12).
+Mama-jelölés csak a franchise nélküli filmeknél (adatlap, táblázat, Mama-szűrő – terv-3 58, 2026-10-12).
+Jelszó módosítása a fejléc e-mail-címéről és a ⋮ menüből (terv-3 27, 2026-10-12).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -1273,20 +1295,20 @@ látványosabb listanézet (keskenyebb, kártyaszerű sorok a film színében, j
 teszt: `munka/e2e/test-53-57.mjs`, `test.mjs` 115/115).
 **55 – pontos dátum szerinti rendezés – kész** (2026-10-10, `f4be52b`; `23_release_date.sql` élesben, a
 meglévő 918 cím dátuma feltöltve; teszt: `munka/e2e/test-55.mjs`; részletek: TERV.md 55-ös pont).
-**58 – Mama jelölése csak ott, ahol értelme van** (Norbi kérése, 2026-10-10; ~1–1,5 óra; részletek: TERV.md
-58-as pont): franchise-os címnél és sorozatnál az adatlapon nincs Mama-csoport (ha már van értéke, marad,
-hogy törölhető legyen), a Mama-szűrő Sorozatok típusnál és franchise-ra szűrve nem látszik – Mama oldala
-úgyis csak a franchise nélküli filmeket kínálja.
+**58 – Mama jelölése csak ott, ahol értelme van – kész** (Norbi kérése, 2026-10-10; kész 2026-10-12, commitra
+vár; teszt: `munka/e2e/test-58.mjs` 7/7, `test.mjs` 115/115): franchise-os címnél és sorozatnál az adatlapon
+nincs Mama-csoport, a táblázatban üres a Mama-cella (ha már van értéke, marad, hogy törölhető legyen –
+`mamaApplies(t)`), a Mama-szűrő Sorozatok típusnál és franchise-ra szűrve nem látszik és nem szűr (az értéke
+megmarad) – Mama oldala úgyis csak a franchise nélküli filmeket kínálja.
 **60 – animációs filmek kiszedése az ajánlásokból – kész** (Norbi kérése, 2026-10-11; kész 2026-10-12,
 `ec2e516`; teszt: `munka/e2e/test-60.mjs` 11/11): a Felfedezés sorai, a kiemelt sáv, a Hasonló címek és a
 „Neked ajánlott” nem kínál animációs címet (TMDB-műfaj 16); a kézi keresés, az importok, a listán lévők és a
 harang („Új rész a gyűjteményben”) nem változnak.
-**Norbi kérései (2026-10-04)** – utána, ebben a sorrendben; a részletek
-(megvalósítás, teszt) a `munka/terv-3/TERV.md` „▶ Következő kör” szakaszában:
-1. **27 – jelszó módosítása** (~1,5 óra): csak bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”:
-   jelenlegi + új kétszer; előbb ellenőrző belépés, utána `updateUser`). Elfelejtett jelszó a
-   belépési oldalon **nem kell** (Norbi döntése, 2026-10-08) – magadtól ne javasold újra; így
-   Supabase-beállítás sem kell.
+**Norbi kérései (2026-10-04)** – mind kész; a részletek a `munka/terv-3/TERV.md`-ben:
+- **27 – jelszó módosítása – kész** (2026-10-12, commitra vár; teszt: `munka/e2e/test-27.mjs` 6/6, `test.mjs`
+  115/115): csak bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”: jelenlegi + új kétszer; előbb
+  ellenőrző belépés külön klienssel, utána `updateUser`). Elfelejtett jelszó a belépési oldalon **nem kell**
+  (Norbi döntése, 2026-10-08) – magadtól ne javasold újra; Supabase-beállítás sem kellett.
 (A 2026-10-05-i 33-as – képes felhasználói leírás – kész, 2026-10-06. A 13-as – Mama külön
 hozzáférése – kész, 2026-10-07: Mama fiókja – tutorne.eva@gmail.com – Norbiéhoz kötve, élesben 141 film
 látszik nála, ebből 24 „Érdekel”; napló: `munka/terv-3/13-mama/ALLAPOT.md`.)

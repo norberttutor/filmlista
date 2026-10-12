@@ -41,6 +41,7 @@ import BulkImport from '@/components/BulkImport';
 import ListSkeleton from '@/components/ListSkeleton';
 import StatsDialog from '@/components/StatsDialog';
 import ManualDialog from '@/components/ManualDialog';
+import PasswordDialog from '@/components/PasswordDialog';
 import BackupsDialog from '@/components/BackupsDialog';
 import MoreMenu from '@/components/MoreMenu';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -64,7 +65,7 @@ const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 const TOAST_THUMB = 'https://image.tmdb.org/t/p/w92';
 
 // a ⋮ menü pontjai, amelyek net nélkül nem működnének (csak olvasható módban nem látszanak)
-const ONLINE_ONLY = ['imdb', 'bulk', 'backups'];
+const ONLINE_ONLY = ['imdb', 'bulk', 'backups', 'password'];
 
 // a tárolt listán állva (a szerver nem érhető el) ennyi időnként újrapróbálja
 const RETRY_MS = 30_000;
@@ -250,6 +251,7 @@ export default function Watchlist({ session }) {
   const [showFranchises, setShowFranchises] = useState(false); // a Franchise-ok ablak nyitva
   const [showBackups, setShowBackups] = useState(false); // a mentések ablak nyitva
   const [showManual, setShowManual] = useState(false); // a felhasználói leírás ablak nyitva
+  const [showPassword, setShowPassword] = useState(false); // a jelszó módosítása ablak nyitva (terv-3 27)
   // a ⋮ menüből nyíló importok (a saját ablakukat / fájlválasztójukat nyitják)
   const imdbImportRef = useRef(null);
   const bulkImportRef = useRef(null);
@@ -1210,7 +1212,20 @@ export default function Watchlist({ session }) {
               readOnly={readOnly}
             />
           )}
-          <span className="muted small">{session.user.email}</span>
+          {/* az e-mail-címre kattintva a jelszó módosítása (terv-3 27; net nélkül csak felirat) */}
+          {readOnly ? (
+            <span className="muted small">{session.user.email}</span>
+          ) : (
+            <button
+              type="button"
+              className="muted small account-email"
+              title="Jelszó módosítása"
+              aria-label={`${session.user.email} – jelszó módosítása`}
+              onClick={() => setShowPassword(true)}
+            >
+              {session.user.email}
+            </button>
+          )}
           <button type="button" className="ghost" onClick={() => supabase.auth.signOut()}>
             Kilépés
           </button>
@@ -1272,6 +1287,13 @@ export default function Watchlist({ session }) {
                     description: 'Heti automatikus mentés; mentés most, visszaállítás',
                     icon: 'history',
                     onSelect: () => setShowBackups(true),
+                  },
+                  {
+                    id: 'password',
+                    label: 'Jelszó módosítása',
+                    description: 'Új jelszó a belépéshez (a jelenlegivel)',
+                    icon: 'key',
+                    onSelect: () => setShowPassword(true),
                   },
                   {
                     id: 'manual',
@@ -1753,6 +1775,7 @@ export default function Watchlist({ session }) {
       )}
 
       {showManual && <ManualDialog onClose={() => setShowManual(false)} />}
+      {showPassword && <PasswordDialog email={session.user.email} onClose={() => setShowPassword(false)} />}
 
       {showBackups && (
         <BackupsDialog

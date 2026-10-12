@@ -5145,6 +5145,41 @@ button.season:hover {
   margin: 0;
 }
 
+/* ---------- Jelszó módosítása (ablak, terv-3 27) ---------- */
+.editor.password-dialog {
+  width: min(26rem, calc(100vw - 2rem));
+}
+
+.password-dialog label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.password-dialog .password-done {
+  color: var(--text);
+}
+
+/* a fejléc e-mail-címe gombként (a jelszó módosítását nyitja): szövegnek látszik, rámutatva aláhúzva */
+.account-email {
+  padding: 0;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.account-email:hover {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* ---------- Mentések (ablak) ---------- */
 .editor.backups-dialog {
   width: min(38rem, calc(100vw - 2rem));

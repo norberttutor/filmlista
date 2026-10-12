@@ -15,6 +15,8 @@ const ICONS = {
   stack: <path d="M12 3l9 4.5-9 4.5-9-4.5zM3 12l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5" />,
   // nyitott könyv (felhasználói leírás)
   book: <path d="M12 6.5C10 4.8 7 4.3 3 4.5v14c4-.2 7 .3 9 2 2-1.7 5-2.2 9-2v-14c-4-.2-7 .3-9 2zM12 6.5v14" />,
+  // kulcs (jelszó módosítása)
+  key: <path d="M14.5 9.5a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0zM13.2 12.7L21 20.5M17.5 17l2-2M15.5 15l1.5-1.5" />,
 };
 
 // "További műveletek" (⋮) gomb a fejlécben, mint a Chrome menüje: kattintásra vagy
