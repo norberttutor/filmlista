@@ -28,6 +28,8 @@ Egyetlen felhasználó (Norbi), de az adatmodell felhasználónként elkülöní
   (route handlerben), soha ne kapjon `NEXT_PUBLIC_` előtagot
 - `OMDB_API_KEY` – OMDb API kulcs az IMDb-értékelésekhez (ingyenes, napi 1000 lekérdezés),
   szintén csak szerveroldalon. Ha hiányzik, az app értékelés nélkül működik (nincs hiba).
+- `APP_VERSION` – nem kell beállítani: a kiadás azonosítója (terv-3 63) a Vercelen magától a commit
+  (`VERCEL_GIT_COMMIT_SHA`), helyben `dev`. Csak a teszt adja meg (eltérő build- és futási értékkel).
 
 Csak helyben (`.env.local`), a Vercelre nem: `TEST_USER_EMAIL` / `TEST_USER_PASSWORD`,
 `MAMATEST_USER_EMAIL` / `MAMATEST_USER_PASSWORD` (második tesztfiók Mama szerepéhez – a 13-as
@@ -79,7 +81,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   vár rá, net nélkül is tudja. Regisztrálja a service workert (`registerServiceWorker()`). Net nélkül,
   lejárt tokennel (vagy ha a `getSession()` 4 mp – net nélkül 0,3 mp – alatt nem válaszol: a Supabase
   ilyenkor sokáig újrapróbál) a tárolt munkamenettel (`storedSession()`, `offline: true`) a `Watchlist`
-  nyílik; kilépéskor (`SIGNED_OUT`) a helyben tárolt lista törlődik (`clearSnapshots()`). A téma (terv-3 50):
+  nyílik; kilépéskor (`SIGNED_OUT`) a helyben tárolt lista törlődik (`clearSnapshots()`). Indításkor
+  `startBackClose()` (a Vissza gomb, terv-3 62). A téma (terv-3 50):
   amint tudja, néző-e, `initUserTheme(userId, néző)` (`useLayoutEffect`); kilépéskor `forgetThemeUser()`
 - `public/sw.js` + `lib/offline.js` – **offline indulás** (terv-3 44, 2026-10-08): service worker (csak a
   kiadott változatban; `next.config.mjs`: `/sw.js` `no-cache`): az oldal előbb a hálózatról (3 mp-es
@@ -234,7 +237,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   onClick }, hideClose, duration = 8000, onExpire })` → id, `dismissToast(id, how)`; az
   `onExpire` lejáratkor és a × gombra fut (az action-re nem); legfeljebb 3 egyszerre (a
   legrégebbi lejártként tűnik el); rámutatáskor / fókusznál megáll (a fogyó csík is); kilépéskor
-  `clearToasts()` – a függő törlés elmarad (kódaudit #11). `kind` (terv-3 52.5, „B”): 'delete' (a cím és az
+  `clearToasts()` – a függő törlés elmarad (kódaudit #11). `duration: null`: nem jár le, nincs fogyó csík (a
+  „Frissült az app” sáv, terv-3 63). `kind` (terv-3 52.5, „B”): 'delete' (a cím és az
   értesítés törlése – piros) | 'rating' („Hogy tetszett?” – borostyán): halványan színezett háttér és keret,
   elöl kerek ikon (kuka / csillag – `.toast-kind`), a fogyó csík is ebben a színben; nélküle türkiz
 - `components/EmptyState.js` – üres állapot: kis vonalrajz (filmkocka + nagyító, türkiz), cím,
@@ -427,6 +431,31 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (Norbi: videó mellett, 2026-10-05) ezek egy-egy hosszú képkockát okoztak a mozgás közepén. Új,
   a szerkesztő megnyitásakor érkező állapotfrissítésnél is ezt használd
 - `lib/useMediaQuery.js` – `useMediaQuery(query)` hook (`useSyncExternalStore`)
+- `lib/backClose.js` – **a Vissza gomb zárja a legfelső ablakot / menüt** (terv-3 62, 2026-10-13): telefonon
+  (vissza-gesztus, a telepített app is) és a böngészőben. Minden nyitott réteg egy előzmény-bejegyzést kap
+  (`history.pushState`, az URL nem változik; a Next 16 a natív pushState-et a routerébe illeszti, nincs
+  újratöltés); a Vissza (`popstate`) a legfelsőt zárja, ha nem zárható, a bejegyzés visszakerül; ha máshogy
+  zárul (×, Esc, kikattintás), a bejegyzése lekerül (`history.back()`, a popstate-je kihagyva). A bejegyzések
+  egyformák, csak a számuk számít. Saját visszalépés alatt új bejegyzés nem kerül fel, csak utána (a Chrome a
+  visszalépés célját a hívásakor rögzíti – pl. ⋮ menü → Statisztika). A modális `<dialog>`-okat egy
+  MutationObserver maga kezeli: a Vissza az Esc-et utánozza (`cancel` esemény, ha nem tiltották, `close()`),
+  így minden ablak a saját Esc-szabálya szerint – **új ablakhoz nem kell semmi**; saját szabály:
+  `dialog.backHandler` → 'stay' | 'closing' (az adatlap: előbb a lapokat lépteti vissza, mint a „‹ Vissza”,
+  mentetlen módosításnál figyelmeztet és nyitva marad, különben bezár). Nem dialog réteg: `useBackLayer(open,
+  close)` – a ⋮ menü, a harang, a „Cím hozzáadása” panel. Teszt: `munka/e2e/test-1013b.mjs` (a Navigation API
+  `currentEntry.index`-ével ellenőrzi, hogy nem marad bejegyzés)
+- `lib/appVersion.js` + `app/api/version/route.js` – **friss adatok visszatéréskor és „Frissült az app”**
+  (terv-3 63, 2026-10-13): `useAppFreshness(enabled, onStale)` a `Watchlist`-ben – ha a lap legalább 5 percig
+  rejtve volt, visszatéréskor csendben újratölt (`reloadKey`: csontváz nélkül, a szűrők, a lapozás, a nyitott
+  adatlap marad; net nélkül / tárolt listánál nem); visszatéréskor (≥ 1 perc után) és félóránként összeveti a
+  buildbe égetett `NEXT_PUBLIC_APP_VERSION`-t (`next.config.mjs`) a futóval (`GET /api/version`, belépés nélkül,
+  `no-store`) – ha eltér, munkamenetenként egyszer lejárat nélküli sáv: „Frissült az app – az újratöltéssel az
+  új változat indul.” + „Újratöltés”
+- `lib/prefetch.js` – **előtöltés rámutatáskor** (terv-3 69, 2026-10-13): `usePrefetchOnHover(t)` a kártyán
+  (`PosterCard`) és a táblázat során – ha az egér ~150 ms-ig rajta áll (csak egérrel, net mellett, címenként
+  egyszer, egyszerre legfeljebb 2 címé), lekéri a providers / credits / videos route-ot ugyanazzal az URL-lel,
+  mint a `TitleEditor`, így megnyitáskor a böngésző gyorsítótárából jönnek (a Hasonló címek nem – az a
+  legnehezebb). Ha a TitleEditor kérésének paraméterei változnak, itt is
 - `lib/useBackdropClose.js` – `useBackdropClose(dialogRef, { onClose, canClose, onBlocked })` →
   `{ onPointerDown, onClick }` a `<dialog>`-ra: kikattintásra (a háttérre) bezár, telefonon
   (≤ 640 px) nem; a lenyomásnak is kívül kell lennie (a kifelé húzott kijelölés nem zár); a
@@ -1296,7 +1325,9 @@ soronként, egy kattintással a listára (terv-3 61, 2026-10-13, „kevert” v�
 Kényelmi és kinézeti kör (2026-10-13, látványterv után): okosabb keresés a listán – elírás, franchise neve, kiemelés
 (66 A); telefonon a borító a jelenetkép aljára úszik az adatlapon (72 A); lista ↔ rács váltáskor a borítók
 lépcsőzetesen a helyükre siklanak (73 B); mikro-átmenetek – állapotváltáskor a szín és a szürkülés 0,2 s alatt úszik
-át, a menük halványan nyílnak (74); csoportcímek a harangban (76 A).
+át, a menük halványan nyílnak (74); csoportcímek a harangban (76 A). A Vissza gomb a legfelső ablakot / menüt zárja,
+nem lép ki az appból (62); visszatéréskor friss lista és „Frissült az app” sáv új kiadásnál (63); rámutatáskor az
+adatlap adatai előre töltődnek (69) – 2026-10-13.
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -1391,17 +1422,17 @@ ne javasold újra): 67 – kattintható Statisztika-csempék, 70 – „Automati
 „62–78” szakasz. Javasolt sorrend a számozás szerint (a 62–63 hozza a legtöbbet). **Elvetve** (Norbi,
 2026-10-13 – magadtól ne javasold újra): 64 – IMDb- / TMDB-link beillesztése a keresőbe, 65 – előző /
 következő cím az adatlapon, 68 – tömeges szerkesztés a listanézetben.
-- **62 – a Vissza gomb zárja az ablakot / adatlapot** (telefon, telepített app, böngésző) – ~1,5–2 óra
-- **63 – friss adatok visszatéréskor + „Frissült az app” sáv** – ~1–1,5 óra
+- **62 – a Vissza gomb zárja az ablakot / adatlapot – kész** (telefon, telepített app, böngésző) (2026-10-13, `676ab21`; teszt: `munka/e2e/test-1013b.mjs` 11/11)
+- **63 – friss adatok visszatéréskor + „Frissült az app” sáv – kész** (2026-10-13, `676ab21`; teszt: `munka/e2e/test-1013b.mjs` 11/11)
 - **66 – okosabb keresés a listán – kész** (franchise neve, elírás, kiemelés) – **„A”** (halk: türkiz aláhúzás) (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
-- **69 – gyorsabb adatlap: előtöltés rámutatáskor** – ~1 óra
+- **69 – gyorsabb adatlap: előtöltés rámutatáskor – kész** (2026-10-13, `676ab21`; teszt: `munka/e2e/test-1013b.mjs` 11/11)
 - **72 – látványosabb telefonos adatlap-fejléc – kész** – **„A”** (a borító balra a jelenetkép aljára úszik, mellette a cím) (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
 - **73 – animált váltás lista ↔ rács – kész** – **„B”** (a borítók lépcsőzetesen siklanak) (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
 - **74 – mikro-átmenetek – kész** (≤ 0,2 s) – **a javaslat** (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
 - **76 – a harang csoportjai – kész** („Ma” / „Ezen a héten” / „Korábban”) – **„A”** (kis, ritkított nagybetűs csoportcím) (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
 - **78 – nyitott kódaudit-pontok** (`munka/audit-2026-10-09/AUDIT.md`, a látható hatásúak előbb, pontonként
   rákérdezve) – ~2–3 óra
-Hátravan: 62, 63, 69, 78 – összesen ~5,5–7,5 óra.
+Hátravan: 78 – ~2–3 óra.
 **Lekerült a roadmapről** (Norbi döntése, 2026-10-08: a közeljövőben nincs tervben; magadtól ne
 javasold újra): **25 – admin jogosultság**, **26 – regisztráció** (a meglévőkön kívül más felhasználó
 nem lesz, Mama fiókja pedig a 13-as óta korlátozott). A részletes tervük a TERV.md-ben megmaradt.
