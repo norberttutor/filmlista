@@ -8,6 +8,7 @@ import { hasSeasons, seasonCounts, SeasonStrip } from '@/components/Seasons';
 import ReleaseBadge from '@/components/ReleaseBadge';
 import { useStrike } from '@/lib/useStrike';
 import { Hl } from '@/components/Highlight';
+import { usePrefetchOnHover } from '@/lib/prefetch';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
 
@@ -29,13 +30,19 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
   const ambient = usePosterColor(t.poster_path, pointed);
   // a borító: innen siklik át a szerkesztő ablakba (nézetváltás)
   const posterRef = useRef(null);
+  // rámutatáskor az adatlap adatai előre (terv-3 69)
+  const prefetch = usePrefetchOnHover(t);
 
   return (
     <article
       className="card"
       data-status={status}
       data-release={release ? release.kind : undefined}
-      onPointerEnter={() => setPointed(true)}
+      onPointerEnter={(e) => {
+        setPointed(true);
+        prefetch.onPointerEnter(e);
+      }}
+      onPointerLeave={prefetch.onPointerLeave}
       {...ambientProps(ambient)}
     >
       {/* a borítóra kattintva a szerkesztő ablak nyílik (mint a ceruzával; billentyűzettel és

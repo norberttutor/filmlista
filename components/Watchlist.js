@@ -64,6 +64,8 @@ import { loadSnapshot, saveSnapshot, useOnline } from '@/lib/offline';
 import { fold, matchTitle, resolveWords, searchIndex } from '@/lib/listSearch';
 import { Hl, SearchHighlight } from '@/components/Highlight';
 import { captureViewPosters, playViewSwitch, viewMotionOk } from '@/lib/viewSwitch';
+import { useBackLayer } from '@/lib/backClose';
+import { useAppFreshness } from '@/lib/appVersion';
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 
@@ -471,6 +473,10 @@ export default function Watchlist({ session }) {
       resetHidden();
     };
   }, [reloadKey]);
+
+  // visszatéréskor (legalább 5 perc rejtve után) csendben újratölt – csontváz nélkül, a szűrők, a lapozás és
+  // a nyitott adatlap marad –, és szól, ha közben új kiadás jött (terv-3 63)
+  useAppFreshness(!loading && !readOnly && !failed, () => setReloadKey((k) => k + 1));
 
   // sikertelen betöltés után: ha visszajön a net, azonnal, egyébként félpercenként újrapróbálja
   useEffect(() => {
@@ -1160,6 +1166,8 @@ export default function Watchlist({ session }) {
     setAdding(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+  // a „Cím hozzáadása” panelt a Vissza gomb is bezárja (terv-3 62)
+  useBackLayer(adding && !readOnly, () => setAdding(false));
 
   // gyorsindítók (terv-3 43): a telepített app ikonjának menüjéből /?nyit=… címmel indul – a lista
   // betöltése után egyszer megnyitja a kért részt, és a címből eltünteti a paramétert (újratöltéskor

@@ -4,6 +4,7 @@ import { Fragment, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { popupSide } from '@/lib/popupSide';
 import { formatDate } from '@/lib/titles';
 import { budapestToday } from '@/lib/refreshDue';
+import { useBackLayer } from '@/lib/backClose';
 import { article } from '@/components/Seasons';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w92';
@@ -91,6 +92,9 @@ export default function NotificationBell({ notifications, titles, franchiseName,
     if (unread > seenUnread) setRinging(true);
     setSeenUnread(unread);
   }
+
+  // a Vissza gomb is bezárja (terv-3 62)
+  useBackLayer(open, () => setOpen(false));
 
   function toggle() {
     if (open) {

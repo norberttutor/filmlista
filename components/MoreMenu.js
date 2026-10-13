@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { popupSide } from '@/lib/popupSide';
+import { useBackLayer } from '@/lib/backClose';
 
 // A menüpontok ikonjai (vonalas, mint a többi ikon)
 const ICONS = {
@@ -63,6 +64,9 @@ export default function MoreMenu({ items }) {
     setOpen(false);
     if (returnFocus) buttonRef.current?.focus();
   }
+
+  // a Vissza gomb is bezárja (terv-3 62)
+  useBackLayer(open, () => close());
 
   function onButtonKey(e) {
     if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {

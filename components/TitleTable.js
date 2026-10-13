@@ -21,6 +21,7 @@ import { hasSeasons, SeasonCell, SeasonDownloads } from '@/components/Seasons';
 import { useStrike } from '@/lib/useStrike';
 import { saveRow } from '@/lib/rowSaves';
 import { Hl, useSearchHighlight } from '@/components/Highlight';
+import { usePrefetchOnHover } from '@/lib/prefetch';
 import Reflow from '@/components/Reflow';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
 
@@ -130,6 +131,7 @@ function TitleRow({
   const release = releaseState(t);
   const strike = useStrike(item ? item.status : t.status); // megnézettre váltáskor kihúzás a címen
   const { byFranchise: searchHit } = useSearchHighlight(); // a franchise neve szerinti találatok (terv-3 66)
+  const prefetch = usePrefetchOnHover(t); // rámutatáskor az adatlap adatai előre (terv-3 69)
 
   // Mentés azonnal: a sor rögtön az új értéket mutatja, hiba esetén csak ez a módosítás áll
   // vissza (a soron közben tett másik megmarad – saveRow, kódaudit #9).
@@ -172,6 +174,7 @@ function TitleRow({
       data-img={t.backdrop_path ? '' : undefined}
       style={{ ...ambientStyle, ...(t.backdrop_path && { '--row-img': `url(${BACKDROP_BASE}${t.backdrop_path})` }) }}
       {...ambientData}
+      {...prefetch}
     >
       <td className="cell-title">
         <div className="row-title">

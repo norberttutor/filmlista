@@ -168,6 +168,20 @@ export default function TitleEditor({
     setStack((s) => s.slice(0, -1));
   }
 
+  // a böngésző / telefon Vissza gombja (terv-3 62, lib/backClose.js): előbb a lapokat lépteti vissza (mint
+  // a „‹ Vissza”), mentetlen módosításnál figyelmeztet és nyitva marad, különben bezár (mint az Esc)
+  useEffect(() => {
+    dialogRef.current.backHandler = () => {
+      if (stack.length > 1) {
+        goBack();
+        return 'stay';
+      }
+      if (!canLeavePage()) return 'stay';
+      close();
+      return 'closing';
+    };
+  });
+
   function markAdded(id) {
     setStack((s) => s.map((entry) => (entry.id === id ? { ...entry, added: true } : entry)));
   }

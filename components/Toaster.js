@@ -29,14 +29,14 @@ function ToastItem({ toast: t }) {
   const remaining = useRef(t.duration);
 
   useEffect(() => {
-    if (paused) return;
+    if (paused || t.duration == null) return; // duration: null – nem jár le (pl. „Frissült az app”)
     const started = Date.now();
     const timer = setTimeout(() => dismissToast(t.id, 'expire'), remaining.current);
     return () => {
       clearTimeout(timer);
       remaining.current -= Date.now() - started;
     };
-  }, [paused, t.id]);
+  }, [paused, t.id, t.duration]);
 
   return (
     <div
@@ -83,11 +83,13 @@ function ToastItem({ toast: t }) {
           </svg>
         </button>
       )}
-      <span
-        className="toast-bar"
-        aria-hidden="true"
-        style={{ animationDuration: `${t.duration}ms`, animationPlayState: paused ? 'paused' : 'running' }}
-      />
+      {t.duration != null && (
+        <span
+          className="toast-bar"
+          aria-hidden="true"
+          style={{ animationDuration: `${t.duration}ms`, animationPlayState: paused ? 'paused' : 'running' }}
+        />
+      )}
     </div>
   );
 }

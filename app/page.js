@@ -6,6 +6,7 @@ import { clearSnapshots, registerServiceWorker, storedSession } from '@/lib/offl
 import { forgetThemeUser, initUserTheme } from '@/lib/theme';
 import { clearToasts } from '@/lib/toast';
 import { clearPendingDeletes } from '@/lib/titles';
+import { startBackClose } from '@/lib/backClose';
 import LoginForm from '@/components/LoginForm';
 import Watchlist from '@/components/Watchlist';
 import MamaView from '@/components/MamaView';
@@ -38,6 +39,7 @@ export default function Home() {
 
   useEffect(() => {
     registerServiceWorker(); // offline indulás (terv-3 44)
+    startBackClose(); // a Vissza gomb a legfelső ablakot / menüt zárja (terv-3 62)
 
     // net nélkül, lejárt tokennel a getSession() nem ad munkamenetet (nem tudja megújítani – és
     // addig sokáig újrapróbálja), de a tárolt munkamenettel a helyben mentett lista megmutatható
