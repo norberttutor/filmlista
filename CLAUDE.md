@@ -160,8 +160,15 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   telefonon (≤ 640 px) a szűrők alapból összecsukva: „Szűrők” gomb, mellette röviden a beállítás
   (`filterSummary`, pl. „Filmek · Megnézendő · Nem letöltött · Franchise nélkül”), kinyitva minden
   szűrő és a rendezés; a kereső összecsukva is látszik (Norbi kérése);
-  jobb szélen keresőmező („Keresés a listán”: a címben és az eredeti címben, kis-/nagybetű és
+  jobb szélen keresőmező („Keresés a listán”: a címben, az eredeti címben és a franchise nevében, kis-/nagybetű és
   ékezet nélkül – `fold()`; több szónál mindegyiknek szerepelnie kell; telefonon külön sorban;
+  **okosabb keresés** (terv-3 66, „A”, 2026-10-13 – `lib/listSearch.js`, `components/Highlight.js`): ha egy szóra a
+  teljes listán sincs pontos találat, 5+ betűs szóban egy betűnyi elírást elnéz (`resolveWords`, Damerau–Levenshtein
+  ≤ 1, a teljes szóval vagy gépelés közben az elejével), a lista fölött „Nincs pontos találat a „dűnne” szóra – a
+  hasonlókat mutatjuk: „dűne”” (`.search-note`); a franchise neve szerinti találatnál „N cím a franchise neve
+  alapján: …”, a táblázatban a sor franchise-mezője kiemelve (`.franchise-field.search-hit`); a cím, az eredeti cím
+  és a kártya „Franchise:” sora keresett része halk türkiz aláhúzást kap (`mark.hl`, `<Hl>` – a szavakat a
+  `SearchHighlight` kontextus adja); teszt: `munka/e2e/test-1013.mjs`;
   gépeléskor az egész listán keres: a szűrők félreállnak – `SEARCH_FILTERS`, keresés közben
   szűkíthetők –, a keresés törlésekor a keresés előtti szűrők állnak vissza),
   mellette felirat nélkül (`aria-label`) a Rendezés (`SORTS`:
@@ -180,7 +187,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   évadja Abbahagyva), a sor legvégén (csak ≥ 1400 px-en) felirat nélküli nézetváltó: két
   ikongomb, lista (táblázat, `TitleTable`) | rács (borítófal) – `aria-pressed`, `title`; a
   választást a böngésző megjegyzi (`localStorage`, `filmlista-nezet`), alapból lista;
-  1400 px alatt mindig borítófal. Borítófal: telefonon (≤ 640 px) 3 kártya egy sorban (kisebb
+  1400 px alatt mindig borítófal. A nézetváltáskor a borítók a helyükre siklanak (terv-3 73, „B” – lépcsőzetesen,
+  `lib/viewSwitch.js`: a váltás előtt a látható borítók helye – `captureViewPosters`, a `data-flip` kulcsok szerint –,
+  utána – `useLayoutEffect` a `view`-ra – a klónjuk egy rögzített rétegen, `.view-switch-layer`, a szűrősor alatt,
+  0,42 s, borítónként 22 ms késéssel; az újonnan látszók beúsznak, a szövegek előtűnnek; „kevesebb mozgás” módban
+  nem). Borítófal: telefonon (≤ 640 px) 3 kártya egy sorban (kisebb
   betűk és csillagok, a „Letöltve” jelvény csak ikon), asztali rácsban `minmax(185px)` kártyák, tömör
   sorközzel (1,5 rem) és margóval (mérés: `munka/dizajn-2/eszkozok/racs-meres.mjs`).
   Az állapotgombok darabszámai a többi szűrőt már figyelembe veszik.
@@ -299,7 +310,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   fölött az idővonal (`SeasonTimeline`; a pöttyre kattintva a lista az évadhoz görget).
   Asztalon (≥ 900 px) széles (66 rem – így a vezérlősáv egy sorba fér, Norbi kérése, 2026-10-08),
   kétoszlopos ablak: balra nagy borító (w500, görgetéskor a helyén
-  marad; borító nélkül filmikon), jobbra az adatok; telefonon egy oszlop, nagy borító nélkül.
+  marad; borító nélkül filmikon), jobbra az adatok; telefonon egy oszlop, nagy borító nélkül – 900 px alatt a
+  jelenetképes lapon a borító kicsiben (6,6 rem) balra a kép aljára úszik, mellette a „Vissza”, a cím és az adatok
+  (terv-3 72, „A”, 2026-10-13: `.editor-titlebar` > `.editor-hero-poster` + `.editor-titletext`; asztalon a
+  burkolók `display: contents`).
   Nézetváltás (asztalon, `lib/viewTransition.js`): a kattintott kártya / sor borítója átsiklik a
   nagy borító helyére (a `Watchlist` `openEditor(t, forrásElem)` indítja), bezáráskor (Esc –
   `cancel` elkapva –, Mégse, Mentés) a `morphTo` borítóra vissza; törléskor nincs. A
@@ -869,7 +883,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   szerint, a közben keletkezett, még be nem töltött – pl. Mama jelölése – olvasatlan marad; kódaudit #2,
   2026-10-09; teszt: `munka/e2e/test-audit-2.mjs`; a
   közben beérkező régi lekérdezés sem írja vissza – `readIds` a Watchlistben); elemre
-  kattintva a sorozat szerkesztő ablaka; kívülre kattintás / Esc bezár. A lista a harang bal széléhez igazodik, ha ott
+  kattintva a sorozat szerkesztő ablaka; kívülre kattintás / Esc bezár. Csoportcímek (terv-3 76, „A”, 2026-10-13):
+  „Ma” / „Ezen a héten” (a hét hétfőtől) / „Korábban” az értesítés napja szerint, budapesti idővel (`dayGroup`;
+  `li.notif-group`, `role="presentation"`, kis ritkított nagybetűk). A lista a harang bal széléhez igazodik, ha ott
   kilógna, a jobbhoz (`lib/popupSide.js`, nyitáskor mérve – a ⋮ menü is így); telefonon teljes
   szélességű. A fejléc felugró listái (`z-index: 35`) a letapadó szűrősor (30) fölött vannak. `loadNotifications()`: előbb
   `collect_season_notifications()` és `collect_release_notifications()` (RPC, párhuzamosan),
@@ -1135,7 +1151,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   az aurora (a lap tetején három elmosott fényfolt – türkiz, lila, borostyán – 36 s-os lassú
   lebegéssel, `body::before`; a belépési oldalon nincs, kétoldalt 4% hely + maszk, hogy ne
   legyen éle és vízszintes görgetés; nyitott ablaknál áll – az elmosott háttér mögött úgysem
-  látszik, és így az elmosást nem kell képkockánként újraszámolni); a nézetváltás borító ↔ szerkesztő (0,3 s); a borítófal
+  látszik, és így az elmosást nem kell képkockánként újraszámolni); a nézetváltás borító ↔ szerkesztő (0,3 s); a lista
+  ↔ rács váltás (terv-3 73: a borítók 0,42 s alatt, borítónként 22 ms-mal később siklanak – `lib/viewSwitch.js`,
+  JS-ből, a „kevesebb mozgás”-t maga nézi); a lenyílók és menük nyílása (terv-3 74: 0,16 s, `popup-in`; franchise- és
+  műfajszűrő, harang, ⋮); a borítófal
   kártyáinak beúszása (a görgetés vezérli: `animation-timeline: view()`); lapozáskor a kártyák /
   táblázatsorok lépcsőzetes beúszása (terv-3 49.8, 2026-10-08: 0,3 s + elemenként 22 ms,
   `sibling-index()`; a `Watchlist` ~1,2 s-ig `data-paging` jelzőt ad a rácsra / a `tbody`-ra –
@@ -1274,6 +1293,10 @@ Mama-jelölés csak a franchise nélküli filmeknél (adatlap, táblázat, Mama-
 Jelszó módosítása a fejléc e-mail-címéről és a ⋮ menüből (terv-3 27, 2026-10-12).
 A színész lapja az adatlapon belül: a Szereplők nevére kattintva adatai, a listán lévő filmjei rácsban, a többi
 soronként, egy kattintással a listára (terv-3 61, 2026-10-13, „kevert” változat).
+Kényelmi és kinézeti kör (2026-10-13, látványterv után): okosabb keresés a listán – elírás, franchise neve, kiemelés
+(66 A); telefonon a borító a jelenetkép aljára úszik az adatlapon (72 A); lista ↔ rács váltáskor a borítók
+lépcsőzetesen a helyükre siklanak (73 B); mikro-átmenetek – állapotváltáskor a szín és a szürkülés 0,2 s alatt úszik
+át, a menük halványan nyílnak (74); csoportcímek a harangban (76 A).
 Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
 
 ## Következő feladat
@@ -1359,6 +1382,26 @@ van ×. A 46-os – kiemelt sáv –, a 43-as – gyorsindítók – és a 42-es
   látványterv után (https://claude.ai/artifact/NKSkigYqGq9xnCoucYQVeM): „kevert” – a listáján lévők rácsban, a
   többi soronként; rendező nincs; ismertség szerint; vendégszereplés és animáció nélkül. Terv:
   `munka/terv-3/TERV.md` 61-es pont.
+**Norbi kérése (2026-10-13): kényelmi és kinézeti kör – 62–78, mind a roadmapen** (Claude javaslataiból;
+Norbi: a funkciók már lefedik az igényeit, QoL és kinézet kell). **A kinézetet érintő pontokhoz Norbi
+látványtervet kér** (beépítés csak a választása után) – lent „látványterv”. **Látványterv** (2026-10-13): https://claude.ai/artifact/5VU52v4Fk1hc2vAXXW4pFA (helyben `munka/terv-3/tervek-1013/`).
+**Norbi választása (2026-10-13):** 66 A, 72 A, 73 B, 74, 76 A – **kész** (2026-10-13, `b293c84`; `test.mjs` 115/115). **Elvetve** a látványterv után (magadtól
+ne javasold újra): 67 – kattintható Statisztika-csempék, 70 – „Automatikus” téma, 71 – két magasságú alsó lap, 75 –
+„Továbbiak” görgetéssel telefonon, 77 – érintési célok. Részletek: `munka/terv-3/TERV.md`
+„62–78” szakasz. Javasolt sorrend a számozás szerint (a 62–63 hozza a legtöbbet). **Elvetve** (Norbi,
+2026-10-13 – magadtól ne javasold újra): 64 – IMDb- / TMDB-link beillesztése a keresőbe, 65 – előző /
+következő cím az adatlapon, 68 – tömeges szerkesztés a listanézetben.
+- **62 – a Vissza gomb zárja az ablakot / adatlapot** (telefon, telepített app, böngésző) – ~1,5–2 óra
+- **63 – friss adatok visszatéréskor + „Frissült az app” sáv** – ~1–1,5 óra
+- **66 – okosabb keresés a listán – kész** (franchise neve, elírás, kiemelés) – **„A”** (halk: türkiz aláhúzás) (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
+- **69 – gyorsabb adatlap: előtöltés rámutatáskor** – ~1 óra
+- **72 – látványosabb telefonos adatlap-fejléc – kész** – **„A”** (a borító balra a jelenetkép aljára úszik, mellette a cím) (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
+- **73 – animált váltás lista ↔ rács – kész** – **„B”** (a borítók lépcsőzetesen siklanak) (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
+- **74 – mikro-átmenetek – kész** (≤ 0,2 s) – **a javaslat** (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
+- **76 – a harang csoportjai – kész** („Ma” / „Ezen a héten” / „Korábban”) – **„A”** (kis, ritkított nagybetűs csoportcím) (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
+- **78 – nyitott kódaudit-pontok** (`munka/audit-2026-10-09/AUDIT.md`, a látható hatásúak előbb, pontonként
+  rákérdezve) – ~2–3 óra
+Hátravan: 62, 63, 69, 78 – összesen ~5,5–7,5 óra.
 **Lekerült a roadmapről** (Norbi döntése, 2026-10-08: a közeljövőben nincs tervben; magadtól ne
 javasold újra): **25 – admin jogosultság**, **26 – regisztráció** (a meglévőkön kívül más felhasználó
 nem lesz, Mama fiókja pedig a 13-as óta korlátozott). A részletes tervük a TERV.md-ben megmaradt.
