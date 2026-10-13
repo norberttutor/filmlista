@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { supabase } from '@/lib/supabase';
 import PosterCard from '@/components/PosterCard';
@@ -59,6 +59,11 @@ import { loadHidden, resetHidden } from '@/lib/hiddenSuggestions';
 import { fetchAll } from '@/lib/fetchAll';
 import { article, collectionFranchiseMap, suggestedFranchiseId } from '@/lib/franchiseSuggest';
 import { loadSnapshot, saveSnapshot, useOnline } from '@/lib/offline';
+// keresés: kis- és nagybetű, valamint ékezet nélkül hasonlít ("dune" → "Dűne"); a franchise nevében is,
+// elírásnál egy betűnyi eltéréssel (terv-3 66)
+import { fold, matchTitle, resolveWords, searchIndex } from '@/lib/listSearch';
+import { Hl, SearchHighlight } from '@/components/Highlight';
+import { captureViewPosters, playViewSwitch, viewMotionOk } from '@/lib/viewSwitch';
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 
@@ -135,9 +140,6 @@ const SEARCH_FILTERS = {
 };
 
 const sameFilters = (a, b) => Object.keys(a).every((k) => a[k] === b[k]);
-
-// keresés: kis- és nagybetű, valamint ékezet nélkül hasonlít ("dune" → "Dűne")
-const fold = (s) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
 const byAddedDesc = (a, b) => new Date(b.created_at) - new Date(a.created_at);
 
@@ -285,7 +287,12 @@ export default function Watchlist({ session }) {
   const isPhone = useMediaQuery(PHONE_QUERY);
   const [view, setView] = useState(storedView); // a Watchlist csak a böngészőben fut
 
+  // lista ↔ rács váltáskor a borítók a helyükre siklanak (terv-3 73): előtte a régi helyük
+  const viewSwitch = useRef(null);
+  const listRoot = (v) => (v === 'grid' ? gridRef.current : document.querySelector('.titles-table tbody'));
   function changeView(next) {
+    if (next === view) return;
+    viewSwitch.current = viewMotionOk() ? captureViewPosters(listRoot(view)) : null;
     setView(next);
     try {
       localStorage.setItem(VIEW_KEY, next);
@@ -642,13 +649,20 @@ export default function Watchlist({ session }) {
   // a keresőben ezek alapján látszik, mi van már a listán
   const existingKeys = useMemo(() => new Set(titles.map(titleKey)), [titles]);
 
-  // keresés a címben és az eredeti címben; több szónál mindegyiknek szerepelnie kell
-  const words = useMemo(() => fold(query).split(/\s+/).filter(Boolean), [query]);
-  const searching = words.length > 0;
-  const searchText = useMemo(
-    () => new Map(titles.map((t) => [t.id, fold(`${t.title} ${t.original_title ?? ''}`)])),
-    [titles]
-  );
+  // keresés a címben, az eredeti címben és a franchise nevében; több szónál mindegyiknek szerepelnie kell.
+  // Ha egy szóra a teljes listán sincs pontos találat, egy betűnyi elírást elnéz (words: a javított szavak)
+  const typedWords = useMemo(() => fold(query).split(/\s+/).filter(Boolean), [query]);
+  const searching = typedWords.length > 0;
+  const searchIdx = useMemo(() => searchIndex(titles, franchiseName), [titles, franchiseName]);
+  const { words, corrected } = useMemo(() => resolveWords(typedWords, searchIdx), [typedWords, searchIdx]);
+  // a címek, amelyek csak a franchise nevük miatt illenek a keresésre (a sorukon a franchise kiemelve)
+  const byFranchise = useMemo(() => {
+    if (!searching) return null;
+    const ids = new Set();
+    for (const t of titles) if (matchTitle(words, searchIdx.get(t.id))?.byFranchise) ids.add(t.id);
+    return ids;
+  }, [searching, titles, words, searchIdx]);
+  const highlight = useMemo(() => ({ words: searching ? words : [], byFranchise }), [searching, words, byFranchise]);
 
   // minden szűrő az állapot és a letöltve kivételével
   const baseFiltered = useMemo(
@@ -661,9 +675,9 @@ export default function Watchlist({ session }) {
             (franchise === NO_FRANCHISE
               ? t.franchise_id == null
               : String(t.franchise_id) === franchise)) &&
-          words.every((w) => searchText.get(t.id).includes(w))
+          (!searching || matchTitle(words, searchIdx.get(t.id)))
       ),
-    [ofType, genre, mamaFilter, franchise, words, searchText]
+    [ofType, genre, mamaFilter, franchise, searching, words, searchIdx]
   );
 
   // minden szűrő az állapot kivételével – ebből jönnek az állapotgombok darabszámai
@@ -771,8 +785,26 @@ export default function Watchlist({ session }) {
   const first = pageState.key === filterKey ? pageState.first : 0;
   const page = Math.min(Math.floor(first / pageSize) + 1, pageCount);
   const paged = visible.slice((page - 1) * pageSize, page * pageSize);
+
+  // keresésnél a lista fölötti mondat: elírás (a javított szavak) vagy a franchise neve szerinti találatok
+  const frMatches = useMemo(() => {
+    if (!byFranchise || corrected.length) return null;
+    const hits = visible.filter((e) => byFranchise.has(e.title.id));
+    if (!hits.length) return null;
+    const ids = new Set(hits.map((e) => e.title.id));
+    return { count: ids.size, names: [...new Set(hits.map((e) => franchiseName.get(e.title.franchise_id)))].filter(Boolean) };
+  }, [byFranchise, corrected, visible, franchiseName]);
   const filtersRef = useRef(null);
   const gridRef = useRef(null); // a borítófal (animált átrendeződés, terv-3 49.3)
+  // nézetváltás után (csak akkor – a többi függőség szándékosan nincs benne): a borítók a régi helyükről
+  // az újra siklanak (terv-3 73)
+  useLayoutEffect(() => {
+    const before = viewSwitch.current;
+    viewSwitch.current = null;
+    if (!before?.size) return;
+    const root = listRoot(view);
+    playViewSwitch(before, root, view === 'grid' ? root : root?.closest('.table-wrap'));
+  }, [view]);
   // a szűrősor eredeti helye: lapozáskor ide görget (a letapadt szűrősorhoz nem lehetne)
   const filtersAnchorRef = useRef(null);
   const [filtersStuck, setFiltersStuck] = useState(false);
@@ -1641,6 +1673,38 @@ export default function Watchlist({ session }) {
             />
           )}
 
+          <SearchHighlight.Provider value={highlight}>
+          {/* keresésnél: elírás javítva, ill. a franchise neve szerinti találatok (terv-3 66) */}
+          {searching && visible.length > 0 && (corrected.length > 0 || frMatches) && (
+            <p className="search-note" role="status">
+              {corrected.length > 0 ? (
+                <>
+                  Nincs pontos találat {typedWords.length > 1 ? `erre: „${query.trim()}”` : `a „${query.trim()}” szóra`} – a
+                  hasonlókat mutatjuk:{' '}
+                  <b>
+                    „
+                    {query
+                      .trim()
+                      .split(/\s+/)
+                      .map((w) => corrected.find((c) => c.from === fold(w))?.label ?? w)
+                      .join(' ')}
+                    ”
+                  </b>
+                </>
+              ) : (
+                <>
+                  <b>{frMatches.count} cím</b> a franchise neve alapján:{' '}
+                  {frMatches.names.map((n, i) => (
+                    <span key={n}>
+                      {i > 0 && ', '}
+                      <Hl text={n} />
+                    </span>
+                  ))}
+                </>
+              )}
+            </p>
+          )}
+
           {/* üres állapot: net nélkül (readOnly) a hozzáadó gombok nem látszanak (kódaudit #8) */}
           {titles.length === 0 ? (
             <EmptyState
@@ -1739,6 +1803,7 @@ export default function Watchlist({ session }) {
               </ul>
             </Reflow>
           )}
+          </SearchHighlight.Provider>
 
           {ofType.length > 0 && (
             <Pagination

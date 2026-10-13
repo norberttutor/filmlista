@@ -7,6 +7,7 @@ import GenreList from '@/components/GenreList';
 import { hasSeasons, seasonCounts, SeasonStrip } from '@/components/Seasons';
 import ReleaseBadge from '@/components/ReleaseBadge';
 import { useStrike } from '@/lib/useStrike';
+import { Hl } from '@/components/Highlight';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
 
@@ -93,18 +94,24 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
               rel="noopener noreferrer"
               aria-label={`${t.title} megnyitása: ${link.site}`}
             >
-              {t.title}
+              <Hl text={t.title} />
             </a>
           ) : (
-            t.title
+            <Hl text={t.title} />
           )}
         </span>
       </h3>
       {season > 0 && <p className="card-season">{season}. évad</p>}
       {t.original_title && t.original_title !== t.title && (
-        <p className="original">{t.original_title}</p>
+        <p className="original">
+          <Hl text={t.original_title} />
+        </p>
       )}
-      {franchise && <p className="card-franchise">Franchise: {franchise}</p>}
+      {franchise && (
+        <p className="card-franchise">
+          Franchise: <Hl text={franchise} />
+        </p>
+      )}
       <p className="meta">
         {t.release_year && <span>{t.release_year}</span>}
         <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>

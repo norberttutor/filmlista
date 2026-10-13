@@ -533,26 +533,35 @@ function TitlePage({
         </div>
         <div className="editor-main">
           <header>
-            {/* a Hasonló címek borítójáról nyílt lapon: vissza az előző címre */}
-            {back && (
-              <button type="button" className="back-link" onClick={onBack}>
-                <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-                  <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                Vissza: {back}
-              </button>
-            )}
-            <h2 id={active ? 'editor-title' : undefined} tabIndex={-1}>
-              {t.title}
-            </h2>
-            <p className="meta">
-              {t.release_year && <span>{t.release_year}</span>}
-              <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
-              {preview && t.seasons?.length > 0 && <span>{t.seasons.length} évad</span>}
-              <ImdbBadge title={t} />
-              {/* előnézetnél csak a TMDB-adatokkal (a találatban nincs megjelenési dátum) */}
-              {(!preview || details) && <ReleaseBadge state={releaseState(t)} />}
-            </p>
+            {/* keskenyebben (< 900 px), jelenetképes lapon a borító balra a kép aljára úszik, mellette a
+                cím és az adatok (terv-3 72, „A”); asztalon a burkolók display: contents – nem változik semmi */}
+            <div className="editor-titlebar">
+              {t.backdrop_path && t.poster_path && (
+                <img className="editor-hero-poster" src={POSTER_BASE + t.poster_path} alt="" decoding="async" />
+              )}
+              <div className="editor-titletext">
+                {/* a Hasonló címek borítójáról nyílt lapon: vissza az előző címre */}
+                {back && (
+                  <button type="button" className="back-link" onClick={onBack}>
+                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                      <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Vissza: {back}
+                  </button>
+                )}
+                <h2 id={active ? 'editor-title' : undefined} tabIndex={-1}>
+                  {t.title}
+                </h2>
+                <p className="meta">
+                  {t.release_year && <span>{t.release_year}</span>}
+                  <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
+                  {preview && t.seasons?.length > 0 && <span>{t.seasons.length} évad</span>}
+                  <ImdbBadge title={t} />
+                  {/* előnézetnél csak a TMDB-adatokkal (a találatban nincs megjelenési dátum) */}
+                  {(!preview || details) && <ReleaseBadge state={releaseState(t)} />}
+                </p>
+              </div>
+            </div>
             {/* műfajok, pötty nélkül (mint Mama adatlapján; Norbi kérése, 2026-10-08) – előnézetnél a
                 TMDB-adatokból ({ id, name }), amint megjöttek */}
             {t.genres?.length > 0 && (

@@ -20,6 +20,7 @@ import ReleaseBadge from '@/components/ReleaseBadge';
 import { hasSeasons, SeasonCell, SeasonDownloads } from '@/components/Seasons';
 import { useStrike } from '@/lib/useStrike';
 import { saveRow } from '@/lib/rowSaves';
+import { Hl, useSearchHighlight } from '@/components/Highlight';
 import Reflow from '@/components/Reflow';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
 
@@ -128,6 +129,7 @@ function TitleRow({
   // még meg nem jelent film: szaggatott keret a borító körül és dátumos jelvény
   const release = releaseState(t);
   const strike = useStrike(item ? item.status : t.status); // megnézettre váltáskor kihúzás a címen
+  const { byFranchise: searchHit } = useSearchHighlight(); // a franchise neve szerinti találatok (terv-3 66)
 
   // Mentés azonnal: a sor rögtön az új értéket mutatja, hiba esetén csak ez a módosítás áll
   // vissza (a soron közben tett másik megmarad – saveRow, kódaudit #9).
@@ -189,15 +191,17 @@ function TitleRow({
               <span key={strike} className="strike" data-strike={strike ? '' : undefined}>
                 {link ? (
                   <a href={link.href} target="_blank" rel="noopener noreferrer">
-                    {t.title}
+                    <Hl text={t.title} />
                   </a>
                 ) : (
-                  t.title
+                  <Hl text={t.title} />
                 )}
               </span>
             </p>
             {t.original_title && t.original_title !== t.title && (
-              <p className="original">{t.original_title}</p>
+              <p className="original">
+                <Hl text={t.original_title} />
+              </p>
             )}
             <p className="meta">
               {item?.season > 0 && <span className="season-tag">{item.season}. évad</span>}
@@ -218,7 +222,12 @@ function TitleRow({
           </div>
           {/* saját, fix szélességű oszlop a cím és a leírás között, középre igazítva – így
               a sorok nem ugrálnak; üresen csak rámutatáskor látszik, de a helyét megtartja */}
-          <div className={t.franchise_id ? 'franchise-field' : 'franchise-field empty'}>
+          {/* keresésnél: ha a cím a franchise neve miatt illik, a franchise mezője kiemelve (terv-3 66) */}
+          <div
+            className={['franchise-field', !t.franchise_id && 'empty', searchHit?.has(t.id) && 'search-hit']
+              .filter(Boolean)
+              .join(' ')}
+          >
             {!t.franchise_id && <span aria-hidden="true">Franchise</span>}
             <Lock on={readOnly}>
               <FranchiseSelect

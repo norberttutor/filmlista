@@ -971,6 +971,21 @@ main.login::after {
   list-style: none;
 }
 
+/* csoportcím: „Ma” / „Ezen a héten” / „Korábban” – kis, ritkított nagybetűk, mint a táblázat fejléce
+   (terv-3 76, Norbi választása: „A”, 2026-10-13) */
+.notif-list .notif-group {
+  padding: 0.7rem 0.6rem 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.notif-list .notif-group:first-child {
+  padding-top: 0.2rem;
+}
+
 .notif-item {
   display: flex;
   align-items: center;
@@ -1910,6 +1925,55 @@ fieldset.lock:disabled .stars {
   .offline-note {
     corner-shape: squircle;
   }
+}
+
+/* ---------- Keresés a listán: kiemelés (terv-3 66, Norbi választása: „A” – halk, 2026-10-13) ---------- */
+/* a cím (eredeti cím, franchise neve) keresett része türkiz aláhúzást kap; a betűszín nem változik */
+mark.hl {
+  color: inherit;
+  background: none;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.18em;
+}
+
+/* a kártya címe eleve halványan aláhúzott link: a kiemelés ugyanarra a vonalra kerül, nem alá */
+.card h3 a mark.hl {
+  text-underline-offset: auto;
+}
+
+/* a lista fölötti mondat: elírás javítva / a franchise neve szerinti találatok */
+.search-note {
+  width: 100%;
+  margin: 0 0 0.5rem;
+  padding-inline: var(--gutter);
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+/* a rácsnak saját felső térköze van */
+.search-note:has(+ .grid) {
+  margin-bottom: -1rem;
+}
+
+.search-note b {
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* listanézetben a táblázattal egy vonalban (az is legfeljebb 1720 px, középre zárva) */
+.search-note:has(+ .table-wrap) {
+  max-width: 1720px;
+  margin-inline: auto;
+}
+
+/* a franchise neve miatt illő sor: a franchise mezője aláhúzva, halvány türkiz kerettel */
+.franchise-field.search-hit select {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 0.2em;
+  box-shadow: 0 0 0 1px var(--accent-line);
 }
 
 /* ---------- Üres állapot (üres lista, találat nélküli szűrés / keresés) ---------- */
@@ -7291,6 +7355,46 @@ a.wo-share-open {
 /* A "kevesebb mozgás" rendszerbeállításnál mind kikapcsol (a lap végén; a nézetváltást a
    Watchlist / TitleEditor el sem indítja). */
 
+/* mikro-átmenetek (terv-3 74, Norbi választása, 2026-10-13 – látványterv: munka/terv-3/tervek-1013/):
+   állapotváltáskor a pálca / állapotcsík színe, a megnézett sor / kártya szürkülése és a szövegek
+   halványulása 0,2 s alatt úszik át (eddig ugrott; a gombok, lenyílók és a borító már eddig is
+   0,15 s-mal váltottak – azok saját átmenetét ez nem írja felül) */
+.titles-table td:first-child::before,
+.status-strip {
+  transition:
+    background-color 0.2s ease-out,
+    box-shadow 0.2s ease-out;
+}
+
+.titles-table tbody :is(.row-name, .original, .meta, .row-genres, .added, .row-overview, .rating-number),
+.card :is(h3, .original, .meta, .status-name, .genres, .added, .card-franchise, .card-season) {
+  transition: color 0.2s ease-out;
+}
+
+.titles-table tbody .stars,
+.card .card-stars,
+:is(.titles-table tbody, .card) .genre::before,
+.titles-table tbody td:is(.col-check, .col-status, .col-mama, .col-actions) > :not(button, select, .lock),
+.titles-table tbody td:is(.col-check, .col-status, .col-mama, .col-actions) > .lock > :not(button, select) {
+  transition:
+    opacity 0.2s ease-out,
+    filter 0.2s ease-out;
+}
+
+/* a lenyílók és a menük (franchise- és műfajszűrő, harang, ⋮) nyitáskor 0,16 s alatt halványan,
+   6 px-et lecsúszva jelennek meg; bezáráskor azonnal eltűnnek */
+:is(.franchise-listbox, .notif-panel, .more-menu) {
+  animation: popup-in 0.16s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes popup-in {
+  from {
+    opacity: 0;
+    translate: 0 -6px;
+    scale: 0.98;
+  }
+}
+
 /* kihúzás (terv-3 40): megnézettre váltáskor (betöltéskor nem – lib/useStrike.js) egy zöld vonal
    fut végig a címen (0,26 s), majd elhalványul – összesen 0,75 s, a kártyán és a soron; a
    nézési sorrendben a vonal megmarad (0,3 s alatt húzódik be). A vonal háttér (a szöveg mögött),
@@ -7423,6 +7527,23 @@ a.wo-share-open {
   margin: 0;
   pointer-events: none;
   animation: none;
+}
+
+/* lista ↔ rács váltáskor a borítók klónja ezen a rögzített rétegen siklik a helyére (terv-3 73, Norbi
+   választása: „B” – lépcsőzetesen, borítónként 22 ms; 0,42 s, mint a borító ↔ adatlap nézetváltás –
+   lib/viewSwitch.js, JS-ből, a „kevesebb mozgás”-t maga nézi); a letapadt szűrősor (30) alatt marad */
+.view-switch-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.view-switch-layer img {
+  position: absolute;
+  object-fit: cover;
+  transform-origin: 0 0;
+  box-shadow: 0 18px 40px -16px rgb(var(--shade) / calc(0.7 * var(--shade-k)));
 }
 
 /* csillag: kattintáskor a kitöltött csillagok egymás után "pattannak" (a StarRating adja a
@@ -7682,6 +7803,62 @@ input[type='checkbox']:checked {
 
   .editor-page:not(.has-backdrop) form {
     padding-top: 1.9rem;
+  }
+}
+
+/* keskenyebben (< 900 px, nincs nagy borító) a jelenetképes adatlapon a borító kicsiben, balra a kép aljára
+   úszik, mellette a cím és az adatok – az asztali elrendezés kicsiben (terv-3 72, Norbi választása: „A”,
+   2026-10-13; látványterv: munka/terv-3/tervek-1013/). Asztalon a burkolók nem számítanak. */
+.editor-titlebar,
+.editor-titletext {
+  display: contents;
+}
+
+.editor-hero-poster {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  .editor-titlebar:has(.editor-hero-poster) {
+    display: grid;
+    grid-template-columns: 6.6rem minmax(0, 1fr);
+    align-items: end;
+    column-gap: 1rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .editor-titlebar:has(.editor-hero-poster) .editor-titletext {
+    display: block;
+    min-width: 0;
+  }
+
+  .editor-hero-poster {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 6.6rem;
+    max-width: 100%;
+    aspect-ratio: 2 / 3;
+    margin-top: -5.2rem; /* a jelenetkép aljára úszik */
+    object-fit: cover;
+    border-radius: 12px;
+    background: var(--placeholder-bg);
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--tint) / 0.1),
+      0 18px 40px -12px rgb(var(--shade) / calc(0.85 * var(--shade-k)));
+  }
+
+  .title-editor[data-ambient] .editor-hero-poster {
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--tint) / 0.08),
+      0 18px 44px -12px color-mix(in oklab, var(--ambient) min(100%, calc(80% * var(--ambient-k))), transparent);
+  }
+}
+
+@supports (corner-shape: squircle) {
+  .editor-hero-poster {
+    border-radius: 13px;
+    corner-shape: squircle;
   }
 }
 

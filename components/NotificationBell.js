@@ -1,11 +1,22 @@
 'use client';
 
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { popupSide } from '@/lib/popupSide';
 import { formatDate } from '@/lib/titles';
+import { budapestToday } from '@/lib/refreshDue';
 import { article } from '@/components/Seasons';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w92';
+
+// a harang csoportjai (terv-3 76, Norbi választása: „A”, 2026-10-13): az értesítés napja (budapesti
+// idővel) szerint „Ma” / „Ezen a héten” (a hét hétfőtől számít) / „Korábban”
+export function dayGroup(createdAt, today) {
+  const day = new Date(createdAt).toLocaleDateString('sv-SE', { timeZone: 'Europe/Budapest' });
+  if (day >= today) return 'Ma';
+  const t = new Date(`${today}T00:00:00Z`);
+  const monday = new Date(t.getTime() - ((t.getUTCDay() + 6) % 7) * 86400000).toISOString().slice(0, 10);
+  return day >= monday ? 'Ezen a héten' : 'Korábban';
+}
 
 // "Megjelent az 5. évad" / "Bejelentették a 4. évadot – várható: 2026. 12. 01." /
 // filmnél: "Digitálisan is megjelent – már letölthető"
@@ -62,6 +73,7 @@ export default function NotificationBell({ notifications, titles, franchiseName,
     n.kind === 'collection_new' ? franchiseName.has(n.franchise_id) : byId.has(n.title_id)
   );
   const unread = items.filter((n) => !n.read_at).length;
+  const today = open ? budapestToday() : null; // a csoportokhoz (kinyitáskor számolva)
 
   useEffect(() => {
     if (!open) return;
@@ -166,6 +178,9 @@ export default function NotificationBell({ notifications, titles, franchiseName,
           ) : (
             <ul className="notif-list" ref={listRef}>
               {items.map((n, index) => {
+                // csoportcím, ahol a nap kategóriája változik (a lista a legújabbal kezdődik)
+                const group = dayGroup(n.created_at, today);
+                const head = index === 0 || dayGroup(items[index - 1].created_at, today) !== group;
                 // a gyűjtemény új része nincs a listán: az értesítés adataiból (TMDB-tétel – előnézet)
                 const t =
                   n.kind === 'collection_new'
@@ -180,7 +195,13 @@ export default function NotificationBell({ notifications, titles, franchiseName,
                 const label = n.kind === 'collection_new' && n.part_year ? `${t.title} (${n.part_year})` : t.title;
                 const isNew = fresh.has(n.id);
                 return (
-                  <li key={n.id}>
+                  <Fragment key={n.id}>
+                  {head && (
+                    <li className="notif-group" role="presentation">
+                      {group}
+                    </li>
+                  )}
+                  <li>
                     <button
                       type="button"
                       className="notif-item"
@@ -223,6 +244,7 @@ export default function NotificationBell({ notifications, titles, franchiseName,
                       </button>
                     )}
                   </li>
+                  </Fragment>
                 );
               })}
             </ul>
