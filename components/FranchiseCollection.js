@@ -31,29 +31,45 @@ export async function fetchCollections(params, signal) {
   return data.collections;
 }
 
-// A gyűjtemények + a saját címek összesítése: szakaszok (a részeknél a listán lévő cím),
-// a gyűjteményekben nem szereplő saját címek (extras), számok, hiányzók.
+// A gyűjtemények + a saját címek összesítése: szakaszok (a részeknél a franchise címe – own –, ill.
+// a listán lévő, de nem ebbe a franchise-ba rendelt film – listed), a gyűjteményekben nem szereplő
+// saját címek (extras), számok, hiányzók.
 export function summarizeCollection(franchise, titles, collections) {
   const manual = franchise.tmdb_collection_ids ?? [];
   const own = titles.filter((t) => t.franchise_id === franchise.id);
   // a részek a listán: tmdb_id → cím (bármelyik franchise-ban vagy anélkül)
   const byTmdb = new Map(titles.filter((t) => t.media_type === 'movie').map((t) => [t.tmdb_id, t]));
+  // csak a franchise-ba rendelt film számít a franchise-énak (a szűrés és a nézési sorrend is csak
+  // ezeket mutatja); a listán lévő többi rész hozzárendelhető (Norbi jelezte, 2026-10-13: korábban
+  // „A listán”-ként látszottak, mintha a franchise-ban lennének)
   const sections = collections.map((c) => ({
     ...c,
     manual: manual.includes(c.id),
-    parts: c.parts.map((p) => ({ ...p, own: byTmdb.get(p.tmdb_id) ?? null })),
+    parts: c.parts.map((p) => {
+      const t = byTmdb.get(p.tmdb_id) ?? null;
+      const mine = t?.franchise_id === franchise.id;
+      return { ...p, own: mine ? t : null, listed: t && !mine ? t : null };
+    }),
   }));
   const inCollections = new Set(sections.flatMap((s) => s.parts.map((p) => p.tmdb_id)));
   const extras = own
     .filter((t) => !(t.media_type === 'movie' && inCollections.has(t.tmdb_id)))
     .sort(byYear);
-  // számlálás: a gyűjtemények részei (egy film csak egyszer) + a további címek
+  // számlálás: a gyűjtemények részei (egy film csak egyszer) + a további címek; a másik franchise-ban
+  // lévő rész csak az összesbe számít
   const parts = [...new Map(sections.flatMap((s) => s.parts).map((p) => [p.tmdb_id, p])).values()];
   const total = parts.length + extras.length;
   const watched =
     parts.filter((p) => p.own?.status === 'watched').length + extras.filter((t) => t.status === 'watched').length;
   const onList = parts.filter((p) => p.own).length + extras.length;
-  return { sections, extras, manual, counts: { total, watched, onList, missing: total - onList } };
+  const missing = parts.filter((p) => !p.own && !p.listed).length;
+  const unassigned = parts.filter((p) => p.listed && !p.listed.franchise_id).length;
+  return { sections, extras, manual, counts: { total, watched, onList, missing, unassigned } };
+}
+
+// a számsor vége: „· 2 hiányzik · 1 nincs hozzárendelve” (a sávon, a csempén, a gyűjtemény-ablakban)
+export function countsNote({ missing, unassigned }) {
+  return `${missing > 0 ? ` · ${missing} hiányzik` : ''}${unassigned > 0 ? ` · ${unassigned} nincs hozzárendelve` : ''}`;
 }
 
 // Franchise-ra szűrve a lista fölött sáv: hány címét láttad / van a listán. A „Gyűjtemény”
@@ -65,7 +81,7 @@ export function summarizeCollection(franchise, titles, collections) {
 //   gyűjtemény nélküli filmek);
 // - „+ TMDB-gyűjtemény hozzáadása”: keresés a TMDB gyűjteményei között (pl. Star Wars).
 // A sáv akkor is megjelenik, ha nincs TMDB-gyűjtemény (a saját címekkel).
-export default function FranchiseCollection({ franchise, titles, orders, onAdded, onUpdated, onOrderChanged, onFranchiseUpdated, onRename, onDelete, readOnly }) {
+export default function FranchiseCollection({ franchise, franchiseNames, titles, orders, onAdded, onUpdated, onOrderChanged, onFranchiseUpdated, onRename, onDelete, readOnly }) {
   const params = collectionParams(franchise, titles);
   const { movies, extra } = params;
   const needsFetch = Boolean(movies || extra);
@@ -93,7 +109,7 @@ export default function FranchiseCollection({ franchise, titles, orders, onAdded
   if (collections === null) return null;
 
   const { sections, extras, manual, counts } = summarizeCollection(franchise, titles, collections);
-  const { total, watched, onList } = counts;
+  const { watched, onList } = counts;
   const backdrop = franchiseBackdrop(franchise, titles, sections);
 
   return (
@@ -118,7 +134,7 @@ export default function FranchiseCollection({ franchise, titles, orders, onAdded
             {watched}/{onList}
           </b>{' '}
           megnézve
-          {onList < total && ` · ${total - onList} hiányzik`}
+          {countsNote(counts)}
           {sections.length === 0 && ' · nincs hozzá TMDB-gyűjtemény'}
         </span>
         <button type="button" className="ghost" onClick={() => setOpen(true)}>
@@ -128,6 +144,7 @@ export default function FranchiseCollection({ franchise, titles, orders, onAdded
       {open && (
         <CollectionDialog
           franchise={franchise}
+          franchiseNames={franchiseNames}
           sections={sections}
           extras={extras}
           counts={counts}
@@ -186,6 +203,8 @@ const TABS = [
 
 export function CollectionDialog({
   franchise,
+  // id → név: a másik franchise-ban lévő rész mellé
+  franchiseNames,
   sections,
   extras,
   counts,
@@ -217,9 +236,12 @@ export function CollectionDialog({
   const [sharing, setSharing] = useState(false); // a megosztás visszavonásának megerősítése / kérése
   const [edit, setEdit] = useState(null); // { mode: 'rename' | 'delete', name, error, busy } – terv-3 57
   const tabRefs = useRef({});
-  const missing = [
-    ...new Map(sections.flatMap((s) => s.parts.filter((p) => !p.own)).map((p) => [p.tmdb_id, p])).values(),
+  const uniqueParts = (keep) => [
+    ...new Map(sections.flatMap((s) => s.parts.filter(keep)).map((p) => [p.tmdb_id, p])).values(),
   ];
+  const missing = uniqueParts((p) => !p.own && !p.listed);
+  // a listán lévő, franchise nélküli részek (a másik franchise-ban lévőket csak egyenként, kérésre helyezi át)
+  const unassigned = uniqueParts((p) => p.listed && !p.listed.franchise_id);
   const backdrop = franchiseBackdrop(franchise, titles, sections);
   // az ablak a franchise színében dereng (terv-3 51.10) – ugyanaz a szín, mint a Franchise-ok csempéjén
   const ambient = usePosterColor(franchisePosterPath(franchise.id, titles));
@@ -242,10 +264,21 @@ export function CollectionDialog({
     }
   }
 
-  // a hiányzók kettesével (mint a tömeges import)
-  async function addMissing() {
-    for (let i = 0; i < missing.length; i += 2) {
-      await Promise.all(missing.slice(i, i + 2).map(add));
+  // a listán lévő rész hozzárendelése ehhez a franchise-hoz (másik franchise-ból: áthelyezés)
+  async function assign(p) {
+    setState((s) => ({ ...s, [p.tmdb_id]: { busy: true } }));
+    try {
+      onUpdated(await updateTitle(p.listed.id, { franchise_id: franchise.id }));
+      setState((s) => ({ ...s, [p.tmdb_id]: {} }));
+    } catch (err) {
+      setState((s) => ({ ...s, [p.tmdb_id]: { error: err.message } }));
+    }
+  }
+
+  // a hiányzók kettesével (mint a tömeges import); a hozzárendelés ugyanígy
+  async function inPairs(list, run) {
+    for (let i = 0; i < list.length; i += 2) {
+      await Promise.all(list.slice(i, i + 2).map(run));
     }
   }
 
@@ -351,7 +384,7 @@ export function CollectionDialog({
               {counts.watched}/{counts.onList}
             </b>{' '}
             megnézve
-            {missing.length > 0 && ` · ${missing.length} hiányzik`}
+            {countsNote(counts)}
           </span>
         </p>
         {edit?.mode === 'rename' ? (
@@ -469,9 +502,10 @@ export function CollectionDialog({
           <ol className="collection-parts">
             {s.parts.map((p) => {
               const st = state[p.tmdb_id] ?? {};
-              const status = p.own ? p.own.status : 'missing';
+              const status = p.own ? p.own.status : p.listed ? 'listed' : 'missing';
               // még meg nem jelent rész (dátum nélkül vagy jövőbeli): indigó jelölés (terv-3 52.1)
               const upcoming = !p.release_date || p.release_date > today;
+              const other = p.listed?.franchise_id ? franchiseNames?.get(p.listed.franchise_id) : null;
               return (
                 <li key={p.tmdb_id} data-state={status} data-upcoming={upcoming || undefined}>
                   <div className="collection-poster">
@@ -482,6 +516,17 @@ export function CollectionDialog({
                   <span className="muted small part-year">{p.release_year ?? 'Bejelentve'}</span>
                   {p.own ? (
                     <OwnState t={p.own} />
+                  ) : p.listed ? (
+                    <>
+                      <span className="collection-state listed">
+                        {p.listed.franchise_id ? `A listádon – ${other ? `„${other}”` : 'másik franchise'}` : 'A listádon, franchise nélkül'}
+                      </span>
+                      {!readOnly && (
+                        <button type="button" className="ghost" disabled={st.busy} onClick={() => assign(p)}>
+                          {st.busy ? 'Hozzárendelés…' : p.listed.franchise_id ? 'Áthelyezés ide' : '+ Hozzárendelés'}
+                        </button>
+                      )}
+                    </>
                   ) : (
                     !readOnly && (
                       <button type="button" className="ghost" disabled={st.busy} onClick={() => add(p)}>
@@ -554,8 +599,13 @@ export function CollectionDialog({
       </div>
 
       <div className="editor-actions">
+        {tab === 'collection' && unassigned.length > 1 && !readOnly && (
+          <button type="button" className="ghost" disabled={busyAny} onClick={() => inPairs(unassigned, assign)}>
+            A listádon lévő {unassigned.length} hozzárendelése
+          </button>
+        )}
         {tab === 'collection' && missing.length > 1 && !readOnly && (
-          <button type="button" className="ghost" disabled={busyAny} onClick={addMissing}>
+          <button type="button" className="ghost" disabled={busyAny} onClick={() => inPairs(missing, add)}>
             A hiányzó {missing.length} felvétele
           </button>
         )}
@@ -586,8 +636,8 @@ function OwnState({ t }) {
 function suggestQueries(franchise, titles) {
   const base = (s) =>
     (s ?? '')
-      .split(/s*:s*|s+[–-]s+/)[0]
-      .replace(/s+(d+|[IVX]+)$/, '')
+      .split(/\s*:\s*|\s+[–-]\s+/)[0]
+      .replace(/\s+(\d+|[IVX]+)$/, '')
       .trim();
   const own = titles.filter((t) => t.franchise_id === franchise.id).map((t) => base(t.original_title || t.title));
   const seen = new Set();

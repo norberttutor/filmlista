@@ -584,7 +584,14 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   „kézzel hozzárendelve · Eltávolítás”), a legkorábbi részük szerint sorban; a részek
   megjelenési sorrendben (sorszám a borítón; megnézett / abbahagyott szürke + saját értékelés
   borostyán, listán lévő „A listán”, hiányzó szaggatott kerettel „+ Hozzáadás” → `addTitle` +
-  a franchise beállítása; „A hiányzó N felvétele” kettesével). „A franchise-od további címei”
+  a franchise beállítása; „A hiányzó N felvétele” kettesével). A listán lévő, de **nem ebbe a
+  franchise-ba rendelt** rész (2026-10-13, Norbi jelezte: korábban „A listán”-ként látszott) –
+  `listed` a `summarizeCollection`-ben, a `own` csak a franchise címe –: szaggatott türkiz keret, „A
+  listádon, franchise nélkül” + „+ Hozzárendelés” / „A listádon – „Név”” + „Áthelyezés ide”
+  (`updateTitle(franchise_id)`); lent „A listádon lévő N hozzárendelése” (csak a franchise nélküliek).
+  A számokban (sáv, csempe, ablak – `countsNote()`) csak a franchise címei számítanak: „· N hiányzik ·
+  N nincs hozzárendelve” (a franchise nélküliek; a másik franchise-ban lévő csak az összesbe). Teszt:
+  `munka/e2e/test-hozzarendeles.mjs`. „A franchise-od további címei”
   (gyűjtemény nélkül: „A franchise-od címei”): a gyűjteményekben nem szereplő saját címek
   (sorozatok – a TMDB-gyűjteményekben sosem szerepelnek –, gyűjtemény nélküli filmek), sorszám
   nélkül, megjelenés szerint. „+ TMDB-gyűjtemény hozzáadása”: késleltetett keresés
@@ -1275,6 +1282,13 @@ változatjelölés – „Pókember 2.1”, „Bővített változat” – Norbi
 Shang-Chi, Morbius már a listán volt) és a 88 tételes nézési sorrend (filmek + évadok, Norbi
 sorrendjében); előtte „Kézi” mentés.
 Norbi listája (norbert.tutor@gmail.com) 2026-10-02-án Excelből importálva: 512 cím.
+IMDb-értékelések importja (2026-10-13, Norbi kérése, szkripttel – `munka/terv-3/imdb-import-1013/`): az IMDb-export
+listán nem lévő 82 filmje és 4 sorozata (Megnézve, a saját értékelés az IMDb-csillag, a megnézés és a hozzáadás dátuma
+az IMDb-értékelés napja, franchise nélkül; a sorozatok megjelent évadai megnézve); előtte „Kézi” mentés (id 459). Az
+epizódok, videók, különkiadások (23) kimaradtak. A lista 939 → 1025 cím.
+Hibajavítás (2026-10-13): a gyűjtemény-ablak a listán lévő, de a franchise-ba nem rendelt részt „+ Hozzárendelés”
+gombbal jelzi (nem „A listán”-ként), a számok csak a franchise címeit számolják; a „Javasolt gyűjtemények”
+keresőszavai újra levágják a „: Part Two”-féle végződést (a 53-as óta hiányoztak a regex fordított perjelei).
 A még meg nem jelent filmek szaggatott kerettel és dátumos jelvénnyel, a harang szól a digitális
 megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül). Asztalon az adatlap
 kikattintásra bezárul, ha nincs mentetlen módosítás (terv-3 24-es pontja, 2026-10-04). „Hol

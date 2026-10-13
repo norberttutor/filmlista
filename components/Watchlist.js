@@ -1669,6 +1669,7 @@ export default function Watchlist({ session }) {
             <FranchiseCollection
               key={franchise}
               franchise={franchises.find((f) => String(f.id) === franchise)}
+              franchiseNames={franchiseName}
               titles={titles}
               orders={orders}
               onAdded={handleAdded}

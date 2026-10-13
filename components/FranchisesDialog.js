@@ -6,6 +6,7 @@ import {
   CollectionDialog,
   CollectionMeter,
   collectionParams,
+  countsNote,
   fetchCollections,
   paramsKey,
   summarizeCollection,
@@ -216,7 +217,7 @@ export default function FranchisesDialog({
                           {counts.watched}/{counts.onList}
                         </b>{' '}
                         megnézve
-                        {ready ? counts.missing > 0 && ` · ${counts.missing} hiányzik` : ' · …'}
+                        {ready ? countsNote(counts) : ' · …'}
                         {ready && sections.length === 0 && counts.total > 0 && ' · nincs TMDB-gyűjtemény'}
                       </>
                     )}
@@ -315,6 +316,7 @@ export default function FranchisesDialog({
       {open && loaded.has(open.f.id) && (
         <CollectionDialog
           franchise={open.f}
+          franchiseNames={new Map(franchises.map((f) => [f.id, f.name]))}
           sections={open.summary.sections}
           extras={open.summary.extras}
           counts={open.summary.counts}

@@ -4819,6 +4819,20 @@ button.season:hover {
   color: var(--st-dropped);
 }
 
+/* a listán lévő, de nem ebbe a franchise-ba rendelt rész: szaggatott türkiz keret, halvány felirat,
+   alatta „+ Hozzárendelés” / „Áthelyezés ide” */
+.collection-parts li[data-state='listed'] .collection-poster {
+  outline: 2px dashed color-mix(in oklab, var(--accent) 45%, transparent);
+  outline-offset: 4px;
+  border-radius: 16px;
+}
+
+.collection-state.listed {
+  font-weight: 500;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
 /* a saját értékelés borostyán (saját jelölés) */
 .collection-state .mine {
   color: var(--accent-2);
