@@ -1899,7 +1899,6 @@ export default function Watchlist({ session }) {
           onRenameFranchise={handleRenameFranchise}
           existingKeys={existingKeys}
           onAdded={handleAdded}
-          onSaved={replaceTitle}
           onChanged={replaceTitle}
           onDelete={requestDelete}
           readOnly={readOnly}

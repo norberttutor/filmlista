@@ -13,7 +13,9 @@ import {
   MAMA_OPTIONS,
   DETAILS_V,
   mamaApplies,
+  mamaLabel,
 } from '@/lib/titles';
+import { saveRow } from '@/lib/rowSaves';
 import StarRating from '@/components/StarRating';
 import FranchiseSelect from '@/components/FranchiseSelect';
 import { Lock } from '@/components/TitleTable';
@@ -36,7 +38,8 @@ const PHONE_QUERY = '(max-width: 640px)';
 // Rádiógombok "chip" formában; a kiválasztottra újra kattintva visszaáll üresre.
 const DOWNLOADED_OPTIONS = [{ code: 'yes', name: 'Letöltve' }];
 
-function ClearableChips({ name, options, value, onChange, className }) {
+// flash: épp mentődött (terv-3 79, „B”) – a kiválasztott gomb sarkán egy pillanatra türkiz pipa
+function ClearableChips({ name, options, value, onChange, className, flash }) {
   return (
     <div className={className ? `segmented ${className}` : 'segmented'}>
       {options.map((o) => (
@@ -50,9 +53,22 @@ function ClearableChips({ name, options, value, onChange, className }) {
             onClick={() => value === o.code && onChange(null)}
           />
           <span>{o.name}</span>
+          {flash && value === o.code && <SavedCheck key={flash} className="on-chip" />}
         </label>
       ))}
     </div>
+  );
+}
+
+// „Mentve” jelzés (terv-3 79): kis türkiz pipa, 2 mp után elhalványul (a felolvasónak a lap alján
+// lévő „… – mentve” sor szól)
+function SavedCheck({ className }) {
+  return (
+    <i className={className ? `saved-check ${className}` : 'saved-check'} aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </i>
   );
 }
 
@@ -64,7 +80,7 @@ function ClearableChips({ name, options, value, onChange, className }) {
 // cím kerül előre, a „Vissza” az előzőre lép (az elhagyott lap rejtve megmarad, a görgetési
 // helyével együtt). A Szereplők nevére kattintva a színész lapja kerül előre (PersonPage, terv-3 61).
 // A natív <dialog> elemet használja: Esc-re bezárul, a fókusz az ablakban
-// marad; asztalon a háttérre kattintva is bezárul, ha nincs mentetlen módosítás.
+// marad; asztalon a háttérre kattintva is bezárul. A listán lévő cím mezői azonnal mentődnek (terv-3 79).
 export default function TitleEditor({
   title: opened, // a megnyitott cím: a lista sora, vagy egy TMDB-találat (előnézet)
   titles, // a lista: a lapok mindig a friss sort mutatják, és innen tudják, mi van már a listán
@@ -130,8 +146,7 @@ export default function TitleEditor({
       });
   }
 
-  // Asztalon az ablakon kívülre (a sötét háttérre) kattintva bezárul – Norbi kérése –, kivéve,
-  // ha az elöl lévő lapon mentetlen módosítás van: akkor figyelmeztet. Nyitva marad akkor is, ha
+  // Asztalon az ablakon kívülre (a sötét háttérre) kattintva bezárul – Norbi kérése. Nyitva marad, ha
   // épp a törlést erősítenéd meg, vagy a Franchise mezőben új nevet / átnevezést gépelsz, vagy
   // épp felveszed a címet (lib/useBackdropClose: a kifelé húzott kijelölés sem zár, telefonon –
   // alsó lap – a lehúzás zár). Az Esc továbbra is mindig bezárja (onCancel).
@@ -141,7 +156,8 @@ export default function TitleEditor({
     onBlocked: () => pageRef.current?.nudge(),
   });
 
-  // lapváltás előtt: mentetlen módosítással a lap nem hagyható el (mint a kikattintásnál)
+  // lapváltás előtt: törlés-megerősítés, franchise-név gépelése, felvétel közben a lap nem hagyható el
+  // (mint a kikattintásnál)
   function canLeavePage() {
     const page = pageRef.current;
     if (!page || page.canLeave()) return true;
@@ -176,8 +192,8 @@ export default function TitleEditor({
   }
 
   // a böngésző / telefon Vissza gombja (terv-3 62, lib/backClose.js): előbb a lapokat lépteti vissza (mint
-  // a „‹ Vissza” – a lapok saját előzmény-bejegyzést kapnak), mentetlen módosításnál figyelmeztet és nyitva
-  // marad, különben bezár (mint az Esc)
+  // a „‹ Vissza” – a lapok saját előzmény-bejegyzést kapnak), különben bezár (mint az Esc); ha a lap épp nem
+  // hagyható el (pl. törlés-megerősítés), nyitva marad
   useEffect(() => {
     dialogRef.current.backHandler = () => {
       if (stack.length > 1) return goBack(true) ? 'stepped' : 'stay';
@@ -257,7 +273,7 @@ export default function TitleEditor({
       {...backdrop}
       {...ambientProps(ambient)}
     >
-      {/* telefonon: fogantyú – lefelé húzva bezárja az ablakot (a Mégse / Esc ugyanaz) */}
+      {/* telefonon: fogantyú – lefelé húzva bezárja az ablakot (a Bezárás / Esc ugyanaz) */}
       <div
         className="sheet-handle"
         aria-hidden="true"
@@ -310,8 +326,8 @@ export default function TitleEditor({
 }
 
 // Egy adatlap az ablakban: listán lévő címnél (entry.row) szerkeszthető, különben előnézet.
-// Sorozatnál az állapot és a "Letöltve" helyett az évadlista látszik; az évadok változása
-// azonnal mentődik (onChanged), a többi mező a "Mentés" gombbal.
+// Sorozatnál az állapot és a "Letöltve" helyett az évadlista látszik. Minden mező azonnal mentődik
+// (onChanged; terv-3 79, „B”).
 function TitlePage({
   entry,
   active, // ez látszik (a többi rejtve, az ablakban hátrébb)
@@ -330,7 +346,6 @@ function TitlePage({
   onRenameFranchise,
   existingKeys,
   onAdded,
-  onSaved,
   onChanged,
   onDelete,
   readOnly, // net nélkül (terv-3 44): csak nézni lehet
@@ -355,52 +370,23 @@ function TitlePage({
   }, [preview, media_type, tmdb_id]);
   const t = row ?? { ...entry.item, ...details };
 
-  // a megnyitáskori értékek (ehhez képest van-e mentetlen módosítás)
-  const [initial, setInitial] = useState(() => ({
-    status: t.status,
-    is_downloaded: t.is_downloaded,
-    mama_status: t.mama_status ?? null,
-    franchise_id: t.franchise_id ?? null,
-    my_rating: t.my_rating ?? null,
-    watched_at: t.watched_at ?? '',
-  }));
-  const [form, setForm] = useState(initial);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(false); // előnézet: a felvétel alatt
   const [error, setError] = useState('');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const seasonal = hasSeasons(t);
-  // Mama-csoport csak franchise nélküli filmnél (terv-3 58) – a franchise mező átállításakor azonnal,
-  // mentés előtt is; a már meglévő (mentett vagy most választott) érték mellett marad, hogy törölhető legyen
-  const showMama = mamaApplies({
-    media_type: t.media_type,
-    franchise_id: form.franchise_id,
-    mama_status: t.mama_status || form.mama_status,
-  });
-  // az utolsó évad törlése után (vagy az első felvételekor) az állapotot, a „Letöltve” jelet és a
-  // dátumot az adatbázis friss sorából vesszük – különben a megnyitáskori, azóta elavult értéket
-  // mutatná, és egy későbbi Mentés azt írná vissza (kódaudit #24)
-  const [wasSeasonal, setWasSeasonal] = useState(seasonal);
-  if (wasSeasonal !== seasonal) {
-    setWasSeasonal(seasonal);
-    const fresh = { status: t.status, is_downloaded: t.is_downloaded, watched_at: t.watched_at ?? '' };
-    setInitial((i) => ({ ...i, ...fresh }));
-    setForm((f) => ({ ...f, ...fresh }));
-  }
-  // mentetlen módosítás: amit a "Mentés" küldene, eltér a megnyitáskoritól (az évadok azonnal
-  // mentődnek, azok nem számítanak; a dátum csak megnézett címnél kerül mentésre)
-  const dirty =
-    !preview &&
-    (form.mama_status !== initial.mama_status ||
-      form.franchise_id !== initial.franchise_id ||
-      form.my_rating !== initial.my_rating ||
-      (!seasonal &&
-        (form.status !== initial.status ||
-          form.is_downloaded !== initial.is_downloaded ||
-          (form.status === 'watched' && form.watched_at !== initial.watched_at))));
-  // kikattintás / lapváltás mentetlen módosítással: figyelmeztetés a gombok mellett, a "Mentés"
-  // felvillan
-  const [nudged, setNudged] = useState(false);
-  const [attention, setAttention] = useState(false);
+  // Mama-csoport csak franchise nélküli filmnél (terv-3 58) – a franchise átállításakor azonnal; a már
+  // meglévő érték mellett marad, hogy törölhető legyen
+  const showMama = mamaApplies(t);
+  // azonnali mentés (terv-3 79, „B”): a módosítás rögtön mentődik (optimista – lib/rowSaves.js), a
+  // módosított vezérlőn egy pillanatra pipa (flash: { field, id }), a gombsor fölött „… – mentve ·
+  // Visszavonás” (undos: a módosítások előtti értékek, a legutóbbi a végén – lépésenként visszafelé;
+  // 10 mp után a sor eltűnik, a lista ürül)
+  const [flash, setFlash] = useState(null);
+  const [undos, setUndos] = useState([]);
+  const saveId = useRef(0);
+  const flashTimer = useRef(0);
+  const undoTimer = useRef(0);
+  useEffect(() => () => (clearTimeout(flashTimer.current), clearTimeout(undoTimer.current)), []);
   const seasonActions = useSeasonActions(t, onChanged, setError);
   // előzetes a TMDB-ről (magyar, ha nincs: angol): megnyitáskor a háttérben kérdezzük le; a gomb
   // csak akkor jelenik meg, ha van. A lejátszó csak kattintásra töltődik (YouTube, adatkímélő mód).
@@ -442,17 +428,11 @@ function TitlePage({
   }, [t.media_type, t.tmdb_id]);
 
   // nyitva marad az ablak (kikattintásra, lapváltáskor), ha épp a törlést erősítenéd meg, a
-  // Franchise mezőben új nevet / átnevezést gépelsz, menteni vagy felvenni készülsz
-  const editingElsewhere = () =>
-    busy || confirmingDelete || Boolean(pageEl.current?.querySelector('.franchise-new'));
+  // Franchise mezőben új nevet / átnevezést gépelsz, vagy felveszed a címet (mentetlen módosítás
+  // nincs – minden azonnal mentődik)
   useImperativeHandle(apiRef, () => ({
-    canLeave: () => !editingElsewhere() && !dirty,
-    nudge: () => {
-      if (!dirty || editingElsewhere()) return;
-      setNudged(true);
-      setAttention(true);
-      setTimeout(() => setAttention(false), 450);
-    },
+    canLeave: () => !busy && !confirmingDelete && !pageEl.current?.querySelector('.franchise-new'),
+    nudge: () => {},
   }));
 
   // az idővonal pöttyére kattintva a lista az évadhoz görget, és annak első gombja kapja a fókuszt
@@ -462,21 +442,74 @@ function TitlePage({
     seasonRow?.querySelector('input')?.focus({ preventScroll: true });
   }
 
-  function setField(field, value) {
-    setForm((f) => ({ ...f, [field]: value }));
+  // egy módosítás mentése: field – melyik vezérlő kapja a pipát; label – a „… – mentve” sor szövege;
+  // undo: false a visszavonásnál (az nem kerül a visszavonható lépések közé)
+  async function save(field, changes, label, undo = true) {
+    if (readOnly) return;
+    const before = Object.fromEntries(Object.keys(changes).map((k) => [k, t[k] ?? null]));
+    const apply = (r) => ({
+      ...r,
+      ...changes,
+      ...(changes.status && { status_name: statuses.find((s) => s.code === changes.status)?.name ?? r.status_name }),
+    });
+    const id = ++saveId.current;
+    setError('');
+    clearTimeout(flashTimer.current);
+    setFlash({ field, id });
+    flashTimer.current = setTimeout(() => setFlash(null), 2100);
+    clearTimeout(undoTimer.current);
+    if (undo) setUndos((u) => [...u, { id, field, label, before }]);
+    undoTimer.current = setTimeout(() => setUndos([]), 10000);
+    try {
+      await saveRow(t, apply, () => updateTitle(t.id, changes), onChanged);
+    } catch (err) {
+      setError(err.message);
+      setFlash((f) => (f?.id === id ? null : f));
+      setUndos((u) => u.filter((x) => x.id !== id));
+    }
+  }
+
+  // a legutóbbi módosítás visszavonása (a következő Visszavonás az előzőt)
+  function undoLast() {
+    const last = undos[undos.length - 1];
+    if (!last) return;
+    setUndos((u) => u.slice(0, -1));
+    save(last.field, last.before, null, false);
   }
 
   function changeStatus(code) {
     code ??= DEFAULT_STATUS; // a kiválasztott újra kattintva: vissza az (üres) alapállapotba
-    setForm((f) => ({
-      ...f,
-      status: code,
-      // megnézettre állításkor a mai nap (a felületen nem látszik, nem szerkeszthető – Norbi
-      // kérése; a Statisztika és a CSV-mentés használja)
-      watched_at: code === 'watched' && !f.watched_at ? todayDate() : f.watched_at,
-      // ...és a "Letöltve" törlődik (az adatbázis-trigger szabálya, itt azonnal látszik)
-      is_downloaded: code === 'watched' && f.status !== 'watched' ? false : f.is_downloaded,
-    }));
+    const becomesWatched = code === 'watched' && t.status !== 'watched';
+    const name = statuses.find((s) => s.code === code)?.name;
+    save(
+      'status',
+      {
+        status: code,
+        // megnézettre állításkor a mai nap (a felületen nem látszik, nem szerkeszthető – Norbi
+        // kérése; a Statisztika és a CSV-mentés használja)
+        watched_at: code === 'watched' ? (t.watched_at ?? todayDate()) : null,
+        // ...és a "Letöltve" törlődik (az adatbázis-trigger szabálya, itt azonnal látszik)
+        ...(becomesWatched && { is_downloaded: false }),
+      },
+      code === DEFAULT_STATUS ? 'Állapot törölve' : `Állapot: ${name}`
+    );
+  }
+
+  const changeDownloaded = (on) =>
+    save('is_downloaded', { is_downloaded: on }, on ? 'Letöltve' : 'Letöltve jelölés levéve');
+  const changeRating = (n) =>
+    save('my_rating', { my_rating: n }, n ? `Saját értékelés: ${n}/10` : 'Saját értékelés törölve');
+  const changeMama = (code) =>
+    save('mama_status', { mama_status: code }, code ? `Mama: ${mamaLabel(code)}` : 'Mama-jelölés törölve');
+  // a lenyíló „Új franchise” / „Törlés” művelete után is onChange jön: a most létrehozott neve még
+  // nincs a franchises-ban, a törölt pedig már minden címről lekerült (nincs mit menteni, visszavonni)
+  const created = useRef(null);
+  const deleted = useRef(null);
+  function changeFranchise(id) {
+    if (id == null && deleted.current != null && deleted.current === t.franchise_id) return;
+    if ((id ?? null) === (t.franchise_id ?? null)) return;
+    const name = franchises.find((f) => f.id === id)?.name ?? (created.current?.id === id ? created.current.name : '');
+    save('franchise_id', { franchise_id: id ?? null }, id ? `Franchise: ${name}` : 'Franchise törölve');
   }
 
   function cancelDelete() {
@@ -499,41 +532,10 @@ function TitlePage({
     }
   }
 
-  async function handleSubmit(event) {
+  // a form csak az előnézet felvétele (a listán lévő cím mezői azonnal mentődnek – terv-3 79)
+  function handleSubmit(event) {
     event.preventDefault();
-    if (readOnly) return;
-    if (preview) {
-      handleAdd();
-      return;
-    }
-    setBusy(true);
-    setError('');
-    try {
-      let saved = await updateTitle(t.id, {
-        // sorozatnál az állapotot, a "Letöltve" jelzőt és a dátumot az évadokból számolja
-        // az adatbázis
-        ...(!seasonal && {
-          status: form.status,
-          is_downloaded: form.is_downloaded,
-          // a dátumnak csak megnézett címnél van értelme
-          watched_at: form.status === 'watched' ? form.watched_at || null : null,
-        }),
-        mama_status: form.mama_status,
-        franchise_id: form.franchise_id,
-        my_rating: form.my_rating,
-      });
-      // Megnézettre váltáskor az adatbázis-trigger leveszi a „Letöltve” jelet – ha ugyanebben a
-      // mentésben újra bepipáltad, egy második mentés visszateszi (a később, külön bepipált jel
-      // amúgy is megmarad; kódaudit #17)
-      if (!seasonal && form.is_downloaded && !saved.is_downloaded) {
-        saved = await updateTitle(t.id, { is_downloaded: true });
-      }
-      onSaved(saved);
-      close();
-    } catch (err) {
-      setError(err.message);
-      setBusy(false);
-    }
+    if (!readOnly && preview) handleAdd();
   }
 
   // a megerősítés után a cím lekerül, a sávban 8 mp-ig visszavonható (a Watchlist törli)
@@ -678,35 +680,38 @@ function TitlePage({
                   franchise-os címnél nincs – terv-3 58; ha így a sáv üres, el is marad) */}
               <div className="editor-pair">
                 <div className="field">
-                  <span aria-hidden="true">Franchise</span>
+                  <span aria-hidden="true">
+                    Franchise{flash?.field === 'franchise_id' && <SavedCheck key={flash.id} />}
+                  </span>
                   <FranchiseSelect
                     label="Franchise"
-                    value={form.franchise_id}
+                    value={t.franchise_id ?? null}
                     franchises={franchises}
-                    onChange={(id) => setField('franchise_id', id)}
-                    onCreate={onCreateFranchise}
-                    onDelete={onDeleteFranchise}
+                    onChange={changeFranchise}
+                    onCreate={async (name) => (created.current = await onCreateFranchise(name))}
+                    onDelete={async (id) => {
+                      deleted.current = id;
+                      await onDeleteFranchise(id);
+                    }}
                     onRename={onRenameFranchise}
                   />
                 </div>
                 <div className="field">
-                  <span>Saját értékelés</span>
+                  <span>
+                    Saját értékelés{flash?.field === 'my_rating' && <SavedCheck key={flash.id} />}
+                  </span>
                   <div className="rating-field">
                     <StarRating
                       name="editor-rating"
                       label="Saját értékelés"
-                      value={form.my_rating}
-                      onChange={(n) => setField('my_rating', n)}
+                      value={t.my_rating ?? null}
+                      onChange={changeRating}
                     />
                     <span className="rating-number">
-                      {form.my_rating ? `${form.my_rating}/10` : 'Nincs'}
+                      {t.my_rating ? `${t.my_rating}/10` : 'Nincs'}
                     </span>
-                    {form.my_rating && (
-                      <button
-                        type="button"
-                        className="link small"
-                        onClick={() => setField('my_rating', null)}
-                      >
+                    {t.my_rating && (
+                      <button type="button" className="link small" onClick={() => changeRating(null)}>
                         Törlés
                       </button>
                     )}
@@ -717,7 +722,6 @@ function TitlePage({
               {seasonal && (
                 <fieldset className="field">
                   <legend>Évadok</legend>
-                  <p className="muted small season-hint">Az évadok változása azonnal mentődik.</p>
                   <SeasonTimeline title={t} onPick={pickSeason} />
                   <SeasonList title={t} actions={seasonActions} />
                 </fieldset>
@@ -738,8 +742,9 @@ function TitlePage({
                               s.code !== DEFAULT_STATUS &&
                               (s.code !== DROPPED_STATUS || t.media_type === 'tv' || t.status === s.code)
                           )}
-                          value={form.status}
+                          value={t.status}
                           onChange={changeStatus}
+                          flash={flash?.field === 'status' && flash.id}
                         />
                       </fieldset>
 
@@ -750,8 +755,9 @@ function TitlePage({
                         <ClearableChips
                           name="is_downloaded"
                           options={DOWNLOADED_OPTIONS}
-                          value={form.is_downloaded ? 'yes' : null}
-                          onChange={(code) => setField('is_downloaded', code === 'yes')}
+                          value={t.is_downloaded ? 'yes' : null}
+                          onChange={(code) => changeDownloaded(code === 'yes')}
+                          flash={flash?.field === 'is_downloaded' && flash.id}
                         />
                       </fieldset>
                     </>
@@ -764,8 +770,9 @@ function TitlePage({
                         name="mama_status"
                         className="mama-chips"
                         options={MAMA_OPTIONS}
-                        value={form.mama_status}
-                        onChange={(code) => setField('mama_status', code)}
+                        value={t.mama_status ?? null}
+                        onChange={changeMama}
+                        flash={flash?.field === 'mama_status' && flash.id}
                       />
                     </fieldset>
                   )}
@@ -778,6 +785,24 @@ function TitlePage({
           <SimilarTitles title={t} existingKeys={existingKeys} onAdded={onAdded} onPreview={onPreview} readOnly={readOnly} />
 
           {!preview && errorMessage}
+
+          {/* a legutóbbi módosítás: „Állapot: Megnézve – mentve · Visszavonás” (az ablak fölött az
+              értesítősáv nem kattintható, ezért itt, a lapon); mindig a lapon (üresen is), hogy a
+              felolvasó bemondja */}
+          {!preview && (
+            <p className="saved-note" role="status">
+              {undos.length > 0 && (
+                <>
+                  <span>
+                    <b>{undos[undos.length - 1].label}</b> – mentve
+                  </span>
+                  <button type="button" className="link small" onClick={undoLast}>
+                    Visszavonás
+                  </button>
+                </>
+              )}
+            </p>
+          )}
 
           <div className="editor-actions">
             {preview ? (
@@ -819,15 +844,8 @@ function TitlePage({
                   Törlés a listáról
                 </button>
                 <span className="spacer" />
-                {/* mindig a lapon van (üresen is), hogy a felolvasó bemondja, amikor megtelik */}
-                <span className="unsaved-hint" role="status">
-                  {nudged && dirty ? 'Mentetlen módosítás – Mentés vagy Mégse' : ''}
-                </span>
                 <button type="button" className="ghost" onClick={close}>
-                  Mégse
-                </button>
-                <button type="submit" className={attention ? 'primary attention' : 'primary'} disabled={busy}>
-                  {busy ? 'Mentés…' : 'Mentés'}
+                  Bezárás
                 </button>
               </>
             )}

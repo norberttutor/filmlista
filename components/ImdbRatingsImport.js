@@ -149,6 +149,8 @@ export default function ImdbRatingsImport({ titles, onApplied, onAdded, ref }) {
         className="editor import-dialog bulk-dialog"
         aria-labelledby="imdb-import-title"
         onClose={() => {
+          // a „close” esemény később érkezik: ha közben új fájllal újra megnyílt, ne ürítse ki
+          if (dialogRef.current.open) return;
           runRef.current++;
           setView(null);
         }}

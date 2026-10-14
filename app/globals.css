@@ -3358,10 +3358,6 @@ button.season:hover {
   font-size: 0.85rem;
 }
 
-.season-hint {
-  margin: -0.2rem 0 0.2rem;
-}
-
 /* évadok idővonala (szerkesztő ablak): évszámok, „ma” jelölő, évadonként egy pötty-gomb */
 .season-timeline {
   padding: 0.75rem 1rem 0.6rem;
@@ -6619,19 +6615,60 @@ body:has(.editor[open]) {
   flex: 1;
 }
 
-/* kikattintás mentetlen módosítással (TitleEditor): felirat a gombok előtt, a "Mentés" egy
-   pillanatra türkiz gyűrűt kap */
-.unsaved-hint {
-  font-size: 0.85rem;
+/* azonnali mentés az adatlapon (terv-3 79, „B”): a módosított vezérlőn egy pillanatra kis türkiz pipa
+   (a gomb sarkán – a helyét nem tolja el –, a Franchise / Saját értékelés címkéje után), a gombsor fölött
+   „Állapot: Megnézve – mentve · Visszavonás”. A pipa 2 mp után eltűnik (a kód veszi le; mozgással
+   elhalványul – „Mozgás” szakasz) */
+.saved-check {
+  display: inline-grid;
+  place-items: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-left: 0.45rem;
+  vertical-align: -0.2em;
+  border-radius: 50%;
+  color: var(--accent-ink);
+  background: var(--accent);
+}
+
+.saved-check svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.segmented label > .saved-check.on-chip {
+  position: absolute;
+  top: -0.45rem;
+  right: -0.45rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  box-shadow: 0 0 0 2px var(--surface);
+  pointer-events: none;
+}
+
+.segmented label > .saved-check.on-chip svg {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+.saved-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.6rem;
+  margin: 0 0 0.6rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.saved-note:empty {
+  margin: 0;
+}
+
+.saved-note b {
+  color: var(--text);
   font-weight: 600;
-}
-
-.editor-actions .primary {
-  transition: background-color 0.15s, box-shadow 0.15s;
-}
-
-.editor-actions .primary.attention {
-  box-shadow: 0 0 0 5px var(--accent-line);
 }
 
 .confirm-text {
@@ -7406,6 +7443,29 @@ a.wo-share-open {
     opacity: 0;
     translate: 0 -6px;
     scale: 0.98;
+  }
+}
+
+/* az adatlap „Mentve” pipája (terv-3 79): 0,15 s alatt bepattan, 2 mp múlva elhalványul (a kód 2,1 mp
+   után leveszi; „kevesebb mozgás” módban csak megjelenik és eltűnik) */
+.saved-check {
+  animation: saved-check 2s ease-out forwards;
+}
+
+@keyframes saved-check {
+  0% {
+    opacity: 0;
+    scale: 0.5;
+  }
+  8% {
+    opacity: 1;
+    scale: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
   }
 }
 

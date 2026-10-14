@@ -290,22 +290,30 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   added }`), mindig az utolsó látszik, a többi rejtve megmarad (`.editor-page[hidden]`, a görgetési
   helyével); a lap sora a `titles` propból jön (a listáról nyitottnál `rowId` szerint, különben
   TMDB-azonosító szerint) – ha nincs a listán, a lap **előnézet** (`TitlePage`, `preview`): a
-  `/api/tmdb/details` adataival, a szerkesztő mezők, a Mentés és a Törlés helyett „Hozzáadás a
+  `/api/tmdb/details` adataival, a szerkesztő mezők és a Törlés helyett „Hozzáadás a
   listához” (`addTitle(item, details)` – nem kérdez újra) és „Bezárás”; felvétel után a lap új
   kulccsal rendes adatlappá válik („✓ Felkerült a listádra”, `.added-note`; Norbi döntése: nem
   zárul be). Előnézet nyílik a Cím hozzáadása találatának borítójáról / címéről és a Felfedezés
   borítójáról (`onPreview` → `Watchlist.openEditor`), valamint a Hasonló címek borítójáról az
   ablakon belül (új lap, a cím fölött „‹ Vissza: …”, `.back-link`) – a Szereplők nevéről a színész
   lapja is így nyílik (`PersonPage`, `{ id, person }` a `stack`-ben, terv-3 61) –; a franchise-gyűjteményből és
-  az importokból nem (Norbi döntése). Mentetlen módosítással a lap nem hagyható el (a hasonló cím
-  és a Vissza is figyelmeztet, mint a kikattintás – az elöl lévő lap `apiRef`-en adja a
-  `canLeave` / `nudge` függvényt); a Mentés / Mégse / Esc / kikattintás az egész ablakot zárja; a
+  az importokból nem (Norbi döntése). Törlés-megerősítés, franchise-név gépelése és felvétel közben a
+  lap nem hagyható el (az elöl lévő lap `apiRef`-en adja a `canLeave` függvényt); a Bezárás / Esc /
+  kikattintás az egész ablakot zárja; a
   nézetváltás csak az első lapról siklik vissza; a háttérképes elrendezés jele (`.has-backdrop`)
   a lapon van, nem a `dialog`-on; a cím `id="editor-title"`-je csak a látható lapé; a rejtett
   lapon nem szól az előzetes. A listán lévő cím lapja: állapot, letöltve (a megnézés
   dátuma – `watched_at` – nem látszik és nem szerkeszthető, Norbi kérése, 2026-10-04: megnézettre
   állításkor a háttérben a mai nap kerül be, a Statisztika és a CSV használja), értékelés 10 csillaggal
-  (+ „Törlés” link), törlés megerősítéssel – Norbi kérésére itt marad –, utána a sávban 8 mp-ig
+  (+ „Törlés” link). **Azonnali mentés** (terv-3 79, „B”, Norbi választása, 2026-10-14 – látványterv:
+  https://claude.ai/artifact/HxvwS24YdW3kaHTbPR9mty): minden mező (Állapot, Letöltve, Saját értékelés,
+  Franchise, Mama) kattintásra mentődik (`save()` → `saveRow`, optimista – a lap a `titles` friss sorát
+  mutatja, nincs külön `form`); nincs „Mentés” / „Mégse” / mentetlen módosítás, csak „Bezárás”. A módosított
+  vezérlőn 2 mp-ig kis türkiz pipa (`SavedCheck`: a gomb sarkán – `.saved-check.on-chip` –, a Franchise /
+  Saját értékelés címkéje után), a gombsor fölött „Állapot: Megnézve – mentve · Visszavonás” (`.saved-note`,
+  `role="status"`; a lapon, mert az ablak fölött a sáv nem kattintható): lépésenként visszafelé (`undos`),
+  10 mp-ig. Hibánál csak a sikertelen módosítás esik ki, hibaüzenet. A franchise létrehozása után a neve a
+  `created`, törlése után a `deleted` refből (a törölt franchise üresre állítása nem mentendő). Törlés megerősítéssel – Norbi kérésére itt marad –, utána a sávban 8 mp-ig
   „Visszavonás” (`onDelete` → `Watchlist.requestDelete`) (a mobilos borítófalon a borító vagy a
   ceruza nyitja). Az „Abbahagyva” állapot csak sorozatnál választható. Alul „Hasonló címek”
   (`SimilarTitles`). Előzetes: megnyitáskor a háttérben `/api/tmdb/videos`; ha van, a cím
@@ -319,15 +327,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (terv-3 72, „A”, 2026-10-13: `.editor-titlebar` > `.editor-hero-poster` + `.editor-titletext`; asztalon a
   burkolók `display: contents`).
   Nézetváltás (asztalon, `lib/viewTransition.js`): a kattintott kártya / sor borítója átsiklik a
-  nagy borító helyére (a `Watchlist` `openEditor(t, forrásElem)` indítja), bezáráskor (Esc –
-  `cancel` elkapva –, Mégse, Mentés) a `morphTo` borítóra vissza; törléskor nincs. A
+  nagy borító helyére (a `Watchlist` `openEditor(t, forrásElem)` indítja), bezáráskor (Esc, Bezárás,
+  kikattintás) a `morphTo` borítóra vissza; törléskor nincs. A
   `showModal()` ezért `useLayoutEffect`-ben fut.
   Kikattintás (Norbi kérése, 2026-10-04; `useBackdropClose`): asztalon (≥ 641 px) a háttérre kattintva bezárul
   (`isOutside`: a cél maga a `dialog`, a pont a téglalapján kívül; a `pointerdown` is kívül –
-  a kifelé húzott kijelölés nem zár), kivéve, ha mentetlen módosítás van (`dirty`: a Mentés
-  által küldött mezők eltérnek a megnyitáskoritól – `initial`; az évadok nem számítanak):
-  ilyenkor `.unsaved-hint` („Mentetlen módosítás – Mentés vagy Mégse”, `role="status"`, mindig a
-  lapon) és a „Mentés” türkiz gyűrűt kap (`.attention`, 450 ms). Nem zár akkor sem, ha a törlés
+  a kifelé húzott kijelölés nem zár; mentetlen módosítás nincs – terv-3 79). Nem zár, ha a törlés
   megerősítése nyitva van, vagy a FranchiseSelect új név / átnevezés módban van
   (`.franchise-new`). Telefonon (alsó lap) nem zár; az Esc mindig zár.
   Megnyitáskor a fókusz az ablak címén van (keret nélkül), nem a Franchise mezőn (Norbi kérése).
@@ -348,7 +353,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   dereng. A kiválasztott Mama borostyán (`.mama-chips`).
   Évados
   sorozatnál az állapot / letöltve / dátum helyett „Évadok” lista (`SeasonList`), ami azonnal
-  ment (`onChanged`); a „Mentés” ilyenkor nem küld `status` / `is_downloaded` / `watched_at`-et
+  ment (`onChanged`)
 - `components/Seasons.js` – évadok (sorozatoknál): `hasSeasons()`, `seasonCounts()`,
   `seasonRange()` („1–3., 5.”), `useSeasonActions()` (optimista mentés `saveRow`-val, hibánál visszaáll;
   megnézettre állításkor az előtte lévő üres évadok is megnézettek lesznek, 10 mp-ig
@@ -441,7 +446,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   MutationObserver maga kezeli: a Vissza az Esc-et utánozza (`cancel` esemény, ha nem tiltották, `close()`),
   így minden ablak a saját Esc-szabálya szerint – **új ablakhoz nem kell semmi**; saját szabály:
   `dialog.backHandler` → 'stay' | 'stepped' | 'closing' (az adatlap: előbb a lapokat lépteti vissza, mint a „‹ Vissza”,
-  mentetlen módosításnál figyelmeztet és nyitva marad, különben bezár). **Androidon** (Chrome, telepített app)
+  törlés-megerősítés / felvétel közben nyitva marad, különben bezár). **Androidon** (Chrome, telepített app)
   nyitott modális ablaknál a vissza-gesztus nem az előzményekhez jut, hanem az ablaknak, Esc-szerű `cancel`
   eseményként (bezárási kérés, close watcher), és a megállítását a Chrome korlátozza (érintés nélkül nem
   engedi). Ezért az adatlap (`TitleEditor`) `closedby="none"`: a böngésző nem zárja magától, a gesztus az
@@ -469,7 +474,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `{ onPointerDown, onClick }` a `<dialog>`-ra: kikattintásra (a háttérre) bezár, telefonon
   (≤ 640 px) nem; a lenyomásnak is kívül kell lennie (a kifelé húzott kijelölés nem zár); a
   beágyazott ablak kattintása a külsőnek nem számít kívülnek. Használja (terv-3 24 és 32, Norbi
-  kérése): `TitleEditor` (mentetlen módosításnál `onBlocked` → figyelmeztetés), `StatsDialog`
+  kérése): `TitleEditor` (törlés-megerősítés / franchise-név gépelése / felvétel közben nem), `StatsDialog`
   (mindig), `FranchisesDialog` (átnevezés / törlés-megerősítés / új név gépelése és nyitott
   gyűjtemény-ablak alatt nem), `CollectionDialog` (rész felvétele közben, a nézési sorrend
   szerkesztése közben, a megosztás visszavonásának megerősítésekor és a fejléc átnevezése / törlés-megerősítése közben – terv-3 57 – nem; a nyitott TMDB-gyűjtemény-keresőnél igen – Norbi kérése, 2026-10-07; a
@@ -1185,7 +1190,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   telítettség). A build (Lightning CSS) a böngészőknek hex / `lab()` tartalékot is generál, ezért
   a számított érték `lab(…)` lehet – a teszt a színeket vásznon át, sRGB-ben hasonlítja (`rgbOf`).
   Új színt OKLCH-ban adj meg (hexből: `munka/dizajn-2/eszkozok/oklch.mjs`).
-- Teli türkiz csak a fő műveleteknél (Cím hozzáadása, Mentés, Belépés); a kiválasztott állapot
+- Teli türkiz csak a fő műveleteknél (Cím hozzáadása, Hozzáadás a listához, Belépés); a kiválasztott állapot
   (szűrőgomb, aktuális oldal, választott lehetőség) `--accent-soft` háttér + `--accent-line` keret.
   A gombok kerek végűek, rámutatva világosodnak, lenyomva sötétednek (`--accent-hover/-press`,
   `--hover-tint/--press-tint`).
@@ -1301,9 +1306,12 @@ keresőszavai újra levágják a „: Part Two”-féle végződést (a 53-as ó
 Hibajavítás (2026-10-14, Norbi jelezte): Androidon a vissza-gesztus az adatlapon lapot léptet (színész lapjáról
 nyitott filmről a színészre), nem zárja be az egész ablakot; franchise-ra szűrve felvett, majd az adatlapján mentett
 film nem kerül be ideiglenesen a szűrt listába (a „helyén marad” – `kept` – csak a már látható sort tartja meg).
+Azonnali mentés az adatlapon (terv-3 79, „B”, 2026-10-14): nincs „Mentés” / „Mégse”; a módosított gombon türkiz pipa,
+alul „… – mentve · Visszavonás” (lépésenként). Az IMDb-importablak a gyorsan újra választott fájlnál nem ürül ki (a
+késve érkező „close” esemény – `ImdbRatingsImport`).
 A még meg nem jelent filmek szaggatott kerettel és dátumos jelvénnyel, a harang szól a digitális
 megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül). Asztalon az adatlap
-kikattintásra bezárul, ha nincs mentetlen módosítás (terv-3 24-es pontja, 2026-10-04). „Hol
+kikattintásra bezárul (terv-3 24-es pontja, 2026-10-04). „Hol
 nézhető?” az adatlapon (magyar streamingszolgáltatók logóval, terv-3 21), IMDb-figyelőlista
 importja (terv-3 20), „Franchise-ok” ablak a ⋮ menüben (terv-3 23, 2026-10-05), kikattintásra záródó ablakok (terv-3 32),
 adatlap a listára vétel előtt – előnézet a találatokból, a Felfedezésből és a Hasonló címekből,
@@ -1458,7 +1466,18 @@ következő cím az adatlapon, 68 – tömeges szerkesztés a listanézetben.
 - **76 – a harang csoportjai – kész** („Ma” / „Ezen a héten” / „Korábban”) – **„A”** (kis, ritkított nagybetűs csoportcím) (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
 - **78 – nyitott kódaudit-pontok** (`munka/audit-2026-10-09/AUDIT.md`, a látható hatásúak előbb, pontonként
   rákérdezve) – ~2–3 óra
-Hátravan: 78 – ~2–3 óra.
+**Norbi kérése (2026-10-14): kényelmi kör, 2. rész – 79–88** (Claude javaslataiból; részletek:
+`munka/terv-3/TERV.md` „79–88” szakasz; látványterv, ahol a kinézet változik). **Elvetve** (Norbi, 2026-10-14 –
+magadtól ne javasold újra): 81 – évszám a „Cím hozzáadása” keresőben, 82 – lapozó nyilak a vízszintes sorokon,
+87 – „Cím másolása” az adatlapon, 88 – „Nemrég megnyitott” adatlapok.
+- **79 – azonnali mentés az adatlapon – kész** (2026-10-14, „B” – pipa a módosított gombon, „… – mentve · Visszavonás”;
+  teszt: `test.mjs` 115/115, `test-gesztus` 5/5, `test-1013b` 11/11, `test-audit-10` 9/9, `test-58` 7/7)
+- **80 – „Hozzáadás megnézettként”** („Már láttam” a keresőben, az előnézeten, a színész lapján) – ~1–1,5 óra
+- **83 – frissítés a TMDB-ről** (cím, leírás, borító, műfajok – magától és gombbal) – ~2 óra
+- **84 – új évad dátuma a sorozat kártyáján / során** („3. évad · márc. 5.”) – ~1,5–2 óra (látványterv)
+- **85 – lehúzás frissítéshez a telefonos appban** – ~1–1,5 óra (kis látványterv)
+- **86 – élő szinkron a gépek között** (Supabase Realtime) – ~2–3 óra
+Hátravan: 78 – ~2–3 óra; 80, 83–86 (5 pont) – ~8–10 óra.
 **Lekerült a roadmapről** (Norbi döntése, 2026-10-08: a közeljövőben nincs tervben; magadtól ne
 javasold újra): **25 – admin jogosultság**, **26 – regisztráció** (a meglévőkön kívül más felhasználó
 nem lesz, Mama fiókja pedig a 13-as óta korlátozott). A részletes tervük a TERV.md-ben megmaradt.
