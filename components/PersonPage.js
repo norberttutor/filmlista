@@ -49,7 +49,7 @@ export default function PersonPage({ person: cast, titles, active, apiRef, back,
   const [allShown, setAllShown] = useState(false);
   const [bioOpen, setBioOpen] = useState(false);
   const [bioLong, setBioLong] = useState(false);
-  const [adding, setAdding] = useState(null); // a felvétel alatt álló cím kulcsa
+  const [adding, setAdding] = useState(null); // a felvétel alatt álló cím: { key, watched }
   const [errors, setErrors] = useState({}); // kulcs → hibaüzenet
   const bioRef = useRef(null);
   // a megnyitáskori lista: ebből dől el, mi kerül „A listádon” csoportba
@@ -75,12 +75,13 @@ export default function PersonPage({ person: cast, titles, active, apiRef, back,
   // felvétel közben a lap nem hagyható el (a Vissza és a kikattintás vár)
   useImperativeHandle(apiRef, () => ({ canLeave: () => !adding, nudge: () => {} }));
 
-  async function add(c) {
+  // watched: „Már láttam” (terv-3 80) – megnézettként kerül fel
+  async function add(c, watched = false) {
     const key = titleKey(c);
-    setAdding(key);
+    setAdding({ key, watched });
     setErrors((e) => ({ ...e, [key]: '' }));
     try {
-      onAdded(await addTitle({ media_type: c.media_type, tmdb_id: c.tmdb_id }));
+      onAdded(await addTitle({ media_type: c.media_type, tmdb_id: c.tmdb_id }, null, { watched }));
     } catch (err) {
       setErrors((e) => ({ ...e, [key]: err.message }));
     }
@@ -99,16 +100,29 @@ export default function PersonPage({ person: cast, titles, active, apiRef, back,
     const row = rows.get(key);
     if (!row) {
       if (readOnly) return null;
+      const busy = adding?.key === key;
       return (
-        <button
-          type="button"
-          className="ghost mini"
-          disabled={adding === key}
-          aria-label={`Hozzáadás a listához: ${c.title}`}
-          onClick={() => add(c)}
-        >
-          {adding === key ? 'Hozzáadás…' : '+ Hozzáadás'}
-        </button>
+        <>
+          <button
+            type="button"
+            className="ghost mini"
+            disabled={busy}
+            aria-label={`Hozzáadás a listához: ${c.title}`}
+            onClick={() => add(c)}
+          >
+            {busy && !adding.watched ? 'Hozzáadás…' : '+ Hozzáadás'}
+          </button>
+          {/* már látott cím: megnézettként kerül fel (terv-3 80) */}
+          <button
+            type="button"
+            className="ghost mini"
+            disabled={busy}
+            aria-label={`Már láttam: ${c.title}`}
+            onClick={() => add(c, true)}
+          >
+            {busy && adding.watched ? 'Hozzáadás…' : 'Már láttam'}
+          </button>
+        </>
       );
     }
     const done = row.status === 'watched' || row.status === 'dropped';

@@ -17,6 +17,7 @@ import {
   deleteTitle,
   registerPendingDelete,
   unregisterPendingDelete,
+  isPendingDelete,
   createFranchise,
   deleteFranchise,
   renameFranchise,
@@ -26,6 +27,7 @@ import {
   refreshBackdrops,
   refreshReleases,
   refreshTitleCollections,
+  refreshDetails,
   refreshCollectionParts,
   DEFAULT_STATUS,
   DROPPED_STATUS,
@@ -66,6 +68,9 @@ import { Hl, SearchHighlight } from '@/components/Highlight';
 import { captureViewPosters, playViewSwitch, viewMotionOk } from '@/lib/viewSwitch';
 import { useBackLayer } from '@/lib/backClose';
 import { useAppFreshness } from '@/lib/appVersion';
+import PullRefresh from '@/components/PullRefresh';
+import { useLiveSync } from '@/lib/liveSync';
+import { hasPendingSave } from '@/lib/rowSaves';
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 
@@ -243,6 +248,7 @@ export default function Watchlist({ session }) {
   const [stale, setStale] = useState(null);
   const [failed, setFailed] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const reloadDone = useRef(null); // a lehúzás (terv-3 85) várja: a következő betöltés végén hívódik
   const online = useOnline();
   const readOnly = Boolean(stale) || !online;
   const userId = session.user.id;
@@ -408,6 +414,14 @@ export default function Watchlist({ session }) {
           setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
         }).catch((err) => console.warn('TMDB-gyűjtemények lekérése sikertelen:', err.message));
 
+        // a címek TMDB-adatai (magyar cím, leírás, borító, műfajok) a háttérben – a bejelentett / friss
+        // címeké később érkezik a TMDB-re (terv-3 83); a változott címek teljes sora jön
+        refreshDetails(titlesRes.data, (rows) => {
+          if (cancelled) return;
+          const byId = new Map(rows.map((r) => [r.id, r]));
+          setTitles((ts) => ts.map((t) => byId.get(t.id) ?? t));
+        }).catch((err) => console.warn('A TMDB-adatok frissítése sikertelen:', err.message));
+
         // sorozatok évadai a háttérben: a még évad nélküliek megkapják, a hetente
         // ellenőrzöttekhez az új (megjelent / bejelentett) évad felkerül
         // értesítések: rögtön, és az évad- / megjelenésfrissítés után újra, ha az változtatott
@@ -465,6 +479,8 @@ export default function Watchlist({ session }) {
         );
       }
       setLoading(false);
+      reloadDone.current?.();
+      reloadDone.current = null;
     }
 
     load();
@@ -477,6 +493,19 @@ export default function Watchlist({ session }) {
   // visszatéréskor (legalább 5 perc rejtve után) csendben újratölt – csontváz nélkül, a szűrők, a lapozás és
   // a nyitott adatlap marad –, és szól, ha közben új kiadás jött (terv-3 63)
   useAppFreshness(!loading && !readOnly && !failed, () => setReloadKey((k) => k + 1));
+
+  // lehúzás frissítéshez (terv-3 85): ugyanez a csendes újratöltés; net nélkül csak szól
+  function pullRefresh() {
+    if (!online) {
+      toast({ text: 'Nincs internetkapcsolat – a lista most nem frissíthető.' });
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      reloadDone.current?.();
+      reloadDone.current = resolve;
+      setReloadKey((k) => k + 1);
+    });
+  }
 
   // sikertelen betöltés után: ha visszajön a net, azonnal, egyébként félpercenként újrapróbálja
   useEffect(() => {
@@ -1045,6 +1074,64 @@ export default function Watchlist({ session }) {
     titlesRef.current = titles;
   }, [titles]);
 
+  // élő szinkron a gépek között (terv-3 86, lib/liveSync.js): a másik eszközön (vagy Mama oldalán) változott
+  // címek sorát a nézetből újratölti; a saját mentés visszhangja (ugyanaz a sor) nem változtat semmit, a még
+  // függő mentésű (lib/rowSaves.js – a válasza úgyis a friss sort hozza) és a visszavonható törlésű cím kimarad
+  useLiveSync(!loading && !readOnly && !failed, userId, {
+    async onTitles(ids, deletedIds) {
+      const known = (id) => titlesRef.current.some((t) => t.id === id);
+      const gone = new Set(deletedIds.filter(known));
+      let rows = [];
+      const wanted = ids.filter((id) => !gone.has(id));
+      if (wanted.length) {
+        const { data, error } = await supabase.from('titles_with_genres').select('*').in('id', wanted);
+        if (error) {
+          console.warn('Élő szinkron: a címek újratöltése sikertelen:', error.message);
+          return;
+        }
+        rows = data;
+        // a nálunk lévő, de a nézetből már nem jövő cím közben lekerült (a törlés jelzése elveszhetett)
+        const back = new Set(rows.map((r) => r.id));
+        for (const id of wanted) if (!back.has(id) && known(id) && !hasPendingSave(id)) gone.add(id);
+      }
+      for (const row of rows) {
+        if (hasPendingSave(row.id) || isPendingDelete(row.id)) continue;
+        const old = titlesRef.current.find((t) => t.id === row.id);
+        if (old && JSON.stringify(old) === JSON.stringify(row)) continue;
+        if (old) {
+          titlesRef.current = titlesRef.current.map((t) => (t.id === row.id ? row : t));
+          replaceTitle(row);
+        } else {
+          titlesRef.current = [row, ...titlesRef.current];
+          setTitles((ts) => (ts.some((t) => t.id === row.id) ? ts.map((t) => (t.id === row.id ? row : t)) : [row, ...ts]));
+        }
+      }
+      if (gone.size) {
+        titlesRef.current = titlesRef.current.filter((t) => !gone.has(t.id));
+        setTitles((ts) => ts.filter((t) => !gone.has(t.id)));
+      }
+    },
+    onNotifications() {
+      loadNotifications({ collect: false })
+        .then((ns) =>
+          setNotifications(
+            ns
+              .filter((n) => !dismissedIds.current.has(n.id))
+              .map((n) => (!n.read_at && readIds.current.has(n.id) ? { ...n, read_at: new Date().toISOString() } : n))
+          )
+        )
+        .catch((err) => console.warn('Élő szinkron:', err.message));
+    },
+    async onFranchises() {
+      const { data, error } = await supabase
+        .from('franchises')
+        .select('id, name, logo_path, tmdb_collection_ids, collections_checked_at');
+      if (error) console.warn('Élő szinkron: a franchise-ok újratöltése sikertelen:', error.message);
+      else setFranchises(data.sort(byName));
+    },
+    onResync: () => setReloadKey((k) => k + 1),
+  });
+
   // ask: false – a gyűjtemény-ablak nézési sorrendjéből (az ablak alatt a sáv nem kattintható,
   // ott a tétel alatt kérdez)
   function handleRowUpdated(row, ask = true) {
@@ -1074,6 +1161,9 @@ export default function Watchlist({ session }) {
     // (a visszavont törlésnél a sor esetleg már a listán van – nem kerül fel kétszer)
     titlesRef.current = [row, ...titlesRef.current.filter((x) => x.id !== row.id)];
     setTitles((ts) => [row, ...ts.filter((x) => x.id !== row.id)]);
+    // „Már láttam” (terv-3 80): megnézettként felvett, értékelés nélküli cím – rögtön kérdezünk (nyitott ablak
+    // fölött a sáv nem kattintható: ott az adatlap / a színész lapja jelzi)
+    if (row.status === 'watched' && !row.my_rating && !document.querySelector('dialog[open]')) askRating(row);
     if (row.media_type !== 'movie' || row.franchise_id != null || row.tmdb_collection_id == null) return;
     pendingSuggest.current.push(row.id);
     clearTimeout(suggestTimer.current);
@@ -1907,6 +1997,7 @@ export default function Watchlist({ session }) {
         />
       )}
 
+      <PullRefresh enabled={!loading} onRefresh={pullRefresh} />
       <Toaster />
     </main>
   );

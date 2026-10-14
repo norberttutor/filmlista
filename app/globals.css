@@ -1360,6 +1360,24 @@ main.login::after {
   box-shadow: none;
 }
 
+/* „Hozzáadás a listához” + „Már láttam” (terv-3 80) egymás mellett; a második halk, körvonalas */
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.result-actions .primary {
+  margin-top: 0;
+}
+
+.result-actions .ghost {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+}
+
 /* "✓ A listán": halványzöld címke ugyanott, ahol a gomb lenne */
 .on-list {
   width: fit-content;
@@ -3597,6 +3615,52 @@ button.season:hover {
 
 .import-arrow b {
   color: var(--accent);
+}
+
+/* ---------- Lehúzás frissítéshez (terv-3 85, components/PullRefresh.js) ----------
+   A telepített appban (a <html data-pull-refresh>): a lap teteje nem „rugózik” / nem tölt újra magától; a
+   jelző fölül, középen a húzással együtt lejjebb csúszik és fordul, a küszöbön türkiz keretet kap,
+   frissítés közben forog („Mozgás” szakasz) */
+:root[data-pull-refresh] body {
+  overscroll-behavior-y: contain;
+}
+
+.pull-refresh {
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  left: 50%;
+  z-index: 40;
+  translate: -50% calc(var(--pull, 0px) - 3rem);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pull-refresh[data-state] {
+  opacity: 1;
+}
+
+.pull-refresh-dot {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 6px 18px rgb(var(--shade) / calc(0.45 * var(--shade-k)));
+}
+
+.pull-refresh[data-state='ready'] .pull-refresh-dot,
+.pull-refresh[data-state='refreshing'] .pull-refresh-dot {
+  border-color: var(--accent-line);
+  background: color-mix(in oklab, var(--accent) 12%, var(--surface));
+}
+
+.pull-refresh-dot svg {
+  width: 1.3rem;
+  height: 1.3rem;
+  rotate: var(--turn, 0deg);
 }
 
 /* ---------- Értesítősáv (toast, lib/toast.js) ---------- */
@@ -6248,6 +6312,14 @@ body:has(.editor[open]) {
   justify-self: end;
 }
 
+/* telefonon a „+ Hozzáadás” és a „Már láttam” (terv-3 80) egymás alatt – a cím kapja a helyet */
+@media (max-width: 640px) {
+  .person-row-side {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+}
+
 .person-more {
   justify-self: start;
 }
@@ -6400,6 +6472,13 @@ body:has(.editor[open]) {
 
 .preview-add p {
   margin: 0;
+}
+
+/* „Hozzáadás a listához” + „Már láttam” (terv-3 80) */
+.preview-add-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .added-note {
@@ -7443,6 +7522,22 @@ a.wo-share-open {
     opacity: 0;
     translate: 0 -6px;
     scale: 0.98;
+  }
+}
+
+/* lehúzás frissítéshez (terv-3 85): elengedés után, amíg a lista újratölt, a jelző forog (az ismétlődő
+   animáció a frissítés végéig tart; „kevesebb mozgás” módban áll) */
+.pull-refresh:not([data-state]) {
+  transition: translate 0.2s, opacity 0.2s;
+}
+
+.pull-refresh[data-state='refreshing'] .pull-refresh-dot svg {
+  animation: pull-spin 0.8s linear infinite;
+}
+
+@keyframes pull-spin {
+  to {
+    rotate: calc(var(--turn, 0deg) + 360deg);
   }
 }
 

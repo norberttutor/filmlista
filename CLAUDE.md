@@ -291,7 +291,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   helyével); a lap sora a `titles` propból jön (a listáról nyitottnál `rowId` szerint, különben
   TMDB-azonosító szerint) – ha nincs a listán, a lap **előnézet** (`TitlePage`, `preview`): a
   `/api/tmdb/details` adataival, a szerkesztő mezők és a Törlés helyett „Hozzáadás a
-  listához” (`addTitle(item, details)` – nem kérdez újra) és „Bezárás”; felvétel után a lap új
+  listához” (`addTitle(item, details)` – nem kérdez újra), mellette „Már láttam” (terv-3 80: megnézettként; utána a
+  `.added-note`: „✓ Felkerült a listádra megnézettként – hogy tetszett? Alább megadhatod a csillagokat.”) és „Bezárás”; felvétel után a lap új
   kulccsal rendes adatlappá válik („✓ Felkerült a listádra”, `.added-note`; Norbi döntése: nem
   zárul be). Előnézet nyílik a Cím hozzáadása találatának borítójáról / címéről és a Felfedezés
   borítójáról (`onPreview` → `Watchlist.openEditor`), valamint a Hasonló címek borítójáról az
@@ -470,6 +471,27 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   egyszer, egyszerre legfeljebb 2 címé), lekéri a providers / credits / videos route-ot ugyanazzal az URL-lel,
   mint a `TitleEditor`, így megnyitáskor a böngésző gyorsítótárából jönnek (a Hasonló címek nem – az a
   legnehezebb). Ha a TitleEditor kérésének paraméterei változnak, itt is
+- `components/PullRefresh.js` – **lehúzás frissítéshez** (terv-3 85, 2026-10-14, látványterv nélkül – Norbi
+  kérése): csak érintéssel és a telepített appban (`isStandalone()`: `display-mode: standalone` / fullscreen /
+  minimal-ui – a böngészőben a Chrome saját lehúzása marad); a lap tetején (`scrollY === 0`) lefelé húzva
+  (csillapítva, a függőleges mozdulat számít) fölül középen kis kör (`.pull-refresh`, `--pull`, `--turn`)
+  követi az ujjat és fordul, 72 px-nél türkiz keret (`data-state="ready"`), elengedve forog (`refreshing`,
+  legalább 0,6 s) – a `Watchlist.pullRefresh()` a csendes újratöltés (`reloadKey`, mint a 63-as visszatérés;
+  a `reloadDone` ígéret a betöltés végén teljesül); net nélkül csak sáv: „Nincs internetkapcsolat – a lista
+  most nem frissíthető.”. Nyitott `dialog`-nál és belül görgetett elemben (pl. kinyitott szűrősor) nem indul.
+  A `<html data-pull-refresh>` alatt a `body` `overscroll-behavior-y: contain`. Teszt: `munka/e2e/test-1014.mjs`
+  (CDP-érintés, a `matchMedia` kiegészítve)
+- `lib/liveSync.js` – **élő szinkron a gépek között** (terv-3 86, 2026-10-14): `useLiveSync(enabled, userId,
+  { onTitles(ids, deletedIds), onNotifications, onFranchises, onResync })` – Supabase Realtime
+  (`postgres_changes`; a `supabase_realtime` publikációban: `titles`, `title_seasons`, `notifications`,
+  `franchises` – `25_realtime.sql`); a beszúrás / módosítás `user_id`-re szűrve (az RLS is csak a sajátot
+  engedi), a törlésről csak a kulcs jön (nem szűrhető – a hívó csak a nála lévőt veszi le); 0,4 mp-ig gyűjt;
+  újrakapcsolódás után `onResync` (csendes teljes újratöltés). A `Watchlist` (net mellett, a friss listával)
+  a változott címek sorát a nézetből tölti újra (az évad változása is a címé), a saját mentés visszhangját
+  (azonos sor) kihagyja, a függő mentésű (`hasPendingSave` – `lib/rowSaves.js`) és a visszavonható törlésű
+  (`isPendingDelete` – `lib/titles.js`) címhez nem nyúl, a meglévőt a `replaceTitle`-lel (a látható a helyén
+  marad); az értesítéseket gyűjtés nélkül (`loadNotifications({ collect: false })`), a franchise-okat
+  újratölti. Teszt: `munka/e2e/test-1014.mjs`
 - `lib/useBackdropClose.js` – `useBackdropClose(dialogRef, { onClose, canClose, onBlocked })` →
   `{ onPointerDown, onClick }` a `<dialog>`-ra: kikattintásra (a háttérre) bezár, telefonon
   (≤ 640 px) nem; a lenyomásnak is kívül kell lennie (a kifelé húzott kijelölés nem zár); a
@@ -485,7 +507,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   ADERTIS” (az ADERTIS link: https://www.adertis.hu, új lapon – Norbi kérése, 2026-10-05; külön
   `span.sponsor`, nem `p` – a teszt egy bekezdést vár a láblécben)
 - `components/TitleSearch.js` – „Cím hozzáadása” panel: késleltetett (400 ms) TMDB keresés,
-  találati lista, „Hozzáadás a listához” gomb; a már listán lévőknél „✓ A listán”;
+  találati lista, „Hozzáadás a listához” gomb, mellette halk „Már láttam” (terv-3 80, `.result-actions`: megnézettként
+  – ma – kerül fel, a `Watchlist.handleAdded` rögtön „Hogy tetszett?” sávot ad, ha nincs nyitott ablak; a
+  Felfedezésben nincs); a már listán lévőknél „✓ A listán”;
   `initialQuery` (kitöltve nyílik); üres keresőnél a felfedező sorok (`Discover`); a találat
   borítója (`.thumb-btn`, egérrel) és címe (`.title-btn`) az adatlapot nyitja (`onPreview`,
   előnézet – a listán lévőé szerkeszthető), a Felfedezésben a borító (`.discover-poster`)
@@ -691,7 +715,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   híján angolul – „angolul”). **„A listádon (N)”** borítórácsban (`.person-grid`; telefonon 3 oszlop): halványzöld
   keret, megnézett / abbahagyott szürke + „✓ Megnézve” + saját csillag (borostyán), a még meg nem jelent indigó
   szaggatott + „Hamarosan”; **„További filmjei és sorozatai (N)”** soronként (`.person-row`: kis borító, cím, év ·
-  típus · szerep, jobbra „+ Hozzáadás” / „✓ A listán”), ismertség (TMDB szavazatszám) szerint, 10 látszik, a többi
+  típus · szerep, jobbra „+ Hozzáadás” + „Már láttam” – terv-3 80, telefonon egymás alatt – / „✓ A listán”), ismertség (TMDB szavazatszám) szerint, 10 látszik, a többi
   „Továbbiak mutatása (N)”-re. Norbi döntései: rendező nincs; a „további” címekből kimarad a `minor` (borító
   nélküli, animáció / dokumentum / talkshow / hírek / valóságshow / szappanopera, sorozatban ≤ 2 rész –
   vendégszereplés –, önmaga-szerep), a listán lévő akkor is látszik. A csoport a lap megnyitásakori listából: a
@@ -725,8 +749,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `restoreSeasons()` (visszavonás), `setSeasonDownloaded()`, `addSeason()` (kézi, mai dátummal),
   `removeLastSeason()`,
   `refreshSeasons()` (háttér), `seasonAired()`, `NEXT_SEASON_STATUS`.
-  Az `addTitle(item, details)` második paramétere a már lekérdezett `/api/tmdb/details` válasz
-  (az előnézeti adatlapé), ha van. A 8 mp-es visszavonási idő alatt újra felvett cím: az `addTitle`
+  Az `addTitle(item, details, { watched })` második paramétere a már lekérdezett `/api/tmdb/details` válasz
+  (az előnézeti adatlapé), ha van; `watched` (terv-3 80, „Már láttam”): Megnézve, `watched_at` = ma – sorozatnál a
+  már megjelent évadok megnézettek (a sorozat állapotát a trigger számolja), a bejelentettek nem. A 8 mp-es visszavonási idő alatt újra felvett cím: az `addTitle`
   a törlést vonja vissza (`registerPendingDelete`, kódaudit #22).
   Megjelenés: `refreshReleases()` (háttér), `releaseState(t)` – `{ kind: 'soon', date | year }`
   (a moziba sem került még, vagy csak digitálisan jön; dátum nélkül jövőbeli / hiányzó év),
@@ -752,7 +777,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   nézik, van-e)
 - `lib/refreshDue.js` – a háttérfrissítések „esedékes-e” szabályai (terv-3 34, E2, 2026-10-06):
   `imdbDue` (van IMDb ID, 14 napnál régebbi / hiányzó), `backdropDue` (még nem néztük),
-  `seasonsDue` (sorozat, 7 nap), `releaseDue` (a megjelenési dátumoké), `collectionDue` (a filmek
+  `seasonsDue` (sorozat, 7 nap), `releaseDue` (a megjelenési dátumoké), `detailsDue` (a TMDB-adatok – terv-3 83:
+  meg nem nézett, nem abbahagyott cím havonta, a még meg nem jelent / dátum nélküli hetente; az utolsó
+  ellenőrzés híján a `created_at` számít), `collectionDue` (a filmek
   TMDB-gyűjteménye – terv-3 35), `collectionPartsDue` (franchise: a gyűjteményei új részei, 7 nap –
   terv-3 36), `budapestToday()`. A
   `lib/titles.js` `refresh…(titles, onUpdated)` függvényei csak akkor hívják a route-ot, ha a
@@ -798,6 +825,16 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (az IMDb-érték címenként egy OMDb-kérés lenne, a napi 1000-es keretből; Norbi az A változatot
   választotta); animációs cím nem (terv-3 60, 2026-10-12 – így a „Neked ajánlott” sorban sem). A kliens `v=3` paraméterrel kéri (a böngésző egynapos gyorsítótára miatt; a szűrés
   következő változásakor emeld)
+- `app/api/tmdb/details-refresh/route.js` – **frissítés a TMDB-ről** (terv-3 83, 2026-10-14): `POST` törzs nélkül
+  a háttérfrissítés (40-esével, a `detailsDue` szerint; a `Watchlist` betöltéskor hívja – `refreshDetails()`,
+  legfeljebb 15 kör, a változott címek teljes sorát kapja), `{ id }`-vel egy cím kézzel (az adatlap „Frissítés a
+  TMDB-ről” linkje – `.tmdb-refresh` a „Törlés a listáról” mellett; utána 4 mp-ig „✓ Frissítve” / „✓ Nincs
+  újdonság a TMDB-n”; `refreshTitleDetails(id)` → `{ row, changed }`). A felhasználó jogaival; a saját adatokhoz
+  nem nyúl. A **cím csak akkor** cserélődik a TMDB magyar címére, ha most az eredeti cím áll ott (felvételkor még
+  nem volt magyar – Norbi döntése, 2026-10-14: a kézzel adott címek, pl. „Pókember 2.1”, maradnak); a leírás
+  (`pickOverview` – `lib/server/tmdb.js`, a details route-tal közös: magyar, ha nincs, angol), a borító, a pontos
+  dátum (+ év) és a műfajok (`title_genres` cseréje), ha a TMDB-n más. Mindig beírja a `details_checked_at`-et;
+  a TMDB-n már nem létező címet csak megjelöli
 - `app/api/tmdb/backdrops/route.js` – `POST`: a még meg nem nézett címek (`backdrop_checked_at`
   üres) háttérképét lekéri a TMDB-ről és elmenti (40-esével, a felhasználó jogaival; ha nincs
   háttérkép vagy a cím már nincs a TMDB-n, csak megjelöli). A `Watchlist` betöltéskor hívja
@@ -1022,7 +1059,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `19_title_collection.sql` (terv-3 35), NULL-t engedők, `release_date` (a TMDB elsődleges dátuma – film:
   `release_date`, sorozat: `first_air_date`; a rendezéshez – `23_release_date.sql`, terv-3 55, NULL-t enged;
   felvételkor a details route adja, a meglévőket 2026-10-10-én egyszer, szkripttel töltöttük fel –
-  `munka/terv-3/terv-55/release-date-feltoltes.mjs`; háttérfrissítése nincs),
+  `munka/terv-3/terv-55/release-date-feltoltes.mjs`; a 83-as óta a TMDB-frissítés is frissíti), `details_checked_at`
+  (mikor frissítettük a TMDB-ről – `26_details_refresh.sql`, terv-3 83, NULL-t enged),
   `created_at`, `updated_at` (trigger); egyedi: `(user_id, media_type, tmdb_id)`
 - `title_seasons (title_id FK → titles on delete cascade, season_number ≥ 1, user_id default
   auth.uid(), name, episode_count, air_date, status FK → statuses, is_downloaded, watched_at,
@@ -1128,6 +1166,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `title_genres (title_id, genre_id)` – kapcsolótábla
 - `titles_with_genres` nézet (`security_invoker`): `titles.*` + `status_name` + `genres text[]`
   + `seasons jsonb` (az évadok évadszám szerint; filmnél / évad nélkül `[]`)
+- Realtime (`25_realtime.sql`, terv-3 86): a `titles`, `title_seasons`, `notifications`, `franchises` a
+  `supabase_realtime` publikációban (replica identity default: a törlésről csak a kulcs megy ki).
 - Minden táblán RLS: a felhasználó csak a saját címeit látja/módosítja. A `titles` írásakor a
   `franchise_id` is csak saját franchise lehet (`22_titles_franchise_check.sql`, kódaudit #41).
 - Sémamódosításnál új számozott SQL fájlt írj a `supabase/` mappába (pl. `05_...sql`).
@@ -1309,6 +1349,10 @@ film nem kerül be ideiglenesen a szűrt listába (a „helyén marad” – `ke
 Azonnali mentés az adatlapon (terv-3 79, „B”, 2026-10-14): nincs „Mentés” / „Mégse”; a módosított gombon türkiz pipa,
 alul „… – mentve · Visszavonás” (lépésenként). Az IMDb-importablak a gyorsan újra választott fájlnál nem ürül ki (a
 késve érkező „close” esemény – `ImdbRatingsImport`).
+Kényelmi kör, 2. rész (2026-10-14): lehúzás frissítéshez a telepített appban (85), élő szinkron a gépek között –
+Supabase Realtime (86), frissítés a TMDB-ről – magyar cím (ha még az eredeti állt ott), leírás, borító, műfajok,
+magától és az adatlapról (83); „Már láttam” – megnézettként felvétel a keresőből, az előnézetből és a színész
+lapjáról (80).
 A még meg nem jelent filmek szaggatott kerettel és dátumos jelvénnyel, a harang szól a digitális
 megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül). Asztalon az adatlap
 kikattintásra bezárul (terv-3 24-es pontja, 2026-10-04). „Hol
@@ -1472,12 +1516,14 @@ magadtól ne javasold újra): 81 – évszám a „Cím hozzáadása” keresőb
 87 – „Cím másolása” az adatlapon, 88 – „Nemrég megnyitott” adatlapok.
 - **79 – azonnali mentés az adatlapon – kész** (2026-10-14, „B” – pipa a módosított gombon, „… – mentve · Visszavonás”;
   teszt: `test.mjs` 115/115, `test-gesztus` 5/5, `test-1013b` 11/11, `test-audit-10` 9/9, `test-58` 7/7)
-- **80 – „Hozzáadás megnézettként”** („Már láttam” a keresőben, az előnézeten, a színész lapján) – ~1–1,5 óra
-- **83 – frissítés a TMDB-ről** (cím, leírás, borító, műfajok – magától és gombbal) – ~2 óra
+- **80 – „Hozzáadás megnézettként” – kész** (2026-10-14; „Már láttam” a keresőben, az előnézeten, a színész lapján;
+  teszt: `munka/e2e/test-80.mjs` 5/5)
+- **83 – frissítés a TMDB-ről – kész** (2026-10-14; a cím csak ha az eredeti állt ott – Norbi döntése; `26_details_refresh.sql`
+  élesben; teszt: `munka/e2e/test-1014.mjs` 10/10)
 - **84 – új évad dátuma a sorozat kártyáján / során** („3. évad · márc. 5.”) – ~1,5–2 óra (látványterv)
-- **85 – lehúzás frissítéshez a telefonos appban** – ~1–1,5 óra (kis látványterv)
-- **86 – élő szinkron a gépek között** (Supabase Realtime) – ~2–3 óra
-Hátravan: 78 – ~2–3 óra; 80, 83–86 (5 pont) – ~8–10 óra.
+- **85 – lehúzás frissítéshez a telefonos appban – kész** (2026-10-14, Norbi kérésére látványterv nélkül; teszt: `test-1014.mjs`)
+- **86 – élő szinkron a gépek között – kész** (2026-10-14, Supabase Realtime; `25_realtime.sql` élesben; teszt: `test-1014.mjs`)
+Hátravan: 78 – ~2–3 óra; 84 – ~1,5–2 óra (látványterv).
 **Lekerült a roadmapről** (Norbi döntése, 2026-10-08: a közeljövőben nincs tervben; magadtól ne
 javasold újra): **25 – admin jogosultság**, **26 – regisztráció** (a meglévőkön kívül más felhasználó
 nem lesz, Mama fiókja pedig a 13-as óta korlátozott). A részletes tervük a TERV.md-ben megmaradt.

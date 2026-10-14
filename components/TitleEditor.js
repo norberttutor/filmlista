@@ -14,6 +14,7 @@ import {
   DETAILS_V,
   mamaApplies,
   mamaLabel,
+  refreshTitleDetails,
 } from '@/lib/titles';
 import { saveRow } from '@/lib/rowSaves';
 import StarRating from '@/components/StarRating';
@@ -219,8 +220,9 @@ export default function TitleEditor({
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  function markAdded(id) {
-    setStack((s) => s.map((entry) => (entry.id === id ? { ...entry, added: true } : entry)));
+  // watched: „Már láttam”-mal került fel (terv-3 80) – a lap a csillagokra hívja fel a figyelmet
+  function markAdded(id, watched = false) {
+    setStack((s) => s.map((entry) => (entry.id === id ? { ...entry, added: watched ? 'watched' : true } : entry)));
   }
 
   // telefonon az ablak alsó lap: a fogantyút lefelé húzva bezárul (elég messzire vagy gyorsan),
@@ -314,7 +316,7 @@ export default function TitleEditor({
             onBack={() => goBack()}
             onPreview={openPreview}
             onPerson={openPerson}
-            onAddedHere={() => markAdded(page.id)}
+            onAddedHere={(watched) => markAdded(page.id, watched)}
             close={close}
             closeNow={() => dialogRef.current.close()}
             {...pageProps}
@@ -386,7 +388,10 @@ function TitlePage({
   const saveId = useRef(0);
   const flashTimer = useRef(0);
   const undoTimer = useRef(0);
-  useEffect(() => () => (clearTimeout(flashTimer.current), clearTimeout(undoTimer.current)), []);
+  useEffect(() => () => (clearTimeout(flashTimer.current), clearTimeout(undoTimer.current), clearTimeout(tmdbTimer.current)), []);
+  // „Frissítés a TMDB-ről” (terv-3 83): null | 'busy' | 'changed' | 'same' (az utóbbi kettő 4 mp-ig látszik)
+  const [tmdbRefresh, setTmdbRefresh] = useState(null);
+  const tmdbTimer = useRef(0);
   const seasonActions = useSeasonActions(t, onChanged, setError);
   // előzetes a TMDB-ről (magyar, ha nincs: angol): megnyitáskor a háttérben kérdezzük le; a gomb
   // csak akkor jelenik meg, ha van. A lejátszó csak kattintásra töltődik (YouTube, adatkímélő mód).
@@ -469,6 +474,22 @@ function TitlePage({
     }
   }
 
+  // a cím TMDB-adatainak frissítése kézzel (magyar cím – ha még az eredeti áll ott –, leírás, borító, műfajok)
+  async function refreshFromTmdb() {
+    clearTimeout(tmdbTimer.current);
+    setTmdbRefresh('busy');
+    setError('');
+    try {
+      const { row: fresh, changed } = await refreshTitleDetails(t.id);
+      if (fresh) onChanged(fresh);
+      setTmdbRefresh(changed ? 'changed' : 'same');
+      tmdbTimer.current = setTimeout(() => setTmdbRefresh(null), 4000);
+    } catch (err) {
+      setTmdbRefresh(null);
+      setError(err.message);
+    }
+  }
+
   // a legutóbbi módosítás visszavonása (a következő Visszavonás az előzőt)
   function undoLast() {
     const last = undos[undos.length - 1];
@@ -519,12 +540,13 @@ function TitlePage({
 
   // előnézet: felvétel a listára (a már lekérdezett adatokkal); utána a lap a rendes adatlapra
   // vált (az ablak új lapot rajzol a friss sorral)
-  async function handleAdd() {
-    setBusy(true);
+  // watched: „Már láttam” (terv-3 80) – megnézettként kerül fel
+  async function handleAdd(watched = false) {
+    setBusy(watched ? 'watched' : 'add');
     setError('');
     try {
-      const added = await addTitle(entry.item, details);
-      onAddedHere();
+      const added = await addTitle(entry.item, details, { watched });
+      onAddedHere(watched);
       onAdded(added);
     } catch (err) {
       setError(err.message);
@@ -612,7 +634,9 @@ function TitlePage({
             )}
             {entry.added && (
               <p className="added-note" role="status">
-                ✓ Felkerült a listádra – itt beállíthatod az állapotát és az értékelését.
+                {entry.added === 'watched'
+                  ? '✓ Felkerült a listádra megnézettként – hogy tetszett? Alább megadhatod a csillagokat.'
+                  : '✓ Felkerült a listádra – itt beállíthatod az állapotát és az értékelését.'}
               </p>
             )}
             {/* keskenyebben (< 900 px, nincs nagy borító) itt, az előzetes fölött */}
@@ -661,9 +685,15 @@ function TitlePage({
           {preview ? (
             // előnézet: a szerkesztő mezők helyett egyetlen gomb
             <div className="preview-add">
-              <button type="submit" className="primary" disabled={busy || readOnly}>
-                {busy ? 'Hozzáadás…' : 'Hozzáadás a listához'}
-              </button>
+              <div className="preview-add-buttons">
+                <button type="submit" className="primary" disabled={Boolean(busy) || readOnly}>
+                  {busy === 'add' ? 'Hozzáadás…' : 'Hozzáadás a listához'}
+                </button>
+                {/* már látott cím: megnézettként kerül fel (terv-3 80) */}
+                <button type="button" className="ghost" disabled={Boolean(busy) || readOnly} onClick={() => handleAdd(true)}>
+                  {busy === 'watched' ? 'Hozzáadás…' : 'Már láttam'}
+                </button>
+              </div>
               <p className="muted small">Felvétel után itt beállíthatod az állapotát és az értékelését is.</p>
               {detailsError && (
                 <p className="error small" role="alert">
@@ -842,6 +872,21 @@ function TitlePage({
                   onClick={() => setConfirmingDelete(true)}
                 >
                   Törlés a listáról
+                </button>
+                <button
+                  type="button"
+                  className="link small tmdb-refresh"
+                  disabled={tmdbRefresh === 'busy'}
+                  onClick={refreshFromTmdb}
+                  title="A magyar cím (ha még az eredeti áll itt), a leírás, a borító és a műfajok a TMDB-ről"
+                >
+                  {tmdbRefresh === 'busy'
+                    ? 'Frissítés…'
+                    : tmdbRefresh === 'changed'
+                      ? '✓ Frissítve'
+                      : tmdbRefresh === 'same'
+                        ? '✓ Nincs újdonság a TMDB-n'
+                        : 'Frissítés a TMDB-ről'}
                 </button>
                 <span className="spacer" />
                 <button type="button" className="ghost" onClick={close}>

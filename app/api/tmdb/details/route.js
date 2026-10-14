@@ -1,5 +1,5 @@
 import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
-import { tmdbFetch, tmdbErrorResponse, yearOf, pickSeasons, pickReleaseDates, cached, cachedResponse, HOUR_S } from '@/lib/server/tmdb';
+import { tmdbFetch, tmdbErrorResponse, yearOf, pickSeasons, pickReleaseDates, pickOverview, cached, cachedResponse, HOUR_S } from '@/lib/server/tmdb';
 
 const HOUR = HOUR_S * 1000;
 import { omdbEnabled, fetchImdbRating } from '@/lib/server/omdb';
@@ -18,13 +18,6 @@ async function imdbFields(imdbId) {
     console.error(err);
     return {};
   }
-}
-
-// Ha nincs magyar leírás, az angolt használjuk – az is jobb a semminél.
-function pickOverview(data) {
-  if (data.overview) return data.overview;
-  const english = data.translations?.translations?.find((t) => t.iso_639_1 === 'en');
-  return english?.data?.overview || null;
 }
 
 // GET /api/tmdb/details?type=movie&id=438631

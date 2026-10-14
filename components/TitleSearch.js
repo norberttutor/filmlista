@@ -42,11 +42,12 @@ export default function TitleSearch({ existingKeys, recommendSeeds, onAdded, onP
     };
   }, [q]);
 
-  async function handleAdd(result) {
+  // watched: „Már láttam” (terv-3 80) – megnézettként kerül fel, a Watchlist rögtön megkérdezi, hogy tetszett
+  async function handleAdd(result, watched = false) {
     const key = titleKey(result);
-    setRowState((s) => ({ ...s, [key]: { busy: true } }));
+    setRowState((s) => ({ ...s, [key]: { busy: watched ? 'watched' : 'add' } }));
     try {
-      onAdded(await addTitle(result));
+      onAdded(await addTitle(result, null, { watched }));
       setRowState((s) => ({ ...s, [key]: {} }));
     } catch (err) {
       setRowState((s) => ({ ...s, [key]: { error: err.message } }));
@@ -135,15 +136,27 @@ export default function TitleSearch({ existingKeys, recommendSeeds, onAdded, onP
                   {existingKeys.has(key) ? (
                     <p className="on-list">✓ A listán</p>
                   ) : (
-                    <button
-                      type="button"
-                      className="primary"
-                      aria-describedby={titleId}
-                      disabled={state.busy}
-                      onClick={() => handleAdd(r)}
-                    >
-                      {state.busy ? 'Hozzáadás…' : 'Hozzáadás a listához'}
-                    </button>
+                    <div className="result-actions">
+                      <button
+                        type="button"
+                        className="primary"
+                        aria-describedby={titleId}
+                        disabled={Boolean(state.busy)}
+                        onClick={() => handleAdd(r)}
+                      >
+                        {state.busy === 'add' ? 'Hozzáadás…' : 'Hozzáadás a listához'}
+                      </button>
+                      {/* már látott cím: megnézettként kerül fel (terv-3 80) */}
+                      <button
+                        type="button"
+                        className="ghost"
+                        aria-describedby={titleId}
+                        disabled={Boolean(state.busy)}
+                        onClick={() => handleAdd(r, true)}
+                      >
+                        {state.busy === 'watched' ? 'Hozzáadás…' : 'Már láttam'}
+                      </button>
+                    </div>
                   )}
                   {state.error && (
                     <p className="error small" role="alert">
