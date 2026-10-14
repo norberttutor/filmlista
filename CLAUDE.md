@@ -487,7 +487,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `franchises` – `25_realtime.sql`); a beszúrás / módosítás `user_id`-re szűrve (az RLS is csak a sajátot
   engedi), a törlésről csak a kulcs jön (nem szűrhető – a hívó csak a nála lévőt veszi le); 0,4 mp-ig gyűjt;
   újrakapcsolódás után `onResync` (csendes teljes újratöltés). A `Watchlist` (net mellett, a friss listával)
-  a változott címek sorát a nézetből tölti újra (az évad változása is a címé), a saját mentés visszhangját
+  a változott címek sorát a nézetből tölti újra (az évad változása is a címé; a törlés utáni újbóli beszúrás – pl. mentés
+  visszaállítása – érvényteleníti a törlést: `pending.deleted.delete`), a saját mentés visszhangját
   (azonos sor) kihagyja, a függő mentésű (`hasPendingSave` – `lib/rowSaves.js`) és a visszavonható törlésű
   (`isPendingDelete` – `lib/titles.js`) címhez nem nyúl, a meglévőt a `replaceTitle`-lel (a látható a helyén
   marad); az értesítéseket gyűjtés nélkül (`loadNotifications({ collect: false })`), a franchise-okat
@@ -705,7 +706,22 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   napig gyorsítótárazva; a TitleEditor egyszer kéri le, `afterTransition` után). Asztalon (≥ 900 px)
   a bal oszlopban a „Hol nézhető?” alatt (`.cast.side`: kerek fotó, név, szerep), keskenyebben a
   leírás alatt egy sor („Szereplők: …”, `.cast-line`). A névre (asztalon a fotóra is – `button.cast-person`,
-  telefonon `button.cast-name`) kattintva a színész lapja nyílik az ablakon belül (`onPerson`, terv-3 61)
+  telefonon `button.cast-name`) kattintva a színész lapja nyílik az ablakon belül (`onPerson`, terv-3 61). **Összes
+  szereplő** (terv-3 91, 2026-10-14): a route legfeljebb 20-at ad (`pickCast`, `CAST_MAX`; a kérés `v=2` – `CREDITS_V`, a
+  `lib/prefetch.js` is), az első 3 alatt „Összes szereplő (N)” / „Kevesebb” (`.cast-more`); kibontva asztalon a bal
+  oszlopban (az `.editor-side` ilyenkor nem ragad – `:has(.cast[data-open])`), keskenyebben a sor alatt fotóval
+  (`.cast-all`). Teszt: `munka/e2e/test-91.mjs`
+- `components/TitleGallery.js` + `app/api/tmdb/images/route.js` – **képgaléria az adatlapon** (terv-3 95, 2026-10-14,
+  Norbi választása a látványterv után – https://claude.ai/artifact/BDEffdLNcJoJ4h3gtjsGWC: **asztalon „A”, telefonon
+  „B”**): a route `GET ?type&id` → `{ images }` (jelenetképek: előbb a felirat nélküliek, aztán az angolok, a legjobb
+  szavazatúak, legfeljebb 8; egy napig gyorsítótárazva; 404 → üres; a `lib/prefetch.js` is kéri); `galleryList()`: a
+  lap jelenetképe elöl + a többi. Asztalon (és jelenetkép nélkül telefonon is) `GalleryStrip` – „Képek N” sor a
+  Hasonló címek fölött (`.gallery`, 16:9-es képek, vízszintesen görgethető); telefonon (≤ 640 px, ha van jelenetkép)
+  `BackdropPager` – a fejléc képe lapozható (jobbra fent „‹ 1 / 8 ›” – `.backdrop-pager`, alul pöttyök, ujjal húzva,
+  koppintva nagy nézet – `.backdrop-zoom`). Nagy nézet: `GalleryLightbox` (`.gallery-lightbox`, a lapon belül, a
+  teljes képernyőn): ‹ › / nyilak / húzás, alul a kis képek, „× Bezárás”; az Esc (a window rögzítő fázisában – az
+  adatlap Esc-je előtt), a Vissza gomb és a vissza-gesztus (`useBackLayer`) csak a nagy nézetet zárja; az elhagyott
+  lapon bezárul. Sötét sziget mindkét témában (a lapozó és a pöttyök is). Teszt: `munka/e2e/test-95.mjs`
 - `components/PersonPage.js` + `app/api/tmdb/person/route.js` – **a színész lapja az adatlapon belül**
   (terv-3 61, 2026-10-12, Norbi választása a látványterv után: „kevert” –
   https://claude.ai/artifact/NKSkigYqGq9xnCoucYQVeM, `munka/terv-3/terv-61/`): a `TitleEditor` új lapja („‹ Vissza”,
@@ -1352,7 +1368,8 @@ késve érkező „close” esemény – `ImdbRatingsImport`).
 Kényelmi kör, 2. rész (2026-10-14): lehúzás frissítéshez a telepített appban (85), élő szinkron a gépek között –
 Supabase Realtime (86), frissítés a TMDB-ről – magyar cím (ha még az eredeti állt ott), leírás, borító, műfajok,
 magától és az adatlapról (83); „Már láttam” – megnézettként felvétel a keresőből, az előnézetből és a színész
-lapjáról (80).
+lapjáról (80). Képgaléria az adatlapon – asztalon „Képek” sor, telefonon lapozható jelenetkép, nagy nézet (95);
+összes szereplő az adatlapon (91); élő szinkron: a mentés visszaállítása után a címek nem tűnnek el (hibajavítás).
 A még meg nem jelent filmek szaggatott kerettel és dátumos jelvénnyel, a harang szól a digitális
 megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül). Asztalon az adatlap
 kikattintásra bezárul (terv-3 24-es pontja, 2026-10-04). „Hol
@@ -1523,6 +1540,13 @@ magadtól ne javasold újra): 81 – évszám a „Cím hozzáadása” keresőb
 - **84 – új évad dátuma a sorozat kártyáján / során** („3. évad · márc. 5.”) – ~1,5–2 óra (látványterv)
 - **85 – lehúzás frissítéshez a telefonos appban – kész** (2026-10-14, Norbi kérésére látványterv nélkül; teszt: `test-1014.mjs`)
 - **86 – élő szinkron a gépek között – kész** (2026-10-14, Supabase Realtime; `25_realtime.sql` élesben; teszt: `test-1014.mjs`)
+**Norbi kérése (2026-10-14): ötletkör – 89–98** (Claude javaslataiból; részletek: `munka/terv-3/TERV.md` „89–98”).
+**Elvetve** (Norbi, 2026-10-14 – magadtól ne javasold újra): 89 – „Következőnek” kitűzés, 90 – „Következik” a
+franchise-sávon, 92 – megosztás az adatlapról, 93 – IMDb-küszöb szűrő, 94 – hangalapú keresés, 96 – „Új” jelvény, 97 –
+franchise-idővonal, 98 – rezgés jelöléskor.
+- **91 – összes szereplő az adatlapon – kész** (2026-10-14; teszt: `munka/e2e/test-91.mjs` 4/4)
+- **95 – képgaléria az adatlapon – kész** (2026-10-14; asztalon „A” – „Képek” sor, telefonon „B” – lapozható jelenetkép;
+  https://claude.ai/artifact/BDEffdLNcJoJ4h3gtjsGWC; teszt: `munka/e2e/test-95.mjs` 6/6)
 Hátravan: 78 – ~2–3 óra; 84 – ~1,5–2 óra (látványterv).
 **Lekerült a roadmapről** (Norbi döntése, 2026-10-08: a közeljövőben nincs tervben; magadtól ne
 javasold újra): **25 – admin jogosultság**, **26 – regisztráció** (a meglévőkön kívül más felhasználó

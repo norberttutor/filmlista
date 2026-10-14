@@ -5,7 +5,7 @@
    Ez a sötét téma (az alap); a világos lent, „Világos téma”. A felsorolt elemek a „sötét szigetek”:
    világos témában is ezekkel a színekkel rajzolódnak (lent). */
 :root,
-:root[data-theme='light'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo) {
+:root[data-theme='light'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo, .gallery-lightbox, .backdrop-pager, .backdrop-dots) {
   --bg: oklch(22.04% 0.0199 258.35);          /* #151b24 vetítőterem-kék háttér */
   --surface: oklch(26.97% 0.0259 255.74);     /* #1e2733 */
   --line: oklch(33.59% 0.0296 252.57);        /* #2c3846 */
@@ -87,7 +87,7 @@
    nagyobb telítettség (a P3 határának 90%-a), így az olvashatóság nem változik */
 @media (color-gamut: p3) {
   :root,
-  :root[data-theme='light'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo) {
+  :root[data-theme='light'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo, .gallery-lightbox, .backdrop-pager, .backdrop-dots) {
     --accent: oklch(83.05% 0.1832 204.05);
     --accent-2: oklch(82.45% 0.1819 73.35);
   }
@@ -170,7 +170,7 @@
    fejléce, a Franchise-ok logódoboza) világosban is sötétek, mint egy mozivászon – a filmlogók fehérek,
    és a franchise-logókat sötét alapra fehérítjük (Norbi döntése, 2026-10-08). A sötét tokeneket a fenti
    :root szabály adja nekik; a szöveg színe innen öröklődik */
-:root[data-theme='light'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo) {
+:root[data-theme='light'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo, .gallery-lightbox, .backdrop-pager, .backdrop-dots) {
   color: var(--text);
 }
 
@@ -5393,7 +5393,8 @@ button.season:hover {
 }
 
 /* lenyitó gomb: mint a mezők felirata, mellette a nyíl (nyitva megfordul) */
-.similar-toggle {
+.similar-toggle,
+.gallery-title {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -6027,6 +6028,33 @@ body:has(.editor[open]) {
 .cast-text small {
   font-size: 0.76rem;
   color: var(--muted);
+}
+
+/* összes szereplő (terv-3 91): „Összes szereplő (N)” / „Kevesebb”; keskenyebben a kibontott lista fotóval a sor
+   alatt; asztalon kibontva a bal oszlop nem ragad (különben a hosszú lista vége nem látszana) */
+.cast-more {
+  justify-self: start;
+  width: fit-content;
+}
+
+.cast-all {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.6rem 0.9rem;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cast-all li {
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .editor-side:has(.cast[data-open]) {
+    position: relative;
+    top: 0;
+  }
 }
 
 .cast-line {
@@ -7325,13 +7353,13 @@ a.wo-share-open {
   --ambient-label: 30%; /* világosban a hangulatszín világos: kevesebb, hogy a felirat olvasható maradjon */
 }
 
-.title-editor[data-ambient] :is(.watch-title, .similar-toggle) {
+.title-editor[data-ambient] :is(.watch-title, .similar-toggle, .gallery-title) {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.title-editor[data-ambient] :is(.watch-title, .similar-toggle)::before {
+.title-editor[data-ambient] :is(.watch-title, .similar-toggle, .gallery-title)::before {
   content: '';
   flex: none;
   order: -1;
@@ -7915,6 +7943,277 @@ input[type='checkbox']:checked {
 @media (max-width: 899px) {
   .editor-backdrop {
     height: 11rem;
+  }
+}
+
+/* ---------- Képgaléria az adatlapon (terv-3 95, components/TitleGallery.js) ----------
+   Asztalon „A”: „Képek N” sor a Hasonló címek fölött (vízszintesen görgethető 16:9-es képek); telefonon „B”: a
+   fejléc jelenetképe lapozható (jobbra fent „‹ 1 / 8 ›”, alul pöttyök). Rákattintva nagy nézet – sötét sziget
+   mindkét témában (a :root szabály adja a sötét tokeneket). */
+.gallery {
+  display: grid;
+  gap: 0.6rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--line);
+}
+
+.gallery-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.gallery-title {
+  margin: 0;
+  cursor: default;
+}
+
+.gallery-count {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.gallery-strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 11.5rem;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0 0 0.6rem;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+}
+
+.gallery-strip li {
+  scroll-snap-align: start;
+}
+
+.gallery-strip button {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgb(var(--tint) / 0.06);
+  box-shadow: inset 0 0 0 1px rgb(var(--tint) / 0.08);
+  cursor: zoom-in;
+  transition: box-shadow 0.15s;
+}
+
+.gallery-strip button:hover,
+.gallery-strip button:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent);
+  outline: none;
+}
+
+.gallery-strip img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 640px) {
+  .gallery-strip {
+    grid-auto-columns: 9.5rem;
+  }
+}
+
+/* B – a fejléc képének lapozója (telefonon); a kép bal alján a kis borító és a cím úszik rá, ezért fölül jobbra */
+.editor-backdrop[data-pager] {
+  touch-action: pan-y;
+}
+
+.backdrop-zoom {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+
+.backdrop-pager {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.2rem;
+  border-radius: 999px;
+  color: var(--text);
+  background: rgb(var(--glass) / 0.55);
+  backdrop-filter: blur(8px);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.backdrop-pager button {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: inherit;
+  background: rgb(var(--tint) / 0.12);
+}
+
+.backdrop-pager span {
+  padding: 0 0.35rem;
+}
+
+.backdrop-dots {
+  position: absolute;
+  left: 50%;
+  bottom: 0.7rem;
+  z-index: 2;
+  display: flex;
+  gap: 0.35rem;
+  translate: -50% 0;
+  pointer-events: none;
+}
+
+.backdrop-dots i {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: rgb(var(--tint) / 0.45);
+}
+
+.backdrop-dots i[data-on] {
+  background: rgb(var(--tint) / 0.95);
+}
+
+/* nagy nézet: az adatlap fölött a teljes képernyőn */
+.gallery-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0.8rem;
+  padding: calc(env(safe-area-inset-top, 0px) + 1rem) 1.2rem calc(env(safe-area-inset-bottom, 0px) + 1.4rem);
+  color: var(--text);
+  background: rgb(var(--glass) / 0.97);
+  backdrop-filter: blur(14px);
+}
+
+.gallery-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.95rem;
+}
+
+.gallery-top b {
+  font-weight: 600;
+}
+
+.gallery-counter {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.gallery-close {
+  flex: none;
+}
+
+.gallery-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  touch-action: pan-y;
+}
+
+.gallery-stage img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgb(var(--shade) / 0.6);
+}
+
+.gallery-nav {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--text);
+  background: rgb(var(--tint) / 0.14);
+  translate: 0 -50%;
+}
+
+.gallery-nav:hover,
+.gallery-nav:focus-visible {
+  background: rgb(var(--tint) / 0.24);
+}
+
+.gallery-nav.prev {
+  left: 0.5rem;
+}
+
+.gallery-nav.next {
+  right: 0.5rem;
+}
+
+.gallery-thumbs {
+  display: flex;
+  justify-content: center;
+  gap: 0.45rem;
+  overflow-x: auto;
+  padding: 0.2rem;
+}
+
+.gallery-thumbs button {
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: none;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+
+.gallery-thumbs button[aria-current='true'] {
+  opacity: 1;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.gallery-thumbs img {
+  display: block;
+  width: 5.5rem;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+@media (max-width: 640px) {
+  .gallery-nav {
+    display: none;
+  }
+
+  .gallery-thumbs {
+    justify-content: flex-start;
+  }
+
+  .gallery-thumbs img {
+    width: 3.6rem;
   }
 }
 

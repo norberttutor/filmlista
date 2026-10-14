@@ -31,10 +31,15 @@ import { usePosterColor, ambientProps } from '@/lib/posterColor';
 import { canMorph, MORPH_NAME, afterTransition } from '@/lib/viewTransition';
 import { useBackdropClose } from '@/lib/useBackdropClose';
 import { pushDialogPage, popDialogPage } from '@/lib/backClose';
+import { useMediaQuery } from '@/lib/useMediaQuery';
+import { galleryList, GalleryStrip, BackdropPager, GalleryLightbox } from '@/components/TitleGallery';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500'; // a nagy borító (asztalon)
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/'; // a háttérkép (telefonon w780, asztalon w1280)
 const PHONE_QUERY = '(max-width: 640px)';
+// a /api/tmdb/credits kérés v paramétere (a böngésző egy napig tárolja a választ – a 91-es óta 20 szereplőt ad);
+// a lib/prefetch.js is ezzel kéri
+const CREDITS_V = 2;
 
 // Rádiógombok "chip" formában; a kiválasztottra újra kattintva visszaáll üresre.
 const DOWNLOADED_OPTIONS = [{ code: 'yes', name: 'Letöltve' }];
@@ -398,6 +403,8 @@ function TitlePage({
   // A háttérben érkező adatok a megnyitás mozgásának végét megvárják (afterTransition).
   const [trailer, setTrailer] = useState(null);
   const [playing, setPlaying] = useState(false);
+  // a képgaléria nagy nézete (terv-3 95): a kép indexe, vagy null – itt, mert az elhagyott lap (lent) zárja
+  const [zoom, setZoom] = useState(null);
   useEffect(() => {
     const controller = new AbortController();
     apiGet('/api/tmdb/videos', { type: t.media_type, id: t.tmdb_id }, { signal: controller.signal })
@@ -409,7 +416,10 @@ function TitlePage({
   const [wasActive, setWasActive] = useState(active);
   if (wasActive !== active) {
     setWasActive(active);
-    if (!active) setPlaying(false);
+    if (!active) {
+      setPlaying(false);
+      setZoom(null);
+    }
   }
   // „Hol nézhető?”: a magyarországi streamingszolgáltatók, szintén a háttérben (ha nincs, vagy
   // nem sikerül, a blokk nem jelenik meg)
@@ -422,11 +432,27 @@ function TitlePage({
     return () => controller.abort();
   }, [t.media_type, t.tmdb_id]);
 
+  // képgaléria (terv-3 95): a cím jelenetképei, szintén a háttérben, a mozgás után. Asztalon „Képek” sor (A),
+  // telefonon (≤ 640 px, ha van jelenetkép) a fejléc képe lapozható (B); rákattintva nagy nézet (zoom: index)
+  const [images, setImages] = useState(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    apiGet('/api/tmdb/images', { type: t.media_type, id: t.tmdb_id }, { signal: controller.signal })
+      .then((data) => afterTransition().then(() => !controller.signal.aborted && setImages(data.images)))
+      .catch((err) => err.name !== 'AbortError' && console.warn('Képek:', err.message));
+    return () => controller.abort();
+  }, [t.media_type, t.tmdb_id]);
+  const gallery = galleryList(t.backdrop_path, images);
+  const isPhone = useMediaQuery(PHONE_QUERY);
+  const pager = isPhone && Boolean(t.backdrop_path) && gallery.length > 1;
+  const [shown, setShown] = useState(0); // B: a fejléc éppen látható képe
+  const backdropPath = pager ? gallery[Math.min(shown, gallery.length - 1)] : t.backdrop_path;
+
   // szereplők (terv-3 38): a top cast első 3 tagja, szintén a háttérben, a mozgás után
   const [cast, setCast] = useState(null);
   useEffect(() => {
     const controller = new AbortController();
-    apiGet('/api/tmdb/credits', { type: t.media_type, id: t.tmdb_id }, { signal: controller.signal })
+    apiGet('/api/tmdb/credits', { type: t.media_type, id: t.tmdb_id, v: CREDITS_V }, { signal: controller.signal })
       .then((data) => afterTransition().then(() => !controller.signal.aborted && setCast(data.cast)))
       .catch((err) => err.name !== 'AbortError' && console.warn('Szereplők:', err.message));
     return () => controller.abort();
@@ -576,14 +602,17 @@ function TitlePage({
     <div ref={pageEl} className={t.backdrop_path ? 'editor-page has-backdrop' : 'editor-page'} hidden={!active}>
       {/* a film széles jelenetképe az ablak tetején (TMDB) */}
       {t.backdrop_path && (
-        <div className="editor-backdrop" aria-hidden="true">
+        <div className="editor-backdrop" data-pager={pager ? '' : undefined}>
           <img
-            src={BACKDROP_BASE + 'w1280' + t.backdrop_path}
-            srcSet={`${BACKDROP_BASE}w780${t.backdrop_path} 780w, ${BACKDROP_BASE}w1280${t.backdrop_path} 1280w`}
+            src={BACKDROP_BASE + 'w1280' + backdropPath}
+            srcSet={`${BACKDROP_BASE}w780${backdropPath} 780w, ${BACKDROP_BASE}w1280${backdropPath} 1280w`}
             sizes="(max-width: 640px) 100vw, 60rem"
             alt=""
+            aria-hidden="true"
             decoding="async"
           />
+          {/* telefonon a fejléc képe lapozható (terv-3 95, „B”) */}
+          {pager && <BackdropPager count={gallery.length} index={Math.min(shown, gallery.length - 1)} onIndex={setShown} onOpen={setZoom} />}
         </div>
       )}
       <form onSubmit={handleSubmit}>
@@ -811,6 +840,9 @@ function TitlePage({
             </Lock>
           )}
 
+          {/* képgaléria (terv-3 95): asztalon (és jelenetkép nélkül telefonon is) „Képek” sor – „A” */}
+          {!pager && gallery.length > 1 && <GalleryStrip images={gallery} onOpen={setZoom} />}
+
           {/* a TMDB ajánlásai: egy kattintással a listára, a borítóra kattintva az adatlapjuk */}
           <SimilarTitles title={t} existingKeys={existingKeys} onAdded={onAdded} onPreview={onPreview} readOnly={readOnly} />
 
@@ -897,6 +929,19 @@ function TitlePage({
           </div>
         </div>
       </form>
+      {/* nagy nézet (terv-3 95): a képsorról / a fejléc képéről */}
+      {active && zoom != null && gallery.length > 0 && (
+        <GalleryLightbox
+          images={gallery}
+          title={t.title}
+          index={Math.min(zoom, gallery.length - 1)}
+          onIndex={(i) => {
+            setZoom(i);
+            if (pager) setShown(i); // a fejléc képe is követi
+          }}
+          onClose={() => setZoom(null)}
+        />
+      )}
     </div>
   );
 }
