@@ -27,6 +27,7 @@ import SimilarTitles from '@/components/SimilarTitles';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
 import { canMorph, MORPH_NAME, afterTransition } from '@/lib/viewTransition';
 import { useBackdropClose } from '@/lib/useBackdropClose';
+import { pushDialogPage, popDialogPage } from '@/lib/backClose';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500'; // a nagy borító (asztalon)
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/'; // a háttérkép (telefonon w780, asztalon w1280)
@@ -75,7 +76,7 @@ export default function TitleEditor({
   const drag = useRef(null); // telefonon a lehúzás: { y, t, dy }
   const pageRef = useRef(null); // az elöl lévő lap: { canLeave(), nudge() }
   const nextId = useRef(1);
-  const escAt = useRef(-Infinity); // az utolsó Esc lenyomása (a vissza-gesztustól így válik el)
+  const closeRef = useRef(null); // a mostani close (az Esc-figyelőnek)
   const scrolls = useRef(new Map()); // lap → görgetési hely (a „Vissza” ide tér vissza)
   // a megnyitott adatlapok, az utolsó látszik; added: előnézetből most került a listára
   const [stack, setStack] = useState(() => [{ id: 0, rowId: opened.id ?? null, item: opened, added: false }]);
@@ -154,6 +155,7 @@ export default function TitleEditor({
     scrolls.current.set(top.id, dialogRef.current.scrollTop);
     const id = nextId.current++;
     setStack((s) => [...s, { id, rowId: null, item, added: false }]);
+    pushDialogPage(dialogRef.current);
   }
 
   // a Szereplők neve: a színész lapja kerül előre (terv-3 61)
@@ -162,26 +164,44 @@ export default function TitleEditor({
     scrolls.current.set(top.id, dialogRef.current.scrollTop);
     const id = nextId.current++;
     setStack((s) => [...s, { id, person, added: false }]);
+    pushDialogPage(dialogRef.current);
   }
 
-  function goBack() {
-    if (!canLeavePage()) return;
+  // fromHistory: a böngésző Vissza-lépése – a lap bejegyzése már lekerült
+  function goBack(fromHistory = false) {
+    if (!canLeavePage()) return false;
     setStack((s) => s.slice(0, -1));
+    if (!fromHistory) popDialogPage(dialogRef.current);
+    return true;
   }
 
   // a böngésző / telefon Vissza gombja (terv-3 62, lib/backClose.js): előbb a lapokat lépteti vissza (mint
-  // a „‹ Vissza”), mentetlen módosításnál figyelmeztet és nyitva marad, különben bezár (mint az Esc)
+  // a „‹ Vissza” – a lapok saját előzmény-bejegyzést kapnak), mentetlen módosításnál figyelmeztet és nyitva
+  // marad, különben bezár (mint az Esc)
   useEffect(() => {
     dialogRef.current.backHandler = () => {
-      if (stack.length > 1) {
-        goBack();
-        return 'stay';
-      }
+      if (stack.length > 1) return goBack(true) ? 'stepped' : 'stay';
       if (!canLeavePage()) return 'stay';
       close();
       return 'closing';
     };
+    closeRef.current = close;
   });
+
+  // Esc (a dialog closedby="none", magától nem zár): a saját bezárás, nézetváltással. Az egész lapon
+  // figyeli – ha az elöl lévő gomb eltűnt (pl. „Visszavonás”), a fókusz a lapra kerül –, de másik
+  // ablakból nem; a belső mezők (pl. a franchise új neve) a saját Esc-jüket preventDefault-tal jelzik.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      const t = e.target;
+      if (t !== document.body && t !== document.documentElement && !dialogRef.current?.contains(t)) return;
+      e.preventDefault();
+      closeRef.current();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   function markAdded(id) {
     setStack((s) => s.map((entry) => (entry.id === id ? { ...entry, added: true } : entry)));
@@ -223,20 +243,16 @@ export default function TitleEditor({
       className="editor title-editor"
       aria-labelledby="editor-title"
       onClose={onClose}
-      onKeyDownCapture={(e) => {
-        if (e.key === 'Escape') escAt.current = performance.now();
-      }}
+      // A böngésző magától nem zárja (closedby): Androidon nyitott ablaknál a vissza-gesztus különben az
+      // ablakhoz jutna (Esc-szerű bezárási kérésként – a megállítását a Chrome korlátozza), így viszont az
+      // előzményekhez, ahol a lapokat lépteti (lib/backClose.js). Az Esc-et a keydown kezeli.
+      closedby="none"
       onCancel={(e) => {
-        // Androidon a vissza-gesztus is ide jut (a Chrome a megnyitott ablaknak adja, nem az
-        // előzményeknek – lib/backClose.js): ilyenkor a Vissza szabálya szerint lapot léptet. Ha a
-        // böngésző nem engedi megállítani (két gesztus között nem volt érintés), az ablak bezárul.
+        // closedby nélküli (régebbi) böngészőben a vissza-gesztus ide jut: a Vissza szabálya szerint
         if (!e.cancelable) return;
-        // Esc: a saját bezárás (nézetváltással), nem a böngésző azonnali bezárása
         e.preventDefault();
-        const esc = performance.now() - escAt.current < 500;
-        escAt.current = -Infinity;
-        if (esc) close();
-        else dialogRef.current.backHandler();
+        if (stack.length > 1) goBack();
+        else if (canLeavePage()) close();
       }}
       {...backdrop}
       {...ambientProps(ambient)}
@@ -263,7 +279,7 @@ export default function TitleEditor({
               active={active}
               apiRef={active ? pageRef : null}
               back={back}
-              onBack={goBack}
+              onBack={() => goBack()}
               onPreview={openPreview}
               onAdded={pageProps.onAdded}
               close={close}
@@ -279,7 +295,7 @@ export default function TitleEditor({
             active={active}
             apiRef={active ? pageRef : null}
             back={back}
-            onBack={goBack}
+            onBack={() => goBack()}
             onPreview={openPreview}
             onPerson={openPerson}
             onAddedHere={() => markAdded(page.id)}

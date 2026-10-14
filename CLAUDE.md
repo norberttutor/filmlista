@@ -440,14 +440,17 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   visszalépés célját a hívásakor rögzíti – pl. ⋮ menü → Statisztika). A modális `<dialog>`-okat egy
   MutationObserver maga kezeli: a Vissza az Esc-et utánozza (`cancel` esemény, ha nem tiltották, `close()`),
   így minden ablak a saját Esc-szabálya szerint – **új ablakhoz nem kell semmi**; saját szabály:
-  `dialog.backHandler` → 'stay' | 'closing' (az adatlap: előbb a lapokat lépteti vissza, mint a „‹ Vissza”,
+  `dialog.backHandler` → 'stay' | 'stepped' | 'closing' (az adatlap: előbb a lapokat lépteti vissza, mint a „‹ Vissza”,
   mentetlen módosításnál figyelmeztet és nyitva marad, különben bezár). **Androidon** (Chrome, telepített app)
   nyitott modális ablaknál a vissza-gesztus nem az előzményekhez jut, hanem az ablaknak, Esc-szerű `cancel`
-  eseményként (ablakbezárási kérés, close watcher) – ezért saját szabályú ablaknál a `cancel`-ben is kezelni kell:
-  az adatlap (`TitleEditor`) a valódi Esc-et (`keydown` időbélyeg, `escAt`) választja el a gesztustól, és ez
-  utóbbira a `backHandler`-t hívja; ha a `cancel` nem megállítható (két gesztus között nem volt érintés – a
-  böngésző szabálya), az ablak bezárul (hibajavítás, 2026-10-14; teszt: `munka/e2e/test-gesztus.mjs` –
-  `dialog.requestClose()`). Nem dialog réteg: `useBackLayer(open,
+  eseményként (bezárási kérés, close watcher), és a megállítását a Chrome korlátozza (érintés nélkül nem
+  engedi). Ezért az adatlap (`TitleEditor`) `closedby="none"`: a böngésző nem zárja magától, a gesztus az
+  előzményekhez jut; az Esc-et a lap `keydown`-figyelője kezeli (az ablakon belül vagy a `body`-n, a belső mező
+  `preventDefault`-ja tiltja); a `cancel` csak a `closedby`-t nem ismerő böngésző tartaléka. Az adatlap újabb
+  lapjai (színész, film) saját bejegyzést kapnak (`pushDialogPage`, a kattintás alatt – a popstate-ben
+  visszatett bejegyzést a Chrome a Vissza gombnál átugorhatja); a Vissza ezt veszi le (`backHandler` →
+  'stepped'), a „‹ Vissza” gomb `popDialogPage`-dzsel, a bezárás az összeset (`history.go(-n)`). Hibajavítás,
+  2026-10-14 (Norbi jelezte); teszt: `munka/e2e/test-gesztus.mjs`. Nem dialog réteg: `useBackLayer(open,
   close)` – a ⋮ menü, a harang, a „Cím hozzáadása” panel. Teszt: `munka/e2e/test-1013b.mjs` (a Navigation API
   `currentEntry.index`-ével ellenőrzi, hogy nem marad bejegyzés)
 - `lib/appVersion.js` + `app/api/version/route.js` – **friss adatok visszatéréskor és „Frissült az app”**
