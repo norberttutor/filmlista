@@ -198,7 +198,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   betűk és csillagok, a „Letöltve” jelvény csak ikon), asztali rácsban `minmax(185px)` kártyák, tömör
   sorközzel (1,5 rem) és margóval (mérés: `munka/dizajn-2/eszkozok/racs-meres.mjs`).
   Az állapotgombok darabszámai a többi szűrőt már figyelembe veszik.
-  A most szerkesztett sor a szűrés változásáig a helyén marad (`kept`), akkor is, ha már nem
+  A most szerkesztett (és addig is látható – a szűrőbe nem illő, épp felvett cím nem) sor a szűrés változásáig a helyén marad (`kept`), akkor is, ha már nem
   illik a szűrőbe (pl. „Nem letöltött” nézetben letöltöttnek jelölve) – így visszavehető.
   Üres találatnál üres állapot (`EmptyState`: rajz, cím, magyarázat, gombok): keresésnél „Nincs
   „…” a listádon” + „Keresés a TMDB-n: „…”” (a Cím hozzáadása panel kitöltve nyílik –
@@ -441,7 +441,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   MutationObserver maga kezeli: a Vissza az Esc-et utánozza (`cancel` esemény, ha nem tiltották, `close()`),
   így minden ablak a saját Esc-szabálya szerint – **új ablakhoz nem kell semmi**; saját szabály:
   `dialog.backHandler` → 'stay' | 'closing' (az adatlap: előbb a lapokat lépteti vissza, mint a „‹ Vissza”,
-  mentetlen módosításnál figyelmeztet és nyitva marad, különben bezár). Nem dialog réteg: `useBackLayer(open,
+  mentetlen módosításnál figyelmeztet és nyitva marad, különben bezár). **Androidon** (Chrome, telepített app)
+  nyitott modális ablaknál a vissza-gesztus nem az előzményekhez jut, hanem az ablaknak, Esc-szerű `cancel`
+  eseményként (ablakbezárási kérés, close watcher) – ezért saját szabályú ablaknál a `cancel`-ben is kezelni kell:
+  az adatlap (`TitleEditor`) a valódi Esc-et (`keydown` időbélyeg, `escAt`) választja el a gesztustól, és ez
+  utóbbira a `backHandler`-t hívja; ha a `cancel` nem megállítható (két gesztus között nem volt érintés – a
+  böngésző szabálya), az ablak bezárul (hibajavítás, 2026-10-14; teszt: `munka/e2e/test-gesztus.mjs` –
+  `dialog.requestClose()`). Nem dialog réteg: `useBackLayer(open,
   close)` – a ⋮ menü, a harang, a „Cím hozzáadása” panel. Teszt: `munka/e2e/test-1013b.mjs` (a Navigation API
   `currentEntry.index`-ével ellenőrzi, hogy nem marad bejegyzés)
 - `lib/appVersion.js` + `app/api/version/route.js` – **friss adatok visszatéréskor és „Frissült az app”**
@@ -1289,6 +1295,9 @@ epizódok, videók, különkiadások (23) kimaradtak. A lista 939 → 1025 cím.
 Hibajavítás (2026-10-13): a gyűjtemény-ablak a listán lévő, de a franchise-ba nem rendelt részt „+ Hozzárendelés”
 gombbal jelzi (nem „A listán”-ként), a számok csak a franchise címeit számolják; a „Javasolt gyűjtemények”
 keresőszavai újra levágják a „: Part Two”-féle végződést (a 53-as óta hiányoztak a regex fordított perjelei).
+Hibajavítás (2026-10-14, Norbi jelezte): Androidon a vissza-gesztus az adatlapon lapot léptet (színész lapjáról
+nyitott filmről a színészre), nem zárja be az egész ablakot; franchise-ra szűrve felvett, majd az adatlapján mentett
+film nem kerül be ideiglenesen a szűrt listába (a „helyén marad” – `kept` – csak a már látható sort tartja meg).
 A még meg nem jelent filmek szaggatott kerettel és dátumos jelvénnyel, a harang szól a digitális
 megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül). Asztalon az adatlap
 kikattintásra bezárul, ha nincs mentetlen módosítás (terv-3 24-es pontja, 2026-10-04). „Hol

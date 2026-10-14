@@ -968,15 +968,18 @@ export default function Watchlist({ session }) {
   }, [filterKey, visible]);
 
   // a nyitott szerkesztő ablak is a friss sort kapja (pl. évadok változása után); a sor a
-  // szűrés változásáig a helyén marad
+  // szűrés változásáig a helyén marad – de csak ha eddig is látszott: a szűrőbe nem illő, épp
+  // felvett cím (pl. franchise-ra szűrve, az adatlapján mentve) ne kerüljön a listába
   function replaceTitle(row) {
     const { filterKey, visible } = listRef.current;
     setTitles((ts) => ts.map((x) => (x.id === row.id ? row : x)));
+    const shown = visible.filter((e) => e.title.id === row.id);
     // nézési sorrendben a cím most látható tételei maradnak a helyükön
-    const items = visible.filter((e) => e.item && e.title.id === row.id).map((e) => e.key);
+    const items = shown.filter((e) => e.item).map((e) => e.key);
+    const ids = shown.length > 0 ? [row.id] : [];
     setKept((k) => ({
       key: filterKey,
-      ids: k.key === filterKey ? [...new Set([...k.ids, row.id])] : [row.id],
+      ids: k.key === filterKey ? [...new Set([...k.ids, ...ids])] : ids,
       items: k.key === filterKey ? [...new Set([...k.items, ...items])] : items,
     }));
     // más franchise-ba került: a régi sorrendből kikerült (az adatbázis-trigger is ezt teszi)

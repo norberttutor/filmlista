@@ -75,6 +75,7 @@ export default function TitleEditor({
   const drag = useRef(null); // telefonon a lehúzás: { y, t, dy }
   const pageRef = useRef(null); // az elöl lévő lap: { canLeave(), nudge() }
   const nextId = useRef(1);
+  const escAt = useRef(-Infinity); // az utolsó Esc lenyomása (a vissza-gesztustól így válik el)
   const scrolls = useRef(new Map()); // lap → görgetési hely (a „Vissza” ide tér vissza)
   // a megnyitott adatlapok, az utolsó látszik; added: előnézetből most került a listára
   const [stack, setStack] = useState(() => [{ id: 0, rowId: opened.id ?? null, item: opened, added: false }]);
@@ -222,10 +223,20 @@ export default function TitleEditor({
       className="editor title-editor"
       aria-labelledby="editor-title"
       onClose={onClose}
+      onKeyDownCapture={(e) => {
+        if (e.key === 'Escape') escAt.current = performance.now();
+      }}
       onCancel={(e) => {
+        // Androidon a vissza-gesztus is ide jut (a Chrome a megnyitott ablaknak adja, nem az
+        // előzményeknek – lib/backClose.js): ilyenkor a Vissza szabálya szerint lapot léptet. Ha a
+        // böngésző nem engedi megállítani (két gesztus között nem volt érintés), az ablak bezárul.
+        if (!e.cancelable) return;
         // Esc: a saját bezárás (nézetváltással), nem a böngésző azonnali bezárása
         e.preventDefault();
-        close();
+        const esc = performance.now() - escAt.current < 500;
+        escAt.current = -Infinity;
+        if (esc) close();
+        else dialogRef.current.backHandler();
       }}
       {...backdrop}
       {...ambientProps(ambient)}
