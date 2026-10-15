@@ -989,7 +989,9 @@ body:not(:has(.filters[data-stuck])) .top.collapsing[data-compact] {
   left: 0;
 }
 
-/* telefonon: a képernyő teljes szélességén, közvetlenül a gomb alatt (mint a harangé) */
+/* telefonon: a képernyő teljes szélességén, közvetlenül a gomb alatt (mint a harangé) – a lista ilyenkor a body-ban
+   van, a top-ot a gombhoz mérve a usePhonePopup adja (átnézés K1: a fejléc gombsorának transformja alatt a fixed
+   lista a gombsorhoz igazodott) */
 @media (max-width: 640px) {
   .more-menu,
   .more-menu.to-left {
@@ -998,7 +1000,6 @@ body:not(:has(.filters[data-stuck])) .top.collapsing[data-compact] {
     right: var(--gutter);
     left: var(--gutter);
     width: auto;
-    margin-top: 0.5rem;
   }
 }
 
@@ -1124,15 +1125,15 @@ body:not(:has(.filters[data-stuck])) .top.collapsing[data-compact] {
 }
 
 /* telefonon a harang a sor elején is lehet: a lista a képernyő teljes szélességét kapja,
-   közvetlenül a harang alatt */
+   közvetlenül a harang alatt (a body-ban, a top-ot a usePhonePopup adja – mint a ⋮ menünél) */
 @media (max-width: 640px) {
-  .notif-panel {
+  .notif-panel,
+  .notif-panel.to-right {
     position: fixed;
     top: auto;
     right: var(--gutter);
     left: var(--gutter);
     width: auto;
-    margin-top: 0.5rem;
   }
 }
 
@@ -3145,7 +3146,7 @@ mark.hl {
 }
 
 .titles-table .col-mama {
-  width: 8.5rem;
+  width: 9.75rem; /* a "Nem érdekli" egy sorban kiférjen (átnézés K7; 8,5 rem-en két sorba tört) */
 }
 
 .titles-table .col-status {
@@ -3178,8 +3179,10 @@ mark.hl {
   width: 100%;
 }
 
-/* a nyílnak jobbra 16 px, balra a böngésző 4 px-es belső margója (mint a beépítettnél) */
+/* a nyílnak jobbra 16 px, balra a böngésző 4 px-es belső margója (mint a beépítettnél); egy sorban (K7) */
 .titles-table select {
+  white-space: nowrap;
+  text-overflow: ellipsis;
   padding: 0.45rem calc(0.6rem + 16px) 0.45rem calc(0.6rem + 4px);
   background-position: right 0.6rem center;
   font-size: 0.9rem;
@@ -3725,7 +3728,7 @@ button.season:hover {
    magassága nem változik */
 .season-panel {
   position: absolute;
-  z-index: 25;
+  z-index: 26; /* a dokkolt lapozó és lábléc (25) fölött – az utolsó sor panelját ne takarják; a letapadt szűrősor (30) alatt */
   top: calc(100% + 0.4rem);
   left: 50%;
   translate: -50% 0;
@@ -6206,18 +6209,19 @@ button.season:hover {
    ha a kártyák nem férnek ki. A main (a body flex oszlopában flex: 1) kitölti a lábléc fölötti
    helyet, a lapozó az aljára kerül (margin-top: auto) – rövid oldalon is a lábléc fölött áll;
    hosszú oldalon görgetés közben ugyanott tapad (sticky, a lábléc magassága fölött). Üveghatás,
-   mint a letapadt szűrősoron. */
-body:has(.pagination.docked) {
+   mint a letapadt szűrősoron. A lábléc a main[data-docked] jelzőhöz kötődik (a Watchlist asztalon adja), nem a
+   lapozóhoz: egyoldalas találatnál (nincs lapozó) is ugyanez a keskeny, üveg lábléc (átnézés K4, 2026-10-15). */
+body:has(main[data-docked]) {
   --docked-footer-h: 2.75rem;
 }
 
-main:has(> .pagination.docked) {
+main[data-docked] {
   display: flex;
   flex-direction: column;
 }
 
 .pagination.docked,
-body:has(.pagination.docked) .site-footer {
+body:has(main[data-docked]) .site-footer {
   position: sticky;
   z-index: 25;
   background-color: color-mix(in oklab, var(--bg) 68%, transparent);
@@ -6235,7 +6239,7 @@ body:has(.pagination.docked) .site-footer {
   backdrop-filter: none;
 }
 
-body:has(.pagination.docked) .site-footer {
+body:has(main[data-docked]) .site-footer {
   bottom: 0;
   box-sizing: border-box;
   height: var(--docked-footer-h);
@@ -6245,7 +6249,11 @@ body:has(.pagination.docked) .site-footer {
   border-top: 0;
 }
 
-/* az értesítősáv a lapozó és a lábléc fölött */
+/* az értesítősáv a lábléc (és a lapozó) fölött */
+body:has(main[data-docked]) .toaster {
+  bottom: calc(var(--docked-footer-h) + 1.5rem);
+}
+
 body:has(.pagination.docked) .toaster {
   bottom: calc(var(--docked-footer-h) + 5rem);
 }
@@ -7188,6 +7196,15 @@ body:has(.editor[open]) {
   border-top: 1px solid var(--line);
 }
 
+/* a „Frissítés a TMDB-ről” jól elválik a romboló „Törlés a listáról”-tól (átnézés J2: szorosan mellette félre
+   lehetett kattintani): nagyobb köz és halk elválasztó vonal */
+.editor-actions .tmdb-refresh {
+  margin-left: 0.6rem;
+  padding-left: 1.2rem;
+  border-left: 1px solid var(--muted); /* a --line ilyen rövid szakaszon nem látszott */
+  border-radius: 0;
+}
+
 .editor-actions .spacer {
   flex: 1;
 }
@@ -7755,27 +7772,30 @@ a.wo-share-open {
   }
 }
 
-/* szerkesztő ablak: a borító mögül színes fény árad (beúszik), színezett keret és árnyék */
-.title-editor::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1; /* az ablak háttere fölött, a tartalom alatt */
-  pointer-events: none;
-  border-radius: inherit;
-  background:
-    radial-gradient(60rem 38rem at 8% 0%, color-mix(in oklab, var(--ambient, transparent) min(100%, calc(30% * var(--ambient-k))), transparent), transparent 70%),
-    radial-gradient(40rem 28rem at 100% 100%, color-mix(in oklab, var(--ambient, transparent) min(100%, calc(12% * var(--ambient-k))), transparent), transparent 70%);
-  opacity: 0;
-  transition: opacity 0.2s ease-out;
+/* szerkesztő ablak: a borító mögül színes fény árad (beúszik – --ambient-on 0 → 1), színezett keret és árnyék.
+   A derengés az ablak saját háttere (átnézés K2, 2026-10-15): az ablak görgethető, és a korábbi ::before réteg
+   (absolute, egy ablaknyi magas) a tartalommal együtt felgördült – a hosszú lap alján éles, lekerekített széllel
+   véget ért. A görgetett elem saját háttere nem gördül, így a jobb alsó derengés a látható ablak sarkában marad. */
+@property --ambient-on {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
 }
 
-.title-editor[data-ambient]::before {
-  opacity: 1;
+.editor.title-editor {
+  --ambient-on: 0;
+  background:
+    radial-gradient(60rem 38rem at 8% 0%, color-mix(in oklab, var(--ambient, transparent) min(100%, calc(30% * var(--ambient-k) * var(--ambient-on))), transparent), transparent 70%),
+    radial-gradient(40rem 28rem at 100% 100%, color-mix(in oklab, var(--ambient, transparent) min(100%, calc(12% * var(--ambient-k) * var(--ambient-on))), transparent), transparent 70%),
+    var(--surface);
+}
+
+.editor.title-editor[data-ambient] {
+  --ambient-on: 1;
 }
 
 .title-editor[open] {
-  transition: opacity 0.16s ease-out, translate 0.16s ease-out, border-color 0.2s, box-shadow 0.2s;
+  transition: opacity 0.16s ease-out, translate 0.16s ease-out, border-color 0.2s, box-shadow 0.2s, --ambient-on 0.2s ease-out;
 }
 
 .editor.title-editor[data-ambient] {
@@ -7794,8 +7814,10 @@ a.wo-share-open {
 
 /* telefonon (nincs nagy borító): az ablak teteje dereng */
 @media (max-width: 899px) {
-  .title-editor::before {
-    background: radial-gradient(30rem 18rem at 50% -4rem, color-mix(in oklab, var(--ambient, transparent) min(100%, calc(34% * var(--ambient-k))), transparent), transparent 75%);
+  .editor.title-editor {
+    background:
+      radial-gradient(30rem 18rem at 50% -4rem, color-mix(in oklab, var(--ambient, transparent) min(100%, calc(34% * var(--ambient-k) * var(--ambient-on))), transparent), transparent 75%),
+      var(--surface);
   }
 }
 
@@ -7928,8 +7950,7 @@ a.wo-share-open {
   }
 
   /* ablakok és felugró panelek */
-  .editor,
-  .title-editor::before {
+  .editor {
     corner-shape: squircle;
     border-radius: 32px;
   }
@@ -8507,10 +8528,11 @@ input[type='checkbox']:checked {
   cursor: zoom-in;
 }
 
+/* balra fent: jobbra fent az adatlap bezáró ×-e (átnézés J1) */
 .backdrop-pager {
   position: absolute;
   top: 0.9rem;
-  right: 0.9rem;
+  left: 0.9rem;
   z-index: 2;
   display: flex;
   align-items: center;
@@ -8692,6 +8714,44 @@ input[type='checkbox']:checked {
   display: none;
 }
 
+/* bezáró × az adatlap jobb felső sarkában (átnézés J1, 2026-10-15): görgetéskor is ott marad (sticky), a sávja nem
+   foglal helyet (0 magas); üveg kör, mint a galéria lapozója – a jelenetképen és a sima felületen is látszik */
+.editor-close-bar {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  justify-content: flex-end;
+  height: 0;
+  pointer-events: none;
+}
+
+.editor-close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.45rem;
+  height: 2.45rem;
+  margin: 0.8rem 0.8rem 0 0;
+  padding: 0;
+  color: var(--text);
+  background: rgb(var(--glass) / 0.55);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgb(var(--tint) / 0.12);
+  border-radius: 50%;
+  pointer-events: auto;
+}
+
+.editor-close:hover {
+  background-color: rgb(var(--glass) / 0.8);
+  border-color: var(--muted);
+}
+
+.editor-close:active {
+  background-color: rgb(var(--glass) / 0.95);
+}
+
 /* telefonon alulról felcsúszó "alsó lap": teljes szélesség, felül kerek sarkok, fogantyú;
    legfeljebb a képernyő 92%-a, belül görgethető; a fogantyút lefelé húzva bezárul */
 @media (max-width: 640px) {
@@ -8706,7 +8766,7 @@ input[type='checkbox']:checked {
   }
 
   .editor.title-editor[open] {
-    transition: translate 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: translate 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), --ambient-on 0.2s ease-out;
   }
 
   @starting-style {
@@ -9889,22 +9949,21 @@ input[type='checkbox']:checked {
    árnyék, a háttér sötétítése is kap egy árnyalatot, a nagy borító a film színében fénylik, a „Hol
    nézhető?” előtt jelölővonal, az „Előzetes megnézése” gomb a film színében. A két nagy gomb és a
    szövegek nem változnak; borító nélkül (nincs [data-ambient]) minden a megszokott */
-.mama-detail::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1; /* az ablak háttere fölött, a tartalom alatt */
-  pointer-events: none;
-  border-radius: inherit;
+/* a derengés az ablak saját háttere, mint Norbi adatlapján (átnézés K2: a ::before réteg görgetéskor felgördült) */
+.editor.mama-detail {
+  --ambient-on: 0;
   background:
-    radial-gradient(56rem 36rem at 10% 0%, color-mix(in oklab, var(--ambient, transparent) min(100%, calc(30% * var(--ambient-k))), transparent), transparent 70%),
-    radial-gradient(40rem 26rem at 100% 100%, color-mix(in oklab, var(--ambient, transparent) min(100%, calc(12% * var(--ambient-k))), transparent), transparent 70%);
-  opacity: 0;
-  transition: opacity 0.2s ease-out;
+    radial-gradient(56rem 36rem at 10% 0%, color-mix(in oklab, var(--ambient, transparent) min(100%, calc(30% * var(--ambient-k) * var(--ambient-on))), transparent), transparent 70%),
+    radial-gradient(40rem 26rem at 100% 100%, color-mix(in oklab, var(--ambient, transparent) min(100%, calc(12% * var(--ambient-k) * var(--ambient-on))), transparent), transparent 70%),
+    var(--surface);
 }
 
-.mama-detail[data-ambient]::before {
-  opacity: 1;
+.editor.mama-detail[data-ambient] {
+  --ambient-on: 1;
+}
+
+.editor.mama-detail[open] {
+  transition: opacity 0.16s ease-out, translate 0.16s ease-out, --ambient-on 0.2s ease-out;
 }
 
 .editor.mama-detail[data-ambient] {
@@ -9956,8 +10015,10 @@ input[type='checkbox']:checked {
 
 /* keskenyebben (telefonon nincs nagy borító): az ablak teteje dereng */
 @media (max-width: 899px) {
-  .mama-detail::before {
-    background: radial-gradient(30rem 18rem at 50% -4rem, color-mix(in oklab, var(--ambient, transparent) min(100%, calc(34% * var(--ambient-k))), transparent), transparent 75%);
+  .editor.mama-detail {
+    background:
+      radial-gradient(30rem 18rem at 50% -4rem, color-mix(in oklab, var(--ambient, transparent) min(100%, calc(34% * var(--ambient-k) * var(--ambient-on))), transparent), transparent 75%),
+      var(--surface);
   }
 }
 
@@ -9965,8 +10026,7 @@ input[type='checkbox']:checked {
   .mama-rows li,
   .mama-poster,
   .mama-detail-poster,
-  .editor.mama-detail,
-  .mama-detail::before {
+  .editor.mama-detail {
     corner-shape: squircle;
   }
 }
@@ -10032,12 +10092,8 @@ input[type='checkbox']:checked {
     corner-shape: round;
   }
 
-  .mama-detail::before {
-    corner-shape: round;
-  }
-
   .editor.mama-detail[open] {
-    transition: translate 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: translate 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), --ambient-on 0.2s ease-out;
   }
 
   @starting-style {

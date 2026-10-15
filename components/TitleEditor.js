@@ -290,6 +290,21 @@ export default function TitleEditor({
         onPointerUp={dragEnd}
         onPointerCancel={dragEnd}
       />
+      {/* bezáró × a jobb felső sarokban, görgetéskor is látszik (átnézés J1, 2026-10-15 – a „Bezárás” a hosszú lap
+          alján van); mint az Esc: törlés-megerősítés / felvétel közben nem zár */}
+      <div className="editor-close-bar">
+        <button
+          type="button"
+          className="editor-close"
+          aria-label="Bezárás"
+          title="Bezárás"
+          onClick={() => canLeavePage() && close()}
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
       {pages.map((page, i) => {
         const active = i === pages.length - 1;
         const prev = pages[i - 1];

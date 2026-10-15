@@ -253,8 +253,9 @@ export function SeasonTimeline({ title, onPick }) {
     t: s.air_date ? Math.min(Date.parse(s.air_date), horizon) : latest + HALF_YEAR,
     upcoming: !seasonAired(s, today),
   }));
-  const first = new Date(Math.min(...points.map((p) => p.t))).getUTCFullYear();
-  const last = new Date(Math.max(...points.map((p) => p.t))).getUTCFullYear() + 1;
+  // a „ma” jelölő is a tengelyen legyen (átnézés K3: a régen befejezett sorozatnál túllógott a tengelyen)
+  const first = new Date(Math.min(now, ...points.map((p) => p.t))).getUTCFullYear();
+  const last = new Date(Math.max(now, ...points.map((p) => p.t))).getUTCFullYear() + 1;
   const start = Date.UTC(first, 0, 1);
   const end = Date.UTC(last, 0, 1);
   const pct = (t) => ((t - start) / (end - start)) * 100;

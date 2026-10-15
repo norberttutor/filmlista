@@ -231,8 +231,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   listanézetben 10-esével (`TABLE_PAGE_SIZE`, terv-3 59 – Norbi kérése); asztali rácsban (≥ 1400 px)
   22-esével (`GRID_PAGE_SIZE`, Norbi kérése, 2026-10-04: 1440p-n 11 oszlop × 2 teli sor), és
   asztalon (≥ 1400 px) – rácsban és 2026-10-15 óta listanézetben is, egységesen (Norbi kérése) – a lapozó és alatta
-  a lábléc az ablak alján áll (`docked={isDesktop}` → `.pagination.docked`; a lábléc
-  ilyenkor kompakt, `--docked-footer-h` = 2,75 rem magas, `sticky; bottom: 0`, a lapozó `sticky;
+  a lábléc az ablak alján áll (`docked={isDesktop}` → `.pagination.docked`; a lábléc a `main[data-docked]`-hoz kötve
+  – egyoldalas találatnál, lapozó nélkül is ugyanez, átnézés K4 –, kompakt, `--docked-footer-h` = 2,75 rem magas, `sticky; bottom: 0`, a lapozó `sticky;
   bottom: var(--docked-footer-h)`; a lábléc üveg, a lapozó fölött fokozatos elmosás – terv-3 102, lent; a `main` flex oszlop –
   a body flex oszlopában `flex: 1` –, a lapozó `margin-top: auto`): minden oldalon ugyanott, a
   lábléc mindig látszik, görgetősáv csak ha a kártyák nem férnek ki (a korábbi `min-height:
@@ -304,7 +304,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   szövegek olvashatósága nem változik; borítónként egyszer számol (`Map`). `ambientProps(szín)`:
   `--ambient` CSS-változó + `data-ambient` jelző; a CSS („Hangulatszín a borítóból” szakasz)
   csak ilyenkor színez (világosban erősebben – `--ambient-k`, `--ambient-ink`, terv-3 52.6): a szerkesztő ablak a borító mögül dereng (színezett keret, árnyék,
-  háttér), a kártya rámutatva fénylik, a táblázat rámutatott sora halványan színeződik; az adatlap
+  háttér – a derengés az ablak saját háttere, `--ambient-on` 0 → 1 úszik be; nem `::before` réteg, mert az a görgetett
+  ablakban felgördült – átnézés K2; Mama adatlapján is), a kártya rámutatva fénylik, a táblázat rámutatott sora halványan színeződik; az adatlap
   belseje is (terv-3 51.8, 2026-10-09): a szakaszcímek (Hol nézhető?, Szereplők, Hasonló címek)
   előtt jelölővonal, a vezérlősáv kerete és teteje, a mezőcímkék (keverve – `--ambient-label`: 55%,
   világosban 30%, a kontraszt miatt) és az „Előzetes megnézése” gomb. `franchisePosterPath(id,
@@ -373,6 +374,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   megerősítése nyitva van, vagy a FranchiseSelect új név / átnevezés módban van
   (`.franchise-new`). Telefonon (alsó lap) nem zár; az Esc mindig zár.
   Megnyitáskor a fókusz az ablak címén van (keret nélkül), nem a Franchise mezőn (Norbi kérése).
+  A jobb felső sarokban ragadós bezáró × (`.editor-close` a `.editor-close-bar`-ban – sticky, 0 magas sáv; átnézés J1,
+  2026-10-15): görgetés után is látszik, mint az Esc (törlés-megerősítés / felvétel közben nem zár – `canLeavePage`).
   Ha van háttérképe (`backdrop_path`), az ablak tetején a film széles jelenetképe (`w1280`,
   telefonon `w780`), alul a felületbe olvadva; asztalon rajta a fejléc (`.has-hero`, terv-3 104 – fent)
   (`.has-backdrop`). Telefonon (≤ 640 px) az ablak alsó lap: alulról felcsúszik, teljes
@@ -399,7 +402,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   üres → Folyamatban → Megnézve → üres), `SeasonList` (évadonként állapot + „Letöltve”,
   „Mind megnézve”, „Nem nézem tovább” / „Mégis folytatom” (ugyanaz a gomb vált feliratot),
   `SeasonTimeline` (szerkesztő ablak, ≥ 2 évad: évadonként egy pötty-gomb a megjelenés napján
-  az állapot színével, bejelentett szaggatott, „ma” jelölő; a tengely legfeljebb egy évvel tart
+  az állapot színével, bejelentett szaggatott, „ma” jelölő – a tengely a mai napot mindig tartalmazza (átnézés K3) –; a tengely legfeljebb egy évvel tart
   a mán / az utolsó megjelent évadon túl – a dátum nélküli fél évvel utána, a távolabbi a
   végén áll, a címkéjében a valódi dátum; 12 évnél hosszabb tengelyen minden 2. évszám),
   „+ Évad hozzáadása”, „Utolsó évad törlése” megerősítéssel – ha a TMDB-n is
@@ -431,7 +434,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   „Letöltve” felirat felé 120 px (`--overview-gap-end`), 4 sorban; 1440p-re (2560 px)
   optimalizálva; 1900 px alatt a franchise a cím adatai mellett, a leírás alattuk 2 sorban;
   teljes szöveg rámutatáskor),
-  jobbra sorrendben Letöltve – Állapot – Mama (kitöltve borostyán: `.mama-set`; sorozatnál / franchise-os
+  jobbra sorrendben Letöltve – Állapot – Mama (9,75 rem, mint az Állapot – a „Nem érdekli” egy sorban, átnézés K7; kitöltve borostyán: `.mama-set`; sorozatnál / franchise-os
   címnél érték nélkül üres cella – terv-3 58) – Értékelés
   (10 másfélszeres csillag középen, mellette „8/10”), a végén kuka: megerősítés nélkül
   lekerül, 8 mp-ig visszavonható (`onDelete`). A sor az első rámutatáskor / fókusznál kiszámolja a borító
@@ -753,14 +756,15 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   szereplő** (terv-3 91, 2026-10-14): a route legfeljebb 20-at ad (`pickCast`, `CAST_MAX`; a kérés `v=2` – `CREDITS_V`, a
   `lib/prefetch.js` is), az első 3 alatt „Összes szereplő (N)” / „Kevesebb” (`.cast-more`); kibontva asztalon a bal
   oszlopban (az `.editor-side` ilyenkor nem ragad – `:has(.cast[data-open])`), keskenyebben a sor alatt fotóval
-  (`.cast-all`). Teszt: `munka/e2e/test-91.mjs`
+  (`.cast-all`). Telefonon (≤ 640 px) nincs „Összes szereplő”, csak az első 3 név (Norbi kérése, 2026-10-15). Teszt:
+  `munka/e2e/test-91.mjs`
 - `components/TitleGallery.js` + `app/api/tmdb/images/route.js` – **képgaléria az adatlapon** (terv-3 95, 2026-10-14,
   Norbi választása a látványterv után – https://claude.ai/artifact/BDEffdLNcJoJ4h3gtjsGWC: **asztalon „A”, telefonon
   „B”**): a route `GET ?type&id` → `{ images }` (jelenetképek: előbb a felirat nélküliek, aztán az angolok, a legjobb
   szavazatúak, legfeljebb 8; egy napig gyorsítótárazva; 404 → üres; a `lib/prefetch.js` is kéri); `galleryList()`: a
   lap jelenetképe elöl + a többi. Asztalon (és jelenetkép nélkül telefonon is) `GalleryStrip` – „Képek N” sor a
   Hasonló címek fölött (`.gallery`, 16:9-es képek, vízszintesen görgethető); telefonon (≤ 640 px, ha van jelenetkép)
-  `BackdropPager` – a fejléc képe lapozható (jobbra fent „‹ 1 / 8 ›” – `.backdrop-pager`, alul pöttyök, ujjal húzva,
+  `BackdropPager` – a fejléc képe lapozható (balra fent – jobbra fent az adatlap ×-e, átnézés J1 – „‹ 1 / 8 ›” – `.backdrop-pager`, alul pöttyök, ujjal húzva,
   koppintva nagy nézet – `.backdrop-zoom`). Nagy nézet: `GalleryLightbox` (`.gallery-lightbox`, a lapon belül, a
   teljes képernyőn): ‹ › / nyilak / húzás, alul a kis képek, „× Bezárás”; az Esc (a window rögzítő fázisában – az
   adatlap Esc-je előtt), a Vissza gomb és a vissza-gesztus (`useBackLayer`) csak a nagy nézetet zárja; az elhagyott
@@ -891,7 +895,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `app/api/tmdb/details-refresh/route.js` – **frissítés a TMDB-ről** (terv-3 83, 2026-10-14): `POST` törzs nélkül
   a háttérfrissítés (40-esével, a `detailsDue` szerint; a `Watchlist` betöltéskor hívja – `refreshDetails()`,
   legfeljebb 15 kör, a változott címek teljes sorát kapja), `{ id }`-vel egy cím kézzel (az adatlap „Frissítés a
-  TMDB-ről” linkje – `.tmdb-refresh` a „Törlés a listáról” mellett; utána 4 mp-ig „✓ Frissítve” / „✓ Nincs
+  TMDB-ről” linkje – `.tmdb-refresh` a „Törlés a listáról” mellett, nagyobb közzel és elválasztó vonallal – átnézés J2; utána 4 mp-ig „✓ Frissítve” / „✓ Nincs
   újdonság a TMDB-n”; `refreshTitleDetails(id)` → `{ row, changed }`). A felhasználó jogaival; a saját adatokhoz
   nem nyúl. A **cím csak akkor** cserélődik a TMDB magyar címére, ha most az eredeti cím áll ott (felvételkor még
   nem volt magyar – Norbi döntése, 2026-10-14: a kézzel adott címek, pl. „Pókember 2.1”, maradnak); a leírás
@@ -1038,7 +1042,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   „Ma” / „Ezen a héten” (a hét hétfőtől) / „Korábban” az értesítés napja szerint, budapesti idővel (`dayGroup`;
   `li.notif-group`, `role="presentation"`, kis ritkított nagybetűk). A lista a harang bal széléhez igazodik, ha ott
   kilógna, a jobbhoz (`lib/popupSide.js`, nyitáskor mérve – a ⋮ menü is így); telefonon teljes
-  szélességű. A fejléc felugró listái (`z-index: 35`) a letapadó szűrősor (30) fölött vannak. `loadNotifications()`: előbb
+  szélességű, közvetlenül a gomb alatt – a ⋮ menü is: telefonon a `document.body`-ba kerülnek (portál,
+  `lib/usePhonePopup.js`, a `top` a gombhoz mérve, görgetéskor követi; átnézés K1, 2026-10-15): az összecsukódó fejléc
+  gombsorának `translate` / `scale`-je a `position: fixed` listát a gombsorhoz igazította (≈200 px széles lett). A
+  kívülre kattintás vizsgálata ezért a lista elemét is nézi. A fejléc felugró listái (`z-index: 35`) a letapadó szűrősor (30) fölött vannak. `loadNotifications()`: előbb
   `collect_season_notifications()` és `collect_release_notifications()` (RPC, párhuzamosan),
   aztán a lista; a Watchlist betöltéskor, valamint az évadfrissítés és a megjelenésidátum-frissítés
   után hívja – utóbbiakat csak, ha frissült sor (a `refreshSeasons` / `refreshReleases` a
@@ -1428,6 +1435,10 @@ Moziszerű adatlap-fejléc asztalon: nagy jelenetkép, rajta a borító, a nagy 
 2026-10-15). Fokozatos elmosás a letapadt szűrősor és a dokkolt lapozó alatt (102); „folyékony üveg” a lebegő gombokon –
 „+”, „↑”, galérialapozó (103) – 2026-10-15. Összecsukódó főcím (99), csúszó kijelölő a gombcsoportokon (100), telefonon a
 beállított szűrők címkeként ×-szel (101), az app stílusában nyíló lenyílók ikonokkal (108) – 2026-10-15.
+Átnézés, első javítások (2026-10-15): telefonon újra teljes szélességű a harang listája és a ⋮ menü (K1), az adatlap
+derengése görgetéskor nem ér véget éles széllel (K2), az évadok idővonalán a „ma” jelölő a tengelyen belül (K3), egyoldalas
+találatnál is a keskeny lábléc (K4), a táblázatban a „Nem érdekli” egy sorban (K7), bezáró × az adatlap jobb felső sarkában
+(J1), az adatlap alján a „Frissítés a TMDB-ről” elválasztva a „Törlés a listáról”-tól (J2); telefonon az adatlapon nincs „Összes szereplő” (Norbi kérése).
 A még meg nem jelent filmek szaggatott kerettel és dátumos jelvénnyel, a harang szól a digitális
 megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül). Asztalon az adatlap
 kikattintásra bezárul (terv-3 24-es pontja, 2026-10-04). „Hol
@@ -1622,7 +1633,75 @@ már megvan.
 - **104 – moziszerű adatlap-fejléc asztalon – kész** (2026-10-15; teszt: `munka/e2e/test-104.mjs` 9/9, `test.mjs` 115/115,
   `test-1013` 12/12)
 - **108 – egységes lenyílók – kész** (2026-10-15; `appearance: base-select`, ikonok CSS-ből; teszt: `test-1015.mjs`)
-Hátravan: 84 – ~1,5–2 óra (látványterv).
+**Átnézés, 2026-10-15 – mind a roadmapen** (Norbi kérése: „minden mehet ezekkel a kódokkal a roadmapre”; a
+pontonkénti részletek – hely, mit lát Norbi, ok, javítás, bizonyosság –: `munka/audit-2026-10-15/ATNEZES.md`; a kódok
+állandók, a kész pontot itt és ott is jelöld: „kész (dátum, commit)”). Kategóriák:
+- **K – Látható hibák (kinézet)** – ~3 óra
+  - K1 – Telefonon a harang és a ⋮ menü keskeny (≈200 px) lenyíló – a 99 (összecsukódó fejléc) óta – **kész** (2026-10-15)
+  - K2 – Az adatlap derengő háttere görgetéskor éles, lekerekített széllel véget ér (Mama adatlapján is) – **kész** (2026-10-15)
+  - K3 – Évadok idővonala: a „ma” jelölő a tengelyen túl (vízszintes kilógás a sorozat adatlapján) – **kész** (2026-10-15)
+  - K4 – Egyoldalas találatnál a lábléc a magas, vonalas változat (nem a keskeny, dokkolt) – **kész** (2026-10-15)
+  - K5 – 641–899 px: az adatlapon a műfajok a borító alá csúsznak, a Franchise mező két sorba törik – ~0,5 óra
+  - K6 – Asztali listanézet 1900 px alatt: a cím egy sorra vágva, az eredeti cím 2–3 sorban – ~0,5 óra
+  - K7 – Táblázat: a „Nem érdekli” két sorba törik a Mama-lenyílóban – **kész** (2026-10-15)
+- **H – Kódhibák, hibakezelés** – ~5 óra
+  - H1 – Csillagos értékelés billentyűzettel: a nyíl azonnal ment („Hogy tetszett?” → 1 csillag) – ~1–1,5 óra
+  - H2 – TMDB-hibánál a franchise-sáv / csempe „nincs TMDB-gyűjtemény”-t ír – ~0,5 óra
+  - H3 – Nincs magyar hibalap (`app/error.js`, a megosztott oldalé is) – ~0,5 óra
+  - H4 – Jelszó módosítása: net nélkül is „A jelenlegi jelszó nem jó.” – ~0,25 óra
+  - H5 – Mama hibaüzenete angol technikai szöveg (+ a gyors kattintások sorrendje) – ~0,4 óra
+  - H6 – Tömeges import: a sikertelen keresés „nincs találat”-nak számít, és eltűnik – ~0,5 óra
+  - H7 – Franchise törlése a gyűjtemény-ablakból → a Franchise-ok ablak nem zár kikattintásra – ~0,25 óra
+  - H8 – Franchise-ok ablak: szerkesztés közben az Esc / Vissza az egész ablakot zárja – ~0,5 óra
+  - H9 – Még be nem töltött franchise-csempe: kattintásra semmi, később magától nyílik – ~0,5–1 óra
+  - H10 – „Frissítés a TMDB-ről”: félrevezető visszajelzések – ~0,25 óra
+  - H11 – A színész-route egy napig tárolja a hiányos (életrajz nélküli) választ – ~0,15 óra
+- **S – Állapot, szinkron, offline** – ~4 óra
+  - S1 – Az élő szinkron csendben leállhat egy rövid hálózatkiesés után – ~0,25 óra
+  - S2 – Net nélküli időszak után semmi nem pótolja a közben történt változásokat – ~0,5 óra
+  - S3 – Sikertelen csendes frissítésnél hibaüzenet kerül a jó lista helyére – ~0,25 óra
+  - S4 – Mama visszavont „Érdekel”-je után a harangban megmarad a „Mamát érdekli” – ~0,25 óra
+  - S5 – Az elrejtett ajánlások minden csendes frissítéskor rövid időre visszajönnek – ~0,25 óra
+  - S6 – A teljes újratöltés nem figyel a függő törlésre / mentésre (törölt cím visszajön) – ~0,5 óra
+  - S7 – „Kilépés” net nélkül nem csinál semmit – ~0,25 óra
+  - S8 – Élő szinkron: sorrendvédelem, 1000 feletti köteg (gyanú – előbb mérni) – ~0,5 óra
+  - S9 – Másik gépen törölt franchise-ra szűrve a szűrő beragad – ~0,25 óra
+  - S10 – „Nincs internetkapcsolat” szerverhibánál és frissítés közben is – ~0,25 óra
+  - S11 – Írási utak `saveRow` nélkül; a „Hogy tetszett?” sáv sikertelen mentés után is marad – ~0,5 óra
+  - S12 – A „Frissült az app” sáv kiszorulhat, és többé nem jön vissza – ~0,25 óra
+  - S13 – Net nélkül az adatlap „Visszavonás”-a csendben elnyeli a lépést – ~0,1 óra
+- **A – Akadálymentesség** – ~1,5 óra
+  - A1 – Fókuszkezelés: a galéria nagy nézete és az évadpanel (Tabbal kilép a takart lapra) – ~0,5–1 óra
+  - A2 – `aria-label` szerep nélküli elemen (Statisztika, színész lapja, Felfedezés) – ~0,25 óra
+  - A3 – A felvételi hibát a felolvasó nem mondja be (Hasonló címek, színész lapja) – ~0,1 óra
+  - A4 – axe-apróságok: lista-szerkezet a harangban, címsorszintek, üres táblázatfejléc a leírásban – ~0,25 óra
+- **I – Következetlenségek (szöveg, gomb, stílus)** – ~2–3 óra
+  - I1 – A „Bezárás” gomb helye és színe ablakonként más (gyűjtemény-ablak, Mentések: teli türkiz) – ~0,1–0,5 óra
+  - I2 – Azonos szerepű feliratok eltérnek („Igen, törlés” / „Törlés”, „Újra” / „Újrapróbálás” …) – ~0,5 óra
+  - I3 – A sorozatok műfajai angolul („Action & Adventure”, „Sci-Fi & Fantasy”), a Statisztikában külön – ~0,5–1 óra
+  - I4 – Franchise-ra szűrve háromféle számlálás magyarázat nélkül (2/4, 3, 3/6) – ~0,25 óra
+  - I5 – Kisebb stíluseltérések (gombok, linkek, „angolul” jelzés, pipa a lenyílókban) – ~0,5 óra
+  - I6 – Az üres keresés magyarázata elavult (a franchise nevét nem említi) – ~0,05 óra
+  - I7 – Statisztika: a „(· értékelt címek)” magyarázat nehezen érthető – ~0,05 óra
+- **J – Javaslatok (lehetne szebb / jobb)** – ~7–8 óra
+  - J1 – Bezáró × az adatlap tetején (most csak a lap alján „Bezárás”) – **kész** (2026-10-15; telefonon a galéria lapozója ezért balra fent)
+  - J2 – „Törlés a listáról” és „Frissítés a TMDB-ről” közé nagyobb köz – **kész** (2026-10-15)
+  - J3 – Net nélkül a tiltott vezérlők halványítása + jelzés az adatlapon – ~0,25 óra
+  - J4 – 641–1000 px között is a telefonos, összecsukható szűrő – ~1 óra
+  - J5 – Rácsnézetben a hosszú cím 2–3 soros vágása – ~0,25 óra
+  - J6 – Összecsukott fejlécben az elrejtett e-mail-cím helye ne maradjon üresen – ~0,25 óra
+  - J7 – Telefonon nyitott „Cím hozzáadása” panelnél a lebegő „+” elrejtése – ~0,1 óra
+  - J8 – Franchise-logó kézi választása (most az első film logója, alcímmel) – ~1 óra
+  - J9 – Statisztika telefonon: olvashatóbb hónapnevek – ~0,25 óra
+  - J10 – Ismétlődő kód és kézzel ismételt gyorsítótár-verziók egyesítése – ~1–2 óra
+  - J11 – A TMDB-frissítés ne kérje le körönként az összes leírást – ~0,5 óra
+  - J12 – Service worker: a nagy képek ne szorítsák ki a borítókat a tárolóból – ~0,5 óra
+  - J13 – Mama oldala is frissüljön magától, és szóljon az új kiadásról – ~0,5 óra
+  - J14 – Apróságok (SVG nyilak a kiemelt sávon, halványuló szél a szűrőcímkéken, kisebb első letöltés, a tiltott bezárás visszajelzése) – ~0,5–1 óra
+
+Javasolt sorrend: K1–K4 → S1–S5 → H2–H5, H11, S10, S12 (együtt ~5 óra, ez hozza a legtöbbet), utána a többi; mind együtt
+~22–25 óra. **Kész (2026-10-15):** K1–K4, K7, J1 és J2 (Norbi kérésére a J1 előre véve; teszt: `munka/e2e/test-atnezes-k.mjs` 11/11).
+Hátravan: az átnézés többi pontja (K5–K6, H, S, A, I, J3–J14, fent) – ~19–23 óra; 84 – ~1,5–2 óra (látványterv).
 **Lekerült a roadmapről** (Norbi döntése, 2026-10-08: a közeljövőben nincs tervben; magadtól ne
 javasold újra): **25 – admin jogosultság**, **26 – regisztráció** (a meglévőkön kívül más felhasználó
 nem lesz, Mama fiókja pedig a 13-as óta korlátozott). A részletes tervük a TERV.md-ben megmaradt.

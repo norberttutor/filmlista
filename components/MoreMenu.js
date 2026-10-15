@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { popupSide } from '@/lib/popupSide';
+import { usePhonePopup } from '@/lib/usePhonePopup';
 import { useBackLayer } from '@/lib/backClose';
 
 // A menüpontok ikonjai (vonalas, mint a többi ikon)
@@ -28,6 +29,7 @@ export default function MoreMenu({ items }) {
   const [open, setOpen] = useState(false);
   const [side, setSide] = useState('right'); // a lista a gomb melyik széléhez igazodik
   const rootRef = useRef(null);
+  const menuRef = useRef(null); // telefonon a body-ban (usePhonePopup)
   const buttonRef = useRef(null);
   const itemRefs = useRef([]);
   const firstRef = useRef(0); // nyitáskor ez a pont kapja a fókuszt
@@ -43,7 +45,7 @@ export default function MoreMenu({ items }) {
   useEffect(() => {
     if (!open) return;
     const onDown = (e) => {
-      if (!rootRef.current?.contains(e.target)) setOpen(false);
+      if (!rootRef.current?.contains(e.target) && !menuRef.current?.contains(e.target)) setOpen(false);
     };
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
@@ -67,6 +69,7 @@ export default function MoreMenu({ items }) {
 
   // a Vissza gomb is bezárja (terv-3 62)
   useBackLayer(open, () => close());
+  const phonePopup = usePhonePopup(open, buttonRef);
 
   function onButtonKey(e) {
     if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
@@ -130,47 +133,51 @@ export default function MoreMenu({ items }) {
         </svg>
       </button>
 
-      {open && (
-        <div
-          id={menuId}
-          className={side === 'left' ? 'more-menu to-left' : 'more-menu'}
-          role="menu" aria-label="További műveletek" onKeyDown={onMenuKey}>
-          {items.map((item, i) => (
-            <button
-              key={item.id}
-              ref={(el) => (itemRefs.current[i] = el)}
-              type="button"
-              role="menuitem"
-              tabIndex={-1}
-              className="more-item"
-              aria-labelledby={`${menuId}-${item.id}`}
-              aria-describedby={`${menuId}-${item.id}-desc`}
-              onClick={() => choose(item)}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="18"
-                height="18"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
+      {phonePopup.render(
+        open && (
+          <div
+            ref={menuRef}
+            style={phonePopup.style}
+            id={menuId}
+            className={side === 'left' ? 'more-menu to-left' : 'more-menu'}
+            role="menu" aria-label="További műveletek" onKeyDown={onMenuKey}>
+            {items.map((item, i) => (
+              <button
+                key={item.id}
+                ref={(el) => (itemRefs.current[i] = el)}
+                type="button"
+                role="menuitem"
+                tabIndex={-1}
+                className="more-item"
+                aria-labelledby={`${menuId}-${item.id}`}
+                aria-describedby={`${menuId}-${item.id}-desc`}
+                onClick={() => choose(item)}
               >
-                {ICONS[item.icon]}
-              </svg>
-              <span className="more-text">
-                <span id={`${menuId}-${item.id}`} className="more-label">
-                  {item.label}
+                <svg
+                  viewBox="0 0 24 24"
+                  width="18"
+                  height="18"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  {ICONS[item.icon]}
+                </svg>
+                <span className="more-text">
+                  <span id={`${menuId}-${item.id}`} className="more-label">
+                    {item.label}
+                  </span>
+                  <span id={`${menuId}-${item.id}-desc`} className="more-desc">
+                    {item.description}
+                  </span>
                 </span>
-                <span id={`${menuId}-${item.id}-desc`} className="more-desc">
-                  {item.description}
-                </span>
-              </span>
-            </button>
-          ))}
-        </div>
+              </button>
+            ))}
+          </div>
+        )
       )}
     </div>
   );

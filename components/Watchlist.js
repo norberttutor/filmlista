@@ -1372,8 +1372,9 @@ export default function Watchlist({ session }) {
   }
 
   return (
-    // data-list: honnan jön a lista (a teszt ezen várja meg a friss adatot)
-    <main data-list={loading ? 'loading' : stale ? 'stale' : 'live'}>
+    // data-list: honnan jön a lista (a teszt ezen várja meg a friss adatot); data-docked: asztalon a lábléc (és a
+    // lapozó, ha van) az ablak alján – egyoldalas találatnál is ugyanaz a keskeny lábléc (átnézés K4)
+    <main data-list={loading ? 'loading' : stale ? 'stale' : 'live'} data-docked={isDesktop ? '' : undefined}>
       <header className="top collapsing" ref={headRef}>
         {/* összecsukva a sáv bal szélén a kis cím (terv-3 99); felolvasónak a nagy cím elég */}
         <p className="top-compact" aria-hidden="true">

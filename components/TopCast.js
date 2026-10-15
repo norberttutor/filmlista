@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useMediaQuery } from '@/lib/useMediaQuery';
 
 const PHOTO_BASE = 'https://image.tmdb.org/t/p/w185';
 const TOP = 3;
+const PHONE_QUERY = '(max-width: 640px)';
 
 // Szereplők az adatlapon (terv-3 38, Norbi választása, 2026-10-06): a top cast első 3 tagja
 // (/api/tmdb/credits). „side”: asztalon a bal oszlopban a „Hol nézhető?” alatt – kerek fotó, név,
@@ -12,11 +14,14 @@ const TOP = 3;
 // (onPerson – terv-3 61; korábban a TMDB-oldalára vitt). Ha nincs adat, semmi nem látszik.
 // Összes szereplő (terv-3 91, 2026-10-14): ha több van (a route legfeljebb 20-at ad), alattuk „Összes szereplő
 // (N)” – kibontva a többi is (asztalon a bal oszlopban, keskenyebben a sor alatt, fotóval), „Kevesebb” csukja.
+// Telefonon (≤ 640 px) nincs: csak az első 3 név (Norbi kérése, 2026-10-15).
 export default function TopCast({ cast, variant, onPerson }) {
-  const [open, setOpen] = useState(false);
+  const [expanded, setOpen] = useState(false);
+  const phone = useMediaQuery(PHONE_QUERY);
   if (!cast?.length) return null;
   const top = cast.slice(0, TOP);
-  const rest = cast.slice(TOP);
+  const rest = phone ? [] : cast.slice(TOP);
+  const open = expanded && rest.length > 0;
 
   const person = (p) => (
     <li key={p.id}>

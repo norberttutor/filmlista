@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { popupSide } from '@/lib/popupSide';
+import { usePhonePopup } from '@/lib/usePhonePopup';
 import { formatDate } from '@/lib/titles';
 import { budapestToday } from '@/lib/refreshDue';
 import { useBackLayer } from '@/lib/backClose';
@@ -58,6 +59,7 @@ export default function NotificationBell({ notifications, titles, franchiseName,
   const rootRef = useRef(null);
   const buttonRef = useRef(null);
   const listRef = useRef(null);
+  const panelRef = useRef(null); // telefonon a body-ban (usePhonePopup)
 
   // a törölt sor helyén a következő (különben az előző) sor törlőgombja kapja a fókuszt
   function remove(n, index) {
@@ -78,7 +80,7 @@ export default function NotificationBell({ notifications, titles, franchiseName,
   useEffect(() => {
     if (!open) return;
     const onDown = (e) => {
-      if (!rootRef.current.contains(e.target)) setOpen(false);
+      if (!rootRef.current.contains(e.target) && !panelRef.current?.contains(e.target)) setOpen(false);
     };
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
@@ -94,6 +96,7 @@ export default function NotificationBell({ notifications, titles, franchiseName,
 
   // a Vissza gomb is bezárja (terv-3 62)
   useBackLayer(open, () => setOpen(false));
+  const phonePopup = usePhonePopup(open, buttonRef);
 
   function toggle() {
     if (open) {
@@ -151,108 +154,112 @@ export default function NotificationBell({ notifications, titles, franchiseName,
         )}
       </button>
 
-      {open && (
-        <div
-          id={panelId}
-          className={side === 'right' ? 'notif-panel to-right' : 'notif-panel'}
-          role="region"
-          aria-label="Értesítések"
-        >
-          <div className="notif-head">
-            <p>Értesítések</p>
-            {items.length > 0 && !readOnly && (
-              <button
-                type="button"
-                className="notif-clear"
-                onClick={() => {
-                  onRemove(items);
-                  buttonRef.current?.focus();
-                }}
-              >
-                Összes törlése
-              </button>
-            )}
-          </div>
-          {items.length === 0 ? (
-            <p className="notif-empty">
-              Még nincs értesítés. Itt jelzem, ha egy sorozatodhoz új évadot jelentenek be, ha
-              egy évad megjelenik, vagy ha egy várt film digitálisan is elérhető lesz.
-            </p>
-          ) : (
-            <ul className="notif-list" ref={listRef}>
-              {items.map((n, index) => {
-                // csoportcím, ahol a nap kategóriája változik (a lista a legújabbal kezdődik)
-                const group = dayGroup(n.created_at, today);
-                const head = index === 0 || dayGroup(items[index - 1].created_at, today) !== group;
-                // a gyűjtemény új része nincs a listán: az értesítés adataiból (TMDB-tétel – előnézet)
-                const t =
-                  n.kind === 'collection_new'
-                    ? {
-                        media_type: 'movie',
-                        tmdb_id: n.part_tmdb_id,
-                        title: n.part_title,
-                        poster_path: n.part_poster_path,
-                        release_year: n.part_year,
-                      }
-                    : byId.get(n.title_id);
-                const label = n.kind === 'collection_new' && n.part_year ? `${t.title} (${n.part_year})` : t.title;
-                const isNew = fresh.has(n.id);
-                return (
-                  <Fragment key={n.id}>
-                  {head && (
-                    <li className="notif-group" role="presentation">
-                      {group}
-                    </li>
-                  )}
-                  <li>
-                    <button
-                      type="button"
-                      className="notif-item"
-                      data-new={isNew ? '' : undefined}
-                      data-kind={n.kind}
-                      onClick={() => {
-                        setOpen(false);
-                        onOpenTitle(t);
-                      }}
-                    >
-                      {/* a fajta színe és ikonja a borító sarkán (terv-3 51.5); a szöveg mondja ki */}
-                      <span className="notif-pic">
-                        <span className="notif-thumb">
-                          {t.poster_path && <img src={THUMB_BASE + t.poster_path} alt="" loading="lazy" />}
-                        </span>
-                        <span className="notif-kind" aria-hidden="true" />
-                      </span>
-                      <span className="notif-text">
-                        <span className="notif-title">
-                          {label}
-                          {isNew && <span className="sr-only"> (új)</span>}
-                        </span>
-                        <span className="notif-what">{describe(n, franchiseName)}</span>
-                        <time className="notif-when" dateTime={n.created_at}>
-                          {formatDate(n.created_at)}
-                        </time>
-                      </span>
-                    </button>
-                    {!readOnly && (
+      {phonePopup.render(
+        open && (
+          <div
+            ref={panelRef}
+            style={phonePopup.style}
+            id={panelId}
+            className={side === 'right' ? 'notif-panel to-right' : 'notif-panel'}
+            role="region"
+            aria-label="Értesítések"
+          >
+            <div className="notif-head">
+              <p>Értesítések</p>
+              {items.length > 0 && !readOnly && (
+                <button
+                  type="button"
+                  className="notif-clear"
+                  onClick={() => {
+                    onRemove(items);
+                    buttonRef.current?.focus();
+                  }}
+                >
+                  Összes törlése
+                </button>
+              )}
+            </div>
+            {items.length === 0 ? (
+              <p className="notif-empty">
+                Még nincs értesítés. Itt jelzem, ha egy sorozatodhoz új évadot jelentenek be, ha
+                egy évad megjelenik, vagy ha egy várt film digitálisan is elérhető lesz.
+              </p>
+            ) : (
+              <ul className="notif-list" ref={listRef}>
+                {items.map((n, index) => {
+                  // csoportcím, ahol a nap kategóriája változik (a lista a legújabbal kezdődik)
+                  const group = dayGroup(n.created_at, today);
+                  const head = index === 0 || dayGroup(items[index - 1].created_at, today) !== group;
+                  // a gyűjtemény új része nincs a listán: az értesítés adataiból (TMDB-tétel – előnézet)
+                  const t =
+                    n.kind === 'collection_new'
+                      ? {
+                          media_type: 'movie',
+                          tmdb_id: n.part_tmdb_id,
+                          title: n.part_title,
+                          poster_path: n.part_poster_path,
+                          release_year: n.part_year,
+                        }
+                      : byId.get(n.title_id);
+                  const label = n.kind === 'collection_new' && n.part_year ? `${t.title} (${n.part_year})` : t.title;
+                  const isNew = fresh.has(n.id);
+                  return (
+                    <Fragment key={n.id}>
+                    {head && (
+                      <li className="notif-group" role="presentation">
+                        {group}
+                      </li>
+                    )}
+                    <li>
                       <button
                         type="button"
-                        className="notif-del"
-                        aria-label={`Értesítés törlése: ${label}`}
-                        title="Törlés"
-                        onClick={() => remove(n, index)}
+                        className="notif-item"
+                        data-new={isNew ? '' : undefined}
+                        data-kind={n.kind}
+                        onClick={() => {
+                          setOpen(false);
+                          onOpenTitle(t);
+                        }}
                       >
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-                          <path d="M6 6l12 12M18 6L6 18" />
-                        </svg>
+                        {/* a fajta színe és ikonja a borító sarkán (terv-3 51.5); a szöveg mondja ki */}
+                        <span className="notif-pic">
+                          <span className="notif-thumb">
+                            {t.poster_path && <img src={THUMB_BASE + t.poster_path} alt="" loading="lazy" />}
+                          </span>
+                          <span className="notif-kind" aria-hidden="true" />
+                        </span>
+                        <span className="notif-text">
+                          <span className="notif-title">
+                            {label}
+                            {isNew && <span className="sr-only"> (új)</span>}
+                          </span>
+                          <span className="notif-what">{describe(n, franchiseName)}</span>
+                          <time className="notif-when" dateTime={n.created_at}>
+                            {formatDate(n.created_at)}
+                          </time>
+                        </span>
                       </button>
-                    )}
-                  </li>
-                  </Fragment>
-                );
-              })}
-            </ul>
-          )}
-        </div>
+                      {!readOnly && (
+                        <button
+                          type="button"
+                          className="notif-del"
+                          aria-label={`Értesítés törlése: ${label}`}
+                          title="Törlés"
+                          onClick={() => remove(n, index)}
+                        >
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+                            <path d="M6 6l12 12M18 6L6 18" />
+                          </svg>
+                        </button>
+                      )}
+                    </li>
+                    </Fragment>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        )
       )}
     </div>
   );
