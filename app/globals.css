@@ -1752,15 +1752,17 @@ body:not(:has(.filters[data-stuck])) .top.collapsing[data-compact] {
   --pb-end: calc(100% - var(--pb-fade) * 0.4);
 }
 
+/* telítésnövelés nélkül: a halmozott saturate a sötétkék hátteret kékes sávvá erősítette (Norbi kérése, 2026-10-15 –
+   előbb a dokkolt lapozónál, utána a szűrősornál is) */
 .pblur > :nth-child(4) {
-  -webkit-backdrop-filter: blur(14px) saturate(1.3);
-  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   --pb-end: calc(100% - var(--pb-fade) * 0.6);
 }
 
 .pblur > :nth-child(5) {
-  -webkit-backdrop-filter: blur(24px) saturate(1.5);
-  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
   --pb-end: calc(100% - var(--pb-fade) * 0.8);
 }
 
@@ -4935,21 +4937,158 @@ button.season:hover {
   color: var(--text);
 }
 
+/* „Szűrés erre” / „Átnevezés” / „Logó” / „Törlés” – ikonos ghost gombok (Norbi kérése, 2026-10-15 – korábban linkek;
+   components/FranchiseActions.js), a törlés pirosas (.danger-ghost, mint az adatlapon) */
 .fr-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.2rem 0.8rem;
-  font-size: 0.8rem;
+  gap: 0.4rem;
 }
 
-.fr-actions .danger-link {
-  padding: 0;
+.fr-actions .fr-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.78rem;
+}
+
+/* a csempén: a csak ikonos gombok kerekek, a sor nem törik */
+.fr-actions[data-compact] {
+  flex-wrap: nowrap;
+}
+
+.fr-actions[data-compact] .fr-action:not(:first-child) {
+  justify-content: center;
+  min-width: 2.1rem;
+  padding-inline: 0;
+}
+
+.fr-actions .fr-action {
+  white-space: nowrap;
+}
+
+/* telefonon (két keskeny oszlop) a „Szűrés erre” teljes szélességben, alatta a két ikon */
+@media (max-width: 640px) {
+  .fr-actions[data-compact] {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .fr-actions[data-compact] .fr-action {
+    justify-content: center;
+  }
+
+  .fr-actions[data-compact] .fr-action:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.fr-actions .fr-action[aria-expanded='true'] {
+  color: var(--accent);
+  background-color: var(--accent-soft);
+  border-color: var(--accent-line);
 }
 
 .fr-actions button:disabled {
   opacity: 0.4;
   cursor: default;
-  text-decoration: none;
+}
+
+/* a franchise logójának választása (átnézés J8): a gyűjtemény-ablak fejléce alatt; a logók sötét alapon (.fr-logo –
+   sötét sziget), a kiválasztott türkiz kerettel */
+.logo-picker {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+  padding: 1rem;
+  background: rgb(var(--tint) / 0.03);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+}
+
+.logo-picker header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1rem;
+}
+
+.logo-picker h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.logo-picker header p {
+  flex: 1 1 16rem;
+  margin: 0;
+}
+
+.logo-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.logo-option {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 0.35rem;
+  color: inherit;
+  text-align: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  cursor: pointer;
+}
+
+.logo-option .fr-logo {
+  height: 4.5rem;
+}
+
+.logo-option .fr-logo b {
+  font-size: 0.9rem;
+}
+
+.logo-caption {
+  overflow: hidden;
+  font-size: 0.72rem;
+  color: var(--muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.logo-option:hover:not(:disabled) {
+  background: rgb(var(--tint) / 0.05);
+}
+
+.logo-option[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+.logo-option[aria-pressed='true'] .logo-caption {
+  color: var(--accent);
+}
+
+.logo-option:disabled {
+  cursor: default;
+}
+
+.logo-option:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@supports (corner-shape: squircle) {
+  .logo-picker,
+  .logo-option {
+    corner-shape: squircle;
+  }
 }
 
 .fr-edit {
@@ -6188,16 +6327,19 @@ button.season:hover {
   padding-bottom: 1.5rem;
 }
 
-/* asztalon (lista- és rácsnézetben egyaránt) a lapozó és alatta a lábléc az ablak alján áll (Norbi kérése): a lapozó minden
-   oldalon pontosan ugyanott van, a lábléc mindig látszik, és görgetősáv csak akkor jelenik meg,
-   ha a kártyák nem férnek ki. A main (a body flex oszlopában flex: 1) kitölti a lábléc fölötti
-   helyet, a lapozó az aljára kerül (margin-top: auto) – rövid oldalon is a lábléc fölött áll;
-   hosszú oldalon görgetés közben ugyanott tapad (sticky, a lábléc magassága fölött). Üveghatás,
-   mint a letapadt szűrősoron. A lábléc a main[data-docked] jelzőhöz kötődik (a Watchlist asztalon adja), nem a
-   lapozóhoz: egyoldalas találatnál (nincs lapozó) is ugyanez a keskeny, üveg lábléc (átnézés K4, 2026-10-15). */
+/* asztalon (lista- és rácsnézetben egyaránt) a lapozó és a lábléc egy sávban, az ablak alján (Norbi kérése,
+   2026-10-15): balra a forrásmegjelölés, középen (1800 px alatt jobbra, a „sponsored by” mellett) a lapozó, jobbra a
+   „sponsored by”. A lapozó minden oldalon pontosan
+   ugyanott van, a lábléc mindig látszik, és görgetősáv csak akkor jelenik meg, ha a kártyák nem férnek ki. A lábléc
+   ragad (sticky, bottom: 0 – a body flex oszlopának végén, így rövid oldalon is az alján), a lapozó rögzített (fixed),
+   a lábléc fölött; a forrásmegjelölés szövege ezért csak a lapozóig ér (--pager-w: a lapozó szélessége, a leghosszabb – „1 … 4 5 6 … 47”, „1000–1022. / 1025 cím” – alapján). Közös üveg: a lábléc háttere
+   (::before), telítésnövelés nélkül (a kékes derengés nem kell – Norbi kérése). A lábléc a main[data-docked]
+   jelzőhöz kötődik (a Watchlist asztalon adja), nem a lapozóhoz: egyoldalas találatnál (nincs lapozó) is ugyanez
+   a keskeny, üveg lábléc (átnézés K4, 2026-10-15). */
 body:has(main[data-docked]) {
-  --docked-footer-h: 2.75rem;
-  --docked-pager-h: 3.625rem;
+  --docked-footer-h: 3.25rem;
+  --pager-w: 40rem;
+  --sponsor-w: 7.5rem;
 }
 
 main[data-docked] {
@@ -6205,23 +6347,32 @@ main[data-docked] {
   flex-direction: column;
 }
 
-.pagination.docked,
+.pagination.docked {
+  position: fixed;
+  z-index: 26;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: max-content;
+  margin-inline: auto;
+  box-sizing: border-box;
+  height: var(--docked-footer-h);
+  flex-wrap: nowrap;
+  padding: 0;
+  white-space: nowrap;
+}
+
 body:has(main[data-docked]) .site-footer {
   position: sticky;
   z-index: 25;
-}
-
-/* a lapozó és a lábléc egyetlen közös üvegen áll (Norbi kérése, 2026-10-15): a lábléc háttérrétege (::before)
-   lapozónál a lapozó mögé is felnyúlik (--docked-pager-h: a lapozó rögzített magassága), a lapozó maga átlátszó és
-   egy réteggel fölötte. Két külön üvegnél a találkozásuknál csík látszott (mindkettő a saját széléig mos el); a
-   102-es fokozatos elmosás pedig kékes derengést adott. */
-.pagination.docked {
-  z-index: 26;
-  bottom: var(--docked-footer-h);
+  bottom: 0;
   box-sizing: border-box;
-  height: var(--docked-pager-h);
-  margin-top: auto;
+  height: var(--docked-footer-h);
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
   padding: 0 var(--gutter);
+  border-top: 0;
 }
 
 body:has(main[data-docked]) .site-footer::before {
@@ -6231,31 +6382,34 @@ body:has(main[data-docked]) .site-footer::before {
   z-index: -1;
   pointer-events: none;
   background-color: color-mix(in oklab, var(--bg) 68%, transparent);
-  -webkit-backdrop-filter: blur(18px) saturate(1.5);
-  backdrop-filter: blur(18px) saturate(1.5);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
 }
 
-body:has(.pagination.docked) .site-footer::before {
-  top: calc(-1 * var(--docked-pager-h));
+/* a forrásmegjelölés a lapozóig ér (egy közzel előtte); 1800 px alatt középen nem férne el két sorban, ott a lapozó
+   jobbra, a „sponsored by” mellé kerül */
+body:has(.pagination.docked) .site-footer p {
+  flex: 0 1 auto;
+  max-width: calc(100% - var(--sponsor-w) - var(--pager-w) - 4rem);
+  line-height: 1.35;
 }
 
-body:has(main[data-docked]) .site-footer {
-  bottom: 0;
-  box-sizing: border-box;
-  height: var(--docked-footer-h);
-  display: flex;
-  align-items: center;
-  padding: 0 var(--gutter);
-  border-top: 0;
+@media (max-width: 1799px) {
+  .pagination.docked {
+    left: auto;
+    right: calc(var(--gutter) + var(--sponsor-w) + 2rem);
+  }
 }
 
-/* az értesítősáv a lábléc (és a lapozó) fölött */
+@media (min-width: 1800px) {
+  body:has(.pagination.docked) .site-footer p {
+    max-width: calc(50% - var(--pager-w) / 2 - 2rem);
+  }
+}
+
+/* az értesítősáv a sáv fölött */
 body:has(main[data-docked]) .toaster {
-  bottom: calc(var(--docked-footer-h) + 1.5rem);
-}
-
-body:has(.pagination.docked) .toaster {
-  bottom: calc(var(--docked-footer-h) + 5rem);
+  bottom: calc(var(--docked-footer-h) + 1.25rem);
 }
 
 .pagination ol {

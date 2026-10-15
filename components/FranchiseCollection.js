@@ -7,6 +7,7 @@ import { useBackdropClose } from '@/lib/useBackdropClose';
 import { usePosterColor, ambientProps, franchisePosterPath } from '@/lib/posterColor';
 import WatchOrder from '@/components/WatchOrder';
 import { useSlidingThumb } from '@/lib/useSlidingThumb';
+import { FranchiseActions, FranchiseLogoPicker } from '@/components/FranchiseActions';
 
 const IMG = 'https://image.tmdb.org/t/p/';
 const byYear = (a, b) => (a.release_year ?? 9999) - (b.release_year ?? 9999);
@@ -307,7 +308,8 @@ export function CollectionDialog({
       dialogRef.current.close();
       onOutsideClose?.();
     },
-    canClose: () => !busyAny && !ordering && !sharing && !edit,
+    // a nyitott logóválasztó nem tartja nyitva (nincs benne bevitel – a kattintás azonnal ment)
+    canClose: () => !busyAny && !ordering && !sharing && (!edit || edit.mode === 'logo'),
   });
 
   async function saveRename(event) {
@@ -419,24 +421,17 @@ export function CollectionDialog({
             </button>
           </div>
         ) : (
-          (onShow || (!readOnly && (onRename || onDelete))) && (
-            <div className="fr-actions collection-actions">
-              {onShow && (
-                <button type="button" className="link small" disabled={counts.onList === 0} onClick={() => onShow(franchise.id)}>
-                  Szűrés erre
-                </button>
-              )}
-              {!readOnly && onRename && (
-                <button type="button" className="link small" onClick={() => setEdit({ mode: 'rename', name: franchise.name, error: '' })}>
-                  Átnevezés
-                </button>
-              )}
-              {!readOnly && onDelete && (
-                <button type="button" className="danger-link small" onClick={() => setEdit({ mode: 'delete', error: '' })}>
-                  Törlés
-                </button>
-              )}
-            </div>
+          (onShow || !readOnly) && (
+            <FranchiseActions
+              className="collection-actions"
+              onShow={onShow && (() => onShow(franchise.id))}
+              showDisabled={counts.onList === 0}
+              onRename={!readOnly && onRename ? () => setEdit({ mode: 'rename', name: franchise.name, error: '' }) : null}
+              // a logó választása (átnézés J8): a fejléc alatt nyíló panel; újra kattintva bezárul
+              onLogo={readOnly ? null : () => setEdit((e) => (e?.mode === 'logo' ? null : { mode: 'logo' }))}
+              logoOpen={edit?.mode === 'logo'}
+              onDelete={!readOnly && onDelete ? () => setEdit({ mode: 'delete', error: '' }) : null}
+            />
           )
         )}
         {edit?.error && (
@@ -445,6 +440,10 @@ export function CollectionDialog({
           </p>
         )}
       </div>
+
+      {edit?.mode === 'logo' && (
+        <FranchiseLogoPicker franchise={franchise} titles={titles} onPicked={onFranchiseUpdated} onClose={() => setEdit(null)} />
+      )}
 
       <div className="dialog-tabs sliding" ref={tabsThumb} role="tablist" aria-label="Nézet">
         {TABS.map((t) => (

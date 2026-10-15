@@ -801,7 +801,8 @@ export default function Watchlist({ session }) {
     : (() => {
         const used = new Set(titles.map((t) => t.franchise_id).filter(Boolean));
         return franchises
-          .filter((f) => !f.logo_path && used.has(f.id) && !logoTried.current.has(f.id))
+          // '' – kézzel „Csak a név” (átnézés J8): nem keresünk hozzá logót
+          .filter((f) => f.logo_path == null && used.has(f.id) && !logoTried.current.has(f.id))
           .map((f) => f.id)
           .join(',');
       })();

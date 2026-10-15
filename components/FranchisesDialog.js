@@ -16,6 +16,7 @@ import { useBackdropClose } from '@/lib/useBackdropClose';
 import { usePosterColor, ambientProps, franchisePosterPath } from '@/lib/posterColor';
 import { franchiseSuggestions } from '@/lib/franchiseSuggest';
 import FranchiseSuggestions from '@/components/FranchiseSuggestions';
+import { FranchiseActions } from '@/components/FranchiseActions';
 
 // kis- és nagybetű, ékezet nélkül (a kereséshez)
 const fold = (s) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
@@ -257,21 +258,14 @@ export default function FranchisesDialog({
                     </button>
                   </div>
                 ) : (
-                  <div className="fr-actions">
-                    <button type="button" className="link small" disabled={ownCount === 0} onClick={() => onShow(f.id)}>
-                      Szűrés erre
-                    </button>
-                    {!readOnly && (
-                      <>
-                        <button type="button" className="link small" onClick={() => setEdit({ id: f.id, mode: 'rename', name: f.name, error: '' })}>
-                          Átnevezés
-                        </button>
-                        <button type="button" className="danger-link small" onClick={() => setEdit({ id: f.id, mode: 'delete', error: '' })}>
-                          Törlés
-                        </button>
-                      </>
-                    )}
-                  </div>
+                  <FranchiseActions
+                    compact
+                    name={f.name}
+                    onShow={() => onShow(f.id)}
+                    showDisabled={ownCount === 0}
+                    onRename={readOnly ? null : () => setEdit({ id: f.id, mode: 'rename', name: f.name, error: '' })}
+                    onDelete={readOnly ? null : () => setEdit({ id: f.id, mode: 'delete', error: '' })}
+                  />
                 )}
                 {editing?.error && (
                   <p className="error small" role="alert">

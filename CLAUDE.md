@@ -232,13 +232,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   22-esével (`GRID_PAGE_SIZE`, Norbi kérése, 2026-10-04: 1440p-n 11 oszlop × 2 teli sor). Telefonon (≤ 640 px) tömörebb
   (Norbi kérése, 2026-10-15): az „Előző” / „Következő” csak nyíl (`.pg-step`, a szó – `.pg-word` – rejtve; felolvasónak
   „Előző oldal” / „Következő oldal”), kisebb közök, alatta nincs fölösleges köz. És
-  asztalon (≥ 1400 px) – rácsban és 2026-10-15 óta listanézetben is, egységesen (Norbi kérése) – a lapozó és alatta
-  a lábléc az ablak alján áll (`docked={isDesktop}` → `.pagination.docked`; a lábléc a `main[data-docked]`-hoz kötve
-  – egyoldalas találatnál, lapozó nélkül is ugyanez, átnézés K4 –, kompakt, `--docked-footer-h` = 2,75 rem magas, `sticky; bottom: 0`, a lapozó `sticky;
-  bottom: var(--docked-footer-h)`; a lapozó és a lábléc egy közös üvegen áll – a lábléc `::before`-ja felnyúlik
-  a lapozó mögé (`--docked-pager-h`, a lapozó fix magassága), a lapozó átlátszó, egy réteggel fölötte; Norbi kérése,
-  2026-10-15: két külön üvegnél csík látszott, a 102-es fokozatos elmosás pedig kékes derengést adott; a `main` flex oszlop –
-  a body flex oszlopában `flex: 1` –, a lapozó `margin-top: auto`): minden oldalon ugyanott, a
+  asztalon (≥ 1400 px) – rácsban és 2026-10-15 óta listanézetben is, egységesen (Norbi kérése) – a lapozó és
+  a lábléc **egy sávban** az ablak alján (Norbi kérése, 2026-10-15): balra a forrásmegjelölés (két sorban), középen – 1800
+  px alatt jobbra, a „sponsored by” mellett – a lapozó, jobbra a „sponsored by” (`docked={isDesktop}` →
+  `.pagination.docked`; a lábléc a `main[data-docked]`-hoz kötve – egyoldalas találatnál, lapozó nélkül is ugyanez,
+  átnézés K4 –, `--docked-footer-h` = 3,25 rem magas, `sticky; bottom: 0`; a lapozó `position: fixed`, alul, a lábléc
+  fölött; a forrásmegjelölés szélessége a lapozóig – `--pager-w`, `--sponsor-w`; közös üveg: a lábléc `::before`-ja,
+  telítésnövelés nélkül – a kékes derengés nem kell; a `main` flex oszlop, a body flex oszlopában `flex: 1`): minden oldalon ugyanott, a
   lábléc mindig látszik, görgetősáv csak ha a kártyák nem férnek ki (a korábbi `min-height:
   100dvh` feleslegesen görgetett); az értesítősáv fölöttük; a
   lapozás az oldal első címének helyét jegyzi (`pageState.first`), így nézetváltáskor az az
@@ -248,7 +248,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   A szűrősor görgetéskor a lap tetejére tapad (`position: sticky`); letapadva (`data-stuck`, a
   Watchlist egy görgetésfigyelője jelzi) átlátszó, vonal nélkül, mögötte **fokozatos elmosás** (terv-3 102, Norbi
   választása a látványterv után, 2026-10-15 – https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs;
-  `components/ProgressiveBlur.js`, CSS: „Fokozatos elmosás”): öt egymásra rétegzett `backdrop-filter` réteg
+  `components/ProgressiveBlur.js`, CSS: „Fokozatos elmosás”): öt egymásra rétegzett `backdrop-filter` réteg (telítésnövelés nélkül – a kékes derengés nem kell, Norbi kérése, 2026-10-15)
   (1–24 px, lépcsőzetes maszkkal) a sávban teljes erővel, alatta 3,5 rem alatt elgyengül (a sáv maga nem kaphat
   backdrop-filtert – a rétegek akkor nem látnák a mögötte lévőt –, és az ősei sem: filter / opacity / maszk); asztali
   listanézetben a táblázat ragadós fejléce alatt is teljes erővel (`--pb-solid`), a fejléc ilyenkor átlátszó és a
@@ -620,7 +620,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   „· nincs TMDB-gyűjtemény”, üresen „Még nincs címe”. A csempére kattintva a gyűjtemény-ablak
   (`CollectionDialog`, a Franchise-ok ablakon belül nyílik; az első betöltés után nyitva marad – felvételkor,
   gyűjtemény hozzárendelésekor az újratöltés alatt a korábbi gyűjteményekkel, így a fül, a görgetés, a
-  kereső megmarad; kódaudit #6, 2026-10-09, teszt: `munka/e2e/test-audit-6.mjs`); a csempe alatt „Szűrés erre” (üres
+  kereső megmarad; kódaudit #6, 2026-10-09, teszt: `munka/e2e/test-audit-6.mjs`); a csempe alatt gombok (`FranchiseActions`, Norbi kérése, 2026-10-15 –
+  korábban linkek; a csempén `compact`: „Szűrés erre” felirattal, az átnevezés és a törlés csak ikon – `aria-label`
+  „„Név” átnevezése” / „„Név” törlése”, súgó; telefonon a „Szűrés erre” külön sorban): „Szűrés erre” (üres
   franchise-nál tiltva; `Watchlist.showFranchise`: a keresés törlődik, minden más szűrő elenged –
   `SEARCH_FILTERS` + a franchise –, az ablak bezárul), „Átnevezés” (helyben, Enter / Esc – az Esc
   a mezőben csak a szerkesztést zárja), „Törlés” (megerősítéssel; a címek maradnak). Felül kereső
@@ -708,11 +710,26 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   sötétítés, a szakaszcímek előtt jelölővonal; a mérő zöld, a fülek türkizek maradnak). A gyűjtemény-ablak két fülön (terv-3 28, Norbi döntése; `role="tablist"`,
   nyilakkal is; a panelek rejtve megmaradnak): „Gyűjtemény” (a fenti) és „Nézési sorrend”
   (`WatchOrder`); sorrend-szerkesztés közben kikattintásra nem zár, az Esc csak a szerkesztést zárja.
-  A fejlécben (terv-3 57, 2026-10-11) a Franchise-ok csempéjének műveletei: „Szűrés erre” (`onShow`, csak
+  A fejlécben (terv-3 57, 2026-10-11) a Franchise-ok csempéjének műveletei – ikonos gombok (`FranchiseActions`), plusz
+  „Logó” (átnézés J8, lent): „Szűrés erre” (`onShow`, csak
   a Franchise-ok ablakból nyitva – a sáv gombjáról már erre szűr; üres franchise-nál tiltva), „Átnevezés”
   (helyben; Enter ment, az Esc csak a szerkesztést zárja), „Törlés” (megerősítéssel; utána az ablak a
   szülőjével bezárul, a szűrő Összes); átnevezés / megerősítés közben kikattintásra nem zár; net nélkül
   csak a „Szűrés erre”
+- `components/FranchiseActions.js` + `app/api/tmdb/logos/route.js` – a franchise műveletei ikonos ghost gombokként
+  (Norbi kérése, 2026-10-15; `FranchiseActions`: „Szűrés erre” – tölcsér, „Átnevezés” – ceruza, „Logó” – kép,
+  „Törlés” – kuka, pirosas `.danger-ghost`; `.fr-actions` / `.fr-action`) és a **franchise-logó kézi választása**
+  (átnézés J8, 2026-10-15 – `FranchiseLogoPicker`): a gyűjtemény-ablak fejlécének „Logó” gombja (`aria-expanded`,
+  újra kattintva zár) a fejléc alatt panelt nyit (`.logo-picker`): a franchise címeinek (megjelenés szerint az első 12)
+  TMDB-logói – a route `GET ?type&id` → `{ logos: [{ path, lang }] }`, címenként legfeljebb 4 (előbb a 6:1-nél nem
+  szélesebbek, angol / nyelv nélküli / magyar, szavazat szerint; egy napig gyorsítótárazva; 404 → üres), 3-asával –
+  és elöl „Csak a név”; sötét alapon (`.fr-logo`, sötét sziget), alattuk a cím; a kiválasztott türkiz keretes
+  (`aria-pressed`; logó nélkül – `null` vagy `''` – a „Csak a név”). A kattintás azonnal ment
+  (`setFranchiseLogo` → `onFranchiseUpdated`: a csempe, a sáv, a szűrő, a megosztott oldal is az új logót mutatja);
+  „Csak a név” = `logo_path: ''` (az automatikus logókeresés – `/api/franchises/logos`, `logoDue` – csak a `null`-t nézi,
+  így a kézi választást soha nem írja felül). „Kész” / újra „Logó” / Esc (a panelen belül) zárja; kikattintásra a
+  gyűjtemény-ablak ilyenkor is zár (nincs bevitel). Mentés közben a gombok nem tiltódnak (a fókusz a tiltott gombról a
+  body-ra esne, és az Esc az egész ablakot zárná). Net nélkül nincs „Logó”. Teszt: `munka/e2e/test-j8.mjs`
 - `components/WatchOrder.js` + `lib/watchOrder.js` – nézési sorrend (terv-3 28, 2026-10-06, Norbi
   döntéseivel): a franchise **listán lévő** filmjei és a sorozatok **évadjai külön tételként**
   (`franchiseItems()`; évad nélküli sorozat egy tétel; tételkulcs `címId:évad`, 0 = film),
@@ -1007,7 +1024,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   sorozatok angol nevei, ismeretlennél pötty), színe a műfaj pöttyéé (`--g` = `genreColor`), világosban
   ugyanaz az árnyalat mélyebben (L 0,56)
 - `app/api/franchises/logos/route.js` – `POST`: a logó nélküli franchise-oknál a franchise első
-  (legkorábbi) filmjének TMDB-címlogóját menti (`pickLogo()`: legfeljebb 6:1 arány, angol);
+  (legkorábbi) filmjének TMDB-címlogóját menti (`pickLogo()`: legfeljebb 6:1 arány, angol); csak a `logo_path is
+  null` franchise-okat nézi – a kézzel választottat (`''` – „Csak a név” – is) nem írja felül (átnézés J8);
   ha nincs logó, 7 napig nem próbálja újra. A `Watchlist` hívja (`logoDue` effekt, 1,5 mp
   várakozással): betöltéskor, és rögtön, amikor egy logó nélküli franchise-hoz az első cím bekerül
   (gyűjtemény, adatlap, sor, tömeges import) – franchise-onként munkamenetenként egyszer
@@ -1680,11 +1698,7 @@ pontonkénti részletek – hely, mit lát Norbi, ok, javítás, bizonyosság �
   - S11 – Írási utak `saveRow` nélkül; a „Hogy tetszett?” sáv sikertelen mentés után is marad – ~0,5 óra
   - S12 – A „Frissült az app” sáv kiszorulhat, és többé nem jön vissza – ~0,25 óra
   - S13 – Net nélkül az adatlap „Visszavonás”-a csendben elnyeli a lépést – ~0,1 óra
-- **A – Akadálymentesség** – ~1,5 óra
-  - A1 – Fókuszkezelés: a galéria nagy nézete és az évadpanel (Tabbal kilép a takart lapra) – ~0,5–1 óra
-  - A2 – `aria-label` szerep nélküli elemen (Statisztika, színész lapja, Felfedezés) – ~0,25 óra
-  - A3 – A felvételi hibát a felolvasó nem mondja be (Hasonló címek, színész lapja) – ~0,1 óra
-  - A4 – axe-apróságok: lista-szerkezet a harangban, címsorszintek, üres táblázatfejléc a leírásban – ~0,25 óra
+- ~~A – Akadálymentesség~~ (A1–A4) – **lekerült a roadmapről** (Norbi döntése, 2026-10-15; magadtól ne javasold újra)
 - **I – Következetlenségek (szöveg, gomb, stílus)** – ~2–3 óra
   - I1 – A „Bezárás” gomb helye és színe ablakonként más (gyűjtemény-ablak, Mentések: teli türkiz) – ~0,1–0,5 óra
   - I2 – Azonos szerepű feliratok eltérnek („Igen, törlés” / „Törlés”, „Újra” / „Újrapróbálás” …) – ~0,5 óra
@@ -1701,7 +1715,7 @@ pontonkénti részletek – hely, mit lát Norbi, ok, javítás, bizonyosság �
   - J5 – Rácsnézetben a hosszú cím 2–3 soros vágása – ~0,25 óra
   - J6 – Összecsukott fejlécben az elrejtett e-mail-cím helye ne maradjon üresen – ~0,25 óra
   - J7 – Telefonon nyitott „Cím hozzáadása” panelnél a lebegő „+” elrejtése – ~0,1 óra
-  - J8 – Franchise-logó kézi választása (most az első film logója, alcímmel) – ~1 óra
+  - J8 – Franchise-logó kézi választása (most az első film logója, alcímmel) – **kész** (2026-10-15; a gyűjtemény-ablak „Logó” gombja)
   - J9 – Statisztika telefonon: olvashatóbb hónapnevek – ~0,25 óra
   - J10 – Ismétlődő kód és kézzel ismételt gyorsítótár-verziók egyesítése – ~1–2 óra
   - J11 – A TMDB-frissítés ne kérje le körönként az összes leírást – ~0,5 óra
@@ -1710,8 +1724,8 @@ pontonkénti részletek – hely, mit lát Norbi, ok, javítás, bizonyosság �
   - J14 – Apróságok (SVG nyilak a kiemelt sávon, halványuló szél a szűrőcímkéken, kisebb első letöltés, a tiltott bezárás visszajelzése) – ~0,5–1 óra
 
 Javasolt sorrend: K1–K4 → S1–S5 → H2–H5, H11, S10, S12 (együtt ~5 óra, ez hozza a legtöbbet), utána a többi; mind együtt
-~22–25 óra. **Kész (2026-10-15):** K1–K4, K7, J1 és J2 (Norbi kérésére a J1 előre véve; teszt: `munka/e2e/test-atnezes-k.mjs` 11/11).
-Hátravan: az átnézés többi pontja (K5–K6, H, S, A, I, J3–J14, fent) – ~19–23 óra; 84 – ~1,5–2 óra (látványterv).
+~21–23,5 óra. **Kész (2026-10-15):** K1–K4, K7, J1 és J2 (Norbi kérésére a J1 előre véve; teszt: `munka/e2e/test-atnezes-k.mjs` 11/11).
+Hátravan: az átnézés többi pontja (K5–K6, H, S, I, J3–J14, fent) – ~18–21,5 óra; 84 – ~1,5–2 óra (látványterv).
 **Lekerült a roadmapről** (Norbi döntése, 2026-10-08: a közeljövőben nincs tervben; magadtól ne
 javasold újra): **25 – admin jogosultság**, **26 – regisztráció** (a meglévőkön kívül más felhasználó
 nem lesz, Mama fiókja pedig a 13-as óta korlátozott). A részletes tervük a TERV.md-ben megmaradt.
