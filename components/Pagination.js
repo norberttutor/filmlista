@@ -1,5 +1,7 @@
 'use client';
 
+import ProgressiveBlur from '@/components/ProgressiveBlur';
+
 // Az oldalszámok: az első, az utolsó és a jelenlegi ±1; a hézagok helyén "…"
 function pageNumbers(page, pageCount) {
   const wanted = new Set([1, pageCount, page - 1, page, page + 1]);
@@ -21,6 +23,8 @@ export default function Pagination({ page, pageCount, total, pageSize, onChange,
 
   return (
     <nav className={docked ? 'pagination docked' : 'pagination'} aria-label="Lapozás">
+      {/* dokkolva fölötte fokozatos elmosás (terv-3 102) */}
+      {docked && <ProgressiveBlur edge="bottom" />}
       <button
         type="button"
         className="ghost"

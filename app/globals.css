@@ -73,6 +73,10 @@
   --scrim: 7 10 15;      /* az ablakok mögötti sötétítés (::backdrop) */
   --scrim-k: 1;          /* a sötétítés erőssége */
   --ambient-k: 1;        /* a film / franchise színével kevert derengések erőssége (terv-3 52.6) */
+  /* „folyékony üveg” a lebegő gombokon (terv-3 103): a csillanás mindkét témában fehér (fény), a türkiz üveg
+     átlátszatlansága világosban nagyobb (a fehér ikon kontrasztja miatt) */
+  --glint: 255 255 255;
+  --lg-fill: 64%;
   /* a felhasználói leírás számozott jelölője (terv-3 52.7): a képek jelölőivel azonos, ezért mindkét
      témában ugyanaz (munka/terv-3/33-leiras/leiras-kepek.mjs) */
   --marker-bg: oklch(82.45% 0.1486 73.35);  /* #ffb547 */
@@ -141,6 +145,8 @@
   /* a hangulatszín (L 0,72) a krémes papíron csak ~58%-os erővel üt el: ×1,7, így ugyanolyan erős,
      mint sötétben (terv-3 52.6, „A”, mérés: munka/terv-3/terv-52-6/meres.mjs) */
   --ambient-k: 1.7;
+  --glint: 255 255 255;
+  --lg-fill: 88%;
   --edge: rgb(var(--tint) / 0.1);
   --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23574a40' stroke-width='1.6'/%3E%3C/svg%3E");
   --chevron-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%2300788c' stroke-width='1.6'/%3E%3C/svg%3E");
@@ -1419,21 +1425,128 @@ main.login::after {
   transition: background-color 0.2s, box-shadow 0.2s, backdrop-filter 0.2s;
 }
 
+/* letapadva a sáv mögött fokozatos elmosás (terv-3 102, ProgressiveBlur – lent „Fokozatos elmosás”): a sáv maga
+   átlátszó, vonal és árnyék nélkül (a saját backdrop-filtere a rétegeket elvakítaná) */
 .filters[data-stuck] {
-  background-color: color-mix(in oklab, var(--bg) 68%, transparent);
-  -webkit-backdrop-filter: blur(18px) saturate(1.5);
-  backdrop-filter: blur(18px) saturate(1.5);
   border-image: none;
-  border-bottom-color: rgb(var(--tint) / 0.07);
-  box-shadow: 0 12px 28px -16px rgb(var(--shade) / calc(0.75 * var(--shade-k)));
+  border-bottom-color: transparent;
 }
 
-/* telefonon kinyitva se takarja el az egész képernyőt: legfeljebb 70%, belül görgethető */
+/* telefonon kinyitva se takarja el az egész képernyőt: legfeljebb 70%, belül görgethető – ilyenkor a rétegek a
+   belső görgetéssel elcsúsznának, ezért a korábbi egyforma üveg */
 @media (max-width: 640px) {
   .filters[data-stuck].open {
     max-height: 70dvh;
     overflow-y: auto;
+    background-color: color-mix(in oklab, var(--bg) 68%, transparent);
+    -webkit-backdrop-filter: blur(18px) saturate(1.5);
+    backdrop-filter: blur(18px) saturate(1.5);
+    border-bottom-color: rgb(var(--tint) / 0.07);
+    box-shadow: 0 12px 28px -16px rgb(var(--shade) / calc(0.75 * var(--shade-k)));
   }
+
+  .filters[data-stuck].open .pblur {
+    display: none;
+  }
+}
+
+/* ---------- Fokozatos elmosás (terv-3 102, components/ProgressiveBlur.js) ----------
+   Norbi választása a látványterv után (2026-10-15 – https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs): a letapadt
+   szűrősor és a dokkolt lapozó mögött öt réteg (1–24 px), lépcsőzetes maszkkal: a sávban teljes erővel, a sávon túl
+   --pb-fade alatt elgyengül (a legerősebb a leghamarabb). Előtte a sáv színével halványuló fátyol. --pb-solid: a sávon
+   túl még teljes erővel – a táblázat ragadós fejléce alatt (az ott átlátszó). */
+.pblur {
+  --pb-fade: 3.5rem;
+  --pb-solid: 0px;
+  --pb-tint: color-mix(in oklab, var(--bg) 72%, transparent);
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.pblur > i {
+  position: absolute;
+  inset: 0;
+}
+
+.pblur-top {
+  top: 0;
+  bottom: calc(-1 * (var(--pb-solid) + var(--pb-fade)));
+  background: linear-gradient(
+    180deg,
+    var(--pb-tint) calc(100% - var(--pb-fade)),
+    color-mix(in oklab, var(--bg) 40%, transparent) calc(100% - var(--pb-fade) / 2),
+    transparent 100%
+  );
+}
+
+.pblur-bottom {
+  bottom: 0;
+  top: calc(-1 * var(--pb-fade));
+  background: linear-gradient(
+    0deg,
+    var(--pb-tint) calc(100% - var(--pb-fade)),
+    color-mix(in oklab, var(--bg) 40%, transparent) calc(100% - var(--pb-fade) / 2),
+    transparent 100%
+  );
+}
+
+.pblur > :nth-child(1) {
+  -webkit-backdrop-filter: blur(1px);
+  backdrop-filter: blur(1px);
+  --pb-end: 100%;
+}
+
+.pblur > :nth-child(2) {
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  --pb-end: calc(100% - var(--pb-fade) * 0.2);
+}
+
+.pblur > :nth-child(3) {
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+  --pb-end: calc(100% - var(--pb-fade) * 0.4);
+}
+
+.pblur > :nth-child(4) {
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  backdrop-filter: blur(14px) saturate(1.3);
+  --pb-end: calc(100% - var(--pb-fade) * 0.6);
+}
+
+.pblur > :nth-child(5) {
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  backdrop-filter: blur(24px) saturate(1.5);
+  --pb-end: calc(100% - var(--pb-fade) * 0.8);
+}
+
+.pblur-top > i {
+  -webkit-mask-image: linear-gradient(180deg, black calc(100% - var(--pb-fade)), transparent var(--pb-end));
+  mask-image: linear-gradient(180deg, black calc(100% - var(--pb-fade)), transparent var(--pb-end));
+}
+
+.pblur-bottom > i {
+  -webkit-mask-image: linear-gradient(0deg, black calc(100% - var(--pb-fade)), transparent var(--pb-end));
+  mask-image: linear-gradient(0deg, black calc(100% - var(--pb-fade)), transparent var(--pb-end));
+}
+
+/* asztali listanézet: a táblázat ragadós fejléce a sáv alatt – letapadva átlátszó, a rétegek teljes erővel alatta,
+   és a sáv fölé kerül (különben az elmosás a feliratait is elmosná); nyitott szűrőlistánál (franchise, műfaj) nem,
+   mert az a sávból lóg le a fejléc fölé */
+body:has(.titles-table) .pblur-top {
+  --pb-solid: 2.7rem;
+}
+
+body:has(.filters[data-stuck]) .titles-table th {
+  background: none;
+  box-shadow: none;
+}
+
+body:has(.filters[data-stuck]):not(:has(.filters [aria-expanded='true'])) .titles-table th {
+  z-index: 31;
 }
 
 /* állapotgombok + "Letöltés" egy egységként */
@@ -1497,7 +1610,7 @@ main.login::after {
     rotate: 180deg;
   }
 
-  .filters:not(.open) > :not(.filters-toggle):not(.list-tools),
+  .filters:not(.open) > :not(.filters-toggle):not(.list-tools):not(.pblur),
   .filters:not(.open) .list-tools > :not(.list-search) {
     display: none;
   }
@@ -5757,12 +5870,14 @@ body:has(.pagination.docked) .site-footer {
   backdrop-filter: blur(18px) saturate(1.5);
 }
 
+/* a lapozó fölött fokozatos elmosás (terv-3 102): maga átlátszó, vonal és árnyék nélkül; a lábléc üveg marad */
 .pagination.docked {
   bottom: var(--docked-footer-h);
   margin-top: auto;
   padding: 0.65rem var(--gutter);
-  border-top: 1px solid rgb(var(--tint) / 0.07);
-  box-shadow: 0 -12px 28px -16px rgb(var(--shade) / calc(0.75 * var(--shade-k)));
+  background-color: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 body:has(.pagination.docked) .site-footer {
@@ -8528,6 +8643,85 @@ input[type='checkbox']:checked {
   /* a lap alja ne kerüljön a gomb alá */
   main {
     padding-bottom: 5rem;
+  }
+}
+
+/* ---------- „Folyékony üveg” a lebegő gombokon (terv-3 103) ----------
+   Norbi választása a látványterv után (2026-10-15 – https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs): a tartalom
+   fölött lebegő gombok áttetsző, élénkítő üveget kapnak – a felső élen csillanás (--glint, mindkét témában fehér), a
+   széleken fénylő keret, a sarokban halvány fényfolt (::before, soft-light). A türkiz „+” türkiz marad (világosban
+   átlátszatlanabb – --lg-fill –, a fehér ikon miatt). Érinti: a telefonos lebegő „+”, a letapadt szűrősor „+” és „↑”
+   gombja (asztal), a galéria lapozója a jelenetképen (telefon; sötét sziget). Valódi fénytörés (SVG-szűrő) nincs. */
+.fab,
+.stuck-tools .primary {
+  background-color: transparent;
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, color-mix(in oklab, var(--accent), rgb(var(--glint)) 30%) var(--lg-fill), transparent),
+    color-mix(in oklab, var(--accent) var(--lg-fill), transparent)
+  );
+  -webkit-backdrop-filter: blur(8px) saturate(1.8);
+  backdrop-filter: blur(8px) saturate(1.8);
+}
+
+.stuck-tools .primary {
+  position: relative;
+  box-shadow:
+    inset 0 1.5px 0 rgb(var(--glint) / 0.7),
+    inset 0 -2px 3px rgb(var(--shade) / 0.2),
+    inset 0 0 0 1px rgb(var(--glint) / 0.26),
+    0 6px 16px -6px rgb(var(--shade) / calc(0.5 * var(--shade-k)));
+}
+
+.stuck-tools .ghost,
+.backdrop-pager {
+  background-color: rgb(var(--glass) / 0.22);
+  background-image: linear-gradient(180deg, rgb(var(--tint) / 0.16), rgb(var(--tint) / 0.04));
+  -webkit-backdrop-filter: blur(5px) saturate(1.9) brightness(1.06);
+  backdrop-filter: blur(5px) saturate(1.9) brightness(1.06);
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 0 rgb(var(--glint) / 0.5),
+    inset 0 -1px 1px rgb(var(--glint) / 0.1),
+    inset 0 0 0 1px rgb(var(--tint) / 0.15),
+    0 8px 22px -8px rgb(var(--shade) / calc(0.5 * var(--shade-k)));
+}
+
+.stuck-tools .ghost {
+  position: relative;
+}
+
+.backdrop-pager {
+  text-shadow: 0 1px 2px rgb(var(--shade) / 0.5);
+}
+
+.backdrop-pager button {
+  background: rgb(var(--tint) / 0.1);
+  box-shadow: inset 0 1px 0 rgb(var(--glint) / 0.28);
+}
+
+:is(.fab, .stuck-tools button, .backdrop-pager)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(70% 45% at 30% 12%, rgb(var(--glint) / 0.45), transparent 70%);
+  mix-blend-mode: soft-light;
+}
+
+@media (max-width: 640px) {
+  .fab {
+    box-shadow:
+      inset 0 1.5px 0 rgb(var(--glint) / 0.75),
+      inset 0 -2px 3px rgb(var(--shade) / 0.25),
+      inset 0 0 0 1px rgb(var(--glint) / 0.28),
+      0 10px 24px -6px rgb(var(--shade) / calc(0.55 * var(--shade-k))),
+      0 0 26px -6px color-mix(in oklab, var(--accent) 70%, transparent);
+  }
+
+  .fab:active {
+    background-image: none;
   }
 }
 

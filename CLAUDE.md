@@ -218,7 +218,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   22-esével (`GRID_PAGE_SIZE`, Norbi kérése, 2026-10-04: 1440p-n 11 oszlop × 2 teli sor), és
   ott a lapozó és alatta a lábléc az ablak alján áll (`docked` → `.pagination.docked`; a lábléc
   ilyenkor kompakt, `--docked-footer-h` = 2,75 rem magas, `sticky; bottom: 0`, a lapozó `sticky;
-  bottom: var(--docked-footer-h)`, mindkettő üveg, mint a letapadt szűrősor; a `main` flex oszlop –
+  bottom: var(--docked-footer-h)`; a lábléc üveg, a lapozó fölött fokozatos elmosás – terv-3 102, lent; a `main` flex oszlop –
   a body flex oszlopában `flex: 1` –, a lapozó `margin-top: auto`): minden oldalon ugyanott, a
   lábléc mindig látszik, görgetősáv csak ha a kártyák nem férnek ki (a korábbi `min-height:
   100dvh` feleslegesen görgetett); az értesítősáv fölöttük; a
@@ -227,11 +227,22 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   váltásakor 1. oldal (akkor is, ha később ugyanaz a szűrés jön vissza); lapozáskor a szűrősor
   eredeti helyére görget (egy üres jelölő a szűrősor előtt – a letapadt sorhoz nem lehetne).
   A szűrősor görgetéskor a lap tetejére tapad (`position: sticky`); letapadva (`data-stuck`, a
-  Watchlist egy görgetésfigyelője jelzi) áttetsző, elmosott üveg; a magasságát
+  Watchlist egy görgetésfigyelője jelzi) átlátszó, vonal nélkül, mögötte **fokozatos elmosás** (terv-3 102, Norbi
+  választása a látványterv után, 2026-10-15 – https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs;
+  `components/ProgressiveBlur.js`, CSS: „Fokozatos elmosás”): öt egymásra rétegzett `backdrop-filter` réteg
+  (1–24 px, lépcsőzetes maszkkal) a sávban teljes erővel, alatta 3,5 rem alatt elgyengül (a sáv maga nem kaphat
+  backdrop-filtert – a rétegek akkor nem látnák a mögötte lévőt –, és az ősei sem: filter / opacity / maszk); asztali
+  listanézetben a táblázat ragadós fejléce alatt is teljes erővel (`--pb-solid`), a fejléc ilyenkor átlátszó és a
+  sáv fölött (`z-index: 31`; nyitott szűrőlistánál nem, mert az a sávból lóg le); telefonon kinyitva (belül
+  görgethető) a korábbi egyforma üveg; a dokkolt lapozó fölött ugyanez fölfelé. A magasságát
   (`--filters-h`, ResizeObserver) a táblázat ragadós fejléce kapja, hogy alatta tapadjon;
   telefonon kinyitva legfeljebb a képernyő 70%-a, belül görgethető. Letapadva (csak asztalon,
   ≥ 641 px) a ↺ után gyorsgombok (`.stuck-tools`): kerek türkiz „+” (Cím hozzáadása, a lap
-  tetejére görget) és „↑” (vissza a lap tetejére)
+  tetejére görget) és „↑” (vissza a lap tetejére). **„Folyékony üveg”** (terv-3 103, ugyanott választva): a tartalom
+  fölött lebegő gombok – ezek, a telefonos lebegő „+” (`.fab`) és a galéria lapozója (`.backdrop-pager`) – áttetsző,
+  élénkítő üveget kapnak (elmosás + telítés, felső csillanás, fénylő keret, `::before` fényfolt); a türkiz türkiz
+  marad (`--lg-fill`: sötétben 64%, világosban 88% – a fehér ikon miatt), a csillanás `--glint` (mindkét témában
+  fehér). Teszt: `munka/e2e/test-102-103.mjs`
 - `components/Toaster.js` + `lib/toast.js` – értesítősáv („toast”): alul középen (telefonon a
   lebegő „+” fölött), `aria-live="polite"`; `toast({ text, image, content, action: { label,
   onClick }, hideClose, duration = 8000, onExpire })` → id, `dismissToast(id, how)`; az
@@ -1380,7 +1391,8 @@ magától és az adatlapról (83); „Már láttam” – megnézettként felvé
 lapjáról (80). Képgaléria az adatlapon – asztalon „Képek” sor, telefonon lapozható jelenetkép, nagy nézet (95);
 összes szereplő az adatlapon (91); élő szinkron: a mentés visszaállítása után a címek nem tűnnek el (hibajavítás).
 Moziszerű adatlap-fejléc asztalon: nagy jelenetkép, rajta a borító, a nagy cím, az adatok és az előzetes (terv-3 104,
-2026-10-15).
+2026-10-15). Fokozatos elmosás a letapadt szűrősor és a dokkolt lapozó alatt (102); „folyékony üveg” a lebegő gombokon –
+„+”, „↑”, galérialapozó (103) – 2026-10-15.
 A még meg nem jelent filmek szaggatott kerettel és dátumos jelvénnyel, a harang szól a digitális
 megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül). Asztalon az adatlap
 kikattintásra bezárul (terv-3 24-es pontja, 2026-10-04). „Hol
@@ -1567,12 +1579,12 @@ már megvan.
 - **99 – összecsukódó főcím** (görgetéskor a szűrősorral egy üveges sáv) – ~1,5 óra
 - **100 – csúszó kijelölő a gombcsoportokon** (állapot, lista / rács, fülek) – ~1–1,5 óra
 - **101 – aktív szűrők címkeként ×-szel (telefon)** – ~1,5–2 óra
-- **102 – fokozatos elmosás a letapadt sávok alatt** – ~1 óra
-- **103 – „folyékony üveg” a lebegő gombokon** – ~1,5 óra
+- **102 – fokozatos elmosás a letapadt sávok alatt – kész** (2026-10-15; teszt: `munka/e2e/test-102-103.mjs` 8/8)
+- **103 – „folyékony üveg” a lebegő gombokon – kész** (2026-10-15; teszt: `test-102-103.mjs`, `test.mjs` 115/115)
 - **104 – moziszerű adatlap-fejléc asztalon – kész** (2026-10-15; teszt: `munka/e2e/test-104.mjs` 9/9, `test.mjs` 115/115,
   `test-1013` 12/12)
 - **108 – egységes lenyílók** (`appearance: base-select`, ikonokkal) – ~2 óra
-Hátravan: 78 – ~2–3 óra; 84 – ~1,5–2 óra (látványterv); 99–103, 108 – összesen ~8,5–10 óra.
+Hátravan: 78 – ~2–3 óra; 84 – ~1,5–2 óra (látványterv); 99, 100, 101, 108 – összesen ~6–7 óra.
 **Lekerült a roadmapről** (Norbi döntése, 2026-10-08: a közeljövőben nincs tervben; magadtól ne
 javasold újra): **25 – admin jogosultság**, **26 – regisztráció** (a meglévőkön kívül más felhasználó
 nem lesz, Mama fiókja pedig a 13-as óta korlátozott). A részletes tervük a TERV.md-ben megmaradt.

@@ -5,6 +5,7 @@ import { flushSync } from 'react-dom';
 import { supabase } from '@/lib/supabase';
 import PosterCard from '@/components/PosterCard';
 import Pagination from '@/components/Pagination';
+import ProgressiveBlur from '@/components/ProgressiveBlur';
 import ImdbRatingsImport from '@/components/ImdbRatingsImport';
 import TitleSearch from '@/components/TitleSearch';
 import { recommendSeeds } from '@/components/Discover';
@@ -1492,6 +1493,8 @@ export default function Watchlist({ session }) {
             ref={filtersRef}
             data-stuck={filtersStuck ? '' : undefined}
           >
+            {/* letapadva a sáv alatt fokozatos elmosás (terv-3 102) */}
+            {filtersStuck && <ProgressiveBlur edge="top" />}
             {/* telefonon a szűrők alapból összecsukva: a gomb röviden mutatja a beállítást,
                 kinyitva minden szűrő és a rendezés látszik (a kereső mindig) */}
             <button
