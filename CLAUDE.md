@@ -235,7 +235,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   asztalon (≥ 1400 px) – rácsban és 2026-10-15 óta listanézetben is, egységesen (Norbi kérése) – a lapozó és alatta
   a lábléc az ablak alján áll (`docked={isDesktop}` → `.pagination.docked`; a lábléc a `main[data-docked]`-hoz kötve
   – egyoldalas találatnál, lapozó nélkül is ugyanez, átnézés K4 –, kompakt, `--docked-footer-h` = 2,75 rem magas, `sticky; bottom: 0`, a lapozó `sticky;
-  bottom: var(--docked-footer-h)`; a lábléc üveg, a lapozó fölött fokozatos elmosás – terv-3 102, lent; a `main` flex oszlop –
+  bottom: var(--docked-footer-h)`; a lapozó és a lábléc egy közös üvegen áll – a lábléc `::before`-ja felnyúlik
+  a lapozó mögé (`--docked-pager-h`, a lapozó fix magassága), a lapozó átlátszó, egy réteggel fölötte; Norbi kérése,
+  2026-10-15: két külön üvegnél csík látszott, a 102-es fokozatos elmosás pedig kékes derengést adott; a `main` flex oszlop –
   a body flex oszlopában `flex: 1` –, a lapozó `margin-top: auto`): minden oldalon ugyanott, a
   lábléc mindig látszik, görgetősáv csak ha a kártyák nem férnek ki (a korábbi `min-height:
   100dvh` feleslegesen görgetett); az értesítősáv fölöttük; a
@@ -251,8 +253,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   backdrop-filtert – a rétegek akkor nem látnák a mögötte lévőt –, és az ősei sem: filter / opacity / maszk); asztali
   listanézetben a táblázat ragadós fejléce alatt is teljes erővel (`--pb-solid`), a fejléc ilyenkor átlátszó és a
   sáv fölött (`z-index: 31`; nyitott szűrőlistánál nem, mert az a sávból lóg le); telefonon kinyitva (belül
-  görgethető) a korábbi egyforma üveg; a dokkolt lapozó fölött ugyanez fölfelé, de telítésnövelés (`saturate`) nélkül
-  (Norbi kérése, 2026-10-15: a halmozott telítés kékes derengést adott). A magasságát
+  görgethető) a korábbi egyforma üveg; a dokkolt lapozó mögött 2026-10-15 óta nincs (ott a lábléc
+  közös üvege – Norbi kérése). A magasságát
   (`--filters-h`, ResizeObserver) a táblázat ragadós fejléce kapja, hogy alatta tapadjon;
   telefonon kinyitva legfeljebb a képernyő 70%-a, belül görgethető. Letapadva (csak asztalon,
   ≥ 641 px) a ↺ után gyorsgomb (`.stuck-tools`): „↑” (vissza a lap tetejére); a „+” (Cím hozzáadása) a 99 óta nincs –

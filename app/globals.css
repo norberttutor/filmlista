@@ -1704,7 +1704,7 @@ body:not(:has(.filters[data-stuck])) .top.collapsing[data-compact] {
 
 /* ---------- Fokozatos elmosás (terv-3 102, components/ProgressiveBlur.js) ----------
    Norbi választása a látványterv után (2026-10-15 – https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs): a letapadt
-   szűrősor és a dokkolt lapozó mögött öt réteg (1–24 px), lépcsőzetes maszkkal: a sávban teljes erővel, a sávon túl
+   szűrősor mögött öt réteg (1–24 px), lépcsőzetes maszkkal: a sávban teljes erővel, a sávon túl
    --pb-fade alatt elgyengül (a legerősebb a leghamarabb). Előtte a sáv színével halványuló fátyol. --pb-solid: a sávon
    túl még teljes erővel – a táblázat ragadós fejléce alatt (az ott átlátszó). */
 .pblur {
@@ -1728,17 +1728,6 @@ body:not(:has(.filters[data-stuck])) .top.collapsing[data-compact] {
   bottom: calc(-1 * (var(--pb-solid) + var(--pb-fade)));
   background: linear-gradient(
     180deg,
-    var(--pb-tint) calc(100% - var(--pb-fade)),
-    color-mix(in oklab, var(--bg) 40%, transparent) calc(100% - var(--pb-fade) / 2),
-    transparent 100%
-  );
-}
-
-.pblur-bottom {
-  bottom: 0;
-  top: calc(-1 * var(--pb-fade));
-  background: linear-gradient(
-    0deg,
     var(--pb-tint) calc(100% - var(--pb-fade)),
     color-mix(in oklab, var(--bg) 40%, transparent) calc(100% - var(--pb-fade) / 2),
     transparent 100%
@@ -1775,26 +1764,9 @@ body:not(:has(.filters[data-stuck])) .top.collapsing[data-compact] {
   --pb-end: calc(100% - var(--pb-fade) * 0.8);
 }
 
-/* a dokkolt lapozó mögött telítésnövelés nélkül: a halmozott saturate a sötétkék hátteret kékes sávvá erősítette
-   (Norbi kérése, 2026-10-15: a kékes derengés nem kell) */
-.pblur-bottom > :nth-child(4) {
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
-}
-
-.pblur-bottom > :nth-child(5) {
-  -webkit-backdrop-filter: blur(24px);
-  backdrop-filter: blur(24px);
-}
-
 .pblur-top > i {
   -webkit-mask-image: linear-gradient(180deg, black calc(100% - var(--pb-fade)), transparent var(--pb-end));
   mask-image: linear-gradient(180deg, black calc(100% - var(--pb-fade)), transparent var(--pb-end));
-}
-
-.pblur-bottom > i {
-  -webkit-mask-image: linear-gradient(0deg, black calc(100% - var(--pb-fade)), transparent var(--pb-end));
-  mask-image: linear-gradient(0deg, black calc(100% - var(--pb-fade)), transparent var(--pb-end));
 }
 
 /* asztali listanézet: a táblázat ragadós fejléce a sáv alatt – letapadva átlátszó, a rétegek teljes erővel alatta,
@@ -6225,6 +6197,7 @@ button.season:hover {
    lapozóhoz: egyoldalas találatnál (nincs lapozó) is ugyanez a keskeny, üveg lábléc (átnézés K4, 2026-10-15). */
 body:has(main[data-docked]) {
   --docked-footer-h: 2.75rem;
+  --docked-pager-h: 3.625rem;
 }
 
 main[data-docked] {
@@ -6236,19 +6209,34 @@ main[data-docked] {
 body:has(main[data-docked]) .site-footer {
   position: sticky;
   z-index: 25;
+}
+
+/* a lapozó és a lábléc egyetlen közös üvegen áll (Norbi kérése, 2026-10-15): a lábléc háttérrétege (::before)
+   lapozónál a lapozó mögé is felnyúlik (--docked-pager-h: a lapozó rögzített magassága), a lapozó maga átlátszó és
+   egy réteggel fölötte. Két külön üvegnél a találkozásuknál csík látszott (mindkettő a saját széléig mos el); a
+   102-es fokozatos elmosás pedig kékes derengést adott. */
+.pagination.docked {
+  z-index: 26;
+  bottom: var(--docked-footer-h);
+  box-sizing: border-box;
+  height: var(--docked-pager-h);
+  margin-top: auto;
+  padding: 0 var(--gutter);
+}
+
+body:has(main[data-docked]) .site-footer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background-color: color-mix(in oklab, var(--bg) 68%, transparent);
   -webkit-backdrop-filter: blur(18px) saturate(1.5);
   backdrop-filter: blur(18px) saturate(1.5);
 }
 
-/* a lapozó fölött fokozatos elmosás (terv-3 102): maga átlátszó, vonal és árnyék nélkül; a lábléc üveg marad */
-.pagination.docked {
-  bottom: var(--docked-footer-h);
-  margin-top: auto;
-  padding: 0.65rem var(--gutter);
-  background-color: transparent;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
+body:has(.pagination.docked) .site-footer::before {
+  top: calc(-1 * var(--docked-pager-h));
 }
 
 body:has(main[data-docked]) .site-footer {
