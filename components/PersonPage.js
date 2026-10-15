@@ -340,7 +340,7 @@ export default function PersonPage({ person: cast, titles, active, apiRef, back,
 
           <div className="editor-actions">
             <span className="spacer" />
-            <button type="button" className="ghost" onClick={close}>
+            <button type="button" className="ghost editor-close-btn" onClick={close}>
               Bezárás
             </button>
           </div>

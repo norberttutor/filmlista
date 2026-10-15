@@ -363,7 +363,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   („Tovább” / „Kevesebb” – `.overview-more`, csak ha nem fér el; ResizeObserver méri, mert megnyitáskor az ablak még
   rejtve van) és az „Előzetes megnézése”; a lejátszó (`player`) a kép alatt, a jobb oszlop tetején. Nagy borító
   (`.editor-poster`) ilyenkor nincs: a bal oszlopban a „Hol nézhető?” és a Szereplők. Jelenetkép nélkül és 900 px
-  alatt a korábbi elrendezés (72). Teszt: `munka/e2e/test-104.mjs`.
+  alatt a korábbi elrendezés (72). Ha a jelenetkép a megnyitás után érkezik (előnézet), a fejléc áthelyeződik és a cím
+  újraépül – a fókusz ilyenkor visszakerül a címre (2026-10-15; addig a body-ra esett). Teszt: `munka/e2e/test-104.mjs`.
   Nézetváltás (asztalon, `lib/viewTransition.js`): a kattintott kártya / sor borítója átsiklik a
   nagy borító helyére – jelenetképes lapon a képen lévő kisebb borítóra (104) – (a `Watchlist` `openEditor(t, forrásElem)` indítja), bezáráskor (Esc, Bezárás,
   kikattintás) a `morphTo` borítóra vissza; törléskor nincs. A
@@ -376,6 +377,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   Megnyitáskor a fókusz az ablak címén van (keret nélkül), nem a Franchise mezőn (Norbi kérése).
   A jobb felső sarokban ragadós bezáró × (`.editor-close` a `.editor-close-bar`-ban – sticky, 0 magas sáv; átnézés J1,
   2026-10-15): görgetés után is látszik, mint az Esc (törlés-megerősítés / felvétel közben nem zár – `canLeavePage`).
+  Telefonon (≤ 640 px, alsó lap) nincs sem ×, sem „Bezárás” (`.editor-close-btn`; Norbi kérése, 2026-10-15): a fogantyú
+  lehúzása, a Vissza gomb / gesztus és az Esc zár; ha a gombsorban más nem marad (előnézet, színész lapja), elmarad.
   Ha van háttérképe (`backdrop_path`), az ablak tetején a film széles jelenetképe (`w1280`,
   telefonon `w780`), alul a felületbe olvadva; asztalon rajta a fejléc (`.has-hero`, terv-3 104 – fent)
   (`.has-backdrop`). Telefonon (≤ 640 px) az ablak alsó lap: alulról felcsúszik, teljes
@@ -764,7 +767,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   szavazatúak, legfeljebb 8; egy napig gyorsítótárazva; 404 → üres; a `lib/prefetch.js` is kéri); `galleryList()`: a
   lap jelenetképe elöl + a többi. Asztalon (és jelenetkép nélkül telefonon is) `GalleryStrip` – „Képek N” sor a
   Hasonló címek fölött (`.gallery`, 16:9-es képek, vízszintesen görgethető); telefonon (≤ 640 px, ha van jelenetkép)
-  `BackdropPager` – a fejléc képe lapozható (balra fent – jobbra fent az adatlap ×-e, átnézés J1 – „‹ 1 / 8 ›” – `.backdrop-pager`, alul pöttyök, ujjal húzva,
+  `BackdropPager` – a fejléc képe lapozható (jobbra fent „‹ 1 / 8 ›” – `.backdrop-pager`, alul pöttyök, ujjal húzva,
   koppintva nagy nézet – `.backdrop-zoom`). Nagy nézet: `GalleryLightbox` (`.gallery-lightbox`, a lapon belül, a
   teljes képernyőn): ‹ › / nyilak / húzás, alul a kis képek, „× Bezárás”; az Esc (a window rögzítő fázisában – az
   adatlap Esc-je előtt), a Vissza gomb és a vissza-gesztus (`useBackLayer`) csak a nagy nézetet zárja; az elhagyott
@@ -1438,7 +1441,7 @@ beállított szűrők címkeként ×-szel (101), az app stílusában nyíló len
 Átnézés, első javítások (2026-10-15): telefonon újra teljes szélességű a harang listája és a ⋮ menü (K1), az adatlap
 derengése görgetéskor nem ér véget éles széllel (K2), az évadok idővonalán a „ma” jelölő a tengelyen belül (K3), egyoldalas
 találatnál is a keskeny lábléc (K4), a táblázatban a „Nem érdekli” egy sorban (K7), bezáró × az adatlap jobb felső sarkában
-(J1), az adatlap alján a „Frissítés a TMDB-ről” elválasztva a „Törlés a listáról”-tól (J2); telefonon az adatlapon nincs „Összes szereplő” (Norbi kérése).
+(J1; telefonon nincs × és „Bezárás”), az adatlap alján a „Frissítés a TMDB-ről” elválasztva a „Törlés a listáról”-tól (J2); telefonon az adatlapon nincs „Összes szereplő” (Norbi kérése).
 A még meg nem jelent filmek szaggatott kerettel és dátumos jelvénnyel, a harang szól a digitális
 megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül). Asztalon az adatlap
 kikattintásra bezárul (terv-3 24-es pontja, 2026-10-04). „Hol
@@ -1637,13 +1640,13 @@ már megvan.
 pontonkénti részletek – hely, mit lát Norbi, ok, javítás, bizonyosság –: `munka/audit-2026-10-15/ATNEZES.md`; a kódok
 állandók, a kész pontot itt és ott is jelöld: „kész (dátum, commit)”). Kategóriák:
 - **K – Látható hibák (kinézet)** – ~3 óra
-  - K1 – Telefonon a harang és a ⋮ menü keskeny (≈200 px) lenyíló – a 99 (összecsukódó fejléc) óta – **kész** (2026-10-15)
-  - K2 – Az adatlap derengő háttere görgetéskor éles, lekerekített széllel véget ér (Mama adatlapján is) – **kész** (2026-10-15)
-  - K3 – Évadok idővonala: a „ma” jelölő a tengelyen túl (vízszintes kilógás a sorozat adatlapján) – **kész** (2026-10-15)
-  - K4 – Egyoldalas találatnál a lábléc a magas, vonalas változat (nem a keskeny, dokkolt) – **kész** (2026-10-15)
+  - K1 – Telefonon a harang és a ⋮ menü keskeny (≈200 px) lenyíló – a 99 (összecsukódó fejléc) óta – **kész** (2026-10-15, `1f26dca`)
+  - K2 – Az adatlap derengő háttere görgetéskor éles, lekerekített széllel véget ér (Mama adatlapján is) – **kész** (2026-10-15, `1f26dca`)
+  - K3 – Évadok idővonala: a „ma” jelölő a tengelyen túl (vízszintes kilógás a sorozat adatlapján) – **kész** (2026-10-15, `1f26dca`)
+  - K4 – Egyoldalas találatnál a lábléc a magas, vonalas változat (nem a keskeny, dokkolt) – **kész** (2026-10-15, `1f26dca`)
   - K5 – 641–899 px: az adatlapon a műfajok a borító alá csúsznak, a Franchise mező két sorba törik – ~0,5 óra
   - K6 – Asztali listanézet 1900 px alatt: a cím egy sorra vágva, az eredeti cím 2–3 sorban – ~0,5 óra
-  - K7 – Táblázat: a „Nem érdekli” két sorba törik a Mama-lenyílóban – **kész** (2026-10-15)
+  - K7 – Táblázat: a „Nem érdekli” két sorba törik a Mama-lenyílóban – **kész** (2026-10-15, `1f26dca`)
 - **H – Kódhibák, hibakezelés** – ~5 óra
   - H1 – Csillagos értékelés billentyűzettel: a nyíl azonnal ment („Hogy tetszett?” → 1 csillag) – ~1–1,5 óra
   - H2 – TMDB-hibánál a franchise-sáv / csempe „nincs TMDB-gyűjtemény”-t ír – ~0,5 óra
@@ -1684,8 +1687,8 @@ pontonkénti részletek – hely, mit lát Norbi, ok, javítás, bizonyosság �
   - I6 – Az üres keresés magyarázata elavult (a franchise nevét nem említi) – ~0,05 óra
   - I7 – Statisztika: a „(· értékelt címek)” magyarázat nehezen érthető – ~0,05 óra
 - **J – Javaslatok (lehetne szebb / jobb)** – ~7–8 óra
-  - J1 – Bezáró × az adatlap tetején (most csak a lap alján „Bezárás”) – **kész** (2026-10-15; telefonon a galéria lapozója ezért balra fent)
-  - J2 – „Törlés a listáról” és „Frissítés a TMDB-ről” közé nagyobb köz – **kész** (2026-10-15)
+  - J1 – Bezáró × az adatlap tetején (most csak a lap alján „Bezárás”) – **kész** (2026-10-15, `1f26dca`; telefonon nincs × és „Bezárás” – Norbi kérése)
+  - J2 – „Törlés a listáról” és „Frissítés a TMDB-ről” közé nagyobb köz – **kész** (2026-10-15, `1f26dca`)
   - J3 – Net nélkül a tiltott vezérlők halványítása + jelzés az adatlapon – ~0,25 óra
   - J4 – 641–1000 px között is a telefonos, összecsukható szűrő – ~1 óra
   - J5 – Rácsnézetben a hosszú cím 2–3 soros vágása – ~0,25 óra

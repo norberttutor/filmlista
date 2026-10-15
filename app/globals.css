@@ -8528,11 +8528,10 @@ input[type='checkbox']:checked {
   cursor: zoom-in;
 }
 
-/* balra fent: jobbra fent az adatlap bezáró ×-e (átnézés J1) */
 .backdrop-pager {
   position: absolute;
   top: 0.9rem;
-  left: 0.9rem;
+  right: 0.9rem;
   z-index: 2;
   display: flex;
   align-items: center;
@@ -8750,6 +8749,19 @@ input[type='checkbox']:checked {
 
 .editor-close:active {
   background-color: rgb(var(--glass) / 0.95);
+}
+
+/* telefonon (alsó lap) nincs × és „Bezárás” (Norbi kérése, 2026-10-15): a fogantyú lehúzása, a Vissza gomb / gesztus és
+   az Esc zár; ha a gombsorban más nem marad (előnézet, színész lapja), az egész sor elmarad */
+@media (max-width: 640px) {
+  .title-editor .editor-close-bar,
+  .title-editor .editor-close-btn {
+    display: none;
+  }
+
+  .title-editor .editor-actions:not(:has(> :not(.spacer, .editor-close-btn))) {
+    display: none;
+  }
 }
 
 /* telefonon alulról felcsúszó "alsó lap": teljes szélesség, felül kerek sarkok, fogantyú;

@@ -281,7 +281,7 @@ export default function TitleEditor({
       {...backdrop}
       {...ambientProps(ambient)}
     >
-      {/* telefonon: fogantyú – lefelé húzva bezárja az ablakot (a Bezárás / Esc ugyanaz) */}
+      {/* telefonon: fogantyú – lefelé húzva bezárja az ablakot (az Esc / Vissza ugyanaz; telefonon nincs × és „Bezárás”) */}
       <div
         className="sheet-handle"
         aria-hidden="true"
@@ -468,6 +468,16 @@ function TitlePage({
   // kicsiben, a cím nagyban, az adatok, a leírás és az előzetes gombja a képre kerül; a bal oszlopban csak a „Hol
   // nézhető?” és a Szereplők marad. A leírás a képen 3 sorban, „Tovább” csak ha nem fér el.
   const hero = useMediaQuery(WIDE_QUERY) && Boolean(t.backdrop_path);
+  // a fejléc ilyenkor máshová kerül a JSX-ben (a képre / a jobb oszlop tetejére), a cím újraépül: ha az előnézet
+  // jelenetképe a megnyitás után érkezik, a címen lévő fókusz a body-ra esne – visszakerül a címre
+  const heroSeen = useRef(hero);
+  useLayoutEffect(() => {
+    if (heroSeen.current === hero) return;
+    heroSeen.current = hero;
+    if (active && (document.activeElement == null || document.activeElement === document.body)) {
+      pageEl.current?.querySelector('h2')?.focus({ preventScroll: true });
+    }
+  }, [hero, active]);
   const overviewRef = useRef(null);
   const [overviewOpen, setOverviewOpen] = useState(false);
   const [overviewLong, setOverviewLong] = useState(false);
@@ -925,7 +935,7 @@ function TitlePage({
             {preview ? (
               <>
                 <span className="spacer" />
-                <button type="button" className="ghost" onClick={close}>
+                <button type="button" className="ghost editor-close-btn" onClick={close}>
                   Bezárás
                 </button>
               </>
@@ -934,7 +944,7 @@ function TitlePage({
               <>
                 <span className="muted small">Kapcsolat nélkül csak nézelődni lehet.</span>
                 <span className="spacer" />
-                <button type="button" className="ghost" onClick={close}>
+                <button type="button" className="ghost editor-close-btn" onClick={close}>
                   Bezárás
                 </button>
               </>
@@ -976,7 +986,7 @@ function TitlePage({
                         : 'Frissítés a TMDB-ről'}
                 </button>
                 <span className="spacer" />
-                <button type="button" className="ghost" onClick={close}>
+                <button type="button" className="ghost editor-close-btn" onClick={close}>
                   Bezárás
                 </button>
               </>
