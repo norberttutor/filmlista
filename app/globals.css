@@ -1775,6 +1775,18 @@ body:not(:has(.filters[data-stuck])) .top.collapsing[data-compact] {
   --pb-end: calc(100% - var(--pb-fade) * 0.8);
 }
 
+/* a dokkolt lapozó mögött telítésnövelés nélkül: a halmozott saturate a sötétkék hátteret kékes sávvá erősítette
+   (Norbi kérése, 2026-10-15: a kékes derengés nem kell) */
+.pblur-bottom > :nth-child(4) {
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+.pblur-bottom > :nth-child(5) {
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+
 .pblur-top > i {
   -webkit-mask-image: linear-gradient(180deg, black calc(100% - var(--pb-fade)), transparent var(--pb-end));
   mask-image: linear-gradient(180deg, black calc(100% - var(--pb-fade)), transparent var(--pb-end));
@@ -6313,6 +6325,32 @@ body:has(.pagination.docked) .toaster {
   color: var(--muted);
 }
 
+/* telefonon tömörebben (Norbi kérése, 2026-10-15): az „Előző” / „Következő” csak nyíl (kerek, mint az oldalszámok),
+   kisebb közök – így a sor ritkábban törik két sorba –, és alatta nincs fölösleges köz */
+@media (max-width: 640px) {
+  .pagination {
+    gap: 0.5rem 0.6rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .pagination .pg-word {
+    display: none;
+  }
+
+  .pagination .pg-step {
+    min-width: 2.2rem;
+    padding: 0.35rem 0.6rem;
+  }
+
+  .pagination ol {
+    gap: 0.25rem;
+  }
+
+  .page-info {
+    font-size: 0.8rem;
+  }
+}
+
 /* ---------- Szerkesztő ablak ---------- */
 /* egy réteggel a lista fölött: világos felső él, hajszálvékony világos keret, mély árnyék;
    mögötte a lista elsötétül és enyhén elmosódik */
@@ -7196,13 +7234,39 @@ body:has(.editor[open]) {
   border-top: 1px solid var(--line);
 }
 
-/* a „Frissítés a TMDB-ről” jól elválik a romboló „Törlés a listáról”-tól (átnézés J2: szorosan mellette félre
-   lehetett kattintani): nagyobb köz és halk elválasztó vonal */
-.editor-actions .tmdb-refresh {
+/* „Törlés a listáról” / „Frissítés a TMDB-ről” (Norbi kérése, 2026-10-15): ikonos ghost gombok – a törlés pirosas
+   (halvány piros keret, rámutatva piros fátyol), a frissítés semleges; a kettő között nagyobb köz (átnézés J2: a
+   romboló mellett félre lehetett kattintani) */
+.editor-actions .editor-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.95rem;
+  font-size: 0.9rem;
+}
+
+.editor-actions .editor-action + .editor-action {
   margin-left: 0.6rem;
-  padding-left: 1.2rem;
-  border-left: 1px solid var(--muted); /* a --line ilyen rövid szakaszon nem látszott */
-  border-radius: 0;
+}
+
+.editor-actions .editor-action:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.ghost.danger-ghost {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+}
+
+.ghost.danger-ghost:hover:not(:disabled) {
+  color: var(--danger);
+  border-color: var(--danger);
+  background-color: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.ghost.danger-ghost:active:not(:disabled) {
+  background-color: color-mix(in srgb, var(--danger) 20%, transparent);
 }
 
 .editor-actions .spacer {
@@ -8761,6 +8825,32 @@ input[type='checkbox']:checked {
 
   .title-editor .editor-actions:not(:has(> :not(.spacer, .editor-close-btn))) {
     display: none;
+  }
+
+  /* a gombsor és az „Előzetes megnézése” középre zárva (Norbi kérése, 2026-10-15) */
+  .title-editor .editor-actions {
+    justify-content: center;
+  }
+
+  .title-editor .editor-actions .spacer {
+    display: none;
+  }
+
+  /* a két gomb 360 px-es telefonon is egy sorba férjen */
+  .title-editor .editor-actions .editor-action {
+    gap: 0.35rem;
+    padding: 0.42rem 0.65rem;
+    font-size: 0.8rem;
+  }
+
+  .title-editor .editor-actions .editor-action + .editor-action {
+    margin-left: 0;
+  }
+
+  .title-editor .trailer-btn {
+    display: flex;
+    width: fit-content;
+    margin-inline: auto;
   }
 }
 

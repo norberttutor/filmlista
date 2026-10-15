@@ -961,22 +961,29 @@ function TitlePage({
               </>
             ) : (
               <>
+                {/* ikonos gombok (Norbi kérése, 2026-10-15 – korábban linkek): a törlés pirosas, a frissítés semleges */}
                 <button
                   type="button"
-                  className="danger-link"
+                  className="ghost editor-action danger-ghost"
                   ref={deleteButtonRef}
                   disabled={busy}
                   onClick={() => setConfirmingDelete(true)}
                 >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" />
+                  </svg>
                   Törlés a listáról
                 </button>
                 <button
                   type="button"
-                  className="link small tmdb-refresh"
+                  className="ghost editor-action tmdb-refresh"
                   disabled={tmdbRefresh === 'busy'}
                   onClick={refreshFromTmdb}
                   title="A magyar cím (ha még az eredeti áll itt), a leírás, a borító és a műfajok a TMDB-ről"
                 >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M21 12a9 9 0 1 1-2.64-6.36L21 8M21 3v5h-5" />
+                  </svg>
                   {tmdbRefresh === 'busy'
                     ? 'Frissítés…'
                     : tmdbRefresh === 'changed'

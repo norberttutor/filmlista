@@ -229,7 +229,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   a `main` végén.
   Lapozás 25-ösével (`PAGE_SIZE`, telefon / keskenyebb rács, `components/Pagination.js`); asztali
   listanézetben 10-esével (`TABLE_PAGE_SIZE`, terv-3 59 – Norbi kérése); asztali rácsban (≥ 1400 px)
-  22-esével (`GRID_PAGE_SIZE`, Norbi kérése, 2026-10-04: 1440p-n 11 oszlop × 2 teli sor), és
+  22-esével (`GRID_PAGE_SIZE`, Norbi kérése, 2026-10-04: 1440p-n 11 oszlop × 2 teli sor). Telefonon (≤ 640 px) tömörebb
+  (Norbi kérése, 2026-10-15): az „Előző” / „Következő” csak nyíl (`.pg-step`, a szó – `.pg-word` – rejtve; felolvasónak
+  „Előző oldal” / „Következő oldal”), kisebb közök, alatta nincs fölösleges köz. És
   asztalon (≥ 1400 px) – rácsban és 2026-10-15 óta listanézetben is, egységesen (Norbi kérése) – a lapozó és alatta
   a lábléc az ablak alján áll (`docked={isDesktop}` → `.pagination.docked`; a lábléc a `main[data-docked]`-hoz kötve
   – egyoldalas találatnál, lapozó nélkül is ugyanez, átnézés K4 –, kompakt, `--docked-footer-h` = 2,75 rem magas, `sticky; bottom: 0`, a lapozó `sticky;
@@ -249,7 +251,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   backdrop-filtert – a rétegek akkor nem látnák a mögötte lévőt –, és az ősei sem: filter / opacity / maszk); asztali
   listanézetben a táblázat ragadós fejléce alatt is teljes erővel (`--pb-solid`), a fejléc ilyenkor átlátszó és a
   sáv fölött (`z-index: 31`; nyitott szűrőlistánál nem, mert az a sávból lóg le); telefonon kinyitva (belül
-  görgethető) a korábbi egyforma üveg; a dokkolt lapozó fölött ugyanez fölfelé. A magasságát
+  görgethető) a korábbi egyforma üveg; a dokkolt lapozó fölött ugyanez fölfelé, de telítésnövelés (`saturate`) nélkül
+  (Norbi kérése, 2026-10-15: a halmozott telítés kékes derengést adott). A magasságát
   (`--filters-h`, ResizeObserver) a táblázat ragadós fejléce kapja, hogy alatta tapadjon;
   telefonon kinyitva legfeljebb a képernyő 70%-a, belül görgethető. Letapadva (csak asztalon,
   ≥ 641 px) a ↺ után gyorsgomb (`.stuck-tools`): „↑” (vissza a lap tetejére); a „+” (Cím hozzáadása) a 99 óta nincs –
@@ -342,7 +345,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   Saját értékelés címkéje után), a gombsor fölött „Állapot: Megnézve – mentve · Visszavonás” (`.saved-note`,
   `role="status"`; a lapon, mert az ablak fölött a sáv nem kattintható): lépésenként visszafelé (`undos`),
   10 mp-ig. Hibánál csak a sikertelen módosítás esik ki, hibaüzenet. A franchise létrehozása után a neve a
-  `created`, törlése után a `deleted` refből (a törölt franchise üresre állítása nem mentendő). Törlés megerősítéssel – Norbi kérésére itt marad –, utána a sávban 8 mp-ig
+  `created`, törlése után a `deleted` refből (a törölt franchise üresre állítása nem mentendő). Alul a gombsorban ikonos
+  ghost gombok (Norbi kérése, 2026-10-15): „Törlés a listáról” (pirosas – `.danger-ghost`) és „Frissítés a TMDB-ről”
+  (`.editor-action`); telefonon a gombsor és az „Előzetes megnézése” középre zárva. Törlés megerősítéssel – Norbi kérésére itt marad –, utána a sávban 8 mp-ig
   „Visszavonás” (`onDelete` → `Watchlist.requestDelete`) (a mobilos borítófalon a borító vagy a
   ceruza nyitja). Az „Abbahagyva” állapot csak sorozatnál választható. Alul „Hasonló címek”
   (`SimilarTitles`). Előzetes: megnyitáskor a háttérben `/api/tmdb/videos`; ha van, a cím
@@ -898,7 +903,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `app/api/tmdb/details-refresh/route.js` – **frissítés a TMDB-ről** (terv-3 83, 2026-10-14): `POST` törzs nélkül
   a háttérfrissítés (40-esével, a `detailsDue` szerint; a `Watchlist` betöltéskor hívja – `refreshDetails()`,
   legfeljebb 15 kör, a változott címek teljes sorát kapja), `{ id }`-vel egy cím kézzel (az adatlap „Frissítés a
-  TMDB-ről” linkje – `.tmdb-refresh` a „Törlés a listáról” mellett, nagyobb közzel és elválasztó vonallal – átnézés J2; utána 4 mp-ig „✓ Frissítve” / „✓ Nincs
+  TMDB-ről” linkje – `.tmdb-refresh` – ikonos ghost gomb a „Törlés a listáról” mellett, köztük nagyobb köz – átnézés J2; utána 4 mp-ig „✓ Frissítve” / „✓ Nincs
   újdonság a TMDB-n”; `refreshTitleDetails(id)` → `{ row, changed }`). A felhasználó jogaival; a saját adatokhoz
   nem nyúl. A **cím csak akkor** cserélődik a TMDB magyar címére, ha most az eredeti cím áll ott (felvételkor még
   nem volt magyar – Norbi döntése, 2026-10-14: a kézzel adott címek, pl. „Pókember 2.1”, maradnak); a leírás

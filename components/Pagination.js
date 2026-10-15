@@ -26,13 +26,15 @@ export default function Pagination({ page, pageCount, total, pageSize, onChange,
     <nav className={docked ? 'pagination docked' : 'pagination'} aria-label="Lapozás">
       {/* dokkolva fölötte fokozatos elmosás (terv-3 102) */}
       {docked && <ProgressiveBlur edge="bottom" />}
+      {/* telefonon csak a nyíl látszik (a szó rejtve – a sor így ritkábban törik két sorba); felolvasónak „Előző oldal” */}
       <button
         type="button"
-        className="ghost"
+        className="ghost pg-step"
+        aria-label="Előző oldal"
         disabled={page === 1}
         onClick={() => onChange(page - 1)}
       >
-        ‹ Előző
+        ‹<span className="pg-word"> Előző</span>
       </button>
       <ol>
         {pageNumbers(page, pageCount).map((p, i) =>
@@ -57,11 +59,12 @@ export default function Pagination({ page, pageCount, total, pageSize, onChange,
       </ol>
       <button
         type="button"
-        className="ghost"
+        className="ghost pg-step"
+        aria-label="Következő oldal"
         disabled={page === pageCount}
         onClick={() => onChange(page + 1)}
       >
-        Következő ›
+        <span className="pg-word">Következő </span>›
       </button>
       <span className="page-info">
         {from}–{to}. / {total} cím
