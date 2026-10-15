@@ -1089,7 +1089,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `supabase/*.sql` – a már lefuttatott adatbázis-szkriptek (dokumentáció)
 - `FELHASZNALOI-LEIRAS.md` – felhasználói leírás Norbinak: minden funkció témák szerint
   (1–17. szakasz), a végén Változásnapló. Kezelési leírás, nem kód: gombnevek, lépések, szabályok.
-  Képes (terv-3 33, 2026-10-06): a képek a `docs/kepek/*.jpg` (28 db, a repóban, ~2,4 MB; legutóbb frissítve 2026-10-08; asztal
+  Képes (terv-3 33, 2026-10-06): a képek a `docs/kepek/*.jpg` (33 db, a repóban, ~2,9 MB; legutóbb frissítve 2026-10-15; asztal
   1440 × 900, telefon 390 × 844), a zsúfoltabbakon borostyán számozott jelölők (①②③), a szöveg
   ugyanazokkal a számokkal magyaráz; a telefonos képek HTML-`<img width>`-del egymás mellett. Mind
   egy szkriptből: `munka/terv-3/33-leiras/leiras-seed.mjs` (próbalista a tesztfiókba) +
