@@ -230,7 +230,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   Lapozás 25-ösével (`PAGE_SIZE`, telefon / keskenyebb rács, `components/Pagination.js`); asztali
   listanézetben 10-esével (`TABLE_PAGE_SIZE`, terv-3 59 – Norbi kérése); asztali rácsban (≥ 1400 px)
   22-esével (`GRID_PAGE_SIZE`, Norbi kérése, 2026-10-04: 1440p-n 11 oszlop × 2 teli sor), és
-  ott a lapozó és alatta a lábléc az ablak alján áll (`docked` → `.pagination.docked`; a lábléc
+  asztalon (≥ 1400 px) – rácsban és 2026-10-15 óta listanézetben is, egységesen (Norbi kérése) – a lapozó és alatta
+  a lábléc az ablak alján áll (`docked={isDesktop}` → `.pagination.docked`; a lábléc
   ilyenkor kompakt, `--docked-footer-h` = 2,75 rem magas, `sticky; bottom: 0`, a lapozó `sticky;
   bottom: var(--docked-footer-h)`; a lábléc üveg, a lapozó fölött fokozatos elmosás – terv-3 102, lent; a `main` flex oszlop –
   a body flex oszlopában `flex: 1` –, a lapozó `margin-top: auto`): minden oldalon ugyanott, a

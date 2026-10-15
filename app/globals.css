@@ -6201,7 +6201,7 @@ button.season:hover {
   padding-bottom: 1.5rem;
 }
 
-/* asztali rácsban a lapozó és alatta a lábléc az ablak alján áll (Norbi kérése): a lapozó minden
+/* asztalon (lista- és rácsnézetben egyaránt) a lapozó és alatta a lábléc az ablak alján áll (Norbi kérése): a lapozó minden
    oldalon pontosan ugyanott van, a lábléc mindig látszik, és görgetősáv csak akkor jelenik meg,
    ha a kártyák nem férnek ki. A main (a body flex oszlopában flex: 1) kitölti a lábléc fölötti
    helyet, a lapozó az aljára kerül (margin-top: auto) – rövid oldalon is a lábléc fölött áll;

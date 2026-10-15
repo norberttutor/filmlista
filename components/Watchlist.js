@@ -1998,7 +1998,7 @@ export default function Watchlist({ session }) {
               total={visible.length}
               pageSize={pageSize}
               onChange={changePage}
-              docked={isDesktop && view === 'grid'}
+              docked={isDesktop} // asztalon lista- és rácsnézetben is az ablak alján (egységesen, Norbi kérése, 2026-10-15)
             />
           )}
         </>

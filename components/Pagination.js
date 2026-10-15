@@ -15,7 +15,8 @@ function pageNumbers(page, pageCount) {
 }
 
 // Lapozó: ‹ Előző  1 … 4 5 6 … 21  Következő ›  –  „76–100. / 512 cím”
-// docked: az ablak aljára rögzítve (asztali rácsban – minden oldalon ugyanott, Norbi kérése)
+// docked: az ablak aljára rögzítve (asztalon – ≥ 1400 px – lista- és rácsnézetben is; minden oldalon ugyanott,
+// Norbi kérése)
 export default function Pagination({ page, pageCount, total, pageSize, onChange, docked = false }) {
   if (pageCount <= 1) return null;
   const from = (page - 1) * pageSize + 1;
