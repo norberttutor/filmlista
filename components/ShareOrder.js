@@ -10,6 +10,8 @@ import { createShare, loadShare, revokeShare, shareUrl } from '@/lib/shares';
 // onBusyChange: a megerősítés és a kérések alatt a gyűjtemény-ablak ne záródjon kikattintásra.
 export default function ShareOrder({ franchise, onBusyChange }) {
   const [token, setToken] = useState(undefined); // undefined: még tölt, null: nincs link
+  const [loadError, setLoadError] = useState(false); // a betöltés nem sikerült (ilyenkor nem tudjuk, van-e link)
+  const [attempt, setAttempt] = useState(0); // „Újrapróbálás”
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -21,14 +23,16 @@ export default function ShareOrder({ franchise, onBusyChange }) {
 
   useEffect(() => {
     let alive = true;
+    setToken(undefined);
+    setLoadError(false);
     loadShare(franchise.id)
       .then((t) => alive && setToken(t))
-      .catch(() => alive && setToken(null));
+      .catch(() => alive && setLoadError(true)); // ne „Link létrehozása” látsszon, ha talán van link (kódaudit #37)
     return () => {
       alive = false;
       clearTimeout(copiedTimer.current);
     };
-  }, [franchise.id]);
+  }, [franchise.id, attempt]);
 
   // layout-effektben: a jelzés még a következő kattintás előtt beáll (a sima effekt csak a
   // kirajzolás után futna – egy gyors kikattintás addig bezárná az ablakot); eltűnéskor elengedi
@@ -97,7 +101,16 @@ export default function ShareOrder({ franchise, onBusyChange }) {
 
       {open && (
         <div className="wo-share" id="wo-share-panel" role="group" aria-label="A nézési sorrend megosztása">
-          {token === undefined ? (
+          {loadError ? (
+            <div className="wo-share-actions">
+              <p className="error small" role="alert">
+                Nem sikerült betölteni a megosztást. Ellenőrizd az internetkapcsolatot, és próbáld újra.
+              </p>
+              <button type="button" className="ghost" onClick={() => setAttempt((n) => n + 1)}>
+                Újrapróbálás
+              </button>
+            </div>
+          ) : token === undefined ? (
             <p className="muted small">Betöltés…</p>
           ) : token === null ? (
             <>

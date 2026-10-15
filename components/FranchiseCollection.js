@@ -258,8 +258,7 @@ export function CollectionDialog({
   async function add(p) {
     setState((s) => ({ ...s, [p.tmdb_id]: { busy: true } }));
     try {
-      const row = await addTitle(p);
-      onAdded(await updateTitle(row.id, { franchise_id: franchise.id }));
+      onAdded(await addTitle(p, null, { franchise_id: franchise.id }));
       setState((s) => ({ ...s, [p.tmdb_id]: {} }));
     } catch (err) {
       setState((s) => ({ ...s, [p.tmdb_id]: { error: err.message } }));
@@ -284,13 +283,18 @@ export function CollectionDialog({
     }
   }
 
+  // hozzárendelés / eltávolítás: mentés közben a többi gomb tiltva – két gyors kattintásnál a második
+  // a még régi listából számolna, és felülírná az elsőt (kódaudit #36)
+  const [savingManual, setSavingManual] = useState(false);
   async function changeManual(ids) {
     setError('');
+    setSavingManual(true);
     try {
       onFranchiseUpdated(await setFranchiseCollections(franchise.id, ids));
     } catch (err) {
       setError(err.message);
     }
+    setSavingManual(false);
   }
 
   const busyAny = Object.values(state).some((s) => s.busy);
@@ -493,6 +497,7 @@ export function CollectionDialog({
                   <button
                     type="button"
                     className="link small"
+                    disabled={savingManual}
                     onClick={() => changeManual(manual.filter((id) => id !== s.id))}
                   >
                     Eltávolítás
@@ -584,6 +589,7 @@ export function CollectionDialog({
             titles={titles}
             assigned={new Set([...manual, ...sections.map((s) => s.id)])}
             onPick={(c) => changeManual([...manual, c.id])}
+            busy={savingManual}
             onClose={() => setSearching(false)}
           />
         ) : (
@@ -649,7 +655,7 @@ function suggestQueries(franchise, titles) {
 // TMDB-gyűjtemény keresése és hozzárendelése (késleltetett keresés, mint a Cím hozzáadása); üres
 // keresőnél javaslatok (terv-3 53, a franchise nevéből és a filmjei eredeti címéből – a már
 // hozzárendeltek nélkül). A név és a borító új lapon a gyűjtemény TMDB-oldalára visz.
-function CollectionSearch({ franchise, titles, assigned, onPick, onClose }) {
+function CollectionSearch({ franchise, titles, assigned, onPick, busy, onClose }) {
   const [query, setQuery] = useState('');
   const [found, setFound] = useState({ q: '', results: [], error: '' });
   const [suggested, setSuggested] = useState(null); // null: betöltés alatt
@@ -712,16 +718,16 @@ function CollectionSearch({ franchise, titles, assigned, onPick, onClose }) {
         </p>
       )}
       {q.length >= 2 ? (
-        done && <CollectionResults results={found.results} assigned={assigned} onPick={onPick} />
+        done && <CollectionResults results={found.results} assigned={assigned} onPick={onPick} busy={busy} />
       ) : (
-        <CollectionResults results={suggestions} assigned={assigned} onPick={onPick} suggested />
+        <CollectionResults results={suggestions} assigned={assigned} onPick={onPick} busy={busy} suggested />
       )}
     </div>
   );
 }
 
 // a talált / javasolt gyűjtemények: borító és név – új lapon a TMDB-oldalra (terv-3 53) –, „Hozzárendelés”
-function CollectionResults({ results, assigned, onPick, suggested }) {
+function CollectionResults({ results, assigned, onPick, busy, suggested }) {
   if (results.length === 0) return null;
   return (
     <ul className="collection-results" data-suggested={suggested || undefined}>
@@ -739,7 +745,7 @@ function CollectionResults({ results, assigned, onPick, suggested }) {
             {assigned.has(c.id) ? (
               <span className="on-list">✓ Hozzárendelve</span>
             ) : (
-              <button type="button" className="ghost" onClick={() => onPick(c)}>
+              <button type="button" className="ghost" disabled={busy} onClick={() => onPick(c)}>
                 Hozzárendelés
               </button>
             )}

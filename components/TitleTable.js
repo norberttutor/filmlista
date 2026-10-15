@@ -316,7 +316,9 @@ function TitleRow({
         <Lock on={readOnly}>
           <div className="rating-field">
             <StarRating
-              name={`rating-${t.id}`}
+              // a tétel kulcsa: nézési sorrendben egy sorozat évadonként külön sor – a csillagaik
+              // ne legyenek egy rádiócsoport (kódaudit #23)
+              name={`rating-${flipKey ?? t.id}`}
               label={`Értékelés – ${t.title}`}
               value={t.my_rating}
               onChange={(n) => save({ my_rating: n })}

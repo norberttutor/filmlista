@@ -807,7 +807,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `restoreSeasons()` (visszavonás), `setSeasonDownloaded()`, `addSeason()` (kézi, mai dátummal),
   `removeLastSeason()`,
   `refreshSeasons()` (háttér), `seasonAired()`, `NEXT_SEASON_STATUS`.
-  Az `addTitle(item, details, { watched })` második paramétere a már lekérdezett `/api/tmdb/details` válasz
+  Az `addTitle(item, details, { watched, franchise_id })` második paramétere a már lekérdezett `/api/tmdb/details` válasz
   (az előnézeti adatlapé), ha van; `watched` (terv-3 80, „Már láttam”): Megnézve, `watched_at` = ma – sorozatnál a
   már megjelent évadok megnézettek (a sorozat állapotát a trigger számolja), a bejelentettek nem. A 8 mp-es visszavonási idő alatt újra felvett cím: az `addTitle`
   a törlést vonja vissza (`registerPendingDelete`, kódaudit #22).
@@ -824,7 +824,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   választ) – a válasz mezőinek változásakor emeld.
   `mamaApplies(t)` (terv-3 58): van-e értelme a Mama-jelölésnek – franchise nélküli film, vagy már van
   értéke; az adatlap (a franchise mező aktuális értékével) és a táblázat Mama-cellája használja.
-  Közös segédek: `externalLink()`, `formatDate()`, `todayDate()`, `DEFAULT_STATUS`,
+  `franchise_id` (kódaudit #16): már a beszúráskor ebbe a franchise-ba kerül (a gyűjtemény-ablak „+ Hozzáadás”-a).
+  Közös segédek: `externalLink()`, `formatDate()`, `todayDate()` (budapesti idővel, a szerveren is – kódaudit #31),
+  `budapestDay(iso)`, `DEFAULT_STATUS`,
   `DROPPED_STATUS` („Abbahagyva”, csak sorozatnál), `MAMA_OPTIONS`, `mamaLabel()`
 - `lib/server/auth.js` – `getUserFromRequest()`, `supabaseAsUser()` (a felhasználó nevében,
   RLS-sel), `unauthorized()` (csak route handlerben). A `getUserFromRequest()` a tokent helyben
@@ -1577,8 +1579,10 @@ következő cím az adatlapon, 68 – tömeges szerkesztés a listanézetben.
 - **73 – animált váltás lista ↔ rács – kész** – **„B”** (a borítók lépcsőzetesen siklanak) (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
 - **74 – mikro-átmenetek – kész** (≤ 0,2 s) – **a javaslat** (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
 - **76 – a harang csoportjai – kész** („Ma” / „Ezen a héten” / „Korábban”) – **„A”** (kis, ritkított nagybetűs csoportcím) (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
-- **78 – nyitott kódaudit-pontok** (`munka/audit-2026-10-09/AUDIT.md`, a látható hatásúak előbb, pontonként
-  rákérdezve) – ~2–3 óra
+- **78 – nyitott kódaudit-pontok** (`munka/audit-2026-10-09/AUDIT.md`) – **a látható hatásúak kész** (2026-10-15:
+  #15, #16, #20, #23, #31, #32, #34, #35, #36, #37; a #40 elvetve, a #19 elavult; teszt: `munka/e2e/test-audit-78.mjs`
+  11/11, `test.mjs` 115/115). Maradt 11 rejtett / gyanú-pont (#13, #14, #21, #25–#30, #33, #39) – ~2 óra, pontonként
+  rákérdezve
 **Norbi kérése (2026-10-14): kényelmi kör, 2. rész – 79–88** (Claude javaslataiból; részletek:
 `munka/terv-3/TERV.md` „79–88” szakasz; látványterv, ahol a kinézet változik). **Elvetve** (Norbi, 2026-10-14 –
 magadtól ne javasold újra): 81 – évszám a „Cím hozzáadása” keresőben, 82 – lapozó nyilak a vízszintes sorokon,
@@ -1614,7 +1618,7 @@ már megvan.
 - **104 – moziszerű adatlap-fejléc asztalon – kész** (2026-10-15; teszt: `munka/e2e/test-104.mjs` 9/9, `test.mjs` 115/115,
   `test-1013` 12/12)
 - **108 – egységes lenyílók – kész** (2026-10-15; `appearance: base-select`, ikonok CSS-ből; teszt: `test-1015.mjs`)
-Hátravan: 78 – ~2–3 óra; 84 – ~1,5–2 óra (látványterv).
+Hátravan: 78 maradéka (11 rejtett pont) – ~2 óra; 84 – ~1,5–2 óra (látványterv).
 **Lekerült a roadmapről** (Norbi döntése, 2026-10-08: a közeljövőben nincs tervben; magadtól ne
 javasold újra): **25 – admin jogosultság**, **26 – regisztráció** (a meglévőkön kívül más felhasználó
 nem lesz, Mama fiókja pedig a 13-as óta korlátozott). A részletes tervük a TERV.md-ben megmaradt.

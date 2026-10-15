@@ -52,43 +52,69 @@ export default function ImdbRatingsImport({ titles, onApplied, onAdded, ref }) {
     await searchWatchlist(planWatchlistImport(titles, parsed.items));
   }
 
-  // a figyelőlista listán nem szereplő címei a TMDB-n (3-asával); a TMDB-azonosító szerint már
-  // listán lévők (IMDb-azonosító nélkül felvettek) is kimaradnak
-  async function searchWatchlist(plan) {
-    const watch = { inFile: plan.inFile, onList: plan.onList, phase: 'searching', progress: { done: 0, total: plan.missing.length }, rows: [], notFound: [] };
-    show({ watch });
-    if (plan.missing.length === 0) {
-      setView({ watch: { ...watch, phase: 'review' } });
-      return;
-    }
-    const update = updater(runRef.current);
-    const keys = new Set(titles.map(titleKey));
+  // tételek keresése a TMDB-n (3-asával): az új címek (rows), a TMDB-n nem létezők (notFound) és a
+  // sikertelen keresések (searchFailed – hálózati / TMDB-hiba; ezekről nem mondjuk, hogy nincsenek
+  // meg, újrapróbálhatók – kódaudit #15); a seen kulcsai (listán lévő / már talált) onList-nek számítanak
+  async function lookup(items, seen, update) {
     const found = await mapLimit(
-      plan.missing,
+      items,
       3,
       async (item) => {
         try {
           const { result } = await apiGet('/api/tmdb/find', { imdb: item.imdbId });
           return { item, result };
-        } catch (err) {
-          return { item, result: null, error: err.message };
+        } catch {
+          return { item, failed: true };
         }
       },
       (done) => update((v) => ({ watch: { ...v.watch, progress: { ...v.watch.progress, done } } }))
     );
     const rows = [];
     const notFound = [];
-    let onList = plan.onList;
-    const seen = new Set();
-    for (const { item, result } of found) {
-      if (!result) notFound.push(item);
-      else if (keys.has(titleKey(result)) || seen.has(titleKey(result))) onList++;
+    const searchFailed = [];
+    let onList = 0;
+    for (const { item, result, failed } of found) {
+      if (failed) searchFailed.push(item);
+      else if (!result) notFound.push(item);
+      else if (seen.has(titleKey(result))) onList++;
       else {
         seen.add(titleKey(result));
         rows.push({ ...result, key: titleKey(result), checked: true });
       }
     }
-    update(() => ({ watch: { ...watch, onList, phase: 'review', rows, notFound } }));
+    return { rows, notFound, searchFailed, onList };
+  }
+
+  // a figyelőlista listán nem szereplő címei a TMDB-n; a TMDB-azonosító szerint már listán lévők
+  // (IMDb-azonosító nélkül felvettek) is kimaradnak
+  async function searchWatchlist(plan) {
+    const watch = { inFile: plan.inFile, onList: plan.onList, phase: 'searching', progress: { done: 0, total: plan.missing.length }, rows: [], notFound: [], searchFailed: [] };
+    show({ watch });
+    if (plan.missing.length === 0) {
+      setView({ watch: { ...watch, phase: 'review' } });
+      return;
+    }
+    const update = updater(runRef.current);
+    const r = await lookup(plan.missing, new Set(titles.map(titleKey)), update);
+    update(() => ({ watch: { ...watch, ...r, onList: plan.onList + r.onList, phase: 'review' } }));
+  }
+
+  // a sikertelen keresések újra; az eredmény a már találtakhoz adódik
+  async function retrySearch() {
+    const items = watch.searchFailed;
+    const update = updater(runRef.current);
+    update((v) => ({ watch: { ...v.watch, phase: 'searching', progress: { done: 0, total: items.length } } }));
+    const r = await lookup(items, new Set([...titles.map(titleKey), ...watch.rows.map((row) => row.key)]), update);
+    update((v) => ({
+      watch: {
+        ...v.watch,
+        phase: 'review',
+        onList: v.watch.onList + r.onList,
+        rows: [...v.watch.rows, ...r.rows],
+        notFound: [...v.watch.notFound, ...r.notFound],
+        searchFailed: r.searchFailed,
+      },
+    }));
   }
 
   const setRowChecked = (key, checked) =>
@@ -209,7 +235,8 @@ export default function ImdbRatingsImport({ titles, onApplied, onAdded, ref }) {
                 <p className="watch-summary">
                   A fájlban <b>{watch.inFile}</b> cím van: <b>{watch.onList}</b> már a listádon,{' '}
                   <b>{watch.rows.length}</b> új
-                  {watch.notFound.length > 0 && <>, {watch.notFound.length} nincs meg a TMDB-n</>}.
+                  {watch.notFound.length > 0 && <>, {watch.notFound.length} nincs meg a TMDB-n</>}
+                  {watch.searchFailed.length > 0 && <>, {watch.searchFailed.length} keresése nem sikerült</>}.
                 </p>
               )}
 
@@ -243,6 +270,21 @@ export default function ImdbRatingsImport({ titles, onApplied, onAdded, ref }) {
                 <p className="muted small">
                   A TMDB-n nem találtam (nem kerülnek fel): {watch.notFound.map((i) => i.title).join(', ')}
                 </p>
+              )}
+
+              {watch.phase !== 'searching' && watch.searchFailed.length > 0 && (
+                <div className="import-retry" role="alert">
+                  <p className="error">
+                    Nem sikerült megkeresni a TMDB-n (lehet, hogy gyenge a net, vagy a TMDB épp túlterhelt):{' '}
+                    {watch.searchFailed.map((i) => i.title).join(', ')}.
+                    {watch.phase === 'review' && ' Próbáld újra.'}
+                  </p>
+                  {watch.phase === 'review' && (
+                    <button type="button" className="ghost" onClick={retrySearch}>
+                      Újrapróbálás
+                    </button>
+                  )}
+                </div>
               )}
 
               {watch.phase === 'done' && (

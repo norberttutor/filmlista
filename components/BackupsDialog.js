@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { BACKUP_KINDS, createBackup, listBackups, restoreBackup } from '@/lib/backups';
+import { toast } from '@/lib/toast';
 import { useBackdropClose } from '@/lib/useBackdropClose';
 
 const formatWhen = (iso) =>
@@ -63,6 +64,10 @@ export default function BackupsDialog({ titleCount, onRestored, onClose }) {
     setBusy(null);
   }
 
+  // Közben az ablak nem zárható (Esc, Mégse, Bezárás – kódaudit #35), de a Chrome a második
+  // Esc-et kattintás nélkül nem engedi megfogni: ha így bezárult, az eredmény az értesítősávba kerül.
+  const isOpen = () => dialogRef.current?.open;
+
   async function restore(b) {
     setBusy('restore');
     setError('');
@@ -71,18 +76,26 @@ export default function BackupsDialog({ titleCount, onRestored, onClose }) {
       const n = await restoreBackup(b.id);
       setConfirmId(null);
       await onRestored();
+      const text = `Visszaállítva: ${n} cím (mentés: ${formatWhen(b.created_at)}). Az előző állapotról mentés készült („Visszaállítás előtt”).`;
+      if (!isOpen()) return toast({ text });
       await reload();
-      setStatus(
-        `Visszaállítva: ${n} cím (mentés: ${formatWhen(b.created_at)}). Az előző állapotról mentés készült („Visszaállítás előtt”).`
-      );
+      setStatus(text);
     } catch (err) {
+      if (!isOpen()) return toast({ text: `A visszaállítás nem sikerült: ${err.message}` });
       setError(err.message);
     }
     setBusy(null);
   }
 
   return (
-    <dialog ref={dialogRef} className="editor backups-dialog" aria-labelledby="backups-title" onClose={onClose} {...backdrop}>
+    <dialog
+      ref={dialogRef}
+      className="editor backups-dialog"
+      aria-labelledby="backups-title"
+      onClose={onClose}
+      onCancel={(e) => busy && e.preventDefault()}
+      {...backdrop}
+    >
       <div className="import-body">
         <h2 id="backups-title" ref={headingRef} tabIndex={-1}>
           Mentések
@@ -107,7 +120,13 @@ export default function BackupsDialog({ titleCount, onRestored, onClose }) {
                     készül.
                   </p>
                   <span className="backup-confirm-actions">
-                    <button type="button" className="ghost" autoFocus onClick={() => setConfirmId(null)}>
+                    <button
+                      type="button"
+                      className="ghost"
+                      autoFocus
+                      disabled={busy === 'restore'}
+                      onClick={() => setConfirmId(null)}
+                    >
                       Mégse
                     </button>
                     <button type="button" className="danger" disabled={busy === 'restore'} onClick={() => restore(b)}>
@@ -147,7 +166,12 @@ export default function BackupsDialog({ titleCount, onRestored, onClose }) {
             {busy === 'backup' ? 'Mentés…' : 'Mentés most'}
           </button>
           <span className="spacer" />
-          <button type="button" className="primary" onClick={() => dialogRef.current.close()}>
+          <button
+            type="button"
+            className="primary"
+            disabled={busy !== null}
+            onClick={() => dialogRef.current.close()}
+          >
             Bezárás
           </button>
         </div>

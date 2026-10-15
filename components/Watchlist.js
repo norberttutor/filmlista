@@ -54,7 +54,7 @@ import Toaster from '@/components/Toaster';
 import EmptyState from '@/components/EmptyState';
 import StarRating from '@/components/StarRating';
 import { toast, dismissToast } from '@/lib/toast';
-import { dismissNotifications, loadNotifications, markNotificationsRead, restoreNotifications } from '@/lib/notifications';
+import { dismissNotifications, loadNotifications, markNotificationsRead, restoreNotifications, shownNotifications } from '@/lib/notifications';
 import { downloadListCsv } from '@/lib/exportList';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 import { canMorph, MORPH_NAME, trackTransition } from '@/lib/viewTransition';
@@ -600,8 +600,9 @@ export default function Watchlist({ session }) {
   const mamaUsed = useMemo(() => titles.some((t) => t.mama_status), [titles]);
 
   // a telepített app ikonján (pl. a tálcán) is látszik az olvasatlan értesítések száma,
-  // ahol a böngésző tudja (Chrome / Edge)
-  const unreadCount = notifications.filter((n) => !n.read_at).length;
+  // ahol a böngésző tudja (Chrome / Edge) – ugyanannyi, amennyit a harang mutat (kódaudit #20)
+  const titleIds = useMemo(() => new Set(titles.map((t) => t.id)), [titles]);
+  const unreadCount = shownNotifications(notifications, titleIds, franchiseName).filter((n) => !n.read_at).length;
   useEffect(() => {
     try {
       const badge = unreadCount ? navigator.setAppBadge?.(unreadCount) : navigator.clearAppBadge?.();

@@ -5,6 +5,7 @@ import { popupSide } from '@/lib/popupSide';
 import { formatDate } from '@/lib/titles';
 import { budapestToday } from '@/lib/refreshDue';
 import { useBackLayer } from '@/lib/backClose';
+import { shownNotifications } from '@/lib/notifications';
 import { article } from '@/components/Seasons';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w92';
@@ -25,7 +26,7 @@ function describe(n, franchiseName) {
   if (n.kind === 'collection_new') {
     // új rész a franchise TMDB-gyűjteményében (terv-3 36); a még meg nem jelentnél a várható dátum
     const name = franchiseName.get(n.franchise_id);
-    const soon = n.air_date && n.air_date > new Date().toISOString().slice(0, 10);
+    const soon = n.air_date && n.air_date > budapestToday(); // helyi nappal (kódaudit #31)
     return `Új rész a gyűjteményben – ${name}${soon ? ` · várható: ${formatDate(n.air_date)}` : ''}`;
   }
   if (n.kind === 'movie_digital') return 'Digitálisan is megjelent – már letölthető';
@@ -70,9 +71,7 @@ export default function NotificationBell({ notifications, titles, franchiseName,
 
   const byId = useMemo(() => new Map(titles.map((t) => [t.id, t])), [titles]);
   // törölt cím / franchise nélkül
-  const items = notifications.filter((n) =>
-    n.kind === 'collection_new' ? franchiseName.has(n.franchise_id) : byId.has(n.title_id)
-  );
+  const items = shownNotifications(notifications, byId, franchiseName);
   const unread = items.filter((n) => !n.read_at).length;
   const today = open ? budapestToday() : null; // a csoportokhoz (kinyitáskor számolva)
 

@@ -4032,6 +4032,18 @@ button.season:hover {
   margin: 0;
 }
 
+/* IMDb-figyelőlista: a sikertelen keresések és az „Újrapróbálás” (kódaudit #15) */
+.import-retry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.import-retry p {
+  flex: 1 1 18rem;
+}
+
 .import-summary {
   margin: 0;
   padding-left: 1.2rem;
