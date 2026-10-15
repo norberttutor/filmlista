@@ -327,8 +327,17 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   jelenetképes lapon a borító kicsiben (6,6 rem) balra a kép aljára úszik, mellette a „Vissza”, a cím és az adatok
   (terv-3 72, „A”, 2026-10-13: `.editor-titlebar` > `.editor-hero-poster` + `.editor-titletext`; asztalon a
   burkolók `display: contents`).
+  **Moziszerű fejléc** (terv-3 104, Norbi választása a látványterv után, 2026-10-15 –
+  https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs, „Javaslat”): asztalon (≥ 900 px – `WIDE_QUERY`) a jelenetképes
+  lapon (`hero` → `.editor-page.has-hero`) a fejléc (`header` – a JSX-ben változó, a képre vagy a jobb oszlop
+  tetejére kerül) a jelenetképen: a kép legalább 27 rem, balról és alulról a felületbe olvad; rajta balra lent a kisebb
+  borító (9,5 rem, `.editor-hero-poster`), mellette a nagy cím (2,75 rem), az adatok, a műfajok, a leírás 3 sorban
+  („Tovább” / „Kevesebb” – `.overview-more`, csak ha nem fér el; ResizeObserver méri, mert megnyitáskor az ablak még
+  rejtve van) és az „Előzetes megnézése”; a lejátszó (`player`) a kép alatt, a jobb oszlop tetején. Nagy borító
+  (`.editor-poster`) ilyenkor nincs: a bal oszlopban a „Hol nézhető?” és a Szereplők. Jelenetkép nélkül és 900 px
+  alatt a korábbi elrendezés (72). Teszt: `munka/e2e/test-104.mjs`.
   Nézetváltás (asztalon, `lib/viewTransition.js`): a kattintott kártya / sor borítója átsiklik a
-  nagy borító helyére (a `Watchlist` `openEditor(t, forrásElem)` indítja), bezáráskor (Esc, Bezárás,
+  nagy borító helyére – jelenetképes lapon a képen lévő kisebb borítóra (104) – (a `Watchlist` `openEditor(t, forrásElem)` indítja), bezáráskor (Esc, Bezárás,
   kikattintás) a `morphTo` borítóra vissza; törléskor nincs. A
   `showModal()` ezért `useLayoutEffect`-ben fut.
   Kikattintás (Norbi kérése, 2026-10-04; `useBackdropClose`): asztalon (≥ 641 px) a háttérre kattintva bezárul
@@ -338,7 +347,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (`.franchise-new`). Telefonon (alsó lap) nem zár; az Esc mindig zár.
   Megnyitáskor a fókusz az ablak címén van (keret nélkül), nem a Franchise mezőn (Norbi kérése).
   Ha van háttérképe (`backdrop_path`), az ablak tetején a film széles jelenetképe (`w1280`,
-  telefonon `w780`), alul a felületbe olvadva; asztalon a nagy borító ráúszik a kép aljára
+  telefonon `w780`), alul a felületbe olvadva; asztalon rajta a fejléc (`.has-hero`, terv-3 104 – fent)
   (`.has-backdrop`). Telefonon (≤ 640 px) az ablak alsó lap: alulról felcsúszik, teljes
   szélességű, felül fogantyú (`.sheet-handle`) – lefelé húzva (110 px vagy gyors mozdulat)
   bezárul, különben visszaugrik.
@@ -1370,6 +1379,8 @@ Supabase Realtime (86), frissítés a TMDB-ről – magyar cím (ha még az ered
 magától és az adatlapról (83); „Már láttam” – megnézettként felvétel a keresőből, az előnézetből és a színész
 lapjáról (80). Képgaléria az adatlapon – asztalon „Képek” sor, telefonon lapozható jelenetkép, nagy nézet (95);
 összes szereplő az adatlapon (91); élő szinkron: a mentés visszaállítása után a címek nem tűnnek el (hibajavítás).
+Moziszerű adatlap-fejléc asztalon: nagy jelenetkép, rajta a borító, a nagy cím, az adatok és az előzetes (terv-3 104,
+2026-10-15).
 A még meg nem jelent filmek szaggatott kerettel és dátumos jelvénnyel, a harang szól a digitális
 megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül). Asztalon az adatlap
 kikattintásra bezárul (terv-3 24-es pontja, 2026-10-04). „Hol
@@ -1547,7 +1558,21 @@ franchise-idővonal, 98 – rezgés jelöléskor.
 - **91 – összes szereplő az adatlapon – kész** (2026-10-14; teszt: `munka/e2e/test-91.mjs` 4/4)
 - **95 – képgaléria az adatlapon – kész** (2026-10-14; asztalon „A” – „Képek” sor, telefonon „B” – lapozható jelenetkép;
   https://claude.ai/artifact/BDEffdLNcJoJ4h3gtjsGWC; teszt: `munka/e2e/test-95.mjs` 6/6)
-Hátravan: 78 – ~2–3 óra; 84 – ~1,5–2 óra (látványterv).
+**Norbi kérése (2026-10-14): korszerűbb felület – 99–108** (a meglévők átalakítása mai trendek szerint, Claude
+javaslataiból; részletek: `munka/terv-3/TERV.md` „99–108”). Látványterv (csak sötét téma):
+https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs (helyben `munka/terv-3/terv-99/`); **Norbi választása (2026-10-15):
+a „Javaslat” nézet** – beépítéskor annak megfelelően. **Elvetve** (magadtól ne javasold újra): 105 – összecsukódó
+adatlap-fejléc, 106 – egymásra rétegzett értesítősáv; a 107 (bento Statisztika) és a 109 (tipográfia) nagyrészt
+már megvan.
+- **99 – összecsukódó főcím** (görgetéskor a szűrősorral egy üveges sáv) – ~1,5 óra
+- **100 – csúszó kijelölő a gombcsoportokon** (állapot, lista / rács, fülek) – ~1–1,5 óra
+- **101 – aktív szűrők címkeként ×-szel (telefon)** – ~1,5–2 óra
+- **102 – fokozatos elmosás a letapadt sávok alatt** – ~1 óra
+- **103 – „folyékony üveg” a lebegő gombokon** – ~1,5 óra
+- **104 – moziszerű adatlap-fejléc asztalon – kész** (2026-10-15; teszt: `munka/e2e/test-104.mjs` 9/9, `test.mjs` 115/115,
+  `test-1013` 12/12)
+- **108 – egységes lenyílók** (`appearance: base-select`, ikonokkal) – ~2 óra
+Hátravan: 78 – ~2–3 óra; 84 – ~1,5–2 óra (látványterv); 99–103, 108 – összesen ~8,5–10 óra.
 **Lekerült a roadmapről** (Norbi döntése, 2026-10-08: a közeljövőben nincs tervben; magadtól ne
 javasold újra): **25 – admin jogosultság**, **26 – regisztráció** (a meglévőkön kívül más felhasználó
 nem lesz, Mama fiókja pedig a 13-as óta korlátozott). A részletes tervük a TERV.md-ben megmaradt.

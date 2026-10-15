@@ -37,6 +37,7 @@ import { galleryList, GalleryStrip, BackdropPager, GalleryLightbox } from '@/com
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500'; // a nagy borító (asztalon)
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/'; // a háttérkép (telefonon w780, asztalon w1280)
 const PHONE_QUERY = '(max-width: 640px)';
+const WIDE_QUERY = '(min-width: 900px)'; // a kétoszlopos asztali adatlap (globals.css)
 // a /api/tmdb/credits kérés v paramétere (a böngésző egy napig tárolja a választ – a 91-es óta 20 szereplőt ad);
 // a lib/prefetch.js is ezzel kéri
 const CREDITS_V = 2;
@@ -448,6 +449,24 @@ function TitlePage({
   const [shown, setShown] = useState(0); // B: a fejléc éppen látható képe
   const backdropPath = pager ? gallery[Math.min(shown, gallery.length - 1)] : t.backdrop_path;
 
+  // moziszerű fejléc (terv-3 104, 2026-10-15): asztalon (≥ 900 px) a jelenetképes lapon a kép magasabb, a borító
+  // kicsiben, a cím nagyban, az adatok, a leírás és az előzetes gombja a képre kerül; a bal oszlopban csak a „Hol
+  // nézhető?” és a Szereplők marad. A leírás a képen 3 sorban, „Tovább” csak ha nem fér el.
+  const hero = useMediaQuery(WIDE_QUERY) && Boolean(t.backdrop_path);
+  const overviewRef = useRef(null);
+  const [overviewOpen, setOverviewOpen] = useState(false);
+  const [overviewLong, setOverviewLong] = useState(false);
+  // megnyitáskor az ablak még nem látszik (a showModal a szülő effektjében fut): a méret változásakor is mér
+  useLayoutEffect(() => {
+    const el = overviewRef.current;
+    if (!el || !hero || overviewOpen) return;
+    const measure = () => setOverviewLong(el.scrollHeight > el.clientHeight + 2);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [t.overview, hero, overviewOpen]);
+
   // szereplők (terv-3 38): a top cast első 3 tagja, szintén a háttérben, a mozgás után
   const [cast, setCast] = useState(null);
   useEffect(() => {
@@ -598,9 +617,109 @@ function TitlePage({
     </p>
   );
 
+  const player = playing && trailer && (
+    <div className="trailer">
+      <iframe
+        src={`https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1&rel=0&hl=hu&cc_lang_pref=hu`}
+        title={`Előzetes: ${t.title}`}
+        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+        allowFullScreen
+      />
+    </div>
+  );
+
+  // a cím, a borító és az adatok: asztalon (≥ 900 px) a jelenetképes lapon a képen (terv-3 104, moziszerű fejléc),
+  // különben a jobb oszlop tetején
+  const header = (
+    <header>
+      {/* keskenyebben (< 900 px), jelenetképes lapon a borító balra a kép aljára úszik, mellette a
+          cím és az adatok (terv-3 72, „A”); asztalon a burkolók display: contents – nem változik semmi */}
+      <div className="editor-titlebar">
+        {t.backdrop_path && t.poster_path && (
+          <img className="editor-hero-poster" src={POSTER_BASE + t.poster_path} alt="" decoding="async" />
+        )}
+        <div className="editor-titletext">
+          {/* a Hasonló címek borítójáról nyílt lapon: vissza az előző címre */}
+          {back && (
+            <button type="button" className="back-link" onClick={onBack}>
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Vissza: {back}
+            </button>
+          )}
+          <h2 id={active ? 'editor-title' : undefined} tabIndex={-1}>
+            {t.title}
+          </h2>
+          <p className="meta">
+            {t.release_year && <span>{t.release_year}</span>}
+            <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
+            {preview && t.seasons?.length > 0 && <span>{t.seasons.length} évad</span>}
+            <ImdbBadge title={t} />
+            {/* előnézetnél csak a TMDB-adatokkal (a találatban nincs megjelenési dátum) */}
+            {(!preview || details) && <ReleaseBadge state={releaseState(t)} />}
+          </p>
+        </div>
+      </div>
+      {/* műfajok, pötty nélkül (mint Mama adatlapján; Norbi kérése, 2026-10-08) – előnézetnél a
+          TMDB-adatokból ({ id, name }), amint megjöttek */}
+      {t.genres?.length > 0 && (
+        <p className="editor-genres">{t.genres.map((g) => (typeof g === 'string' ? g : g.name)).join(' · ')}</p>
+      )}
+      {entry.added && (
+        <p className="added-note" role="status">
+          {entry.added === 'watched'
+            ? '✓ Felkerült a listádra megnézettként – hogy tetszett? Alább megadhatod a csillagokat.'
+            : '✓ Felkerült a listádra – itt beállíthatod az állapotát és az értékelését.'}
+        </p>
+      )}
+      {/* keskenyebben (< 900 px, nincs nagy borító) itt, az előzetes fölött */}
+      <WatchProviders providers={providers} className="inline" />
+      {trailer && (
+        <button
+          type="button"
+          className="ghost trailer-btn"
+          aria-expanded={playing}
+          onClick={() => setPlaying((p) => !p)}
+        >
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+            <path d={playing ? 'M6 6l12 12M18 6 6 18' : 'M8 5v14l11-7z'} fill={playing ? 'none' : 'currentColor'} stroke="currentColor" strokeWidth={playing ? 2.4 : 0} strokeLinecap="round" />
+          </svg>
+          {playing ? 'Előzetes bezárása' : 'Előzetes megnézése'}
+          {!playing && trailer.lang !== 'hu' && <span className="trailer-lang">angolul</span>}
+        </button>
+      )}
+      {!hero && player}
+      {t.overview ? (
+        <>
+          <p ref={overviewRef} className={hero && !overviewOpen ? 'editor-overview clamped' : 'editor-overview'}>
+            {t.overview}
+          </p>
+          {hero && (overviewLong || overviewOpen) && (
+            <button type="button" className="link small overview-more" aria-expanded={overviewOpen} onClick={() => setOverviewOpen((o) => !o)}>
+              {overviewOpen ? 'Kevesebb' : 'Tovább'}
+            </button>
+          )}
+        </>
+      ) : (
+        preview &&
+        !details &&
+        !detailsError && (
+          <div className="editor-overview-sk" aria-hidden="true">
+            <span className="sk sk-line" />
+            <span className="sk sk-line sk-w80" />
+            <span className="sk sk-line sk-w60" />
+          </div>
+        )
+      )}
+      {/* keskenyebben (< 900 px) a szereplők egy sorban a leírás alatt */}
+      <TopCast cast={cast} variant="inline" onPerson={onPerson} />
+    </header>
+  );
+
   return (
-    <div ref={pageEl} className={t.backdrop_path ? 'editor-page has-backdrop' : 'editor-page'} hidden={!active}>
-      {/* a film széles jelenetképe az ablak tetején (TMDB) */}
+    <div ref={pageEl} className={`editor-page${t.backdrop_path ? ' has-backdrop' : ''}${hero ? ' has-hero' : ''}`} hidden={!active}>
+      {/* a film széles jelenetképe az ablak tetején (TMDB); asztalon rajta a fejléc (terv-3 104) */}
       {t.backdrop_path && (
         <div className="editor-backdrop" data-pager={pager ? '' : undefined}>
           <img
@@ -613,103 +732,24 @@ function TitlePage({
           />
           {/* telefonon a fejléc képe lapozható (terv-3 95, „B”) */}
           {pager && <BackdropPager count={gallery.length} index={Math.min(shown, gallery.length - 1)} onIndex={setShown} onOpen={setZoom} />}
+          {hero && header}
         </div>
       )}
       <form onSubmit={handleSubmit}>
         {/* asztalon a borító nagyban, balra (görgetéskor a helyén marad), alatta a „Hol
-            nézhető?”; keskenyebben (< 900 px) rejtve */}
+            nézhető?”; keskenyebben (< 900 px) rejtve. A moziszerű fejlécnél a borító a képen van. */}
         <div className="editor-side">
-          <div className="editor-poster" aria-hidden="true">
-            {t.poster_path && <img src={POSTER_BASE + t.poster_path} alt="" decoding="async" />}
-          </div>
+          {!hero && (
+            <div className="editor-poster" aria-hidden="true">
+              {t.poster_path && <img src={POSTER_BASE + t.poster_path} alt="" decoding="async" />}
+            </div>
+          )}
           <WatchProviders providers={providers} className="side" />
           <TopCast cast={cast} variant="side" onPerson={onPerson} />
         </div>
         <div className="editor-main">
-          <header>
-            {/* keskenyebben (< 900 px), jelenetképes lapon a borító balra a kép aljára úszik, mellette a
-                cím és az adatok (terv-3 72, „A”); asztalon a burkolók display: contents – nem változik semmi */}
-            <div className="editor-titlebar">
-              {t.backdrop_path && t.poster_path && (
-                <img className="editor-hero-poster" src={POSTER_BASE + t.poster_path} alt="" decoding="async" />
-              )}
-              <div className="editor-titletext">
-                {/* a Hasonló címek borítójáról nyílt lapon: vissza az előző címre */}
-                {back && (
-                  <button type="button" className="back-link" onClick={onBack}>
-                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-                      <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    Vissza: {back}
-                  </button>
-                )}
-                <h2 id={active ? 'editor-title' : undefined} tabIndex={-1}>
-                  {t.title}
-                </h2>
-                <p className="meta">
-                  {t.release_year && <span>{t.release_year}</span>}
-                  <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
-                  {preview && t.seasons?.length > 0 && <span>{t.seasons.length} évad</span>}
-                  <ImdbBadge title={t} />
-                  {/* előnézetnél csak a TMDB-adatokkal (a találatban nincs megjelenési dátum) */}
-                  {(!preview || details) && <ReleaseBadge state={releaseState(t)} />}
-                </p>
-              </div>
-            </div>
-            {/* műfajok, pötty nélkül (mint Mama adatlapján; Norbi kérése, 2026-10-08) – előnézetnél a
-                TMDB-adatokból ({ id, name }), amint megjöttek */}
-            {t.genres?.length > 0 && (
-              <p className="editor-genres">{t.genres.map((g) => (typeof g === 'string' ? g : g.name)).join(' · ')}</p>
-            )}
-            {entry.added && (
-              <p className="added-note" role="status">
-                {entry.added === 'watched'
-                  ? '✓ Felkerült a listádra megnézettként – hogy tetszett? Alább megadhatod a csillagokat.'
-                  : '✓ Felkerült a listádra – itt beállíthatod az állapotát és az értékelését.'}
-              </p>
-            )}
-            {/* keskenyebben (< 900 px, nincs nagy borító) itt, az előzetes fölött */}
-            <WatchProviders providers={providers} className="inline" />
-            {trailer && (
-              <button
-                type="button"
-                className="ghost trailer-btn"
-                aria-expanded={playing}
-                onClick={() => setPlaying((p) => !p)}
-              >
-                <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-                  <path d={playing ? 'M6 6l12 12M18 6 6 18' : 'M8 5v14l11-7z'} fill={playing ? 'none' : 'currentColor'} stroke="currentColor" strokeWidth={playing ? 2.4 : 0} strokeLinecap="round" />
-                </svg>
-                {playing ? 'Előzetes bezárása' : 'Előzetes megnézése'}
-                {!playing && trailer.lang !== 'hu' && <span className="trailer-lang">angolul</span>}
-              </button>
-            )}
-            {playing && trailer && (
-              <div className="trailer">
-                <iframe
-                  src={`https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1&rel=0&hl=hu&cc_lang_pref=hu`}
-                  title={`Előzetes: ${t.title}`}
-                  allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-                  allowFullScreen
-                />
-              </div>
-            )}
-            {t.overview ? (
-              <p className="editor-overview">{t.overview}</p>
-            ) : (
-              preview &&
-              !details &&
-              !detailsError && (
-                <div className="editor-overview-sk" aria-hidden="true">
-                  <span className="sk sk-line" />
-                  <span className="sk sk-line sk-w80" />
-                  <span className="sk sk-line sk-w60" />
-                </div>
-              )
-            )}
-            {/* keskenyebben (< 900 px) a szereplők egy sorban a leírás alatt */}
-            <TopCast cast={cast} variant="inline" onPerson={onPerson} />
-          </header>
+          {!hero && header}
+          {hero && player}
 
           {preview ? (
             // előnézet: a szerkesztő mezők helyett egyetlen gomb
