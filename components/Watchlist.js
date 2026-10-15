@@ -72,7 +72,7 @@ import { useBackLayer } from '@/lib/backClose';
 import { useAppFreshness } from '@/lib/appVersion';
 import PullRefresh from '@/components/PullRefresh';
 import { useLiveSync } from '@/lib/liveSync';
-import { hasPendingSave } from '@/lib/rowSaves';
+import { hasPendingSave, isOptimistic } from '@/lib/rowSaves';
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 
@@ -259,6 +259,7 @@ export default function Watchlist({ session }) {
   // a friss lista már megjött (ezután a tárolt nem írhatja felül)
   const live = useRef(false);
   const snapshotShown = useRef(false); // a tárolt lista látszik (vagy látszott)
+  const loadRunning = useRef(false); // a lista betöltése folyamatban (az újrapróbálás kivárja – kódaudit #26)
   const [adding, setAdding] = useState(false);
   const [addQuery, setAddQuery] = useState(''); // a „Cím hozzáadása” panel kezdő keresése
   const [showStats, setShowStats] = useState(false); // a statisztika ablak nyitva
@@ -361,6 +362,8 @@ export default function Watchlist({ session }) {
 
   useEffect(() => {
     let cancelled = false;
+    const stopped = () => cancelled; // a háttérfrissítések körönként nézik (kódaudit #30)
+    loadRunning.current = true;
 
     async function load() {
       const [titlesRes, statusesRes, franchisesRes] = await Promise.all([
@@ -369,6 +372,7 @@ export default function Watchlist({ session }) {
         supabase.from('franchises').select('id, name, logo_path, tmdb_collection_ids, collections_checked_at'),
       ]);
       if (cancelled) return;
+      loadRunning.current = false;
 
       const error = titlesRes.error || statusesRes.error || franchisesRes.error;
       if (error) {
@@ -402,21 +406,21 @@ export default function Watchlist({ session }) {
           if (cancelled) return;
           const byId = new Map(rows.map((r) => [r.id, r]));
           setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
-        }).catch((err) => console.warn('IMDb-értékelések frissítése sikertelen:', err.message));
+        }, stopped).catch((err) => console.warn('IMDb-értékelések frissítése sikertelen:', err.message));
 
         // a szerkesztő ablak háttérképei a háttérben (a még meg nem nézett címekhez)
         refreshBackdrops(titlesRes.data, (rows) => {
           if (cancelled) return;
           const byId = new Map(rows.map((r) => [r.id, r]));
           setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
-        }).catch((err) => console.warn('Háttérképek lekérése sikertelen:', err.message));
+        }, stopped).catch((err) => console.warn('Háttérképek lekérése sikertelen:', err.message));
 
         // a filmek TMDB-gyűjteménye a háttérben (a franchise-javaslathoz, terv-3 35)
         refreshTitleCollections(titlesRes.data, (rows) => {
           if (cancelled) return;
           const byId = new Map(rows.map((r) => [r.id, r]));
           setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
-        }).catch((err) => console.warn('TMDB-gyűjtemények lekérése sikertelen:', err.message));
+        }, stopped).catch((err) => console.warn('TMDB-gyűjtemények lekérése sikertelen:', err.message));
 
         // a címek TMDB-adatai (magyar cím, leírás, borító, műfajok) a háttérben – a bejelentett / friss
         // címeké később érkezik a TMDB-re (terv-3 83); a változott címek teljes sora jön
@@ -424,7 +428,7 @@ export default function Watchlist({ session }) {
           if (cancelled) return;
           const byId = new Map(rows.map((r) => [r.id, r]));
           setTitles((ts) => ts.map((t) => byId.get(t.id) ?? t));
-        }).catch((err) => console.warn('A TMDB-adatok frissítése sikertelen:', err.message));
+        }, stopped).catch((err) => console.warn('A TMDB-adatok frissítése sikertelen:', err.message));
 
         // sorozatok évadai a háttérben: a még évad nélküliek megkapják, a hetente
         // ellenőrzöttekhez az új (megjelent / bejelentett) évad felkerül
@@ -454,7 +458,7 @@ export default function Watchlist({ session }) {
           if (cancelled) return;
           const byId = new Map(rows.map((r) => [r.id, r]));
           setTitles((ts) => ts.map((t) => byId.get(t.id) ?? t));
-        }).then(
+        }, stopped).then(
           (count) => count > 0 && reloadNotifications(),
           (err) => {
             console.warn('Évadok frissítése sikertelen:', err.message);
@@ -468,7 +472,7 @@ export default function Watchlist({ session }) {
           if (cancelled) return;
           const byId = new Map(rows.map((r) => [r.id, r]));
           setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
-        }).then(
+        }, stopped).then(
           (count) => count > 0 && reloadNotifications(),
           (err) => {
             console.warn('Megjelenési dátumok frissítése sikertelen:', err.message);
@@ -477,7 +481,7 @@ export default function Watchlist({ session }) {
         );
 
         // új rész a franchise-ok TMDB-gyűjteményeiben (terv-3 36): hetente; ha jött új, a harang szól
-        refreshCollectionParts(franchisesRes.data).then(
+        refreshCollectionParts(franchisesRes.data, stopped).then(
           (count) => count > 0 && reloadNotifications(),
           (err) => console.warn('A gyűjtemények új részeinek ellenőrzése sikertelen:', err.message)
         );
@@ -514,7 +518,8 @@ export default function Watchlist({ session }) {
   // sikertelen betöltés után: ha visszajön a net, azonnal, egyébként félpercenként újrapróbálja
   useEffect(() => {
     if (!failed) return;
-    const retry = () => setReloadKey((k) => k + 1);
+    // a még futó (lassú) betöltést nem dobja el – nagyon lassú netnél különben sosem érne célba (kódaudit #26)
+    const retry = () => !loadRunning.current && setReloadKey((k) => k + 1);
     const timer = setInterval(retry, RETRY_MS);
     window.addEventListener('online', retry);
     return () => {
@@ -1050,7 +1055,9 @@ export default function Watchlist({ session }) {
       ids: k.key === filterKey ? [...new Set([...k.ids, ...ids])] : ids,
       items: k.key === filterKey ? [...new Set([...k.items, ...items])] : items,
     }));
-    // más franchise-ba került: a régi sorrendből kikerült (az adatbázis-trigger is ezt teszi)
+    // más franchise-ba került: a régi sorrendből kikerült (az adatbázis-trigger is ezt teszi) – csak a
+    // mentett váltásnál; az optimistánál nem, mert ha a mentés elbukik, a hely elveszne (kódaudit #21)
+    if (isOptimistic(row)) return;
     setOrders((os) =>
       os.some((o) => o.title_id === row.id && o.franchise_id !== row.franchise_id)
         ? os.filter((o) => o.title_id !== row.id || o.franchise_id === row.franchise_id)

@@ -15,7 +15,7 @@ export async function POST(request) {
 
   const db = supabaseAsUser(request);
   // esedékes: ugyanaz, mint a lib/refreshDue.js backdropDue()-ja (a böngésző azzal dönti el, hív-e)
-  const todo = (query) => query.is('backdrop_checked_at', null);
+  const todo = (query) => query.is('backdrop_checked_at', null).not('tmdb_id', 'is', null);
 
   const { data: batch, error } = await todo(db.from('titles').select('id, media_type, tmdb_id'))
     .order('id')

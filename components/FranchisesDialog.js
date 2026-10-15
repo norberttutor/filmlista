@@ -65,7 +65,13 @@ export default function FranchisesDialog({
     if (!dialog.open) dialog.showModal();
     headingRef.current?.focus();
     controllerRef.current = new AbortController();
-    return () => controllerRef.current?.abort();
+    return () => {
+      controllerRef.current?.abort();
+      // a megszakított betöltések nem függők: fejlesztői módban (StrictMode) a React lebontja és újra
+      // felcsatolja az ablakot – különben az újracsatolt betöltés mindet függőnek látná, és semmi nem
+      // töltődne be (kódaudit #39). Élesben ez csak a bezáráskor fut.
+      pending.current.clear();
+    };
   }, []);
 
   // a gyűjtemények betöltése 3-asával; ha egy franchise címei / kézi gyűjteményei változnak

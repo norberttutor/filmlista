@@ -806,7 +806,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   Évadok: `setSeasonStatus()` (visszaad `{ row, filled, previous }`), `markAllSeasonsWatched()`,
   `restoreSeasons()` (visszavonás), `setSeasonDownloaded()`, `addSeason()` (kézi, mai dátummal),
   `removeLastSeason()`,
-  `refreshSeasons()` (háttér), `seasonAired()`, `NEXT_SEASON_STATUS`.
+  `refreshSeasons()` (háttér), `seasonAired()`, `NEXT_SEASON_STATUS`. A `refresh…()` háttérfrissítők utolsó paramétere
+  `isCancelled` (a `Watchlist` a lebomlását adja – körönként nézik, kódaudit #30).
   Az `addTitle(item, details, { watched, franchise_id })` második paramétere a már lekérdezett `/api/tmdb/details` válasz
   (az előnézeti adatlapé), ha van; `watched` (terv-3 80, „Már láttam”): Megnézve, `watched_at` = ma – sorozatnál a
   már megjelent évadok megnézettek (a sorozat állapotát a trigger számolja), a bejelentettek nem. A 8 mp-es visszavonási idő alatt újra felvett cím: az `addTitle`
@@ -858,7 +859,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   #5, 2026-10-09, teszt: `munka/e2e/test-audit-5.mjs` + `fail-tmdb.mjs`), `tmdbFetch()`,
   `tmdbErrorResponse()`, `yearOf()`, `pickReleaseDates()`
   (mozi: 3, ha nincs 2; digitális: 4; előbb HU, ha nincs US; országon belül a legkorábbi), `cached(kulcs, ms,
-  betöltő, keep?)` (memóriában, a szerverpéldány élete alatt, legfeljebb 500 elem; a hibát nem tárolja,
+  betöltő, keep?)` (memóriában, a szerverpéldány élete alatt, legfeljebb 500 elem; az egyszerre érkező hiányok egy
+  betöltést várnak – kódaudit #29; a hibát nem tárolja,
   és amire a `keep(érték)` hamis – pl. a hiányos kiemelt sávot – azt sem;
   a videos és a similar 1 napig, a details TMDB-része és az OMDb-érték – `omdb:` kulcs – 1 óráig), `pickSeasons()`
   (a TMDB évadjai a „0. évad” – különkiadások – nélkül) (csak route handlerben). A `tmdbFetch` és az
@@ -963,7 +965,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   saját előtti állapotára állt vissza, és a közben tett másikat is eltüntette a képernyőről.
   Használja: a táblázat soron belüli mentése (`TitleTable`), az évadműveletek (`useSeasonActions`
   – táblázat és adatlap), a nézési sorrend pipája (`WatchOrder`). **Új optimista mentésnél ezt
-  használd.** Teszt: `munka/e2e/test-audit-9.mjs`
+  használd.** `isOptimistic(row)`: a még nem mentett (optimista) sor – a mentés mellékhatását (pl. a nézési sorrendből
+  kivétel) csak a mentett sorra utánozd (kódaudit #21). Teszt: `munka/e2e/test-audit-9.mjs`
 - `lib/useStrike.js` – kihúzás (terv-3 40): `useStrike(status)` → hányszor vált megnézettre, amióta
   látszik; a cím köré tett `.strike` span kulcsa és `data-strike` jelzője (PosterCard, TitleTable
   sora – nézési sorrendben a tétel állapota): váltáskor a span újraépül, a CSS-animáció lefut,
@@ -1581,8 +1584,8 @@ következő cím az adatlapon, 68 – tömeges szerkesztés a listanézetben.
 - **76 – a harang csoportjai – kész** („Ma” / „Ezen a héten” / „Korábban”) – **„A”** (kis, ritkított nagybetűs csoportcím) (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
 - **78 – nyitott kódaudit-pontok** (`munka/audit-2026-10-09/AUDIT.md`) – **a látható hatásúak kész** (2026-10-15:
   #15, #16, #20, #23, #31, #32, #34, #35, #36, #37; a #40 elvetve, a #19 elavult; teszt: `munka/e2e/test-audit-78.mjs`
-  11/11, `test.mjs` 115/115). Maradt 11 rejtett / gyanú-pont (#13, #14, #21, #25–#30, #33, #39) – ~2 óra, pontonként
-  rákérdezve
+  11/11, `test.mjs` 115/115) és **a rejtettek is kész** (2026-10-15: #14, #21, #25–#30, #33, #39; a #13 elvetve; teszt:
+  `munka/e2e/test-audit-78b.mjs` 9/9). **Az audit minden pontja lezárult.**
 **Norbi kérése (2026-10-14): kényelmi kör, 2. rész – 79–88** (Claude javaslataiból; részletek:
 `munka/terv-3/TERV.md` „79–88” szakasz; látványterv, ahol a kinézet változik). **Elvetve** (Norbi, 2026-10-14 –
 magadtól ne javasold újra): 81 – évszám a „Cím hozzáadása” keresőben, 82 – lapozó nyilak a vízszintes sorokon,
@@ -1618,7 +1621,7 @@ már megvan.
 - **104 – moziszerű adatlap-fejléc asztalon – kész** (2026-10-15; teszt: `munka/e2e/test-104.mjs` 9/9, `test.mjs` 115/115,
   `test-1013` 12/12)
 - **108 – egységes lenyílók – kész** (2026-10-15; `appearance: base-select`, ikonok CSS-ből; teszt: `test-1015.mjs`)
-Hátravan: 78 maradéka (11 rejtett pont) – ~2 óra; 84 – ~1,5–2 óra (látványterv).
+Hátravan: 84 – ~1,5–2 óra (látványterv).
 **Lekerült a roadmapről** (Norbi döntése, 2026-10-08: a közeljövőben nincs tervben; magadtól ne
 javasold újra): **25 – admin jogosultság**, **26 – regisztráció** (a meglévőkön kívül más felhasználó
 nem lesz, Mama fiókja pedig a 13-as óta korlátozott). A részletes tervük a TERV.md-ben megmaradt.
