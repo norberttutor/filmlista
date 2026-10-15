@@ -84,6 +84,7 @@
   --danger-ink: #2a0d09; /* felirat a teli piros gombon */
 
   --gutter: clamp(1rem, 4vw, 3rem);
+  --head-c: 3.6rem; /* az összecsukott fejléc sávja (terv-3 99) – = HEAD_COMPACT_REM a Watchlistben */
   color-scheme: dark;
 }
 
@@ -378,6 +379,170 @@ select:hover {
   border-color: var(--muted);
 }
 
+/* Egységes lenyílók (terv-3 108, Norbi választása a látványterv után, 2026-10-15 –
+   https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs): a natív <select> listája a böngésző testreszabható lenyílójával
+   (appearance: base-select – Chrome / Edge 135+; máshol a mai lista) az app stílusában nyílik, mint a franchise- és
+   a műfajszűrő: lekerekített, árnyékos panel, halvány nyílás (0,16 s, popup-in), a kiválasztott türkiz, mellette pipa.
+   A zárt mező nem változik (a saját vékony nyíl marad, a beépített ikon rejtve). A szűrősor lenyílóinak opciói elé ikon
+   kerül (érték szerint, ::before maszkkal), az állapotokéi elé az állapot színe. A billentyűzet, a felolvasó és a
+   választás (change esemény) a natívé. */
+@supports (appearance: base-select) {
+  select,
+  ::picker(select) {
+    appearance: base-select;
+  }
+
+  select::picker-icon {
+    display: none;
+  }
+
+  ::picker(select) {
+    min-width: anchor-size(width);
+    max-height: min(26rem, 70dvh);
+    margin-block: 6px;
+    padding: 0.35rem;
+    overflow-y: auto;
+    color: var(--text);
+    background: var(--surface-raised);
+    border: 1px solid var(--edge);
+    border-radius: 16px;
+    box-shadow: var(--shadow-pop);
+  }
+
+  select:open::picker(select) {
+    animation: popup-in 0.16s ease-out;
+  }
+
+  select:open {
+    border-color: var(--accent-line);
+  }
+
+  select option {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 2.25rem;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.92rem;
+    border-radius: 10px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  select option:hover,
+  select option:focus-visible {
+    background: var(--hover-tint);
+    outline: none;
+  }
+
+  select option:checked {
+    color: var(--accent);
+    background: var(--accent-soft);
+    font-weight: 600;
+  }
+
+  select option::checkmark {
+    order: 1;
+    margin-left: auto;
+    padding-left: 0.8rem;
+    content: '✓';
+    font-weight: 700;
+  }
+
+  select option:disabled {
+    color: var(--muted);
+    cursor: default;
+  }
+
+  /* ikonok a szűrősor lenyílóiban (a műfajikonok mintájára, a felirat színében) */
+  :is(.type-select, .download-select, .sort-select) option::before {
+    content: '';
+    flex: none;
+    width: 17px;
+    height: 17px;
+    background: currentColor;
+    opacity: 0.8;
+    -webkit-mask: var(--opt-icon) center / contain no-repeat;
+    mask: var(--opt-icon) center / contain no-repeat;
+  }
+
+  .type-select option[value='movie'] {
+    --opt-icon: var(--icon-film);
+  }
+
+  .type-select option[value='tv'] {
+    --opt-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='6' width='18' height='13' rx='2'/%3E%3Cpath d='M8 3l4 3 4-3'/%3E%3C/svg%3E");
+  }
+
+  .type-select option[value='all'] {
+    --opt-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='8' height='7' rx='1.5'/%3E%3Crect x='13' y='4' width='8' height='7' rx='1.5'/%3E%3Crect x='3' y='13' width='8' height='7' rx='1.5'/%3E%3Crect x='13' y='13' width='8' height='7' rx='1.5'/%3E%3C/svg%3E");
+  }
+
+  .download-select option[value='all'] {
+    --opt-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Cpath d='M5 7h14M5 12h14M5 17h14'/%3E%3C/svg%3E");
+  }
+
+  .download-select option[value='yes'] {
+    --opt-icon: var(--icon-download);
+  }
+
+  .download-select option[value='no'] {
+    --opt-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/svg%3E");
+  }
+
+  .sort-select option:is([value='added_desc'], [value='added_asc']) {
+    --opt-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M12 8v4l3 2'/%3E%3C/svg%3E");
+  }
+
+  .sort-select option:is([value='rating'], [value='imdb']) {
+    --opt-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linejoin='round'%3E%3Cpath d='M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.9z'/%3E%3C/svg%3E");
+  }
+
+  .sort-select option:is([value='year_desc'], [value='year_asc']) {
+    --opt-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='5' width='16' height='15' rx='2'/%3E%3Cpath d='M4 10h16M9 3v4M15 3v4'/%3E%3C/svg%3E");
+  }
+
+  .sort-select option[value='watch_order'] {
+    --opt-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Cpath d='M10 6h10M10 12h10M10 18h10M4 5.5h1.5v3M4 8.5h3M4 15.5c0-1 2.5-1.5 2.5 0 0 1-2.5 1.8-2.5 3h2.8'/%3E%3C/svg%3E");
+  }
+
+  /* telefonon az állapot-lenyíló: az opció előtt az állapot színe (Megnézendő: üres kör) */
+  :is(.status-select, .mama-select) option::before {
+    content: '';
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--opt-dot, transparent);
+    box-shadow: inset 0 0 0 1.5px var(--opt-ring, var(--opt-dot, var(--muted)));
+  }
+
+  .status-select option[value='all'] {
+    --opt-ring: var(--muted);
+    --opt-dot: linear-gradient(90deg, var(--st-watching) 50%, var(--st-watched) 50%);
+  }
+
+  .status-select option[value='watching'] {
+    --opt-dot: var(--st-watching);
+  }
+
+  .status-select option[value='watched'] {
+    --opt-dot: var(--st-watched);
+  }
+
+  .status-select option[value='dropped'] {
+    --opt-dot: var(--st-dropped);
+  }
+
+  .mama-select option[value='interested'] {
+    --opt-dot: var(--accent-2);
+  }
+
+  .mama-select option[value='received'] {
+    --opt-dot: var(--st-watched);
+  }
+}
+
 /* jelölőnégyzet a sötét témához: vékony keretes, lekerekített négyzet, bejelölve türkiz
    kitöltés sötét pipával (a méretét a helye adja meg) */
 input[type='checkbox'] {
@@ -659,6 +824,92 @@ main.login::after {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
+}
+
+/* Összecsukódó főcím (terv-3 99, Norbi választása a látványterv után, 2026-10-15 –
+   https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs): a fejléc ragad, negatív helyzettel (--head-h: a mért
+   magassága), így görgetéskor csak az alsó --head-c magas sávja marad fent; a szűrősor alatta tapad. A magassága nem
+   változik (a lista nem ugrál), csak a --head-p (0–1, a Watchlist írja görgetéskor) szerint: a nagy cím a bal alsó
+   sarka felé összemegy és elhalványul, a gombsor a sáv jobb szélére csúszik (--acc-shift; ha a cím alá tört) és a sáv
+   közepére száll, az e-mail-cím elhalványul, a kis cím (.top-compact) előtűnik. Letapadt szűrősornál a sáv mögött a
+   szűrősor fokozatos elmosása (102) – fölfelé kinyúlik –, különben (pl. nyitott „Cím hozzáadása” panel alatt) saját
+   üveg. A fejléc felugrói (harang, ⋮) a szűrősor fölött. */
+.top.collapsing {
+  --head-p: 0;
+  position: sticky;
+  top: calc(var(--head-c) - var(--head-h, 100vh));
+  z-index: 32;
+}
+
+body:not(:has(.filters[data-stuck])) .top.collapsing[data-compact] {
+  background: linear-gradient(transparent calc(100% - var(--head-c)), color-mix(in oklab, var(--bg) 72%, transparent) 0);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
+}
+
+.top.collapsing .top-title {
+  transform-origin: left bottom;
+  scale: calc(1 - 0.45 * var(--head-p));
+  opacity: calc(1 - 1.5 * var(--head-p));
+}
+
+.top.collapsing .account {
+  translate: calc(var(--acc-shift, 0px) * var(--head-p)) calc(0.7rem * var(--head-p));
+}
+
+.top.collapsing .account > .small {
+  opacity: calc(1 - 2 * var(--head-p));
+}
+
+.top.collapsing[data-compact] .account > .small {
+  visibility: hidden;
+}
+
+.top-compact {
+  position: absolute;
+  left: var(--gutter);
+  bottom: 0.55rem;
+  max-width: calc(100% - 2 * var(--gutter) - var(--acc-w, 0px) - 1rem);
+  margin: 0;
+  overflow: hidden;
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 2.5rem;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: clamp(0, calc(3 * var(--head-p) - 2), 1);
+  translate: 0 calc((1 - var(--head-p)) * 0.6rem);
+  pointer-events: none;
+}
+
+.top-compact .short {
+  display: none;
+}
+
+/* lapozáskor ide görget: a fejléc sávja ne takarja a lista elejét */
+.filters-anchor {
+  scroll-margin-top: var(--head-c);
+}
+
+@media (max-width: 640px) {
+  .top.collapsing .account {
+    transform-origin: right center;
+    scale: calc(1 - 0.2 * var(--head-p));
+  }
+
+  .top-compact {
+    max-width: calc(100% - 2 * var(--gutter) - 0.8 * var(--acc-w, 0px) - 0.6rem);
+    font-size: 0.92rem;
+  }
+
+  .top-compact .long {
+    display: none;
+  }
+
+  .top-compact .short {
+    display: inline;
+  }
 }
 
 /* ---------- További műveletek (⋮ menü a fejlécben) ---------- */
@@ -1418,7 +1669,7 @@ main.login::after {
    ragadós fejléce ez alá tapad. */
 .filters {
   position: sticky;
-  top: 0;
+  top: var(--head-c); /* az összecsukott fejléc sávja alatt (terv-3 99) */
   z-index: 30;
   margin-top: -0.85rem;
   padding-top: 0.85rem;
@@ -1472,7 +1723,7 @@ main.login::after {
 }
 
 .pblur-top {
-  top: 0;
+  top: calc(-1 * var(--head-c)); /* az összecsukott fejléc sávja mögé is (terv-3 99) */
   bottom: calc(-1 * (var(--pb-solid) + var(--pb-fade)));
   background: linear-gradient(
     180deg,
@@ -1610,8 +1861,100 @@ body:has(.filters[data-stuck]):not(:has(.filters [aria-expanded='true'])) .title
     rotate: 180deg;
   }
 
-  .filters:not(.open) > :not(.filters-toggle):not(.list-tools):not(.pblur),
+  .filters:not(.open) > :not(.filters-toggle):not(.list-tools):not(.pblur):not(.active-filters),
   .filters:not(.open) .list-tools > :not(.list-search) {
+    display: none;
+  }
+
+  /* összecsukva a „Szűrők” gomb keskeny, mellette a beállított szűrők címkeként (terv-3 101) – az összefoglaló
+     helyett; kinyitva a régi: teljes szélességű gomb az összefoglalóval, címkék nélkül */
+  .filters:not(.open) .filters-toggle {
+    flex: none;
+    width: auto;
+  }
+
+  .filters:not(.open) .filters-summary {
+    display: none;
+  }
+
+  .filters.open .active-filters {
+    display: none;
+  }
+
+  .active-filters {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+    padding-block: 2px;
+    padding-inline-end: 1rem; /* a jobb szélen halványuló maszk ne takarja az utolsót */
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, black calc(100% - 1rem), transparent);
+    mask-image: linear-gradient(90deg, black calc(100% - 1rem), transparent);
+  }
+
+  .active-filter {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.2rem 0.2rem 0.2rem 0.7rem;
+    font-size: 0.82rem;
+    color: var(--accent);
+    white-space: nowrap;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-line);
+    border-radius: 999px;
+    animation: chip-in 0.18s ease-out;
+  }
+
+  .active-filter.fixed {
+    padding-right: 0.7rem;
+    color: var(--text);
+    background: rgb(var(--tint) / 0.05);
+    border-color: var(--line);
+  }
+
+  .active-filter button {
+    display: grid;
+    place-items: center;
+    width: 1.55rem;
+    height: 1.55rem;
+    padding: 0;
+    color: inherit;
+    background: color-mix(in oklab, var(--accent) 14%, transparent);
+    border: 0;
+    border-radius: 50%;
+  }
+
+  .active-filter button:active {
+    background: color-mix(in oklab, var(--accent) 30%, transparent);
+  }
+
+  .active-reset {
+    flex: none;
+    padding: 0.28rem 0.75rem;
+    font-size: 0.82rem;
+    color: var(--muted);
+    white-space: nowrap;
+    background: none;
+    border: 1px dashed var(--line);
+    border-radius: 999px;
+  }
+}
+
+@keyframes chip-in {
+  from {
+    opacity: 0;
+    scale: 0.85;
+  }
+}
+
+/* asztalon a szűrők mind látszanak: nincs szükség a címkékre */
+@media (min-width: 641px) {
+  .active-filters {
     display: none;
   }
 }
@@ -2730,7 +3073,7 @@ mark.hl {
    fejléc magassága nem változik) */
 .titles-table th {
   position: sticky;
-  top: var(--filters-h, 0px); /* a letapadt szűrősor alatt */
+  top: calc(var(--head-c) + var(--filters-h, 0px)); /* a fejléc sávja és a letapadt szűrősor alatt */
   z-index: 1;
   padding: 0.9rem 0.75rem 0.6rem;
   text-align: left;
@@ -8650,10 +8993,10 @@ input[type='checkbox']:checked {
    Norbi választása a látványterv után (2026-10-15 – https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs): a tartalom
    fölött lebegő gombok áttetsző, élénkítő üveget kapnak – a felső élen csillanás (--glint, mindkét témában fehér), a
    széleken fénylő keret, a sarokban halvány fényfolt (::before, soft-light). A türkiz „+” türkiz marad (világosban
-   átlátszatlanabb – --lg-fill –, a fehér ikon miatt). Érinti: a telefonos lebegő „+”, a letapadt szűrősor „+” és „↑”
-   gombja (asztal), a galéria lapozója a jelenetképen (telefon; sötét sziget). Valódi fénytörés (SVG-szűrő) nincs. */
-.fab,
-.stuck-tools .primary {
+   átlátszatlanabb – --lg-fill –, a fehér ikon miatt). Érinti: a telefonos lebegő „+”, a letapadt szűrősor „↑” gombja
+   (asztal; a „+”-a a 99 óta nincs), a galéria lapozója a jelenetképen (telefon; sötét sziget). Valódi fénytörés
+   (SVG-szűrő) nincs. */
+.fab {
   background-color: transparent;
   background-image: linear-gradient(
     180deg,
@@ -8662,15 +9005,6 @@ input[type='checkbox']:checked {
   );
   -webkit-backdrop-filter: blur(8px) saturate(1.8);
   backdrop-filter: blur(8px) saturate(1.8);
-}
-
-.stuck-tools .primary {
-  position: relative;
-  box-shadow:
-    inset 0 1.5px 0 rgb(var(--glint) / 0.7),
-    inset 0 -2px 3px rgb(var(--shade) / 0.2),
-    inset 0 0 0 1px rgb(var(--glint) / 0.26),
-    0 6px 16px -6px rgb(var(--shade) / calc(0.5 * var(--shade-k)));
 }
 
 .stuck-tools .ghost,
@@ -9731,6 +10065,48 @@ input[type='checkbox']:checked {
     padding: 1rem 1.2rem 1.4rem;
     background: var(--surface);
   }
+}
+
+/* ---------- Csúszó kijelölő (terv-3 100, lib/useSlidingThumb.js) ----------
+   Norbi választása a látványterv után (2026-10-15 – https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs): az
+   állapotgombokon, a lista / rács váltón, Mama fülein és a gyűjtemény-ablak fülein a kiválasztott gomb halvány türkiz
+   háttere (a csoport ::before-ja, a gombok mögött) rugózva átsiklik az újra (0,32 s – a mozgásszabály kivétele, a
+   „kevesebb mozgás” kikapcsolja); a felirat színe 0,2 s alatt úszik át. A kiválasztott gomb saját háttere és kerete
+   ilyenkor átlátszó (a szabály a fülek szabályai után áll, hogy azonos erősségnél is nyerjen). */
+.sliding {
+  position: relative;
+  isolation: isolate;
+}
+
+.sliding[data-thumb]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: var(--thumb-w);
+  height: var(--thumb-h);
+  translate: var(--thumb-x) var(--thumb-y);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+  pointer-events: none;
+}
+
+.sliding[data-thumb-anim]::before {
+  transition:
+    translate 0.32s cubic-bezier(0.3, 1.25, 0.5, 1),
+    width 0.32s cubic-bezier(0.3, 1.25, 0.5, 1),
+    height 0.32s cubic-bezier(0.3, 1.25, 0.5, 1);
+}
+
+.sliding[data-thumb] > :is([aria-pressed='true'], [aria-selected='true']) {
+  background: transparent;
+  border-color: transparent;
+}
+
+.sliding > button {
+  transition: color 0.2s, background-color 0.15s, border-color 0.15s;
 }
 
 

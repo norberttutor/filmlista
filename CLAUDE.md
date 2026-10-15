@@ -135,7 +135,18 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   a … -kor elmentett állapotot mutatja; most csak nézelődni lehet…”. Sikertelen betöltésnél a net
   visszatérésekor és félpercenként újrapróbálja (`reloadKey`). A borítófalon nincs mit tiltani (a
   kártya csak az adatlapot nyitja). Teszt: `munka/e2e/test-44.mjs`; fejléc:
-  „Megnézendő filmek és sorozatok”; mellette (jobbra) „Cím hozzáadása”, harang (`NotificationBell`),
+  „Megnézendő filmek és sorozatok” – **összecsukódó** (terv-3 99, Norbi választása a látványterv után, 2026-10-15 –
+  https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs): `header.top.collapsing` ragad, negatív helyzettel (`top:
+  calc(var(--head-c) - var(--head-h))`, a `--head-h` a mért magassága), így görgetéskor csak az alsó `--head-c` (3,6
+  rem = `HEAD_COMPACT_REM`) magas sávja marad fent, a szűrősor alatta tapad (`top: var(--head-c)`; a táblázat fejléce
+  `calc(var(--head-c) + var(--filters-h))`, a lapozás célja `.filters-anchor` `scroll-margin-top`-pal). A magassága nem
+  változik (nincs ugrálás): a `--head-p` (0–1, a görgetésfigyelő írja) szerint a nagy cím (`.top-title`) a bal alsó
+  sarka felé összemegy és elhalványul, a gombsor a sáv jobb szélére (`--acc-shift`, ha a cím alá tört) és közepére
+  csúszik (telefonon 80%-ra kicsinyedve), az e-mail-cím elhalványul, a kis cím (`.top-compact`, aria-hidden; telefonon
+  „Megnézendő filmek”) előtűnik; összecsukva `data-compact`. A sáv mögött a szűrősor fokozatos elmosása (fölfelé
+  kinyúlik), letapadt szűrősor nélkül (pl. nyitott „Cím hozzáadása” panelnél) saját üveg. „Kevesebb mozgás” módban
+  nincs közbülső állapot. A fejléc felugrói (harang, ⋮) a szűrősor fölött (`z-index: 32`). Teszt:
+  `munka/e2e/test-1015.mjs`; mellette (jobbra) „Cím hozzáadása”, harang (`NotificationBell`),
   e-mail (telefonon – ≤ 640 px – nem látszik, terv-3 50; gomb – `.account-email`, a `muted small` osztállyal –,
   a „Jelszó módosítása” ablakot nyitja, net nélkül sima felirat – terv-3 27), Kilépés, a téma váltógombja (`ThemeToggle`,
   terv-3 50; asztalon – ≥ 900 px – a sor nem törik: `flex-wrap: nowrap`), a sor végén a „További műveletek” (⋮) menü (`MoreMenu`, Norbi kérése, mint a
@@ -160,9 +171,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   alapállapotban halvány, letiltott). **A szűrők alapállapota** (betöltéskor és a ↺-vel,
   `DEFAULT_FILTERS`, Norbi kérése): Filmek – Megnézendő – Nem letöltött – Összes műfaj –
   Franchise nélkül;
-  telefonon (≤ 640 px) a szűrők alapból összecsukva: „Szűrők” gomb, mellette röviden a beállítás
-  (`filterSummary`, pl. „Filmek · Megnézendő · Nem letöltött · Franchise nélkül”), kinyitva minden
-  szűrő és a rendezés; a kereső összecsukva is látszik (Norbi kérése);
+  telefonon (≤ 640 px) a szűrők alapból összecsukva: „Szűrők” gomb, mellette a beállított szűrők **címkeként**
+  (terv-3 101, 2026-10-15 – `activeFilters`, `.active-filters`: türkiz címkék ×-szel, vízszintesen görgethetők; a ×
+  az adott szűrőt „Összes” / „Mind” értékre állítja – ugyanazokkal a függvényekkel, mint a lenyílók –, a típus
+  („Filmek”) mindig be van állítva, azon nincs ×; az alapállapottól eltérve a végén „↺ Alaphelyzet”), kinyitva minden
+  szűrő és a rendezés, a gomb teljes szélességű, benne röviden a beállítás (`filterSummary`, pl. „Filmek ·
+  Megnézendő · Nem letöltött · Franchise nélkül”), címkék nélkül; a kereső összecsukva is látszik (Norbi kérése);
   jobb szélen keresőmező („Keresés a listán”: a címben, az eredeti címben és a franchise nevében, kis-/nagybetű és
   ékezet nélkül – `fold()`; több szónál mindegyiknek szerepelnie kell; telefonon külön sorban;
   **okosabb keresés** (terv-3 66, „A”, 2026-10-13 – `lib/listSearch.js`, `components/Highlight.js`): ha egy szóra a
@@ -237,8 +251,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   görgethető) a korábbi egyforma üveg; a dokkolt lapozó fölött ugyanez fölfelé. A magasságát
   (`--filters-h`, ResizeObserver) a táblázat ragadós fejléce kapja, hogy alatta tapadjon;
   telefonon kinyitva legfeljebb a képernyő 70%-a, belül görgethető. Letapadva (csak asztalon,
-  ≥ 641 px) a ↺ után gyorsgombok (`.stuck-tools`): kerek türkiz „+” (Cím hozzáadása, a lap
-  tetejére görget) és „↑” (vissza a lap tetejére). **„Folyékony üveg”** (terv-3 103, ugyanott választva): a tartalom
+  ≥ 641 px) a ↺ után gyorsgomb (`.stuck-tools`): „↑” (vissza a lap tetejére); a „+” (Cím hozzáadása) a 99 óta nincs –
+  az összecsukott fejléc sávjában ott a gomb. Az állapotgombokon és a lista / rács váltón **csúszó kijelölő** (terv-3
+  100 – `lib/useSlidingThumb.js`, lent). **„Folyékony üveg”** (terv-3 103, ugyanott választva): a tartalom
   fölött lebegő gombok – ezek, a telefonos lebegő „+” (`.fab`) és a galéria lapozója (`.backdrop-pager`) – áttetsző,
   élénkítő üveget kapnak (elmosás + telítés, felső csillanás, fénylő keret, `::before` fényfolt); a türkiz türkiz
   marad (`--lg-fill`: sötétben 64%, világosban 88% – a fehér ikon miatt), a csillanás `--glint` (mindkét témában
@@ -457,6 +472,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (Norbi: videó mellett, 2026-10-05) ezek egy-egy hosszú képkockát okoztak a mozgás közepén. Új,
   a szerkesztő megnyitásakor érkező állapotfrissítésnél is ezt használd
 - `lib/useMediaQuery.js` – `useMediaQuery(query)` hook (`useSyncExternalStore`)
+- `lib/useSlidingThumb.js` – **csúszó kijelölő a gombcsoportokon** (terv-3 100, Norbi választása a látványterv után,
+  2026-10-15): `useSlidingThumb()` → callback ref a csoportra (`.sliding`): a kiválasztott közvetlen gyermek
+  (`[aria-pressed="true"]` / `[aria-selected="true"]`) helyét és méretét CSS-változókba írja (`--thumb-x` / `-y` /
+  `-w` / `-h`, `data-thumb`), minden rajzolás után és méretváltozáskor; a jelölő a csoport `::before`-ja (halvány
+  türkiz, a kiválasztott gomb saját háttere ilyenkor átlátszó), 0,32 s alatt rugózva csúszik (`data-thumb-anim` – az
+  első elhelyezés után). Használja: az állapotgombok és a lista / rács váltó (`Watchlist`), Mama fülei (`MamaView`), a
+  gyűjtemény-ablak fülei (`CollectionDialog`). Új gombcsoportnál: `className="… sliding"` + `ref={useSlidingThumb()}`
 - `lib/backClose.js` – **a Vissza gomb zárja a legfelső ablakot / menüt** (terv-3 62, 2026-10-13): telefonon
   (vissza-gesztus, a telepített app is) és a böngészőben. Minden nyitott réteg egy előzmény-bejegyzést kap
   (`history.pushState`, az URL nem változik; a Next 16 a natív pushState-et a routerébe illeszti, nincs
@@ -1272,7 +1294,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `--hover-tint/--press-tint`).
 - Saját lenyíló-nyíl (`--chevron`, `appearance: none`) és jelölőnégyzet (`--check-mark`); ahol egy
   szabály `background` rövidítést ad egy lenyílónak, a nyilat is újra meg kell adni. Windows nagy
-  kontrasztú módban a beépített vezérlők maradnak.
+  kontrasztú módban a beépített vezérlők maradnak. **A natív `<select>` listája** (terv-3 108, 2026-10-15) a
+  testreszabható lenyílóval (`appearance: base-select`, `@supports` mögött – Chrome / Edge 135+; máshol a mai lista) az
+  app stílusában nyílik: lekerekített, árnyékos panel (`::picker(select)`, `popup-in`), a kiválasztott türkiz, pipával
+  (`option::checkmark`); a zárt mező nem változik (a beépített `::picker-icon` rejtve). A szűrősor lenyílóinak opciói
+  előtt érték szerinti ikon (`.type-select`, `.download-select`, `.sort-select` – `--opt-icon` maszk) / az állapot és
+  Mama színe (`.status-select`, `.mama-select` – `--opt-dot`); új opciókódnál ide is kell ikon. A React-jelölés nem
+  változott (az ikon CSS-ből jön).
 - Mozgás: legfeljebb ~0,2 s-os átmenetek. Kivételek („Mozgás” szakasz a `globals.css`-ben):
   az aurora (a lap tetején három elmosott fényfolt – türkiz, lila, borostyán – 36 s-os lassú
   lebegéssel, `body::before`; a belépési oldalon nincs, kétoldalt 4% hely + maszk, hogy ne
@@ -1392,7 +1420,8 @@ lapjáról (80). Képgaléria az adatlapon – asztalon „Képek” sor, telefo
 összes szereplő az adatlapon (91); élő szinkron: a mentés visszaállítása után a címek nem tűnnek el (hibajavítás).
 Moziszerű adatlap-fejléc asztalon: nagy jelenetkép, rajta a borító, a nagy cím, az adatok és az előzetes (terv-3 104,
 2026-10-15). Fokozatos elmosás a letapadt szűrősor és a dokkolt lapozó alatt (102); „folyékony üveg” a lebegő gombokon –
-„+”, „↑”, galérialapozó (103) – 2026-10-15.
+„+”, „↑”, galérialapozó (103) – 2026-10-15. Összecsukódó főcím (99), csúszó kijelölő a gombcsoportokon (100), telefonon a
+beállított szűrők címkeként ×-szel (101), az app stílusában nyíló lenyílók ikonokkal (108) – 2026-10-15.
 A még meg nem jelent filmek szaggatott kerettel és dátumos jelvénnyel, a harang szól a digitális
 megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül). Asztalon az adatlap
 kikattintásra bezárul (terv-3 24-es pontja, 2026-10-04). „Hol
@@ -1576,15 +1605,16 @@ https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs (helyben `munka/terv-3/terv-99
 a „Javaslat” nézet** – beépítéskor annak megfelelően. **Elvetve** (magadtól ne javasold újra): 105 – összecsukódó
 adatlap-fejléc, 106 – egymásra rétegzett értesítősáv; a 107 (bento Statisztika) és a 109 (tipográfia) nagyrészt
 már megvan.
-- **99 – összecsukódó főcím** (görgetéskor a szűrősorral egy üveges sáv) – ~1,5 óra
-- **100 – csúszó kijelölő a gombcsoportokon** (állapot, lista / rács, fülek) – ~1–1,5 óra
-- **101 – aktív szűrők címkeként ×-szel (telefon)** – ~1,5–2 óra
+- **99 – összecsukódó főcím – kész** (2026-10-15; a letapadt sor „+”-a megszűnt – a fejléc sávjában ott a „Cím
+  hozzáadása”; teszt: `munka/e2e/test-1015.mjs` 18/18, `test.mjs` 115/115)
+- **100 – csúszó kijelölő a gombcsoportokon – kész** (2026-10-15; teszt: `test-1015.mjs`)
+- **101 – aktív szűrők címkeként ×-szel (telefon) – kész** (2026-10-15; teszt: `test-1015.mjs`)
 - **102 – fokozatos elmosás a letapadt sávok alatt – kész** (2026-10-15; teszt: `munka/e2e/test-102-103.mjs` 8/8)
 - **103 – „folyékony üveg” a lebegő gombokon – kész** (2026-10-15; teszt: `test-102-103.mjs`, `test.mjs` 115/115)
 - **104 – moziszerű adatlap-fejléc asztalon – kész** (2026-10-15; teszt: `munka/e2e/test-104.mjs` 9/9, `test.mjs` 115/115,
   `test-1013` 12/12)
-- **108 – egységes lenyílók** (`appearance: base-select`, ikonokkal) – ~2 óra
-Hátravan: 78 – ~2–3 óra; 84 – ~1,5–2 óra (látványterv); 99, 100, 101, 108 – összesen ~6–7 óra.
+- **108 – egységes lenyílók – kész** (2026-10-15; `appearance: base-select`, ikonok CSS-ből; teszt: `test-1015.mjs`)
+Hátravan: 78 – ~2–3 óra; 84 – ~1,5–2 óra (látványterv).
 **Lekerült a roadmapről** (Norbi döntése, 2026-10-08: a közeljövőben nincs tervben; magadtól ne
 javasold újra): **25 – admin jogosultság**, **26 – regisztráció** (a meglévőkön kívül más felhasználó
 nem lesz, Mama fiókja pedig a 13-as óta korlátozott). A részletes tervük a TERV.md-ben megmaradt.

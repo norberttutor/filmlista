@@ -6,6 +6,7 @@ import { addTitle, setFranchiseCollections, todayDate, updateTitle } from '@/lib
 import { useBackdropClose } from '@/lib/useBackdropClose';
 import { usePosterColor, ambientProps, franchisePosterPath } from '@/lib/posterColor';
 import WatchOrder from '@/components/WatchOrder';
+import { useSlidingThumb } from '@/lib/useSlidingThumb';
 
 const IMG = 'https://image.tmdb.org/t/p/';
 const byYear = (a, b) => (a.release_year ?? 9999) - (b.release_year ?? 9999);
@@ -236,6 +237,7 @@ export function CollectionDialog({
   const [sharing, setSharing] = useState(false); // a megosztás visszavonásának megerősítése / kérése
   const [edit, setEdit] = useState(null); // { mode: 'rename' | 'delete', name, error, busy } – terv-3 57
   const tabRefs = useRef({});
+  const tabsThumb = useSlidingThumb(); // csúszó kijelölő a füleken (terv-3 100)
   const uniqueParts = (keep) => [
     ...new Map(sections.flatMap((s) => s.parts.filter(keep)).map((p) => [p.tmdb_id, p])).values(),
   ];
@@ -440,7 +442,7 @@ export function CollectionDialog({
         )}
       </div>
 
-      <div className="dialog-tabs" role="tablist" aria-label="Nézet">
+      <div className="dialog-tabs sliding" ref={tabsThumb} role="tablist" aria-label="Nézet">
         {TABS.map((t) => (
           <button
             key={t.id}

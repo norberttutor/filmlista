@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import PosterCard from '@/components/PosterCard';
 import Pagination from '@/components/Pagination';
 import ProgressiveBlur from '@/components/ProgressiveBlur';
+import { useSlidingThumb } from '@/lib/useSlidingThumb';
 import ImdbRatingsImport from '@/components/ImdbRatingsImport';
 import TitleSearch from '@/components/TitleSearch';
 import { recommendSeeds } from '@/components/Discover';
@@ -95,6 +96,8 @@ const NO_FRANCHISE = 'none';
 const DESKTOP_QUERY = '(min-width: 1400px)';
 const PHONE_QUERY = '(max-width: 640px)'; // telefonos nézet
 
+// az összecsukott fejléc sávjának magassága (terv-3 99) – = a CSS --head-c értéke
+const HEAD_COMPACT_REM = 3.6;
 const PAGE_SIZE = 25; // ennyi cím egy oldalon (telefon, keskenyebb rács)
 // asztali rácsban (≥ 1400 px): 1440p-n (2560 px) 11 kártya fér egy sorba → 2 teli sor, és a
 // lapozó görgetés nélkül is látszik (Norbi kérése)
@@ -831,6 +834,9 @@ export default function Watchlist({ session }) {
     return { count: ids.size, names: [...new Set(hits.map((e) => franchiseName.get(e.title.franchise_id)))].filter(Boolean) };
   }, [byFranchise, corrected, visible, franchiseName]);
   const filtersRef = useRef(null);
+  // csúszó kijelölő az állapotgombokon és a lista / rács váltón (terv-3 100)
+  const statusThumb = useSlidingThumb();
+  const viewThumb = useSlidingThumb();
   const gridRef = useRef(null); // a borítófal (animált átrendeződés, terv-3 49.3)
   // nézetváltás után (csak akkor – a többi függőség szándékosan nincs benne): a borítók a régi helyükről
   // az újra siklanak (terv-3 73)
@@ -843,22 +849,50 @@ export default function Watchlist({ session }) {
   }, [view]);
   // a szűrősor eredeti helye: lapozáskor ide görget (a letapadt szűrősorhoz nem lehetne)
   const filtersAnchorRef = useRef(null);
+  const headRef = useRef(null); // a fejléc (terv-3 99: görgetéskor összecsukódik)
   const [filtersStuck, setFiltersStuck] = useState(false);
   // telefonon a lebegő "+" gomb lefelé görgetéskor elhúzódik, felfelé visszajön
   const [fabHidden, setFabHidden] = useState(false);
   const lastScrollY = useRef(0);
 
   // a szűrősor görgetéskor a lap tetejére tapad: letapadva üveghatású ([data-stuck]); a
-  // magasságát (--filters-h) a táblázat ragadós fejléce kapja, hogy alatta tapadjon
+  // magasságát (--filters-h) a táblázat ragadós fejléce kapja, hogy alatta tapadjon.
+  // Összecsukódó főcím (terv-3 99): a fejléc is ragad, negatív helyzettel (--head-h: a mért magassága) – görgetéskor
+  // csak az alsó, HEAD_COMPACT_REM magas sávja marad fent, a szűrősor alatta tapad. A fejléc magassága nem változik
+  // (a lista nem ugrál): a --head-p (0–1, az összecsukódás útjának aránya) szerint a nagy cím összemegy és
+  // elhalványul, a gombsor a sáv jobb szélére csúszik (--acc-shift; ha a cím alá tört), a kis cím előtűnik.
+  // „Kevesebb mozgás” módban nincs közbülső állapot: csak összecsukott / nyitott.
   const listShown = !loading && !loadError;
   useEffect(() => {
     const el = filtersRef.current;
-    if (!el) return;
+    const head = headRef.current;
+    if (!el || !head) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
     let frame = 0;
+    let stickTop = 0; // a szűrősor ragadási helye (px): a fejléc sávja alatt
+    let collapse = 1; // ennyi görgetés alatt csukódik össze a fejléc
+    const measure = () => {
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      const compact = HEAD_COMPACT_REM * rem;
+      const h = head.offsetHeight;
+      collapse = Math.max(1, h - compact);
+      stickTop = parseFloat(getComputedStyle(el).top) || 0;
+      document.documentElement.style.setProperty('--head-h', `${h}px`);
+      const acc = head.querySelector('.account');
+      if (acc) {
+        const right = head.clientWidth - parseFloat(getComputedStyle(head).paddingRight);
+        head.style.setProperty('--acc-shift', `${Math.max(0, right - acc.offsetLeft - acc.offsetWidth)}px`);
+        head.style.setProperty('--acc-w', `${acc.offsetWidth}px`);
+      }
+    };
     const check = () => {
       frame = 0;
       const y = window.scrollY;
-      setFiltersStuck(y > 0 && el.getBoundingClientRect().top <= 0.5);
+      let p = Math.min(1, Math.max(0, y / collapse));
+      if (reduce.matches) p = p >= 1 ? 1 : 0;
+      head.style.setProperty('--head-p', p.toFixed(3));
+      head.toggleAttribute('data-compact', p >= 1);
+      setFiltersStuck(y > 0 && el.getBoundingClientRect().top <= stickTop + 0.5);
       if (y <= 240 || y < lastScrollY.current - 6) setFabHidden(false);
       else if (y > lastScrollY.current + 6) setFabHidden(true);
       lastScrollY.current = y;
@@ -868,9 +902,12 @@ export default function Watchlist({ session }) {
     };
     const resize = new ResizeObserver(() => {
       document.documentElement.style.setProperty('--filters-h', `${el.offsetHeight}px`);
+      measure();
       onScroll();
     });
     resize.observe(el);
+    resize.observe(head);
+    measure();
     check();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => {
@@ -1294,6 +1331,23 @@ export default function Watchlist({ session }) {
     .filter(Boolean)
     .join(' · ');
 
+  // telefonon a beállított szűrők címkeként (terv-3 101): a × az adott szűrőt „Összes” / „Mind” értékre állítja
+  // (ugyanazokkal a függvényekkel, mint a lenyílók); a típus mindig be van állítva, azon nincs ×
+  const activeFilters = [
+    { key: 'type', label: (type === 'all' ? BOTH_TYPES : TYPES.find((t) => t.code === type))?.name },
+    status !== 'all' && { key: 'status', label: statuses.find((s) => s.code === status)?.name, clear: () => pickStatus('all') },
+    downloaded !== 'all' && {
+      key: 'downloaded',
+      label: DOWNLOAD_FILTERS.find((d) => d.code === downloaded)?.name,
+      clear: () => setDownloaded('all'),
+    },
+    genre && { key: 'genre', label: genre, clear: () => setGenre('') },
+    mamaFilter && { key: 'mama', label: `Mama: ${mamaLabel(mamaFilter)}`, clear: () => setMama('') },
+    franchise === NO_FRANCHISE
+      ? usedFranchises.length > 0 && { key: 'franchise', label: 'Franchise nélkül', clear: () => changeFranchise('') }
+      : franchise && { key: 'franchise', label: franchiseName.get(Number(franchise)), clear: () => changeFranchise('') },
+  ].filter((x) => x && x.label);
+
   // ↺: a szűrők alapállapota, keresés nélkül
   const atDefault = !searching && sameFilters(filters, DEFAULT_FILTERS);
 
@@ -1312,8 +1366,13 @@ export default function Watchlist({ session }) {
   return (
     // data-list: honnan jön a lista (a teszt ezen várja meg a friss adatot)
     <main data-list={loading ? 'loading' : stale ? 'stale' : 'live'}>
-      <header className="top">
-        <div>
+      <header className="top collapsing" ref={headRef}>
+        {/* összecsukva a sáv bal szélén a kis cím (terv-3 99); felolvasónak a nagy cím elég */}
+        <p className="top-compact" aria-hidden="true">
+          <span className="long">Megnézendő filmek és sorozatok</span>
+          <span className="short">Megnézendő filmek</span>
+        </p>
+        <div className="top-title">
           <h1 className="brand">Megnézendő filmek és sorozatok</h1>
           {!loading && !loadError && (
             <p className="count">
@@ -1486,7 +1545,7 @@ export default function Watchlist({ session }) {
             />
           )}
 
-          <div ref={filtersAnchorRef} aria-hidden="true" />
+          <div ref={filtersAnchorRef} className="filters-anchor" aria-hidden="true" />
           <section
             className={filtersOpen ? 'filters open' : 'filters'}
             aria-label="Szűrők"
@@ -1509,6 +1568,30 @@ export default function Watchlist({ session }) {
                 <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6" />
               </svg>
             </button>
+            {/* telefonon, összecsukva: a beállított szűrők címkeként, ×-szel (terv-3 101); asztalon rejtve */}
+            <div className="active-filters" role="group" aria-label="Beállított szűrők">
+              {activeFilters.map((x) =>
+                x.clear ? (
+                  <span key={x.key} className="active-filter">
+                    {x.label}
+                    <button type="button" aria-label={`„${x.label}” szűrő levétele`} title="Szűrő levétele" onClick={x.clear}>
+                      <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true">
+                        <path d="M3 3l6 6M9 3l-6 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                      </svg>
+                    </button>
+                  </span>
+                ) : (
+                  <span key={x.key} className="active-filter fixed">
+                    {x.label}
+                  </span>
+                )
+              )}
+              {!atDefault && (
+                <button type="button" className="active-reset" onClick={resetToDefault}>
+                  ↺ Alaphelyzet
+                </button>
+              )}
+            </div>
 
             <select
               className="type-select"
@@ -1539,7 +1622,7 @@ export default function Watchlist({ session }) {
             </select>
 
             <div className="filter-group">
-              <div className="chips status-chips" role="group" aria-label="Állapot">
+              <div className="chips status-chips sliding" ref={statusThumb} role="group" aria-label="Állapot">
                 <Chip
                   active={status === 'all'}
                   onClick={() => pickStatus('all')}
@@ -1559,7 +1642,7 @@ export default function Watchlist({ session }) {
 
               <label className="inline-field">
                 Letöltés
-                <select value={downloaded} onChange={(e) => setDownloaded(e.target.value)}>
+                <select className="download-select" value={downloaded} onChange={(e) => setDownloaded(e.target.value)}>
                   {DOWNLOAD_FILTERS.map((d) => (
                     <option key={d.code} value={d.code}>
                       {d.name}
@@ -1591,7 +1674,7 @@ export default function Watchlist({ session }) {
             {(mamaUsed || mama) && !mamaOff && (
               <label className="inline-field">
                 Mama
-                <select value={mama} onChange={(e) => setMama(e.target.value)}>
+                <select className="mama-select" value={mama} onChange={(e) => setMama(e.target.value)}>
                   <option value="">Összes</option>
                   {MAMA_OPTIONS.map((o) => (
                     <option key={o.code} value={o.code}>
@@ -1651,21 +1734,10 @@ export default function Watchlist({ session }) {
                 </span>
               </span>
 
-              {/* letapadt szűrősorban (lejjebb görgetve) gyorsgombok: Cím hozzáadása, vissza a
-                  lap tetejére – csak asztalon (telefonon ott a lebegő „+”) */}
-              {filtersStuck && !readOnly && (
+              {/* letapadt szűrősorban (lejjebb görgetve) gyorsgomb: vissza a lap tetejére – csak asztalon. A „+” (Cím
+                  hozzáadása) a 99 óta nem kell: az összecsukott fejlécben ott a „Cím hozzáadása” gomb */}
+              {filtersStuck && (
                 <span className="stuck-tools">
-                  <button
-                    type="button"
-                    className="primary"
-                    aria-label="Cím hozzáadása"
-                    title="Cím hozzáadása"
-                    onClick={() => openAdd()}
-                  >
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                  </button>
                   <button
                     type="button"
                     className="ghost"
@@ -1692,6 +1764,7 @@ export default function Watchlist({ session }) {
                 onChange={(e) => changeQuery(e.target.value)}
               />
               <select
+                className="sort-select"
                 aria-label="Rendezés"
                 value={activeSort}
                 onChange={(e) => {
@@ -1711,7 +1784,7 @@ export default function Watchlist({ session }) {
               </select>
               {/* lista / rács váltó felirat nélkül (keskenyebben mindig rács) */}
               {isDesktop && (
-                <div className="view-toggle" role="group" aria-label="Nézet">
+                <div className="view-toggle sliding" ref={viewThumb} role="group" aria-label="Nézet">
                   <button
                     type="button"
                     aria-label="Listás nézet"

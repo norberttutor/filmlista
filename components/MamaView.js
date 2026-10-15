@@ -7,6 +7,7 @@ import Toaster from '@/components/Toaster';
 import ImdbBadge from '@/components/ImdbBadge';
 import MamaDetail from '@/components/MamaDetail';
 import ThemeToggle from '@/components/ThemeToggle';
+import { useSlidingThumb } from '@/lib/useSlidingThumb';
 
 const POSTER = 'https://image.tmdb.org/t/p/w185';
 const PAGE = 24; // ennyi film látszik, utána „További filmek”
@@ -36,6 +37,7 @@ export default function MamaView() {
   const [list, setList] = useState(null); // null: tölt
   const [loadError, setLoadError] = useState('');
   const [tab, setTab] = useState('open');
+  const tabsThumb = useSlidingThumb(); // csúszó kijelölő a füleken (terv-3 100)
   const [kept, setKept] = useState(() => new Set());
   const [shown, setShown] = useState(PAGE);
   const [openId, setOpenId] = useState(null);
@@ -124,7 +126,7 @@ export default function MamaView() {
       </header>
 
       {list && !loadError && (
-        <div className="mama-tabs" role="group" aria-label="Szűrés">
+        <div className="mama-tabs sliding" ref={tabsThumb} role="group" aria-label="Szűrés">
           {TABS.map((x) => (
             <button key={x.code} type="button" className="chip" aria-pressed={tab === x.code} onClick={() => pickTab(x.code)}>
               {x.label}
