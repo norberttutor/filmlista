@@ -8914,9 +8914,10 @@ input[type='checkbox']:checked {
     backdrop-filter: blur(6px);
   }
 
-  /* a képen sötét (világosban világos) üveg alatta, rámutatva a megszokott szín */
-  .editor-page.has-hero .editor-backdrop .trailer-btn:not(:hover) {
-    background-color: rgb(var(--glass) / 0.35);
+  /* a képen sötét (világosban világos) üveg: külön rétegként (background-image), így alatta a gomb megszokott
+     háttérszíne – a film színének árnyalata, 52.6 – és a rámutatás is megmarad */
+  .editor-page.has-hero .editor-backdrop .trailer-btn {
+    background-image: linear-gradient(rgb(var(--glass) / 0.35), rgb(var(--glass) / 0.35));
   }
 
   /* a lejátszó a kép alatt, a jobb oszlop tetején */

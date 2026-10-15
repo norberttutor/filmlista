@@ -1681,6 +1681,12 @@ füstteszt élesítés után – magadtól ne javasold újra.
   Fix várakozás (`waitForTimeout`) helyett a teszt a mentés utáni friss sorra (`rowRefetched`) vagy két
   képkockára (`settle`) vár – „kevesebb mozgás” módban az átmenetek úgyis kikapcsolnak; képernyőkép csak
   `SHOTS=1`-gyel készül; a futás végén kiírja a leglassabb lépéseket (kb. 2¼ perc, 115 lépés, 2026-10-09).
+  **Teljes tesztkör** (Norbi kérése, 2026-10-15): `munka/e2e/teljes.sh` (a scratchpadbe másolt e2e mappából, Git
+  Bash-ben; ~25 perc): az adatbázis-tesztek (`--live` / visszagörgetve), a böngészős tesztek (a próbalistát igénylők
+  `leiras-seed` + `seed-52-1` után), a `test-audit-5` hibás TMDB-vel, a `test-1013b` két verzióval; minden teszt után
+  üríti a tesztfiókot, a végén rendes fordítás. Összesítő: `teljes/osszesito.txt`. 2026-10-15: 50 fájl, ~500 lépés, a
+  javítások után mind rendben (az elavult tesztek – műfajszűrő-gomb, 53-as találatlista, a 83 óta frissülő próbalista
+  – igazítva). A `leiras-seed` a címeket `details_checked_at`-tel veszi fel (a TMDB-frissítés ne írja át őket).
   Képernyőkép / videó a tesztfiókról: a fejléc e-mail-címét mintacímre kell cserélni
   (`munka/dizajn-2/eszkozok/mask.mjs`); videóhoz a Playwright ffmpeg-je a scratchpadbe kerül
   (`PLAYWRIGHT_BROWSERS_PATH`), lásd `munka/dizajn-2/eszkozok/video*.mjs`.
