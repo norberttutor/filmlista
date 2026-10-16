@@ -174,7 +174,9 @@ export default function StatsDialog({ titles, franchiseName, onClose }) {
             ) : (
               <p className="sub">Egy műfajhoz legalább {TASTE_MIN} saját értékelés kell – még egyiknél sincs meg.</p>
             )}
-            {s.taste.favorites.length > 0 && <p className="sub">A saját csillagaid átlaga műfajonként (· értékelt címek).</p>}
+            {s.taste.favorites.length > 0 && (
+              <p className="sub">Az első szám a saját csillagaid átlaga, a második az értékelt címek száma.</p>
+            )}
           </section>
 
           <section className="tile tile-3" data-tile="deviation" aria-labelledby="st-deviation">

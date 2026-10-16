@@ -1959,8 +1959,8 @@ export default function Watchlist({ session }) {
               title={`Nincs „${query.trim()}” a listádon`}
               text={
                 sameFilters(filters, SEARCH_FILTERS)
-                  ? 'A címekben és az eredeti címekben kerestem, a szűrőktől függetlenül.'
-                  : `A címekben és az eredeti címekben kerestem, ezzel a szűréssel: ${filterSummary}.`
+                  ? 'A címekben, az eredeti címekben és a franchise-ok nevében kerestem, a szűrőktől függetlenül.'
+                  : `A címekben, az eredeti címekben és a franchise-ok nevében kerestem, ezzel a szűréssel: ${filterSummary}.`
               }
             >
               {!readOnly && (

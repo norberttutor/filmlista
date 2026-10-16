@@ -416,8 +416,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `Watchlist` a saját visszhangot, a függő mentésű (`hasPendingSave`) és a függő törlésű (`isPendingDelete`) címet
   kihagyja; a meglévőt a `replaceTitle`-lel cseréli; az újbóli beszúrás a törlést érvényteleníti.
 - `public/sw.js` + `lib/offline.js` – service worker (csak a kiadott változatban; `next.config.mjs`: `/sw.js`
-  `no-cache`): az oldal hálózatról 3 mp-es korláttal, a `/_next/static/` és a TMDB-képek (≤ 1500) tárolóból; az
-  `/api` és a Supabase nem. A lap elküldi a használt programfájlokat (`assets`), a régiek törlődnek. **A tárolás
+  `no-cache`): az oldal hálózatról 3 mp-es korláttal, a `/_next/static/` és a TMDB-képek tárolóból; az
+  `/api` és a Supabase nem. A TMDB-képek két tárolóban: a lista borítói és a franchise-logók (`POSTERS`, korlát
+  nélkül – a service worker a tárolt listából dönti el, mi ide tartozik; `LIST_SIZES` w342 / w185 – **a `PosterCard` /
+  `TitleTable` / `FranchiseFilter` képméretének változásakor itt is**), minden más ≤ 400 (`EXTRA_LIMIT`); a `?szin`
+  sehol. A lap elküldi a használt programfájlokat (`assets`), a régiek törlődnek; ekkor és kilépéskor (`posters`
+  üzenet) a borítótároló a listához igazodik. **A tárolás
   módjának változásakor emeld a `VERSION`-t.** Lista: IndexedDB `filmlista` / `snapshots` (`loadSnapshot` /
   `saveSnapshot` / `clearSnapshots`), `useOnline()`. Teszt: `test-44.mjs`.
 
