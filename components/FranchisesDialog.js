@@ -75,6 +75,35 @@ export default function FranchisesDialog({
     };
   }, []);
 
+  // egy franchise gyűjteményeinek betöltése (hibánál üresen – a számok a saját címekből)
+  async function loadOne({ id, key, params, token }, signal) {
+    let collections = [];
+    try {
+      collections = await fetchCollections(params, signal);
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      console.warn('Gyűjtemény:', err.message);
+    }
+    pending.current.delete(token);
+    setLoaded((m) => new Map(m).set(id, { key, collections }));
+  }
+
+  // a még be nem töltött csempére kattintva (átnézés H9, 2026-10-16): a franchise soron kívül, azonnal töltődik – a
+  // gyűjtemény-ablak a betöltés után nyílik (addig a csempén „megnyitás…”); korábban a 3-asával haladó sorra várt,
+  // a lista végén akár fél percig, és a kattintás látszólag semmit nem csinált
+  const rushed = useRef(new Set());
+  function openFranchise(f) {
+    setOpenId(f.id);
+    if (loaded.has(f.id)) return; // a korábbi gyűjteményekkel nyílik, az újratöltés közben is (kódaudit #6)
+    const params = collectionParams(f, titles);
+    const key = paramsKey(params);
+    const token = `${f.id}:${key}`;
+    if (rushed.current.has(token)) return;
+    rushed.current.add(token);
+    pending.current.add(token);
+    loadOne({ id: f.id, key, params, token }, controllerRef.current.signal);
+  }
+
   // a gyűjtemények betöltése 3-asával; ha egy franchise címei / kézi gyűjteményei változnak
   // (pl. hiányzó rész felvétele után), azt újra
   useEffect(() => {
@@ -89,22 +118,8 @@ export default function FranchisesDialog({
     }
     if (todo.length === 0) return;
     const signal = controllerRef.current.signal;
-    mapLimit(
-      todo,
-      3,
-      async ({ id, key, params, token }) => {
-        let collections = [];
-        try {
-          collections = await fetchCollections(params, signal);
-        } catch (err) {
-          if (err.name === 'AbortError') return;
-          console.warn('Gyűjtemény:', err.message); // a számok a saját címekből
-        }
-        pending.current.delete(token);
-        setLoaded((m) => new Map(m).set(id, { key, collections }));
-      },
-      () => {}
-    );
+    // a soron kívül (kattintásra) betöltötteket kihagyja
+    mapLimit(todo, 3, (item) => (rushed.current.has(item.token) ? null : loadOne(item, signal)), () => {});
   }, [franchises, titles, loaded]);
 
   const rows = [...franchises].sort(byNameNoArticle).map((f) => {
@@ -209,9 +224,17 @@ export default function FranchisesDialog({
           {shown.map(({ f, ready, ownCount, summary }) => {
             const { counts, sections } = summary;
             const editing = edit?.id === f.id ? edit : null;
+            // rákattintott, de a gyűjteményei még töltődnek (átnézés H9): a betöltés után nyílik
+            const opening = openId === f.id && !loaded.has(f.id);
             return (
               <FranchiseTile key={f.id} posterPath={tintPoster(f, titles)} data-editing={editing ? editing.mode : undefined}>
-                <button type="button" className="fr-main" aria-busy={!ready || undefined} onClick={() => setOpenId(f.id)}>
+                <button
+                  type="button"
+                  className="fr-main"
+                  aria-busy={!ready || undefined}
+                  data-opening={opening ? '' : undefined}
+                  onClick={() => openFranchise(f)}
+                >
                   <span className="fr-logo">{f.logo_path ? <FranchiseLogo path={f.logo_path} /> : <b>{f.name}</b>}</span>
                   <span className="fr-name">{f.name}</span>
                   <CollectionMeter {...counts} />
@@ -224,7 +247,7 @@ export default function FranchisesDialog({
                           {counts.watched}/{counts.onList}
                         </b>{' '}
                         megnézve
-                        {ready ? countsNote(counts) : ' · …'}
+                        {ready ? countsNote(counts) : opening ? ' · megnyitás…' : ' · …'}
                         {ready && sections.length === 0 && counts.total > 0 && ' · nincs TMDB-gyűjtemény'}
                       </>
                     )}

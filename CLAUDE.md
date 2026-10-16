@@ -629,7 +629,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   „· nincs TMDB-gyűjtemény”, üresen „Még nincs címe”. A csempére kattintva a gyűjtemény-ablak
   (`CollectionDialog`, a Franchise-ok ablakon belül nyílik; az első betöltés után nyitva marad – felvételkor,
   gyűjtemény hozzárendelésekor az újratöltés alatt a korábbi gyűjteményekkel, így a fül, a görgetés, a
-  kereső megmarad; kódaudit #6, 2026-10-09, teszt: `munka/e2e/test-audit-6.mjs`); a csempe alatt gombok (`FranchiseActions`, Norbi kérése, 2026-10-15 –
+  kereső megmarad; kódaudit #6, 2026-10-09, teszt: `munka/e2e/test-audit-6.mjs`; a még be nem töltött csempére
+  kattintva a franchise soron kívül, azonnal töltődik – `openFranchise`, `rushed` –, addig a csempén „· megnyitás…”
+  (`.fr-main[data-opening]`), utána nyílik; a sor ezt nem kéri le újra – átnézés H9, 2026-10-16, teszt:
+  `munka/e2e/test-h9.mjs`); a csempe alatt gombok (`FranchiseActions`, Norbi kérése, 2026-10-15 –
   korábban linkek; a csempén `compact`: „Szűrés erre” felirattal, az átnevezés és a törlés csak ikon – `aria-label`
   „„Név” átnevezése” / „„Név” törlése”, súgó; telefonon a „Szűrés erre” külön sorban): „Szűrés erre” (üres
   franchise-nál tiltva; `Watchlist.showFranchise`: a keresés törlődik, minden más szűrő elenged –
@@ -1692,7 +1695,7 @@ pontonkénti részletek – hely, mit lát Norbi, ok, javítás, bizonyosság �
   - H6 – Tömeges import: a sikertelen keresés „nincs találat”-nak számít, és eltűnik – ~0,5 óra
   - H7 – Franchise törlése a gyűjtemény-ablakból → a Franchise-ok ablak nem zár kikattintásra – ~0,25 óra
   - H8 – Franchise-ok ablak: szerkesztés közben az Esc / Vissza az egész ablakot zárja – ~0,5 óra
-  - H9 – Még be nem töltött franchise-csempe: kattintásra semmi, később magától nyílik – ~0,5–1 óra
+  - H9 – Még be nem töltött franchise-csempe: kattintásra semmi, később magától nyílik – **kész** (2026-10-16; soron kívül töltődik, „megnyitás…”)
   - H10 – „Frissítés a TMDB-ről”: félrevezető visszajelzések – ~0,25 óra
   - H11 – A színész-route egy napig tárolja a hiányos (életrajz nélküli) választ – ~0,15 óra
 - **S – Állapot, szinkron, offline** – ~4 óra

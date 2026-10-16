@@ -4915,6 +4915,15 @@ button.season:hover {
   cursor: pointer;
 }
 
+/* rákattintott, a gyűjteményei még töltődnek (átnézés H9): a betöltés után nyílik a gyűjtemény-ablak */
+.fr-main[data-opening] {
+  cursor: progress;
+}
+
+.fr-main[data-opening] .fr-count {
+  color: var(--accent);
+}
+
 .fr-main:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
