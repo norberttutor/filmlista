@@ -138,7 +138,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   „Megnézendő filmek és sorozatok” – **összecsukódó** (terv-3 99, Norbi választása a látványterv után, 2026-10-15 –
   https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs): `header.top.collapsing` ragad, negatív helyzettel (`top:
   calc(var(--head-c) - var(--head-h))`, a `--head-h` a mért magassága), így görgetéskor csak az alsó `--head-c` (3,6
-  rem = `HEAD_COMPACT_REM`) magas sávja marad fent, a szűrősor alatta tapad (`top: var(--head-c)`; a táblázat fejléce
+  rem; a `Watchlist` a CSS-ből olvassa) magas sávja marad fent – **asztalon (≥ 641 px) 0** („A – Egy sáv”, Norbi
+  választása a látványterv után, 2026-10-16 – https://claude.ai/artifact/L29pE1Z1sR3MNVXAnsguaN: `main[data-head-away]`
+  → `--head-c: 0rem`; a fejléc egészen felgördül, a „+”, a harang és a ⋮ a letapadt szűrősorba kerül – lent; nyitott
+  „Cím hozzáadása” panelnél nincs `data-head-away`, ott a sáv marad; telefonon is), a szűrősor alatta tapad (`top: var(--head-c)`; a táblázat fejléce
   `calc(var(--head-c) + var(--filters-h))`, a lapozás célja `.filters-anchor` `scroll-margin-top`-pal). A magassága nem
   változik (nincs ugrálás): a `--head-p` (0–1, a görgetésfigyelő írja) szerint a nagy cím (`.top-title`) a bal alsó
   sarka felé összemegy és elhalványul, a gombsor a sáv jobb szélére (`--acc-shift`, ha a cím alá tört) és közepére
@@ -257,8 +260,14 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   közös üvege – Norbi kérése). A magasságát
   (`--filters-h`, ResizeObserver) a táblázat ragadós fejléce kapja, hogy alatta tapadjon;
   telefonon kinyitva legfeljebb a képernyő 70%-a, belül görgethető. Letapadva (csak asztalon,
-  ≥ 641 px) a ↺ után gyorsgomb (`.stuck-tools`): „↑” (vissza a lap tetejére); a „+” (Cím hozzáadása) a 99 óta nincs –
-  az összecsukott fejléc sávjában ott a gomb. Az állapotgombokon és a lista / rács váltón **csúszó kijelölő** (terv-3
+  ≥ 641 px) a ↺ után gyorsgombok (`.stuck-tools`): „↑” (vissza a lap tetejére), és („A – Egy sáv”, 2026-10-16; nyitott
+  „Cím hozzáadása” panelnél nem) kerek „+” (Cím hozzáadása – `openAdd()`, teli türkiz üveg), a harang (`NotificationBell
+  quiet` – második példány, a megjelenésekor nem rezzen) és a ⋮ (`MoreMenu`, ugyanazok a pontok – `moreItems`); a Kilépés
+  és a téma csak a nyitott fejlécben. A gyorsgombok helye nyugalomban is foglalt, csak láthatatlan (`data-off` →
+  `visibility: hidden`): letapadáskor a sor nem törhet másként, különben a sáv – és vele a lista – megugrana; asztalon
+  ezért keskenyebb a kereső (10,5 rem) és kisebb a csoportköz (1,75 rem) – így a sor a legtöbb szélességen ugyanannyi
+  sorba törik, mint előtte (660–2560 px között mérve; 740–860 és ~1140 px-en egy sorral több). A `.stuck-tools` kerek
+  gombszabályai csak a közvetlen gombokra (`> button`) – a harang és a ⋮ listájában is van gomb. Az állapotgombokon és a lista / rács váltón **csúszó kijelölő** (terv-3
   100 – `lib/useSlidingThumb.js`, lent). **„Folyékony üveg”** (terv-3 103, ugyanott választva): a tartalom
   fölött lebegő gombok – ezek, a telefonos lebegő „+” (`.fab`) és a galéria lapozója (`.backdrop-pager`) – áttetsző,
   élénkítő üveget kapnak (elmosás + telítés, felső csillanás, fénylő keret, `::before` fényfolt); a türkiz türkiz
@@ -1467,6 +1476,8 @@ beállított szűrők címkeként ×-szel (101), az app stílusában nyíló len
 derengése görgetéskor nem ér véget éles széllel (K2), az évadok idővonalán a „ma” jelölő a tengelyen belül (K3), egyoldalas
 találatnál is a keskeny lábléc (K4), a táblázatban a „Nem érdekli” egy sorban (K7), bezáró × az adatlap jobb felső sarkában
 (J1; telefonon nincs × és „Bezárás”), az adatlap alján a „Frissítés a TMDB-ről” elválasztva a „Törlés a listáról”-tól (J2); telefonon az adatlapon nincs „Összes szereplő” (Norbi kérése).
+2026-10-15–16: a lapozó és a lábléc egy sávban; a franchise műveletei ikonos gombok, a franchise-logó kézzel választható
+(J8); asztalon lejjebb görgetve a fejléc sávja is felgördül, a „+”, a harang és a ⋮ a letapadt szűrősorban („A – Egy sáv”, J6).
 A még meg nem jelent filmek szaggatott kerettel és dátumos jelvénnyel, a harang szól a digitális
 megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül). Asztalon az adatlap
 kikattintásra bezárul (terv-3 24-es pontja, 2026-10-04). „Hol
@@ -1713,7 +1724,7 @@ pontonkénti részletek – hely, mit lát Norbi, ok, javítás, bizonyosság �
   - J3 – Net nélkül a tiltott vezérlők halványítása + jelzés az adatlapon – ~0,25 óra
   - J4 – 641–1000 px között is a telefonos, összecsukható szűrő – ~1 óra
   - J5 – Rácsnézetben a hosszú cím 2–3 soros vágása – ~0,25 óra
-  - J6 – Összecsukott fejlécben az elrejtett e-mail-cím helye ne maradjon üresen – ~0,25 óra
+  - J6 – Összecsukott fejlécben az elrejtett e-mail-cím helye ne maradjon üresen – **kész** (2026-10-16, „A – Egy sáv”: asztalon a sáv felgördül; csak nyitott „Cím hozzáadása” panelnél marad meg)
   - J7 – Telefonon nyitott „Cím hozzáadása” panelnél a lebegő „+” elrejtése – ~0,1 óra
   - J8 – Franchise-logó kézi választása (most az első film logója, alcímmel) – **kész** (2026-10-15; a gyűjtemény-ablak „Logó” gombja)
   - J9 – Statisztika telefonon: olvashatóbb hónapnevek – ~0,25 óra

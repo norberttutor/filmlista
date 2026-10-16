@@ -51,7 +51,8 @@ function describe(n, franchiseName) {
 // Kattintás kívül / Esc: bezár.
 // readOnly: net nélkül (terv-3 44) csak olvasni lehet – nincs törlés, és a kinyitás sem jelöli
 // olvasottnak (az adatbázisba úgysem jutna el; kódaudit #8)
-export default function NotificationBell({ notifications, titles, franchiseName, onOpenTitle, onRead, onRemove, readOnly }) {
+// quiet: a megjelenéskor nem rezzen meg (a letapadt szűrősor másodpéldánya – minden letapadáskor újra megjelenik)
+export default function NotificationBell({ notifications, titles, franchiseName, onOpenTitle, onRead, onRemove, readOnly, quiet }) {
   const [open, setOpen] = useState(false);
   const [side, setSide] = useState('left'); // a lista a harang melyik széléhez igazodik
   const [fresh, setFresh] = useState(() => new Set()); // a kinyitáskor még olvasatlanok
@@ -87,7 +88,7 @@ export default function NotificationBell({ notifications, titles, franchiseName,
   }, [open]);
 
   // új értesítés érkezett (több az olvasatlan, mint eddig): a harang egyszer megrezzen
-  const [seenUnread, setSeenUnread] = useState(0);
+  const [seenUnread, setSeenUnread] = useState(() => (quiet ? unread : 0));
   const [ringing, setRinging] = useState(false);
   if (unread !== seenUnread) {
     if (unread > seenUnread) setRinging(true);

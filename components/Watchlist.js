@@ -96,8 +96,6 @@ const NO_FRANCHISE = 'none';
 const DESKTOP_QUERY = '(min-width: 1400px)';
 const PHONE_QUERY = '(max-width: 640px)'; // telefonos nézet
 
-// az összecsukott fejléc sávjának magassága (terv-3 99) – = a CSS --head-c értéke
-const HEAD_COMPACT_REM = 3.6;
 const PAGE_SIZE = 25; // ennyi cím egy oldalon (telefon, keskenyebb rács)
 // asztali rácsban (≥ 1400 px): 1440p-n (2560 px) 11 kártya fér egy sorba → 2 teli sor, és a
 // lapozó görgetés nélkül is látszik (Norbi kérése)
@@ -865,7 +863,8 @@ export default function Watchlist({ session }) {
   // a szűrősor görgetéskor a lap tetejére tapad: letapadva üveghatású ([data-stuck]); a
   // magasságát (--filters-h) a táblázat ragadós fejléce kapja, hogy alatta tapadjon.
   // Összecsukódó főcím (terv-3 99): a fejléc is ragad, negatív helyzettel (--head-h: a mért magassága) – görgetéskor
-  // csak az alsó, HEAD_COMPACT_REM magas sávja marad fent, a szűrősor alatta tapad. A fejléc magassága nem változik
+  // csak az alsó, --head-c magas sávja marad fent (asztalon – „A – Egy sáv”, 2026-10-16 – nyitott „Cím hozzáadása” panel
+  // nélkül 0: a fejléc egészen felgördül), a szűrősor alatta tapad. A fejléc magassága nem változik
   // (a lista nem ugrál): a --head-p (0–1, az összecsukódás útjának aránya) szerint a nagy cím összemegy és
   // elhalványul, a gombsor a sáv jobb szélére csúszik (--acc-shift; ha a cím alá tört), a kis cím előtűnik.
   // „Kevesebb mozgás” módban nincs közbülső állapot: csak összecsukott / nyitott.
@@ -880,7 +879,8 @@ export default function Watchlist({ session }) {
     let collapse = 1; // ennyi görgetés alatt csukódik össze a fejléc
     const measure = () => {
       const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-      const compact = HEAD_COMPACT_REM * rem;
+      // a sáv magassága a CSS-ből (--head-c, rem-ben; a main adja – data-head-away)
+      const compact = (parseFloat(getComputedStyle(head).getPropertyValue('--head-c')) || 0) * rem;
       const h = head.offsetHeight;
       collapse = Math.max(1, h - compact);
       stickTop = parseFloat(getComputedStyle(el).top) || 0;
@@ -922,7 +922,7 @@ export default function Watchlist({ session }) {
       resize.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [listShown]);
+  }, [listShown, adding]); // a „Cím hozzáadása” panel a sáv magasságát is váltja (data-head-away)
 
   function changePage(p) {
     setPageState({ key: filterKey, first: (p - 1) * pageSize });
@@ -1372,10 +1372,84 @@ export default function Watchlist({ session }) {
     applyFilters(searching ? SEARCH_FILTERS : { ...SEARCH_FILTERS, type: type === 'all' ? 'movie' : type });
   }
 
+  // a ⋮ menü pontjai – a fejlécben és (asztalon, lejjebb görgetve) a letapadt szűrősorban is
+  const moreItems = [
+    {
+      id: 'stats',
+      label: 'Statisztika',
+      description: 'Havonta megnézett címek, műfajok, átlagos értékelés',
+      icon: 'chart',
+      onSelect: () => setShowStats(true),
+    },
+    {
+      id: 'franchises',
+      label: 'Franchise-ok',
+      description: 'Az összes franchise logóval, ábécérendben; gyűjtemény, szűrés, átnevezés',
+      icon: 'stack',
+      onSelect: () => setShowFranchises(true),
+    },
+    // a CSV-fájl betöltése asztali / tableten végzett teendő: telefonon nincs (Norbi kérése)
+    ...(isPhone
+      ? []
+      : [
+          {
+            id: 'imdb',
+            label: 'IMDb import',
+            description: 'Az IMDb-értékeléseid vagy a figyelőlistád (Watchlist) CSV-exportjából: csillagok, új címek',
+            icon: 'star',
+            onSelect: () => imdbImportRef.current?.open(),
+          },
+        ]),
+    ...(isDesktop
+      ? [
+          {
+            id: 'bulk',
+            label: 'Tömeges import',
+            description: 'Sok cím felvétele egyszerre, soronként egy címmel',
+            icon: 'list',
+            onSelect: () => bulkImportRef.current?.open(),
+          },
+          {
+            id: 'export',
+            label: 'Mentés letöltése',
+            description: `A teljes lista (${titles.length} cím) CSV-fájlba – Excelben megnyitható`,
+            icon: 'download',
+            onSelect: () => downloadListCsv(titles, franchiseName),
+          },
+        ]
+      : []),
+    {
+      id: 'backups',
+      label: 'Mentések',
+      description: 'Heti automatikus mentés; mentés most, visszaállítás',
+      icon: 'history',
+      onSelect: () => setShowBackups(true),
+    },
+    {
+      id: 'password',
+      label: 'Jelszó módosítása',
+      description: 'Új jelszó a belépéshez (a jelenlegivel)',
+      icon: 'key',
+      onSelect: () => setShowPassword(true),
+    },
+    {
+      id: 'manual',
+      label: 'Felhasználói leírás',
+      description: 'Minden funkció, képekkel',
+      icon: 'book',
+      onSelect: () => setShowManual(true),
+    },
+  ].filter((item) => !readOnly || !ONLINE_ONLY.includes(item.id));
+
   return (
     // data-list: honnan jön a lista (a teszt ezen várja meg a friss adatot); data-docked: asztalon a lábléc (és a
     // lapozó, ha van) az ablak alján – egyoldalas találatnál is ugyanaz a keskeny lábléc (átnézés K4)
-    <main data-list={loading ? 'loading' : stale ? 'stale' : 'live'} data-docked={isDesktop ? '' : undefined}>
+    <main
+      data-list={loading ? 'loading' : stale ? 'stale' : 'live'}
+      data-docked={isDesktop ? '' : undefined}
+      // asztalon összecsukva a fejléc sávja is felgördül (CSS: --head-c 0) – a nyitott „Cím hozzáadása” panelnél nem
+      data-head-away={adding && !readOnly ? undefined : ''}
+    >
       <header className="top collapsing" ref={headRef}>
         {/* összecsukva a sáv bal szélén a kis cím (terv-3 99); felolvasónak a nagy cím elég */}
         <p className="top-compact" aria-hidden="true">
@@ -1438,75 +1512,7 @@ export default function Watchlist({ session }) {
               a mentés csak asztali nézetben */}
           {!loading && !loadError && (
             <>
-              <MoreMenu
-                items={[
-                  {
-                    id: 'stats',
-                    label: 'Statisztika',
-                    description: 'Havonta megnézett címek, műfajok, átlagos értékelés',
-                    icon: 'chart',
-                    onSelect: () => setShowStats(true),
-                  },
-                  {
-                    id: 'franchises',
-                    label: 'Franchise-ok',
-                    description: 'Az összes franchise logóval, ábécérendben; gyűjtemény, szűrés, átnevezés',
-                    icon: 'stack',
-                    onSelect: () => setShowFranchises(true),
-                  },
-                  // a CSV-fájl betöltése asztali / tableten végzett teendő: telefonon nincs (Norbi kérése)
-                  ...(isPhone
-                    ? []
-                    : [
-                        {
-                          id: 'imdb',
-                          label: 'IMDb import',
-                          description: 'Az IMDb-értékeléseid vagy a figyelőlistád (Watchlist) CSV-exportjából: csillagok, új címek',
-                          icon: 'star',
-                          onSelect: () => imdbImportRef.current?.open(),
-                        },
-                      ]),
-                  ...(isDesktop
-                    ? [
-                        {
-                          id: 'bulk',
-                          label: 'Tömeges import',
-                          description: 'Sok cím felvétele egyszerre, soronként egy címmel',
-                          icon: 'list',
-                          onSelect: () => bulkImportRef.current?.open(),
-                        },
-                        {
-                          id: 'export',
-                          label: 'Mentés letöltése',
-                          description: `A teljes lista (${titles.length} cím) CSV-fájlba – Excelben megnyitható`,
-                          icon: 'download',
-                          onSelect: () => downloadListCsv(titles, franchiseName),
-                        },
-                      ]
-                    : []),
-                  {
-                    id: 'backups',
-                    label: 'Mentések',
-                    description: 'Heti automatikus mentés; mentés most, visszaállítás',
-                    icon: 'history',
-                    onSelect: () => setShowBackups(true),
-                  },
-                  {
-                    id: 'password',
-                    label: 'Jelszó módosítása',
-                    description: 'Új jelszó a belépéshez (a jelenlegivel)',
-                    icon: 'key',
-                    onSelect: () => setShowPassword(true),
-                  },
-                  {
-                    id: 'manual',
-                    label: 'Felhasználói leírás',
-                    description: 'Minden funkció, képekkel',
-                    icon: 'book',
-                    onSelect: () => setShowManual(true),
-                  },
-                ].filter((item) => !readOnly || !ONLINE_ONLY.includes(item.id))}
-              />
+              <MoreMenu items={moreItems} />
               <ImdbRatingsImport
                 ref={imdbImportRef}
                 titles={titles}
@@ -1744,23 +1750,46 @@ export default function Watchlist({ session }) {
                 </span>
               </span>
 
-              {/* letapadt szűrősorban (lejjebb görgetve) gyorsgomb: vissza a lap tetejére – csak asztalon. A „+” (Cím
-                  hozzáadása) a 99 óta nem kell: az összecsukott fejlécben ott a „Cím hozzáadása” gomb */}
-              {filtersStuck && (
-                <span className="stuck-tools">
-                  <button
-                    type="button"
-                    className="ghost"
-                    aria-label="Vissza a lap tetejére"
-                    title="Vissza a lap tetejére"
-                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                  >
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M12 19V5M5 12l7-7 7 7" />
-                    </svg>
-                  </button>
-                </span>
-              )}
+              {/* letapadt szűrősorban (lejjebb görgetve) gyorsgombok – csak asztalon (≥ 641 px): vissza a lap tetejére,
+                  és mert a fejléc sávja ilyenkor felgördül („A – Egy sáv”, Norbi választása, 2026-10-16), a fejléc
+                  gyakori gombjai: „+” (Cím hozzáadása), harang, ⋮. Nyitott „Cím hozzáadása” panelnél a fejléc sávja
+                  marad (benne ezek), itt csak a „↑”. A helyük nyugalomban is foglalt, csak láthatatlan (data-off): letapadáskor
+                  a sor nem törhet másként, különben a sáv magassága – és vele a lista – megugrana */}
+              <span className="stuck-tools" data-off={filtersStuck ? undefined : ''}>
+                <button
+                  type="button"
+                  className="ghost"
+                  aria-label="Vissza a lap tetejére"
+                  title="Vissza a lap tetejére"
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                >
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 19V5M5 12l7-7 7 7" />
+                  </svg>
+                </button>
+                {!adding && (
+                  <>
+                    {!readOnly && (
+                      <button type="button" className="primary" aria-label="Cím hozzáadása" title="Cím hozzáadása" onClick={() => openAdd()}>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                          <path d="M12 5v14M5 12h14" />
+                        </svg>
+                      </button>
+                    )}
+                    <NotificationBell
+                      quiet
+                      notifications={notifications}
+                      titles={titles}
+                      franchiseName={franchiseName}
+                      onOpenTitle={(t) => openEditor(t)}
+                      onRead={readNotifications}
+                      onRemove={removeNotifications}
+                      readOnly={readOnly}
+                    />
+                    <MoreMenu items={moreItems} />
+                  </>
+                )}
+              </span>
             </div>
 
             {/* jobb szélen: keresés a felvett címek között, mellette a rendezés */}

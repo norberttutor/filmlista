@@ -887,6 +887,16 @@ body:not(:has(.filters[data-stuck])) .top.collapsing[data-compact] {
   display: none;
 }
 
+/* „A – Egy sáv” (Norbi választása, 2026-10-16 – https://claude.ai/artifact/L29pE1Z1sR3MNVXAnsguaN): asztalon (≥ 641 px)
+   összecsukva a fejléc sávja sem marad fent – a szűrősor kerül a lap tetejére, a „+”, a harang és a ⋮ a letapadt
+   szűrősorba költözik (.stuck-tools); a Kilépés és a téma csak a nyitott fejlécben. Nyitott „Cím hozzáadása” panelnél
+   (nincs data-head-away) a sáv marad, mint eddig – ott a szűrősor nem tapad le. A Watchlist a --head-c-t olvassa. */
+@media (min-width: 641px) {
+  main[data-head-away] {
+    --head-c: 0rem;
+  }
+}
+
 /* lapozáskor ide görget: a fejléc sávja ne takarja a lista elejét */
 .filters-anchor {
   scroll-margin-top: var(--head-c);
@@ -1953,8 +1963,9 @@ body:has(.filters[data-stuck]):not(:has(.filters [aria-expanded='true'])) .title
   gap: 0.9rem;
 }
 
-/* letapadt szűrősorban gyorsgombok: Cím hozzáadása (teli türkiz) és vissza a lap tetejére;
-   telefonon nincs (ott a lebegő „+”) */
+/* letapadt szűrősorban gyorsgombok: vissza a lap tetejére, és – mert asztalon a fejléc sávja ilyenkor felgördül (Norbi
+   választása, 2026-10-16, „A – Egy sáv”) – „+” (Cím hozzáadása, teli türkiz), a harang és a ⋮ menü; telefonon nincs
+   (ott a lebegő „+” és a fejléc sávja marad). Csak a közvetlen gombok kerekek: a harang és a ⋮ listájában is van gomb */
 .stuck-tools {
   display: inline-flex;
   align-items: center;
@@ -1963,7 +1974,12 @@ body:has(.filters[data-stuck]):not(:has(.filters [aria-expanded='true'])) .title
   border-left: 1px solid var(--line);
 }
 
-.stuck-tools button {
+.stuck-tools[data-off] {
+  visibility: hidden;
+}
+
+.stuck-tools > button {
+  position: relative;
   display: grid;
   place-items: center;
   width: 2.4rem;
@@ -2233,6 +2249,19 @@ body:has(.filters[data-stuck]):not(:has(.filters [aria-expanded='true'])) .title
 
 .list-search:hover {
   border-color: var(--muted);
+}
+
+/* asztalon (≥ 641 px) keskenyebb kereső és kisebb csoportköz (2026-10-16): a letapadt sáv gyorsgombjainak helye
+   nyugalomban is foglalt („A – Egy sáv”, .stuck-tools[data-off]) – így a sor a legtöbb szélességen ugyanannyi sorba
+   törik, mint a gyorsgombok előtt (mérve 660–2560 px között) */
+@media (min-width: 641px) {
+  .filters {
+    column-gap: 1.75rem;
+  }
+
+  .list-search {
+    width: 10.5rem;
+  }
 }
 
 /* rácsos / listás nézet váltó (csak asztali szélességen): két ikongomb egy kerek keretben,
@@ -9313,7 +9342,8 @@ input[type='checkbox']:checked {
    átlátszatlanabb – --lg-fill –, a fehér ikon miatt). Érinti: a telefonos lebegő „+”, a letapadt szűrősor „↑” gombja
    (asztal; a „+”-a a 99 óta nincs), a galéria lapozója a jelenetképen (telefon; sötét sziget). Valódi fénytörés
    (SVG-szűrő) nincs. */
-.fab {
+.fab,
+.stuck-tools > .primary {
   background-color: transparent;
   background-image: linear-gradient(
     180deg,
@@ -9324,7 +9354,9 @@ input[type='checkbox']:checked {
   backdrop-filter: blur(8px) saturate(1.8);
 }
 
-.stuck-tools .ghost,
+.stuck-tools > .ghost,
+.stuck-tools .notif-bell,
+.stuck-tools .more-btn,
 .backdrop-pager {
   background-color: rgb(var(--glass) / 0.22);
   background-image: linear-gradient(180deg, rgb(var(--tint) / 0.16), rgb(var(--tint) / 0.04));
@@ -9338,7 +9370,8 @@ input[type='checkbox']:checked {
     0 8px 22px -8px rgb(var(--shade) / calc(0.5 * var(--shade-k)));
 }
 
-.stuck-tools .ghost {
+.stuck-tools > .ghost,
+.stuck-tools .more-btn {
   position: relative;
 }
 
@@ -9351,7 +9384,7 @@ input[type='checkbox']:checked {
   box-shadow: inset 0 1px 0 rgb(var(--glint) / 0.28);
 }
 
-:is(.fab, .stuck-tools button, .backdrop-pager)::before {
+:is(.fab, .stuck-tools > button, .stuck-tools .notif-bell, .stuck-tools .more-btn, .backdrop-pager)::before {
   content: '';
   position: absolute;
   inset: 0;
