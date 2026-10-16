@@ -8,12 +8,13 @@
 
 ## Mi ez?
 Személyes webalkalmazás megnézendő filmek és sorozatok nyilvántartására:
-borítókép, műfajok, IMDb link, állapot (megnézendő / folyamatban / megnézve), letöltve jelző.
-Egyetlen felhasználó (Norbi), de az adatmodell felhasználónként elkülönít.
+borítókép, műfajok, IMDb link, állapot (megnézendő / folyamatban / megnézve / abbahagyva), letöltve jelző.
+Norbi a fő felhasználó; Mama saját, korlátozott fiókkal Norbi filmjeit látja és jelöli. Az adatmodell
+felhasználónként elkülönít.
 
 ## Technológia
 - **Next.js 16** (App Router), **JavaScript** (nem TypeScript), React 19
-- **Supabase** (PostgreSQL + Auth), `@supabase/supabase-js`, kliensoldali használat
+- **Supabase** (PostgreSQL + Auth + Realtime), `@supabase/supabase-js`, kliensoldali használat
 - **Vercel** hosting, a GitHub `main` ág minden push-a után automatikus deploy
   - Repó: `norberttutor/filmlista` (privát)
   - Élő oldal: https://filmlista-six.vercel.app/
@@ -24,1802 +25,632 @@ Egyetlen felhasználó (Norbi), de az adatmodell felhasználónként elkülöní
 `.env.local` (helyben) és Vercel → Settings → Environment Variables:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_KEY` – publishable/anon kulcs (a böngészőbe kerül, RLS véd)
-- `TMDB_READ_TOKEN` – TMDB API Read Access Token, **csak szerveroldalon** használható
-  (route handlerben), soha ne kapjon `NEXT_PUBLIC_` előtagot
-- `OMDB_API_KEY` – OMDb API kulcs az IMDb-értékelésekhez (ingyenes, napi 1000 lekérdezés),
-  szintén csak szerveroldalon. Ha hiányzik, az app értékelés nélkül működik (nincs hiba).
-- `APP_VERSION` – nem kell beállítani: a kiadás azonosítója (terv-3 63) a Vercelen magától a commit
-  (`VERCEL_GIT_COMMIT_SHA`), helyben `dev`. Csak a teszt adja meg (eltérő build- és futási értékkel).
+- `TMDB_READ_TOKEN` – TMDB API Read Access Token, **csak szerveroldalon** (route handlerben),
+  soha ne kapjon `NEXT_PUBLIC_` előtagot
+- `OMDB_API_KEY` – OMDb (IMDb-értékelések, napi 1000 lekérdezés), csak szerveroldalon. Ha hiányzik,
+  az app értékelés nélkül működik.
+- `APP_VERSION` – nem kell beállítani: a Vercelen a commit (`VERCEL_GIT_COMMIT_SHA`), helyben `dev`.
+  Csak a teszt adja meg.
 
-Csak helyben (`.env.local`), a Vercelre nem: `TEST_USER_EMAIL` / `TEST_USER_PASSWORD`,
-`MAMATEST_USER_EMAIL` / `MAMATEST_USER_PASSWORD` (második tesztfiók Mama szerepéhez – a 13-as
-ponthoz, Norbi hozta létre 2026-10-07; az értékeit soha ne írd ki),
-`SUPABASE_DB_URL` (admin) és `BACKUP_DB_URL` – a csak olvasó `backup_reader` szerep kapcsolata
-(`munka/e2e/mentes-olvaso.mjs` állítja be); ugyanez a GitHubon is titok (Settings → Secrets and
-variables → Actions → `BACKUP_DB_URL`) a heti mentés-feladathoz.
+Csak helyben (`.env.local`): `TEST_USER_EMAIL` / `TEST_USER_PASSWORD`, `MAMATEST_USER_EMAIL` /
+`MAMATEST_USER_PASSWORD` (Mama-tesztfiók; az értékeket soha ne írd ki), `SUPABASE_DB_URL` (admin) és
+`BACKUP_DB_URL` – a csak olvasó `backup_reader` szerep (`munka/e2e/mentes-olvaso.mjs` állítja be);
+ugyanez GitHub-titok is (Actions → `BACKUP_DB_URL`) a heti mentéshez.
 
 Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 
-## Fájlszerkezet
-- `app/layout.js` – Bricolage Grotesque betűtípus (`--font-main`) az optikai méret
-  (`axes: ['opsz']`) tengellyel is (a nagy főcím a nagy méretre rajzolt formát kapja), `lang="hu"`;
-  a böngészőfül címe „Megnézendő filmek”; a címsor színe (`viewport.themeColor`) `#1a222d` (`--bg-top`;
-  világos témában a `lib/theme.js` cseréli `#fcf9f4`-re). A `<head>`-ben a téma kirajzolás előtti
-  szkriptje (`THEME_BOOT_SCRIPT`, `lib/themeBoot.js`), ezért a `<html>`-en `suppressHydrationWarning`
-- `lib/theme.js` + `lib/themeBoot.js` + `components/ThemeToggle.js` – **világos / sötét téma**
-  (terv-3 50, 2026-10-08; Norbi döntései, látványterv: https://claude.ai/artifact/3vsvTnTQ27NnjErSb3CYYn,
-  `munka/terv-3/terv-50/`): az alap a sötét; a világos a „B – meleg papír”, a `<html
-  data-theme="light">` kapcsolja (sötétnél nincs jelző). A választást a böngésző jegyzi meg
-  felhasználónként (`filmlista-tema:<userId>`); ha nincs, a szerep dönt: **Mama (néző) világos**, a
-  többiek sötét (`initUserTheme(userId, viewer)` – a `page.js` hívja, amint tudja, néző-e;
-  `useLayoutEffect`). Az utoljára használt külön is (`filmlista-tema`): ezzel indul a lap – a
-  `THEME_BOOT_SCRIPT` a kirajzolás előtt állítja, nincs villanás –, és ezt mutatja a belépési oldal
-  (kilépéskor a téma marad: `forgetThemeUser`). A megosztott sorrend (`/sorrend/…`) a látogató gépét
-  követi (`prefers-color-scheme`, váltáskor is; a tárolt téma ott nem számít). `setTheme()`,
-  `useTheme()` (`useSyncExternalStore`). A `themeBoot.js` React nélkül van, mert a `layout.js`
-  (szerverkomponens) is használja. `ThemeToggle`: Norbinál kerek ikongomb a „Kilépés” után, a ⋮ előtt
-  (`.theme-toggle`, a `.more-btn` mintájára; sötétben nap – „Világos téma”, világosban hold – „Sötét
-  téma”, `aria-label` + `title`); Mama oldalán `labeled` – „Világos” / „Sötét” felirattal a „Kilépés”
-  előtt (`.theme-toggle-labeled` a `.mama-head-actions`-ben). Teszt: `munka/e2e/test-50.mjs`
-- `app/icon.svg` – az app ikonja (böngészőfül): sötét, lekerekített négyzeten neon türkiz
-  filmcsapó. PNG-változatai: `app/apple-icon.png` (iPhone, 180 px), `public/icon-192.png`,
-  `public/icon-512.png` (telepített app), `public/icon-maskable-512.png` (Android: teljes négyzet,
-  a csapó a kör alakú vágáson belül). Mind egy forrásból készül: `munka/e2e/ikon.mjs` (helyi
-  mappa); az ikon változtatásakor ezzel kell újragenerálni mindet
-- `app/manifest.js` – webalkalmazás-manifest (`/manifest.webmanifest`): ettől telepíthető az oldal
-  Chrome-ból / Edge-ből saját ablakos alkalmazásként (név: „Megnézendő filmek és sorozatok”, rövid
-  név: „Megnézendő filmek”, `theme_color` = `--bg-top`). Ellenőrzés: `munka/e2e/verify-ikon.mjs`.
-  Gyorsindítók (`shortcuts`, terv-3 43, 2026-10-07): jobb klikk a telepített app ikonjára (telefonon
-  hosszan nyomva) – „Cím hozzáadása” / „Franchise-ok” / „Statisztika” → `/?nyit=hozzaadas` |
-  `franchise-ok` | `statisztika`; a `Watchlist` a lista betöltése után egyszer megnyitja
-  (`SHORTCUTS`), és a paramétert kiveszi a címből (újratöltéskor ne nyíljon újra). A már telepített
-  appnál a Chrome a manifest frissülése után (néha csak az app újraindítása után) mutatja
-- `app/page.js` – kliensoldali session-kezelés: belépés vagy lista. Belépés után megnézi a `list_viewers`
-  saját sorát (terv-3 13): ha van (Mama – néző), `MamaView`, különben `Watchlist`; amíg nem tudja,
-  „Betöltés…”; hibánál a `Watchlist` nyílik (a néző ott csak a saját üres adatait látná). A néző-e
-  választ a böngésző megjegyzi (`localStorage`, `filmlista-nezo:<userId>`): a következő indításkor nem
-  vár rá, net nélkül is tudja. Regisztrálja a service workert (`registerServiceWorker()`). Net nélkül,
-  lejárt tokennel (vagy ha a `getSession()` 4 mp – net nélkül 0,3 mp – alatt nem válaszol: a Supabase
-  ilyenkor sokáig újrapróbál) a tárolt munkamenettel (`storedSession()`, `offline: true`) a `Watchlist`
-  nyílik; kilépéskor (`SIGNED_OUT`) a helyben tárolt lista törlődik (`clearSnapshots()`). Indításkor
-  `startBackClose()` (a Vissza gomb, terv-3 62). A téma (terv-3 50):
-  amint tudja, néző-e, `initUserTheme(userId, néző)` (`useLayoutEffect`); kilépéskor `forgetThemeUser()`
-- `public/sw.js` + `lib/offline.js` – **offline indulás** (terv-3 44, 2026-10-08): service worker (csak a
-  kiadott változatban; `next.config.mjs`: `/sw.js` `no-cache`): az oldal előbb a hálózatról (3 mp-es
-  időkorláttal, utána / net nélkül a tárolt), a `/_next/static/` és a TMDB-képek (CORS-szal, legfeljebb
-  1500) előbb a tárolóból; az `/api` és a Supabase nem. A lap betöltés után elküldi a használt
-  programfájlokat (`assets` üzenet) – a régi kiadásokéi ekkor törlődnek. A tárolás módjának
-  változásakor a `VERSION`-t emeld. A lista helyben: IndexedDB `filmlista` / `snapshots`,
-  felhasználónként (`loadSnapshot` / `saveSnapshot` / `clearSnapshots`); `useOnline()`. Mama oldala
-  (`MamaView`) nem tárol helyben: net nélkül elindul, de üres / hibát mutat
-- `components/MamaView.js` + `components/MamaDetail.js` – **Mama oldala** (terv-3 13, Norbi választása:
-  „B” látványterv – `munka/terv-3/terv-13/`): „Norbi filmjei”, „Világos” / „Sötét” (téma, terv-3 50 – Mamánál a világos az alap), „Kilépés”
-  (`.mama-head-actions`; telefonon a cím fölött, jobbra); rendezés, kereső,
-  menü, harang nincs. Egy szűrő (Norbi kérése, 2026-10-07; `.mama-tabs`, darabszámmal): „Filmek” (a
-  jelöletlenek – eldöntendők, alapból) / „Érdekel”; a most jelölt / visszavont sor a szűrő váltásáig a
-  helyén marad (`kept`). A `mama_list()` filmjei (a legutóbb hozzáadott elöl), 24-esével „További filmek”;
-  soronként borító, cím, év, műfajok, IMDb (`ImdbBadge`), 2 soros leírás (telefonon nincs) és a két
-  gomb: „Érdekel” (borostyán – saját jelölés; kiválasztva „✓ Érdekel”, újra kattintva visszavonja) /
-  „Nem érdekel” (a sor eltűnik, az értesítősávban „Visszavonás” – a régi helyére teszi vissza).
-  Optimista mentés a `mama_mark()`-kal, hibánál visszaáll és üzen. A borítóra / címre kattintva
-  **adatlap** (`MamaDetail`, `dialog.editor.mama-detail`): háttérkép, borító, cím, év, műfajok, IMDb,
-  „Előzetes megnézése” (`/api/tmdb/videos`), leírás, „Hol nézhető?” (`WatchProviders`), alul a két
-  nagy gomb; „Nem érdekel”-re bezárul. A borító színében dereng (terv-3 52.4, „A” – mint Norbi
-  adatlapja, 51.8: `usePosterColor` + `ambientProps` a `dialog`-on; derengés, keret, árnyék, a háttér
-  sötétítése, a borító fénye, „Hol nézhető?” jelölővonal, „Előzetes megnézése”; a gombok és a szövegek
-  nem változnak; CSS: `.mama-detail[data-ambient]`). Kikattintásra (asztalon) / „Bezárás” (×) / Esc zár; telefonon
-  alsó lap fogantyúval (lehúzva zár). Üres „Filmek”-nél „Most nincs új film, amiről kérdeznénk.”. CSS: a
-  „Mama oldala” szakasz (nagyobb betűk, `.mama-*`). E2e: „Mama oldala (terv-3 13)…” (Mama-tesztfiók,
-  külön böngészőablak, telefonméret)
-- `components/LoginForm.js` – e-mail + jelszó belépés (regisztráció nincs, ki van kapcsolva);
-  minden középen: cím, alatta az űrlap (nagyobb kijelzőn kártyán, felülről halvány türkiz fény);
-  **vetítőfény** (terv-3 51.11, 2026-10-09): álló, puha fénykúp felülről a cím és az űrlap mögé
-  (türkizből lilába, borostyán széllel – `main.login::before`, `conic-gradient`), fölül a „lencse”
-  (`::after`), a kártya felső élén türkiz fényél; nem mozog
-- `components/Watchlist.js` – lista betöltése a `titles_with_genres` nézetből (`loadTitles()`:
-  ezres adagokban – `lib/fetchAll.js`; a háttérfrissítések csak akkor hívják a szervert, ha a
-  betöltött listában van esedékes cím – `lib/refreshDue.js`). **Offline** (terv-3 44): induláskor
-  azonnal a helyben tárolt lista (címek, állapotok, franchise-ok, nézési sorrendek, értesítések;
-  `stale` = a mentés ideje), a friss a háttérben jön („· frissítés…” a darabszám mellett); a friss
-  lista és minden módosítása 1,5 mp után helyben is mentődik. Amíg a tárolt látszik vagy nincs net
-  (`readOnly`): nincs „Cím hozzáadása” / „+” / gyorsgomb, a ⋮ menüből kimarad az IMDb import, a
-  Tömeges import és a Mentések (`ONLINE_ONLY`), a táblázat vezérlői és az adatlap mezői tiltva (`Lock`
-  – `fieldset.lock`, `display: contents`; az adatlapon csak „Bezárás”), a háttérfrissítések nem
-  indulnak; a `readOnly` a többi írási helyre is eljut (kódaudit #8, 2026-10-09): a Hasonló címeknél
-  nincs „+ Hozzáadás” / ×, a gyűjtemény-ablakban nincs felvétel / TMDB-gyűjtemény hozzárendelése /
-  eltávolítása, a nézési sorrend pipái tiltva, „Sorrend szerkesztése” és „Megosztás” nincs, a
-  Franchise-ok ablakban nincs Átnevezés / Törlés / „+ Új franchise” / Javasolt hozzárendelések (a
-  „Szűrés erre” marad), a harangban nincs × / „Összes törlése”, és a kinyitás nem jelöli olvasottnak,
-  az üres állapotból a hozzáadó gombok (Első cím, Keresés a TMDB-n, Felfedezés, Tömeges import)
-  kimaradnak. **Új írási gombnál a `readOnly`-t is kezeld**; net nélkül / sikertelen betöltésnél sáv (`.offline-note`): „Nincs internetkapcsolat. A lista
-  a … -kor elmentett állapotot mutatja; most csak nézelődni lehet…”. Sikertelen betöltésnél a net
-  visszatérésekor és félpercenként újrapróbálja (`reloadKey`). A borítófalon nincs mit tiltani (a
-  kártya csak az adatlapot nyitja). Teszt: `munka/e2e/test-44.mjs`; fejléc:
-  „Megnézendő filmek és sorozatok” – **összecsukódó** (terv-3 99, Norbi választása a látványterv után, 2026-10-15 –
-  https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs): `header.top.collapsing` ragad, negatív helyzettel (`top:
-  calc(var(--head-c) - var(--head-h))`, a `--head-h` a mért magassága), így görgetéskor csak az alsó `--head-c` (3,6
-  rem; a `Watchlist` a CSS-ből olvassa) magas sávja marad fent – **asztalon (≥ 641 px) 0** („A – Egy sáv”, Norbi
-  választása a látványterv után, 2026-10-16 – https://claude.ai/artifact/L29pE1Z1sR3MNVXAnsguaN: `main[data-head-away]`
-  → `--head-c: 0rem`; a fejléc egészen felgördül, a „+”, a harang és a ⋮ a letapadt szűrősorba kerül – lent; nyitott
-  „Cím hozzáadása” panelnél nincs `data-head-away`, ott a sáv marad; telefonon is), a szűrősor alatta tapad (`top: var(--head-c)`; a táblázat fejléce
-  `calc(var(--head-c) + var(--filters-h))`, a lapozás célja `.filters-anchor` `scroll-margin-top`-pal). A magassága nem
-  változik (nincs ugrálás): a `--head-p` (0–1, a görgetésfigyelő írja) szerint a nagy cím (`.top-title`) a bal alsó
-  sarka felé összemegy és elhalványul, a gombsor a sáv jobb szélére (`--acc-shift`, ha a cím alá tört) és közepére
-  csúszik (telefonon 80%-ra kicsinyedve), az e-mail-cím elhalványul, a kis cím (`.top-compact`, aria-hidden; telefonon
-  „Megnézendő filmek”) előtűnik; összecsukva `data-compact`. A sáv mögött a szűrősor fokozatos elmosása (fölfelé
-  kinyúlik), letapadt szűrősor nélkül (pl. nyitott „Cím hozzáadása” panelnél) saját üveg. „Kevesebb mozgás” módban
-  nincs közbülső állapot. A fejléc felugrói (harang, ⋮) a szűrősor fölött (`z-index: 32`). Teszt:
-  `munka/e2e/test-1015.mjs`; mellette (jobbra) „Cím hozzáadása”, harang (`NotificationBell`),
-  e-mail (telefonon – ≤ 640 px – nem látszik, terv-3 50; gomb – `.account-email`, a `muted small` osztállyal –,
-  a „Jelszó módosítása” ablakot nyitja, net nélkül sima felirat – terv-3 27), Kilépés, a téma váltógombja (`ThemeToggle`,
-  terv-3 50; asztalon – ≥ 900 px – a sor nem törik: `flex-wrap: nowrap`), a sor végén a „További műveletek” (⋮) menü (`MoreMenu`, Norbi kérése, mint a
-  Chrome-ban): „Statisztika” (`StatsDialog`), „Franchise-ok” (`FranchisesDialog`, telefonon is), „IMDb import” (telefonon – `PHONE_QUERY`, ≤ 640 px –
-  nincs, Norbi kérése), asztali nézetben „Tömeges
-  import” (`BulkImport`) és „Mentés letöltése” (`downloadListCsv`), utána „Mentések”
-  (`BackupsDialog`, telefonon is), „Jelszó módosítása” (`PasswordDialog`, telefonon is, net nélkül nem –
-  terv-3 27), a végén „Felhasználói leírás” (`ManualDialog`, telefonon és net
-  nélkül is). Telefonon (≤ 640 px) a
-  „Cím hozzáadása” helyett lebegő, kerek „+” gomb a jobb alsó sarokban (`.fab`; lefelé
-  görgetéskor elhúzódik, felfelé visszajön – ugyanaz a görgetésfigyelő, mint a szűrősoré;
-  kattintva megnyitja a keresőt és a lap tetejére görget); szűrősor
-  balról: Típus lenyíló (Filmek / Sorozatok; kiválasztott franchise vagy keresés
-  mellett plusz „Filmek és sorozatok” – `type: 'all'`, ami franchise választásakor
-  automatikusan beáll, a franchise-szűrő megszüntetésekor vissza Filmek) – állapotgombok
-  (mobilon, ≤ 640 px: lenyíló a típus mellett; az „Abbahagyva” csak Sorozatok / Filmek és
-  sorozatok típusnál) + Letöltés lenyíló (Összes / Letöltött / Nem letöltött) – Műfaj (csak az
-  adott típus műfajai; saját lenyíló műfajikonokkal – terv-3 56) – Mama (Összes / Érdekli / Nem érdekli / Megkapta; csak ha van Mama-jelölés, és nem Sorozatok típusnál /
-  franchise-ra szűrve – terv-3 58: ilyenkor nem is szűr – `mamaFilter`, az értéke visszaváltáskor visszajön) –
-  Franchise (Összes / Franchise nélkül / a listán használtak, típustól
-  függetlenül) – mellette felirat nélküli ↺ gomb („Szűrők alaphelyzetbe”, rámutatva súgó;
-  alapállapotban halvány, letiltott). **A szűrők alapállapota** (betöltéskor és a ↺-vel,
-  `DEFAULT_FILTERS`, Norbi kérése): Filmek – Megnézendő – Nem letöltött – Összes műfaj –
-  Franchise nélkül;
-  telefonon (≤ 640 px) a szűrők alapból összecsukva: „Szűrők” gomb, mellette a beállított szűrők **címkeként**
-  (terv-3 101, 2026-10-15 – `activeFilters`, `.active-filters`: türkiz címkék ×-szel, vízszintesen görgethetők; a ×
-  az adott szűrőt „Összes” / „Mind” értékre állítja – ugyanazokkal a függvényekkel, mint a lenyílók –, a típus
-  („Filmek”) mindig be van állítva, azon nincs ×; az alapállapottól eltérve a végén „↺ Alaphelyzet”), kinyitva minden
-  szűrő és a rendezés, a gomb teljes szélességű, benne röviden a beállítás (`filterSummary`, pl. „Filmek ·
-  Megnézendő · Nem letöltött · Franchise nélkül”), címkék nélkül; a kereső összecsukva is látszik (Norbi kérése);
-  jobb szélen keresőmező („Keresés a listán”: a címben, az eredeti címben és a franchise nevében, kis-/nagybetű és
-  ékezet nélkül – `fold()`; több szónál mindegyiknek szerepelnie kell; telefonon külön sorban;
-  **okosabb keresés** (terv-3 66, „A”, 2026-10-13 – `lib/listSearch.js`, `components/Highlight.js`): ha egy szóra a
-  teljes listán sincs pontos találat, 5+ betűs szóban egy betűnyi elírást elnéz (`resolveWords`, Damerau–Levenshtein
-  ≤ 1, a teljes szóval vagy gépelés közben az elejével), a lista fölött „Nincs pontos találat a „dűnne” szóra – a
-  hasonlókat mutatjuk: „dűne”” (`.search-note`); a franchise neve szerinti találatnál „N cím a franchise neve
-  alapján: …”, a táblázatban a sor franchise-mezője kiemelve (`.franchise-field.search-hit`); a cím, az eredeti cím
-  és a kártya „Franchise:” sora keresett része halk türkiz aláhúzást kap (`mark.hl`, `<Hl>` – a szavakat a
-  `SearchHighlight` kontextus adja); teszt: `munka/e2e/test-1013.mjs`;
-  gépeléskor az egész listán keres: a szűrők félreállnak – `SEARCH_FILTERS`, keresés közben
-  szűkíthetők –, a keresés törlésekor a keresés előtti szűrők állnak vissza),
-  mellette felirat nélkül (`aria-label`) a Rendezés (`SORTS`:
-  legutóbb / legkorábban hozzáadott, legjobb értékelés, legújabb / legrégebbi megjelenés – pontos
-  dátummal, `releaseKey(t)` (terv-3 55, 2026-10-10: korábban csak az év számított, a Marvel egy évének
-  címei összekeveredtek); üres érték a végére; franchise-ra szűrve, ha annak van saját nézési sorrendje – terv-3 28 –, elöl
-  „Nézési sorrend” (`WATCH_ORDER`): Norbi döntése, 2026-10-06, csak ilyenkor kínálja, és a franchise
-  kiválasztásakor magától erre áll – `orderSort`; nézési sorrend nélküli franchise-nál magától
-  „Legrégebbi megjelenés” – `FRANCHISE_SORT` –; franchise kiválasztásakor – nézési sorrendtől függetlenül – az állapotszűrő magától „Mind” – a franchise-szűrő
-  megszűnésekor az előző állapot jön vissza, `statusBeforeFranchise`, kézi állapotválasztás után nem;
-  Norbi kérése, 2026-10-06; kézi rendezésválasztás után az marad –, más franchise-nál / franchise nélkül az előző
-  rendezés; ilyenkor a lista a sorrend tételeiből áll – `visible`: `{ key, title, item }` –: a
-  sorozat évadonként külön tétel, több helyen is („2. évad” a kártyán – `.card-season` – és a soron –
-  `.season-tag` –; az évadcsíkon nincs kiemelés – Norbi kérése, 2026-10-06), az állapot- és a letöltve-szűrő, a
-  darabszámok és a `kept` tételenként – évadnál az évadé, abbahagyott sorozat meg nem nézett
-  évadja Abbahagyva), a sor legvégén (csak ≥ 1400 px-en) felirat nélküli nézetváltó: két
-  ikongomb, lista (táblázat, `TitleTable`) | rács (borítófal) – `aria-pressed`, `title`; a
-  választást a böngésző megjegyzi (`localStorage`, `filmlista-nezet`), alapból lista;
-  1400 px alatt mindig borítófal. A nézetváltáskor a borítók a helyükre siklanak (terv-3 73, „B” – lépcsőzetesen,
-  `lib/viewSwitch.js`: a váltás előtt a látható borítók helye – `captureViewPosters`, a `data-flip` kulcsok szerint –,
-  utána – `useLayoutEffect` a `view`-ra – a klónjuk egy rögzített rétegen, `.view-switch-layer`, a szűrősor alatt,
-  0,42 s, borítónként 22 ms késéssel; az újonnan látszók beúsznak, a szövegek előtűnnek; „kevesebb mozgás” módban
-  nem). Borítófal: telefonon (≤ 640 px) 3 kártya egy sorban (kisebb
-  betűk és csillagok, a „Letöltve” jelvény csak ikon), asztali rácsban `minmax(185px)` kártyák, tömör
-  sorközzel (1,5 rem) és margóval (mérés: `munka/dizajn-2/eszkozok/racs-meres.mjs`).
-  Az állapotgombok darabszámai a többi szűrőt már figyelembe veszik.
-  A most szerkesztett (és addig is látható – a szűrőbe nem illő, épp felvett cím nem) sor a szűrés változásáig a helyén marad (`kept`), akkor is, ha már nem
-  illik a szűrőbe (pl. „Nem letöltött” nézetben letöltöttnek jelölve) – így visszavehető.
-  Üres találatnál üres állapot (`EmptyState`: rajz, cím, magyarázat, gombok): keresésnél „Nincs
-  „…” a listádon” + „Keresés a TMDB-n: „…”” (a Cím hozzáadása panel kitöltve nyílik –
-  `openAdd(q)`, `TitleSearch initialQuery`) + „Keresés törlése” / „Szűrők törlése”; szűrésnél
-  „Szűrők törlése” + „Felfedezés”; üres listánál „Első cím hozzáadása” + Tömeges import (a
-  gombok neve szándékosan nem „Cím hozzáadása”: a fejléc gombjával ne ütközzön).
-  Franchise-ra szűrve a lista fölött a gyűjtemény sávja (`FranchiseCollection`).
-  Törlés visszavonással (`requestDelete(t)`): a cím azonnal lekerül, az értesítősávban 8 mp-ig
-  „Visszavonás”; az adatbázisból csak a sáv lejártakor vagy a × gombra törlődik (ha a lapot
-  közben bezárják, a cím megmarad). A táblázatból (sor vagy évadcella) Megnézve-re váltott,
-  még értékelés nélküli címnél „Megnézted: … Hogy tetszett?” sáv csillagsorral és „Később”
-  gombbal (`handleRowUpdated` → `askRating`; a sor kétszer jön – azonnal és mentve –, a
-  `titlesRef` miatt csak egyszer kérdez; a szerkesztő ablakból nem kérdez). Az `<Toaster />`
-  a `main` végén.
-  Lapozás 25-ösével (`PAGE_SIZE`, telefon / keskenyebb rács, `components/Pagination.js`); asztali
-  listanézetben 10-esével (`TABLE_PAGE_SIZE`, terv-3 59 – Norbi kérése); asztali rácsban (≥ 1400 px)
-  22-esével (`GRID_PAGE_SIZE`, Norbi kérése, 2026-10-04: 1440p-n 11 oszlop × 2 teli sor). Telefonon (≤ 640 px) tömörebb
-  (Norbi kérése, 2026-10-15): az „Előző” / „Következő” csak nyíl (`.pg-step`, a szó – `.pg-word` – rejtve; felolvasónak
-  „Előző oldal” / „Következő oldal”), kisebb közök, alatta nincs fölösleges köz. És
-  asztalon (≥ 1400 px) – rácsban és 2026-10-15 óta listanézetben is, egységesen (Norbi kérése) – a lapozó és
-  a lábléc **egy sávban** az ablak alján (Norbi kérése, 2026-10-15): balra a forrásmegjelölés (két sorban), középen – 1800
-  px alatt jobbra, a „sponsored by” mellett – a lapozó, jobbra a „sponsored by” (`docked={isDesktop}` →
-  `.pagination.docked`; a lábléc a `main[data-docked]`-hoz kötve – egyoldalas találatnál, lapozó nélkül is ugyanez,
-  átnézés K4 –, `--docked-footer-h` = 3,25 rem magas, `sticky; bottom: 0`; a lapozó `position: fixed`, alul, a lábléc
-  fölött; a forrásmegjelölés szélessége a lapozóig – `--pager-w`, `--sponsor-w`; közös üveg: a lábléc `::before`-ja,
-  telítésnövelés nélkül – a kékes derengés nem kell; a `main` flex oszlop, a body flex oszlopában `flex: 1`): minden oldalon ugyanott, a
-  lábléc mindig látszik, görgetősáv csak ha a kártyák nem férnek ki (a korábbi `min-height:
-  100dvh` feleslegesen görgetett); az értesítősáv fölöttük; a
-  lapozás az oldal első címének helyét jegyzi (`pageState.first`), így nézetváltáskor az az
-  oldal jön, amelyiken az addig látott első cím van; szűrés/rendezés/keresés
-  váltásakor 1. oldal (akkor is, ha később ugyanaz a szűrés jön vissza); lapozáskor a szűrősor
-  eredeti helyére görget (egy üres jelölő a szűrősor előtt – a letapadt sorhoz nem lehetne).
-  A szűrősor görgetéskor a lap tetejére tapad (`position: sticky`); letapadva (`data-stuck`, a
-  Watchlist egy görgetésfigyelője jelzi) átlátszó, vonal nélkül, mögötte **fokozatos elmosás** (terv-3 102, Norbi
-  választása a látványterv után, 2026-10-15 – https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs;
-  `components/ProgressiveBlur.js`, CSS: „Fokozatos elmosás”): öt egymásra rétegzett `backdrop-filter` réteg (telítésnövelés nélkül – a kékes derengés nem kell, Norbi kérése, 2026-10-15)
-  (1–24 px, lépcsőzetes maszkkal) a sávban teljes erővel, alatta 3,5 rem alatt elgyengül (a sáv maga nem kaphat
-  backdrop-filtert – a rétegek akkor nem látnák a mögötte lévőt –, és az ősei sem: filter / opacity / maszk); asztali
-  listanézetben a táblázat ragadós fejléce alatt is teljes erővel (`--pb-solid`), a fejléc ilyenkor átlátszó és a
-  sáv fölött (`z-index: 31`; nyitott szűrőlistánál nem, mert az a sávból lóg le); telefonon kinyitva (belül
-  görgethető) a korábbi egyforma üveg; a dokkolt lapozó mögött 2026-10-15 óta nincs (ott a lábléc
-  közös üvege – Norbi kérése). A magasságát
-  (`--filters-h`, ResizeObserver) a táblázat ragadós fejléce kapja, hogy alatta tapadjon;
-  telefonon kinyitva legfeljebb a képernyő 70%-a, belül görgethető. Letapadva (csak asztalon,
-  ≥ 641 px) a ↺ után gyorsgombok (`.stuck-tools`): „↑” (vissza a lap tetejére), és („A – Egy sáv”, 2026-10-16; nyitott
-  „Cím hozzáadása” panelnél nem) kerek „+” (Cím hozzáadása – `openAdd()`, teli türkiz üveg), a harang (`NotificationBell
-  quiet` – második példány, a megjelenésekor nem rezzen) és a ⋮ (`MoreMenu`, ugyanazok a pontok – `moreItems`); a Kilépés
-  és a téma csak a nyitott fejlécben. A gyorsgombok helye nyugalomban is foglalt, csak láthatatlan (`data-off` →
-  `visibility: hidden`): letapadáskor a sor nem törhet másként, különben a sáv – és vele a lista – megugrana; asztalon
-  ezért keskenyebb a kereső (10,5 rem) és kisebb a csoportköz (1,75 rem) – így a sor a legtöbb szélességen ugyanannyi
-  sorba törik, mint előtte (660–2560 px között mérve; 740–860 és ~1140 px-en egy sorral több). A `.stuck-tools` kerek
-  gombszabályai csak a közvetlen gombokra (`> button`) – a harang és a ⋮ listájában is van gomb. Az állapotgombokon és a lista / rács váltón **csúszó kijelölő** (terv-3
-  100 – `lib/useSlidingThumb.js`, lent). **„Folyékony üveg”** (terv-3 103, ugyanott választva): a tartalom
-  fölött lebegő gombok – ezek, a telefonos lebegő „+” (`.fab`) és a galéria lapozója (`.backdrop-pager`) – áttetsző,
-  élénkítő üveget kapnak (elmosás + telítés, felső csillanás, fénylő keret, `::before` fényfolt); a türkiz türkiz
-  marad (`--lg-fill`: sötétben 64%, világosban 88% – a fehér ikon miatt), a csillanás `--glint` (mindkét témában
-  fehér). Teszt: `munka/e2e/test-102-103.mjs`
-- `components/Toaster.js` + `lib/toast.js` – értesítősáv („toast”): alul középen (telefonon a
-  lebegő „+” fölött), `aria-live="polite"`; `toast({ text, image, content, action: { label,
-  onClick }, hideClose, duration = 8000, onExpire })` → id, `dismissToast(id, how)`; az
-  `onExpire` lejáratkor és a × gombra fut (az action-re nem); legfeljebb 3 egyszerre (a
-  legrégebbi lejártként tűnik el); rámutatáskor / fókusznál megáll (a fogyó csík is); kilépéskor
-  `clearToasts()` – a függő törlés elmarad (kódaudit #11). `duration: null`: nem jár le, nincs fogyó csík (a
-  „Frissült az app” sáv, terv-3 63). `kind` (terv-3 52.5, „B”): 'delete' (a cím és az
-  értesítés törlése – piros) | 'rating' („Hogy tetszett?” – borostyán): halványan színezett háttér és keret,
-  elöl kerek ikon (kuka / csillag – `.toast-kind`), a fogyó csík is ebben a színben; nélküle türkiz
-- `components/EmptyState.js` – üres állapot: kis vonalrajz (filmkocka + nagyító, türkiz), cím,
-  szöveg, a hívó gombjai
-- `components/PosterCard.js` – borító (`https://image.tmdb.org/t/p/w342` + `poster_path`),
-  állapotcsík, „Letöltve” jelvény; a borítóra kattintva a szerkesztő ablak nyílik (mint a
-  ceruzával – Norbi kérése), az IMDb- (vagy TMDB-, ha nincs IMDb ID) adatlapra csak a cím visz
-  (halvány aláhúzással), „Hozzáadva: <dátum>” a `created_at` alapján (csak megjelenítés, nem
-  szerkeszthető), saját értékelés kis csillagsorként (`StarsDisplay`), ceruza gomb a bal felső
-  sarokban → szerkesztő ablak (billentyűzettel / felolvasóval ez a borító-kattintás megfelelője);
-  Mamából csak az „Érdekli”: borostyán „M” a borító jobb felső sarkában (`.poster-corner` > `.mama-mark`,
-  a „Letöltve” jelvény mellett; a többi Mama-érték a kártyán nem látszik – a szűrő mutatja; Norbi
-  választása, 2026-10-08, látványterv: `munka/terv-3/mama-ikon/`), műfajok
-  színes pöttyel (`GenreList`); az első
-  rámutatáskor kiszámolja a borító hangulatszínét (`usePosterColor`), rámutatva a borító ebben fénylik
-  (a kurzort követő „fénylő kártyaél” 2026-10-04-én Norbi kérésére kikerült). Még meg nem
-  jelent filmnél (`releaseState(t)`, `data-release`) szaggatott keret a borító körül és
-  `ReleaseBadge` a borító alján (a „digitálisan: …” második sorban; telefonon csak a dátum –
-  „okt. 15.” – vagy „Moziban” / „Hamarosan”; borító nélkül a helykitöltő cím feljebb csúszik)
-- `components/ReleaseBadge.js` – a még meg nem jelent film jelvénye (naptár ikon, szaggatott
-  keretű pirula): „Hamarosan · okt. 15.” / „Hamarosan · 2027” / „Moziban · digitálisan: nov.
-  20.” vagy „… még nincs dátum”; a kártyán, a táblázat sorában (a cím adatai között) és a
-  szerkesztő ablakban. Norbi döntése (2026-10-04): szűrőgomb nem kell, csak a szaggatott
-  megjelenítés (+ a harang). Színe a fajtája szerint (terv-3 51.4, `data-kind`): „Hamarosan” indigó
-  (`--c-indigo`), „Moziban” korall (`--c-coral`) – a jelvény és a borító szaggatott kerete is
-- `components/GenreList.js` + `lib/genreColors.js` – műfajok, mindegyik előtt kis színes pötty
-  (`genreColor(név)`: OKLCH, egyforma világosság, a rokon műfajok rokon színt kapnak; ismeretlen
-  műfaj szürke; a kulcs a TMDB magyar műfajneve); felolvasónak vesszővel elválasztva (`sr-only`).
-  A kártyán és a táblázat sorában; megnézett / abbahagyott címnél a pötty szürke
-- `lib/posterColor.js` – hangulatszín a borítóból: `usePosterColor(poster_path, enabled)` a kis
-  (w92, saját gyorsítótár-kulccsal: `?szin`) borítót vászonra rajzolja (a TMDB képszervere CORS-t
-  enged, de csak CORS-os kérésre: ha ugyanaz a kép CORS nélkül is a böngésző gyorsítótárában
-  lenne – mint a harang w92-es képei –, a vászon tiltást kapna; a külön kulcs ezt kizárja.
-  Korábban w185 volt, ~15 KB helyett most ~5 KB, terv-3 34, 2026-10-05), a legjellemzőbb élénk
-  színt adja OKLCH-ban, rögzített világossággal (0,72) és telítettséggel (0,04–0,13) – így a
-  szövegek olvashatósága nem változik; borítónként egyszer számol (`Map`). `ambientProps(szín)`:
-  `--ambient` CSS-változó + `data-ambient` jelző; a CSS („Hangulatszín a borítóból” szakasz)
-  csak ilyenkor színez (világosban erősebben – `--ambient-k`, `--ambient-ink`, terv-3 52.6): a szerkesztő ablak a borító mögül dereng (színezett keret, árnyék,
-  háttér – a derengés az ablak saját háttere, `--ambient-on` 0 → 1 úszik be; nem `::before` réteg, mert az a görgetett
-  ablakban felgördült – átnézés K2; Mama adatlapján is), a kártya rámutatva fénylik, a táblázat rámutatott sora halványan színeződik; az adatlap
-  belseje is (terv-3 51.8, 2026-10-09): a szakaszcímek (Hol nézhető?, Szereplők, Hasonló címek)
-  előtt jelölővonal, a vezérlősáv kerete és teteje, a mezőcímkék (keverve – `--ambient-label`: 55%,
-  világosban 30%, a kontraszt miatt) és az „Előzetes megnézése” gomb. `franchisePosterPath(id,
-  titles)`: a franchise színének borítója (a legjobb IMDb-értékelésű, borítós címé) – a Franchise-ok
-  csempéje, a Statisztika franchise-sávja és a gyűjtemény-ablak közös forrása
-- `components/TitleEditor.js` – natív `<dialog>` (fejlécben a leírás; a cím adatai – `.meta` – alatt a
-  műfajok sima szövegként, „Akció · Sci-Fi”, **pötty nélkül**, mint Mama adatlapján – `.editor-genres`,
-  Norbi kérése, 2026-10-08; előnézetnél a TMDB-adatokból, amint megjöttek; próba: `munka/e2e/test-mufaj.mjs`; a cím
-  szövegoszlopában – `.editor-titletext` –, így 900 px alatt a kis borító mellett marad, átnézés K5, 2026-10-16). **Adatlapok egymás mögött**
-  (terv-3 31-es pont, 2026-10-05): az ablak (`TitleEditor`) lapokat tart (`stack`: `{ id, rowId, item,
-  added }`), mindig az utolsó látszik, a többi rejtve megmarad (`.editor-page[hidden]`, a görgetési
-  helyével); a lap sora a `titles` propból jön (a listáról nyitottnál `rowId` szerint, különben
-  TMDB-azonosító szerint) – ha nincs a listán, a lap **előnézet** (`TitlePage`, `preview`): a
-  `/api/tmdb/details` adataival, a szerkesztő mezők és a Törlés helyett „Hozzáadás a
-  listához” (`addTitle(item, details)` – nem kérdez újra), mellette „Már láttam” (terv-3 80: megnézettként; utána a
-  `.added-note`: „✓ Felkerült a listádra megnézettként – hogy tetszett? Alább megadhatod a csillagokat.”) és „Bezárás”; felvétel után a lap új
-  kulccsal rendes adatlappá válik („✓ Felkerült a listádra”, `.added-note`; Norbi döntése: nem
-  zárul be). Előnézet nyílik a Cím hozzáadása találatának borítójáról / címéről és a Felfedezés
-  borítójáról (`onPreview` → `Watchlist.openEditor`), valamint a Hasonló címek borítójáról az
-  ablakon belül (új lap, a cím fölött „‹ Vissza: …”, `.back-link`) – a Szereplők nevéről a színész
-  lapja is így nyílik (`PersonPage`, `{ id, person }` a `stack`-ben, terv-3 61) –; a franchise-gyűjteményből és
-  az importokból nem (Norbi döntése). Törlés-megerősítés, franchise-név gépelése és felvétel közben a
-  lap nem hagyható el (az elöl lévő lap `apiRef`-en adja a `canLeave` függvényt); a Bezárás / Esc /
-  kikattintás az egész ablakot zárja; a
-  nézetváltás csak az első lapról siklik vissza; a háttérképes elrendezés jele (`.has-backdrop`)
-  a lapon van, nem a `dialog`-on; a cím `id="editor-title"`-je csak a látható lapé; a rejtett
-  lapon nem szól az előzetes. A listán lévő cím lapja: állapot, letöltve (a megnézés
-  dátuma – `watched_at` – nem látszik és nem szerkeszthető, Norbi kérése, 2026-10-04: megnézettre
-  állításkor a háttérben a mai nap kerül be, a Statisztika és a CSV használja), értékelés 10 csillaggal
-  (+ „Törlés” link). **Azonnali mentés** (terv-3 79, „B”, Norbi választása, 2026-10-14 – látványterv:
-  https://claude.ai/artifact/HxvwS24YdW3kaHTbPR9mty): minden mező (Állapot, Letöltve, Saját értékelés,
-  Franchise, Mama) kattintásra mentődik (`save()` → `saveRow`, optimista – a lap a `titles` friss sorát
-  mutatja, nincs külön `form`); nincs „Mentés” / „Mégse” / mentetlen módosítás, csak „Bezárás”. A módosított
-  vezérlőn 2 mp-ig kis türkiz pipa (`SavedCheck`: a gomb sarkán – `.saved-check.on-chip` –, a Franchise /
-  Saját értékelés címkéje után), a gombsor fölött „Állapot: Megnézve – mentve · Visszavonás” (`.saved-note`,
-  `role="status"`; a lapon, mert az ablak fölött a sáv nem kattintható): lépésenként visszafelé (`undos`),
-  10 mp-ig. Hibánál csak a sikertelen módosítás esik ki, hibaüzenet. A franchise létrehozása után a neve a
-  `created`, törlése után a `deleted` refből (a törölt franchise üresre állítása nem mentendő). Alul a gombsorban ikonos
-  ghost gombok (Norbi kérése, 2026-10-15): „Törlés a listáról” (pirosas – `.danger-ghost`) és „Frissítés a TMDB-ről”
-  (`.editor-action`); telefonon a gombsor és az „Előzetes megnézése” középre zárva. Törlés megerősítéssel – Norbi kérésére itt marad –, utána a sávban 8 mp-ig
-  „Visszavonás” (`onDelete` → `Watchlist.requestDelete`) (a mobilos borítófalon a borító vagy a
-  ceruza nyitja). Az „Abbahagyva” állapot csak sorozatnál választható. Alul „Hasonló címek”
-  (`SimilarTitles`). Előzetes: megnyitáskor a háttérben `/api/tmdb/videos`; ha van, a cím
-  adatai alatt „Előzetes megnézése” (angolnál „angolul” jelzés) → 16:9 YouTube-lejátszó
-  (`youtube-nocookie.com`, `.trailer`), „Előzetes bezárása”. Évados sorozatnál az Évadok
-  fölött az idővonal (`SeasonTimeline`; a pöttyre kattintva a lista az évadhoz görget).
-  Asztalon (≥ 900 px) széles (66 rem – így a vezérlősáv egy sorba fér, Norbi kérése, 2026-10-08),
-  kétoszlopos ablak: balra nagy borító (w500, görgetéskor a helyén
-  marad; borító nélkül filmikon), jobbra az adatok; telefonon egy oszlop, nagy borító nélkül – 900 px alatt a
-  jelenetképes lapon a borító kicsiben (6,6 rem) balra a kép aljára úszik, mellette a „Vissza”, a cím és az adatok
-  (terv-3 72, „A”, 2026-10-13: `.editor-titlebar` > `.editor-hero-poster` + `.editor-titletext`; asztalon a
-  burkolók `display: contents`).
-  **Moziszerű fejléc** (terv-3 104, Norbi választása a látványterv után, 2026-10-15 –
-  https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs, „Javaslat”): asztalon (≥ 900 px – `WIDE_QUERY`) a jelenetképes
-  lapon (`hero` → `.editor-page.has-hero`) a fejléc (`header` – a JSX-ben változó, a képre vagy a jobb oszlop
-  tetejére kerül) a jelenetképen: a kép legalább 27 rem, balról és alulról a felületbe olvad; rajta balra lent a kisebb
-  borító (9,5 rem, `.editor-hero-poster`), mellette a nagy cím (2,75 rem), az adatok, a műfajok, a leírás 3 sorban
-  („Tovább” / „Kevesebb” – `.overview-more`, csak ha nem fér el; ResizeObserver méri, mert megnyitáskor az ablak még
-  rejtve van) és az „Előzetes megnézése”; a lejátszó (`player`) a kép alatt, a jobb oszlop tetején. Nagy borító
-  (`.editor-poster`) ilyenkor nincs: a bal oszlopban a „Hol nézhető?” és a Szereplők. Jelenetkép nélkül és 900 px
-  alatt a korábbi elrendezés (72). Ha a jelenetkép a megnyitás után érkezik (előnézet), a fejléc áthelyeződik és a cím
-  újraépül – a fókusz ilyenkor visszakerül a címre (2026-10-15; addig a body-ra esett). Teszt: `munka/e2e/test-104.mjs`.
-  Nézetváltás (asztalon, `lib/viewTransition.js`): a kattintott kártya / sor borítója átsiklik a
-  nagy borító helyére – jelenetképes lapon a képen lévő kisebb borítóra (104) – (a `Watchlist` `openEditor(t, forrásElem)` indítja), bezáráskor (Esc, Bezárás,
-  kikattintás) a `morphTo` borítóra vissza; törléskor nincs. A
-  `showModal()` ezért `useLayoutEffect`-ben fut.
-  Kikattintás (Norbi kérése, 2026-10-04; `useBackdropClose`): asztalon (≥ 641 px) a háttérre kattintva bezárul
-  (`isOutside`: a cél maga a `dialog`, a pont a téglalapján kívül; a `pointerdown` is kívül –
-  a kifelé húzott kijelölés nem zár; mentetlen módosítás nincs – terv-3 79). Nem zár, ha a törlés
-  megerősítése nyitva van, vagy a FranchiseSelect új név / átnevezés módban van
-  (`.franchise-new`). Telefonon (alsó lap) nem zár; az Esc mindig zár.
-  Megnyitáskor a fókusz az ablak címén van (keret nélkül), nem a Franchise mezőn (Norbi kérése).
-  A jobb felső sarokban ragadós bezáró × (`.editor-close` a `.editor-close-bar`-ban – sticky, 0 magas sáv; átnézés J1,
-  2026-10-15): görgetés után is látszik, mint az Esc (törlés-megerősítés / felvétel közben nem zár – `canLeavePage`).
-  Telefonon (≤ 640 px, alsó lap) nincs sem ×, sem „Bezárás” (`.editor-close-btn`; Norbi kérése, 2026-10-15): a fogantyú
-  lehúzása, a Vissza gomb / gesztus és az Esc zár; ha a gombsorban más nem marad (előnézet, színész lapja), elmarad.
-  Ha van háttérképe (`backdrop_path`), az ablak tetején a film széles jelenetképe (`w1280`,
-  telefonon `w780`), alul a felületbe olvadva; asztalon rajta a fejléc (`.has-hero`, terv-3 104 – fent)
-  (`.has-backdrop`). Telefonon (≤ 640 px) az ablak alsó lap: alulról felcsúszik, teljes
-  szélességű, felül fogantyú (`.sheet-handle`) – lefelé húzva (110 px vagy gyors mozdulat)
-  bezárul, különben visszaugrik.
-  **Tömör elrendezés** (terv-3 30, B – „vezérlősáv”, Norbi választása, 2026-10-05): fölül a
-  Franchise és a Saját értékelés egymás mellett (`.editor-pair`), alatta keretes sáv
-  (`.editor-controls`): Állapot | Letöltve | Mama, elválasztóvonalakkal (évados sorozatnál az
-  Évadok a sáv fölött, a sávban csak a Mama; asztalon egy sorban; a csoportok – telefonon is – középre zárva); a mezők címkéi kis, ritkított nagybetűk; telefonon
-  a pár egymás alatt (900 px alatt – átnézés K5, 2026-10-16: mellette a tíz csillag a Franchise lenyílót összenyomta),
-  a sávban fent az Állapot, alatta a Letöltve és a Mama. Asztalon a
-  vezérlőblokk 341 → 168 px (látványtervek: `munka/terv-3/terv-30/`). A Mama-csoport csak franchise
-  nélküli filmnél (terv-3 58, `mamaApplies` – a franchise mező átállításakor azonnal; a meglévő érték
-  mellett marad); évados sorozatnál így a sáv el is marad.
-  A borító hangulatszínét megnyitáskor kiszámolja (`usePosterColor`): az ablak a film színében
-  dereng. A kiválasztott Mama borostyán (`.mama-chips`).
-  Évados
-  sorozatnál az állapot / letöltve / dátum helyett „Évadok” lista (`SeasonList`), ami azonnal
-  ment (`onChanged`)
-- `components/Seasons.js` – évadok (sorozatoknál): `hasSeasons()`, `seasonCounts()`,
-  `seasonRange()` („1–3., 5.”), `useSeasonActions()` (optimista mentés `saveRow`-val, hibánál visszaáll;
-  megnézettre állításkor az előtte lévő üres évadok is megnézettek lesznek, 10 mp-ig
-  „Visszavonás”), `SeasonStrip` (évadonként egy szakasz az állapotszínnel; a bejelentett –
-  jövőbeli / dátum nélküli – szaggatott, nem jelölhető; táblázatban kattintásra lépteti:
-  üres → Folyamatban → Megnézve → üres), `SeasonList` (évadonként állapot + „Letöltve”,
-  „Mind megnézve”, „Nem nézem tovább” / „Mégis folytatom” (ugyanaz a gomb vált feliratot),
-  `SeasonTimeline` (szerkesztő ablak, ≥ 2 évad: évadonként egy pötty-gomb a megjelenés napján
-  az állapot színével, bejelentett szaggatott, „ma” jelölő – a tengely a mai napot mindig tartalmazza (átnézés K3) –; a tengely legfeljebb egy évvel tart
-  a mán / az utolsó megjelent évadon túl – a dátum nélküli fél évvel utána, a távolabbi a
-  végén áll, a címkéjében a valódi dátum; 12 évnél hosszabb tengelyen minden 2. évszám),
-  „+ Évad hozzáadása”, „Utolsó évad törlése” megerősítéssel – ha a TMDB-n is
-  szerepel, a heti frissítés üresen visszahozza; abbahagyott sorozatnál a lista tetején lila
-  sáv), `SeasonCell` (táblázat Állapot cellája: csík + „x/y évad”, ami lenyíló panelt nyit,
-  alatta „Abbahagyva”, ha az; kívülre kattintás / Esc bezár), `SeasonDownloads`
-  (Letöltve cella: a letöltött évadok). „Abbahagyva” (sorozat, amit Norbi nem néz tovább, de a
-  listán marad): kézi, az évadjelölés és az új évad sem írja felül; a „Mind megnézve” feloldja
-  (→ Megnézve, a visszavonás az Abbahagyva-t is visszaadja); a „Mégis folytatom” után az
-  adatbázis az évadokból számol
-- `components/TitleTable.js` – asztali soros nézet (≥ 1400 px, `DESKTOP_QUERY` a
-  `Watchlist`-ben; `table-layout: fixed`, minden maradék hely a címoszlopé). **Kártyaszerű sorok** (terv-3 59,
-  „B”, 2026-10-11 – felülírja az alábbi méreteket): legfeljebb 1720 px széles, középre zárt táblázat, sorköz
-  (`border-spacing`), lekerekített sorok, 100 px-es borító (w185), 24 px-es cím, a leírás mindig a cím alatt
-  2 sorban, a sor mindig halványan a film színében (a szín azonnal számolódik, nem az első rámutatáskor),
-  a film jelenetképe (`backdrop_path`, w780, `--row-img`, `tr[data-img]`) halványan a címcella jobb felén
-  (megnézettnél szürkén); a megnézett sor vezérlőinek halványítása a cella tartalmán (nem a cellán).
-  **Átnézés K6 (2026-10-16, felülírja az alábbiakat):** a cím legfeljebb 2 sorban (`line-clamp`, utána „…” + tooltip), az
-  eredeti cím 1 sorban „…”-val (`title` a teljessel); a Franchise lenyíló nem saját oszlopban, hanem a „Hozzáadva: …” sor
-  végén (`.row-added` – flex sor; a mező legfeljebb `--franchise-col` = 11rem, üresen láthatatlan, de a helyét megtartja,
-  így rámutatáskor nem ugrik a sor); a `.row-title` rácsa borító | cím és adatok (a leírás alattuk, ugyanabban az
-  oszlopban) – 1440 px-en a cím így ~365 px-et kap (korábban ~170-et: az üres franchise-oszlop foglalta mellette a helyet).
-  A korábbi leírás: balra borító (72 px
-  széles – Norbi kérése, 2026-10-04: így olyan magas, mint mellette az adatok; gomb:
-  rákattintva a szerkesztő ablak – részletek, hasonló címek; rámutatva türkiz keret) +
-  adatok (a cím 20 px-es, mindig egy sorban, ha így sem fér ki „…” + tooltip; a műfajok külön
-  sorban)
-  + Franchise lenyíló saját, fix `11rem` (176 px) oszlopban, középre igazítva (Norbi
-  leghosszabb franchise-neve is kifér); üresen átlátszó, de a helyét megtartja (így a sorok nem
-  ugrálnak), rámutatáskor / billentyűzetes fókusznál látszik + TMDB leírás (`overview`;
-  ≥ 1900 px egymás mellett: borító | cím oszlop fix `22.5rem` (360 px, Norbi címeinek kb. 96%-a
-  belefér, a hosszabbak „…”-val) | franchise | leírás, a franchise két oldalán egyforma
-  rácsköz, a leírás minden sorban ugyanott kezdődik, minden maradék helyet megkap, a
-  „Letöltve” felirat felé 120 px (`--overview-gap-end`), 4 sorban; 1440p-re (2560 px)
-  optimalizálva; 1900 px alatt a franchise a cím adatai mellett, a leírás alattuk 2 sorban;
-  teljes szöveg rámutatáskor),
-  jobbra sorrendben Letöltve – Állapot – Mama (9,75 rem, mint az Állapot – a „Nem érdekli” egy sorban, átnézés K7; kitöltve borostyán: `.mama-set`; sorozatnál / franchise-os
-  címnél érték nélkül üres cella – terv-3 58) – Értékelés
-  (10 másfélszeres csillag középen, mellette „8/10”), a végén kuka: megerősítés nélkül
-  lekerül, 8 mp-ig visszavonható (`onDelete`). A sor az első rámutatáskor / fókusznál kiszámolja a borító
-  hangulatszínét, és rámutatva halványan felveszi. Az üres
-  Állapot / Mama lenyíló és a kuka csak a sorra mutatva (vagy fókusznál) látszik teljesen
-  (`@media (hover: hover)`). Fejléc: kis, ritkított nagybetűs címkék; állapotcsík: lekerekített
-  pálca a borító mellett (`td:first-child::before`). Azonnali, optimista mentés (`saveRow`, hibánál
-  csak a sikertelen módosítás áll vissza). Megjegyzés mező nincs a felületen (Norbi kérésére; a `notes` oszlop megmaradt).
-  Évados sorozatnál a Letöltve cellában a letöltött évadok, az Állapot cellában az évadcsík
-  (`SeasonDownloads`, `SeasonCell`); a borítókártyán a borító alján évadcsík + „x/y évad”
-- `components/FranchiseSelect.js` – franchise lenyíló (üres / meglévők / „+ Új franchise…”
-  → helyben névmegadás, Enter: hozzáadás, Esc: mégse / „× „Név” törlése…” a kiválasztottra,
-  megerősítéssel, minden címről lekerül / „✎ „Név” átnevezése…” – helyben, a régi névvel
-  kitöltve, Enter: mentés, Esc: mégse; ütközésnél hibaüzenet); soros nézet és szerkesztő ablak is
-- `components/StarRating.js` – `StarRating` (szerkeszthető: rádiógombok, nyilakkal is
-  állítható, a kiválasztott csillagra újra kattintva `null`; választáskor a kitöltött csillagok
-  egymás után „pattannak” – `.pop` + `--i`, csak kattintásra / nyílra, betöltéskor nem) és
-  `StarsDisplay` (csak kijelzés)
-- `components/ListSkeleton.js` – csontváz-betöltés a lista helyén, amíg tölt (asztali
-  listanézetben 6 sor, egyébként 12 kártya körvonala, csillogó áthúzással; felolvasónak „Lista
-  betöltése…”); a `SimilarTitles` betöltése is borító-körvonalakkal (`.similar-sk`)
-- `components/Reflow.js` – **animált átrendeződés szűréskor / rendezéskor** (terv-3 49.3, 2026-10-08,
-  látványterv nélkül – Norbi kérése): `<Reflow trigger boxRef layerRef>` a borítófal `ul.grid`-je (a
-  `Watchlist`-ben) és a táblázat `tbody`-ja (`TitleTable`, `reflowKey`) körül; a trigger a `filterKey`
-  (szűrés, rendezés, keresés – a lapozás nem). Saját FLIP (Web Animations), nem View Transitions (az a
-  lap fölé rajzolna – a mozgó kártyák a letapadt szűrősor fölé kerülnének –, és közben a lap nem
-  kattintható): a DOM-módosítás előtt (`getSnapshotBeforeUpdate`, ezért osztálykomponens) megméri a
-  `data-flip="<kulcs>"` tételeket; utána a megmaradók a régi helyükről csúsznak (0,32 s, `composite:
-  add` – a görgetéses beúszás alatta marad), az újak beúsznak (0,28 s, 90 ms késéssel), a kiesők
-  klónja (`.reflow-ghost`, `aria-hidden`, `inert`, azonosítók nélkül; sornál saját `<table>`-ben a
-  fejléc oszlopszélességeivel) a régi helyén 0,2 s alatt elhalványul – a `.grid` / `.table-wrap` ezért
-  `position: relative`. Csak a képernyőn látszókat mozgatja; félbehagyott mozgásból a látható helyről
-  folytat; „kevesebb mozgás” módban nem mozog (maga nézi). Teszt: `munka/e2e/test-49-3.mjs`
-- `lib/viewTransition.js` – `canMorph(elem)` (támogatott böngésző, ≥ 900 px, nincs „kevesebb
-  mozgás”, az elem a lapon van) és `MORPH_NAME` (`editor-poster`); `trackTransition(t)` (a
-  `Watchlist.openEditor` hívja) és `afterTransition()` – a megnyitás közben érkező, nem sürgős
-  frissítések (hangulatszín: `usePosterColor` – a vászonra rajzolás is –, „Hol nézhető?”,
-  előzetes, hasonló címek, előnézeti adatok) megvárják a 0,3 s-os mozgás végét: terhelt gépen
-  (Norbi: videó mellett, 2026-10-05) ezek egy-egy hosszú képkockát okoztak a mozgás közepén. Új,
-  a szerkesztő megnyitásakor érkező állapotfrissítésnél is ezt használd
-- `lib/useMediaQuery.js` – `useMediaQuery(query)` hook (`useSyncExternalStore`)
-- `lib/useSlidingThumb.js` – **csúszó kijelölő a gombcsoportokon** (terv-3 100, Norbi választása a látványterv után,
-  2026-10-15): `useSlidingThumb()` → callback ref a csoportra (`.sliding`): a kiválasztott közvetlen gyermek
-  (`[aria-pressed="true"]` / `[aria-selected="true"]`) helyét és méretét CSS-változókba írja (`--thumb-x` / `-y` /
-  `-w` / `-h`, `data-thumb`), minden rajzolás után és méretváltozáskor; a jelölő a csoport `::before`-ja (halvány
-  türkiz, a kiválasztott gomb saját háttere ilyenkor átlátszó), 0,32 s alatt rugózva csúszik (`data-thumb-anim` – az
-  első elhelyezés után). Használja: az állapotgombok és a lista / rács váltó (`Watchlist`), Mama fülei (`MamaView`), a
-  gyűjtemény-ablak fülei (`CollectionDialog`). Új gombcsoportnál: `className="… sliding"` + `ref={useSlidingThumb()}`
-- `lib/backClose.js` – **a Vissza gomb zárja a legfelső ablakot / menüt** (terv-3 62, 2026-10-13): telefonon
-  (vissza-gesztus, a telepített app is) és a böngészőben. Minden nyitott réteg egy előzmény-bejegyzést kap
-  (`history.pushState`, az URL nem változik; a Next 16 a natív pushState-et a routerébe illeszti, nincs
-  újratöltés); a Vissza (`popstate`) a legfelsőt zárja, ha nem zárható, a bejegyzés visszakerül; ha máshogy
-  zárul (×, Esc, kikattintás), a bejegyzése lekerül (`history.back()`, a popstate-je kihagyva). A bejegyzések
-  egyformák, csak a számuk számít. Saját visszalépés alatt új bejegyzés nem kerül fel, csak utána (a Chrome a
-  visszalépés célját a hívásakor rögzíti – pl. ⋮ menü → Statisztika). A modális `<dialog>`-okat egy
-  MutationObserver maga kezeli: a Vissza az Esc-et utánozza (`cancel` esemény, ha nem tiltották, `close()`),
-  így minden ablak a saját Esc-szabálya szerint – **új ablakhoz nem kell semmi**; saját szabály:
-  `dialog.backHandler` → 'stay' | 'stepped' | 'closing' (az adatlap: előbb a lapokat lépteti vissza, mint a „‹ Vissza”,
-  törlés-megerősítés / felvétel közben nyitva marad, különben bezár). **Androidon** (Chrome, telepített app)
-  nyitott modális ablaknál a vissza-gesztus nem az előzményekhez jut, hanem az ablaknak, Esc-szerű `cancel`
-  eseményként (bezárási kérés, close watcher), és a megállítását a Chrome korlátozza (érintés nélkül nem
-  engedi). Ezért az adatlap (`TitleEditor`) `closedby="none"`: a böngésző nem zárja magától, a gesztus az
-  előzményekhez jut; az Esc-et a lap `keydown`-figyelője kezeli (az ablakon belül vagy a `body`-n, a belső mező
-  `preventDefault`-ja tiltja); a `cancel` csak a `closedby`-t nem ismerő böngésző tartaléka. Az adatlap újabb
-  lapjai (színész, film) saját bejegyzést kapnak (`pushDialogPage`, a kattintás alatt – a popstate-ben
-  visszatett bejegyzést a Chrome a Vissza gombnál átugorhatja); a Vissza ezt veszi le (`backHandler` →
-  'stepped'), a „‹ Vissza” gomb `popDialogPage`-dzsel, a bezárás az összeset (`history.go(-n)`). Hibajavítás,
-  2026-10-14 (Norbi jelezte); teszt: `munka/e2e/test-gesztus.mjs`. Nem dialog réteg: `useBackLayer(open,
-  close)` – a ⋮ menü, a harang, a „Cím hozzáadása” panel. Teszt: `munka/e2e/test-1013b.mjs` (a Navigation API
-  `currentEntry.index`-ével ellenőrzi, hogy nem marad bejegyzés)
-- `lib/appVersion.js` + `app/api/version/route.js` – **friss adatok visszatéréskor és „Frissült az app”**
-  (terv-3 63, 2026-10-13): `useAppFreshness(enabled, onStale)` a `Watchlist`-ben – ha a lap legalább 5 percig
-  rejtve volt, visszatéréskor csendben újratölt (`reloadKey`: csontváz nélkül, a szűrők, a lapozás, a nyitott
-  adatlap marad; net nélkül / tárolt listánál nem); visszatéréskor (≥ 1 perc után) és félóránként összeveti a
-  buildbe égetett `NEXT_PUBLIC_APP_VERSION`-t (`next.config.mjs`) a futóval (`GET /api/version`, belépés nélkül,
-  `no-store`) – ha eltér, munkamenetenként egyszer lejárat nélküli sáv: „Frissült az app – az újratöltéssel az
-  új változat indul.” + „Újratöltés”
-- `lib/prefetch.js` – **előtöltés rámutatáskor** (terv-3 69, 2026-10-13): `usePrefetchOnHover(t)` a kártyán
-  (`PosterCard`) és a táblázat során – ha az egér ~150 ms-ig rajta áll (csak egérrel, net mellett, címenként
-  egyszer, egyszerre legfeljebb 2 címé), lekéri a providers / credits / videos route-ot ugyanazzal az URL-lel,
-  mint a `TitleEditor`, így megnyitáskor a böngésző gyorsítótárából jönnek (a Hasonló címek nem – az a
-  legnehezebb). Ha a TitleEditor kérésének paraméterei változnak, itt is
-- `components/PullRefresh.js` – **lehúzás frissítéshez** (terv-3 85, 2026-10-14, látványterv nélkül – Norbi
-  kérése): csak érintéssel és a telepített appban (`isStandalone()`: `display-mode: standalone` / fullscreen /
-  minimal-ui – a böngészőben a Chrome saját lehúzása marad); a lap tetején (`scrollY === 0`) lefelé húzva
-  (csillapítva, a függőleges mozdulat számít) fölül középen kis kör (`.pull-refresh`, `--pull`, `--turn`)
-  követi az ujjat és fordul, 72 px-nél türkiz keret (`data-state="ready"`), elengedve forog (`refreshing`,
-  legalább 0,6 s) – a `Watchlist.pullRefresh()` a csendes újratöltés (`reloadKey`, mint a 63-as visszatérés;
-  a `reloadDone` ígéret a betöltés végén teljesül); net nélkül csak sáv: „Nincs internetkapcsolat – a lista
-  most nem frissíthető.”. Nyitott `dialog`-nál és belül görgetett elemben (pl. kinyitott szűrősor) nem indul.
-  A `<html data-pull-refresh>` alatt a `body` `overscroll-behavior-y: contain`. Teszt: `munka/e2e/test-1014.mjs`
-  (CDP-érintés, a `matchMedia` kiegészítve)
-- `lib/liveSync.js` – **élő szinkron a gépek között** (terv-3 86, 2026-10-14): `useLiveSync(enabled, userId,
-  { onTitles(ids, deletedIds), onNotifications, onFranchises, onResync })` – Supabase Realtime
-  (`postgres_changes`; a `supabase_realtime` publikációban: `titles`, `title_seasons`, `notifications`,
-  `franchises` – `25_realtime.sql`); a beszúrás / módosítás `user_id`-re szűrve (az RLS is csak a sajátot
-  engedi), a törlésről csak a kulcs jön (nem szűrhető – a hívó csak a nála lévőt veszi le); 0,4 mp-ig gyűjt;
-  újrakapcsolódás után `onResync` (csendes teljes újratöltés). A `Watchlist` (net mellett, a friss listával)
-  a változott címek sorát a nézetből tölti újra (az évad változása is a címé; a törlés utáni újbóli beszúrás – pl. mentés
-  visszaállítása – érvényteleníti a törlést: `pending.deleted.delete`), a saját mentés visszhangját
-  (azonos sor) kihagyja, a függő mentésű (`hasPendingSave` – `lib/rowSaves.js`) és a visszavonható törlésű
-  (`isPendingDelete` – `lib/titles.js`) címhez nem nyúl, a meglévőt a `replaceTitle`-lel (a látható a helyén
-  marad); az értesítéseket gyűjtés nélkül (`loadNotifications({ collect: false })`), a franchise-okat
-  újratölti. Teszt: `munka/e2e/test-1014.mjs`
-- `lib/useBackdropClose.js` – `useBackdropClose(dialogRef, { onClose, canClose, onBlocked })` →
-  `{ onPointerDown, onClick }` a `<dialog>`-ra: kikattintásra (a háttérre) bezár, telefonon
-  (≤ 640 px) nem; a lenyomásnak is kívül kell lennie (a kifelé húzott kijelölés nem zár); a
-  beágyazott ablak kattintása a külsőnek nem számít kívülnek. Használja (terv-3 24 és 32, Norbi
-  kérése): `TitleEditor` (törlés-megerősítés / franchise-név gépelése / felvétel közben nem), `StatsDialog`
-  (mindig), `FranchisesDialog` (átnevezés / törlés-megerősítés / új név gépelése és nyitott
-  gyűjtemény-ablak alatt nem), `CollectionDialog` (rész felvétele közben, a nézési sorrend
-  szerkesztése közben, a megosztás visszavonásának megerősítésekor és a fejléc átnevezése / törlés-megerősítése közben – terv-3 57 – nem; a nyitott TMDB-gyűjtemény-keresőnél igen – Norbi kérése, 2026-10-07; a
-  Franchise-ok ablakból nyitva mindkét ablak bezárul – `onOutsideClose`), `BackupsDialog` (mentés / visszaállítás közben és nyitott
-  megerősítésnél nem), `PasswordDialog` (beírt jelszóval és mentés közben nem – terv-3 27). Az
-  importablakok (Tömeges import, IMDb import) nem (Norbi döntése)
-- `components/SiteFooter.js` – kötelező TMDB forrásmegjelölés, ne töröld; jobbra lent „sponsored by
-  ADERTIS” (az ADERTIS link: https://www.adertis.hu, új lapon – Norbi kérése, 2026-10-05; külön
-  `span.sponsor`, nem `p` – a teszt egy bekezdést vár a láblécben)
-- `components/TitleSearch.js` – „Cím hozzáadása” panel: késleltetett (400 ms) TMDB keresés,
-  találati lista, „Hozzáadás a listához” gomb, mellette halk „Már láttam” (terv-3 80, `.result-actions`: megnézettként
-  – ma – kerül fel, a `Watchlist.handleAdded` rögtön „Hogy tetszett?” sávot ad, ha nincs nyitott ablak; a
-  Felfedezésben nincs); a már listán lévőknél „✓ A listán”;
-  `initialQuery` (kitöltve nyílik); üres keresőnél a felfedező sorok (`Discover`); a találat
-  borítója (`.thumb-btn`, egérrel) és címe (`.title-btn`) az adatlapot nyitja (`onPreview`,
-  előnézet – a listán lévőé szerkeszthető), a Felfedezésben a borító (`.discover-poster`)
-- `components/Discover.js` + `app/api/tmdb/discover/route.js` – Felfedezés: „Most a
-  mozikban” (`cinema`), „Hamarosan a mozikban” (`upcoming`, dátummal), „Új digitálisan”
-  (`digital`), „Népszerű sorozatok” (`tv`), vízszintes borítósorok (soronként saját szín –
-  terv-3 51.4, 2026-10-09, `section[data-list]`: a cím előtt kerek ikonjelvény – mozi korall
-  filmcsapó, hamarosan indigó naptár, digitális égkék letöltés, sorozatok zsálya tévé, „Neked
-  ajánlott” rózsa szív; a kiemelt sáv „moziban … óta” korall), „+ Hozzáadás” / „✓ A
-  listán” (a `.discover` oszlopa `minmax(0, 1fr)`: a sorok a helyükön görögnek – enélkül a
-  rács a 16 borító szélességére nőtt, és telefonon az egész lap kicsinyedett, 2026-10-05). A
-  borítók türkiz kerete rámutatásra csak `@media (hover: hover)` alatt (telefonon az érintés
-  után ne ragadjon be), fókusznál mindig. A nem listán lévők borítóján × („Nem érdekel”, terv-3
-  39, `HideButton`): az elrejtett címek nem látszanak; alul „Elrejtett ajánlások (N)” → lista,
-  „Mégis érdekel”. Norbit csak a **magyar szinkronos** címek érdeklik; a TMDB ezt nem tárolja, ezért
-  közelítés: film = magyarországi megjelenés (`discover/movie`, `region=HU`,
-  `with_release_type` 2|3 vagy 4), sorozat = magyar előfizetéses streamingen elérhető
-  (`discover/tv`, `watch_region=HU`, `flatrate`, 90 napon belül futott rész); mindkettőnél
-  angol vagy magyar eredeti nyelv, van magyar leírás, és nincs dokumentum / valóságshow /
-  talkshow / hírek / szappanopera / **animáció** műfaj (az animáció Norbi kérésére – terv-3 60,
-  2026-10-12; `ANIMATION_GENRE` = 16, `lib/server/tmdb.js`). A felület ezt két mondatban jelzi. Listánként
-  legfeljebb 16, 5 oldalig, egy óráig gyorsítótárazva (`cached()`). A listák betöltője közös:
-  `lib/server/discover.js` (`discoverList(name)`, `DISCOVER_LISTS`; csak route handlerben).
-  **Kiemelt sáv** fölül (terv-3 46, 2026-10-07, Norbi választása: „A” látványterv –
-  `munka/terv-3/terv-46/`; `components/FeaturedBand.js` + `app/api/tmdb/featured/route.js`): a
-  „Most a mozikban” első 6 nem elrejtett címe egyenként, nagy jelenetképpel (jobbra, balra a sötétbe
-  olvadva), logóval (magyar, ha van – különben `pickLogo`; ha nincs, a cím), év · 2 műfaj ·
-  játékidő · „moziban júl. 29. óta” (türkiz), 3 soros leírás, „Adatlap” (előnézet, nézetváltás
-  nélkül) / „+ Hozzáadás” (a kereső felvétele) / „✓ A listán”; ‹ / › nyíl, pöttyök, alatta a kis
-  képek; telefonon fent a kép, alatta a szöveg, nyíl és kis képek nélkül, ujjal húzva lapoz. Magától
-  nem lapoz (Norbi döntése). A nem listán lévőn × („Nem érdekel”) – az elrejtett helyére a következő
-  jelölt lép (a route 10 jelöltet ad: a „Most a mozikban” első 10-éből a háttérképesek, egy óráig
-  gyorsítótárazva). A lenti „Most a mozikban” sorból a kiemeltek kimaradnak (Norbi döntése). Betöltés
-  alatt csontváz (`.featured-sk`), hibánál a sáv elmarad.
-  **„Neked ajánlott”** (terv-3 37, 2026-10-07) – az ötödik, utolsó sor: a 8+ saját értékelések közül a
-  legjobb 10 (azon belül a legutóbb megnézettek – `recommendSeeds(titles)`, a Watchlist adja a
-  `TitleSearch`-en át) `/api/tmdb/similar` ajánlásai (ugyanaz a route és `v=3`, mint a Hasonló
-  címeknél, így gyorsítótárazva), 3-asával, a gyakoriság szerint (ami több kedvenchez is ajánlott,
-  elöl), legfeljebb 16; a betöltéskor listán lévők kimaradnak (a most felvett „✓ A listán”-nal marad);
-  ×-szel elrejthető. A magyar megjelenést itt nem szűri (az alcím jelzi); 8+ értékelés nélkül nincs sor
-- `components/FranchisesDialog.js` – „Franchise-ok” ablak a ⋮ menüből (terv-3 23-as pont,
-  2026-10-05, Norbi döntéseivel): az összes franchise **ábécérendben, névelő nélkül** („A” / „Az” /
-  „The” nem számít, a név kiírva változatlan), csempénként (asztalon 4, 900 px alatt 3, telefonon 2
-  oszlop): logó sötét alapon (`FranchiseLogo`; ha nincs, a név), név, mérő; a csempe hangulatszínt
-  kap a franchise legjobb IMDb-értékelésű, borítós címének borítójából (terv-3 47, 2026-10-06,
-  látványterv nélkül – `FranchiseTile` + `usePosterColor` + `franchisePosterPath`, `.fr-tile[data-ambient]`: halvány keret,
-  derengő csempetető, színezett logóháttér), „x/y megnézve · m hiányzik” (y = a listán lévők
-  száma, mint a mérőben – Norbi kérése, 2026-10-06) – a hiányzók a TMDB-gyűjteményekből (a `FranchiseCollection` közös
-  függvényeivel; 3-asával töltve, franchise-onként a lekérés kulcsával – `paramsKey` –
-  megjegyezve, ha a címek / kézi gyűjtemények változnak, újra; betöltés alatt „· …”, `aria-busy`),
-  „· nincs TMDB-gyűjtemény”, üresen „Még nincs címe”. A csempére kattintva a gyűjtemény-ablak
-  (`CollectionDialog`, a Franchise-ok ablakon belül nyílik; az első betöltés után nyitva marad – felvételkor,
-  gyűjtemény hozzárendelésekor az újratöltés alatt a korábbi gyűjteményekkel, így a fül, a görgetés, a
-  kereső megmarad; kódaudit #6, 2026-10-09, teszt: `munka/e2e/test-audit-6.mjs`; a még be nem töltött csempére
-  kattintva a franchise soron kívül, azonnal töltődik – `openFranchise`, `rushed` –, addig a csempén „· megnyitás…”
-  (`.fr-main[data-opening]`), utána nyílik; a sor ezt nem kéri le újra – átnézés H9, 2026-10-16, teszt:
-  `munka/e2e/test-h9.mjs`); a csempe alatt gombok (`FranchiseActions`, Norbi kérése, 2026-10-15 –
-  korábban linkek; a csempén `compact`: „Szűrés erre” felirattal, az átnevezés és a törlés csak ikon – `aria-label`
-  „„Név” átnevezése” / „„Név” törlése”, súgó; telefonon a „Szűrés erre” külön sorban): „Szűrés erre” (üres
-  franchise-nál tiltva; `Watchlist.showFranchise`: a keresés törlődik, minden más szűrő elenged –
-  `SEARCH_FILTERS` + a franchise –, az ablak bezárul), „Átnevezés” (helyben, Enter / Esc – az Esc
-  a mezőben csak a szerkesztést zárja), „Törlés” (megerősítéssel; a címek maradnak). Felül kereső
-  (ékezet nélkül is), alul „+ Új franchise” (létrehozás után a gyűjtemény-ablaka nyílik). A
-  külső ablak `onClose`-a csak a saját eseményére zár (`e.target === e.currentTarget`): a
-  belső `<dialog>` „close” eseményét a React a külső kezelőnek is továbbítja.
-  Fölül (keresés közben nem) **„Javasolt hozzárendelések”** (`components/FranchiseSuggestions.js`,
-  terv-3 35): a franchise nélküli filmek, amelyek egy franchise-od TMDB-gyűjteményébe tartoznak;
-  pipálható (alapból mind) → „Hozzárendelés (N)” (`assignFranchises()`, franchise-onként egy
-  módosítás); soronként „Nem kell” (`franchise_suggestion_off`: többé nem javasolja). Ha nincs
-  javaslat, nem látszik
-- `lib/franchiseSuggest.js` – franchise-javaslat (terv-3 35, 2026-10-07; Norbi döntése: **csak
-  felajánlja**, magától soha nem rendel hozzá, a meglévő franchise-t nem írja át):
-  `collectionFranchiseMap()` (TMDB-gyűjtemény → franchise: a franchise filmjeinek `tmdb_collection_id`-ja
-  és a kézzel hozzárendelt gyűjtemények; több franchise-nál a kézi nyer, aztán a több filmes, aztán
-  a név), `suggestedFranchiseId(t, map)`, `franchiseSuggestions()`, `article()` („a” / „az”). A
-  `Watchlist.handleAdded` (minden felvétel ezen át megy) a felvétel után 1,2 mp-cel felajánlja: egy
-  filmnél sáv „„…” – a Dűne franchise-ba tartozik?” + „Hozzárendelés”, többnél (pl. tömeges import)
-  „N új film egy franchise-odba tartozik” + „Megnézés” (a Franchise-ok ablak). Nyitott `<dialog>`
-  alatt (adatlap, import) a sáv nem kattintható, ezért a bezárásáig vár (`close` esemény, elkapva);
-  közben kézzel beállított franchise-nál már nem kérdez
-- `app/api/tmdb/title-collections/route.js` – `POST`: a filmek TMDB-gyűjteménye
-  (`tmdb_collection_id`, `collection_checked_at`) 40-esével, a felhasználó jogaival; esedékes:
-  `collectionDue()` (még nem néztük; vagy gyűjtemény nélküli, tavalyi / idei / jövőbeli film,
-  30 naponta). A `Watchlist` betöltéskor hívja (`refreshTitleCollections()`, legfeljebb 40 kör).
-  Az új filmek felvételkor kapják meg (a details route adja)
-- `app/api/tmdb/collection-parts/route.js` + `lib/server/collections.js` – **új rész egy franchise
-  TMDB-gyűjteményében → harang** (terv-3 36, 2026-10-09): `POST`, a felhasználó jogaival, 8
-  franchise-onként; esedékes: `collectionPartsDue()` (`collections_checked_at` üres vagy 7 napnál
-  régebbi). A franchise gyűjteményei (a filmjei `tmdb_collection_id`-ja + a kézzel hozzárendeltek,
-  legfeljebb 15) a TMDB-ről (`loadCollection()`, egy napig gyorsítótárazva – a gyűjtemény-ablak route-ja
-  is ezt használja), összevetve az ismert részekkel (`franchise_collection_parts`): a franchise első
-  ellenőrzésekor és egy újonnan hozzá került gyűjteménynél csak megjegyzi a részeket (nem szól), utána
-  az új rész → `collection_new` értesítés – ha nincs a listán és nincs elrejtve („Nem érdekel”);
-  részenként egyszer. Előbb az értesítést írja, csak utána az ismert részeket (kódaudit #3,
-  2026-10-09: fordítva egy közbeni hibánál az értesítés végleg elmaradna; az újrapróbálást az egyedi
-  kulcs nem duplikálja). Ha egy gyűjtemény nem tölthető le, a franchise-t nem jelöli ellenőrzöttnek;
-  a TMDB-n már nem létező (404 – törölt / összevont) gyűjtemény üresnek számít (kódaudit #4). A
-  `Watchlist` betöltéskor hívja (`refreshCollectionParts(franchises)`, legfeljebb 10 kör; ha jött új,
-  az értesítések újratöltődnek). Teszt: `munka/e2e/test-36.mjs`
-- `components/FranchiseCollection.js` + `app/api/tmdb/collection/route.js` +
-  `app/api/tmdb/collection-search/route.js` – franchise-ra szűrve mindig sáv a lista fölött
-  (háttérképpel – terv-3 45, 2026-10-06: a franchise legjobb IMDb-értékelésű, háttérképes címének
-  jelenetképe, ha nincs, a TMDB-gyűjteményé – `franchiseBackdrop()`, a gyűjtemény-ablak fejléce is ezt
-  mutatja; a kép a sáv jobb felén – asztalon legfeljebb ~670 px –, elmosás nélkül, balra a sötétbe
-  olvadva, mert teljes szélességben túl nagyított lett volna; telefonon teljes szélességben,
-  halványan; nagyobb logó – `data-backdrop`, `--banner-img`)
-  (a sáv a franchise színében – terv-3 52.2, „B”: színes keret és 4 px-es pálca a bal szélen, balról
-  derengés, a logó fénye, színes „2/3” és „Gyűjtemény”-keret; `franchisePosterPath`, mint a csempén; a
-  háttérképes sáv sötét sziget, ott világosban is a pasztell)
-  (logó vagy név, mérő: a listán lévők közül a megnézettek aránya zölden, a többi szürke – a hiányzó
-  részek nem számítanak, türkiz nincs; Norbi döntése, 2026-10-06 –, „x/y megnézve · m hiányzik” –
-  y a listán lévők száma, a mérővel egyezően –, gyűjtemény nélkül „· nincs hozzá TMDB-gyűjtemény”; „Gyűjtemény” gomb). Ablak,
-  gyűjteményenként egy szakasz: a franchise **összes** filmjének (legfeljebb 60) minden
-  `belongs_to_collection`-je, plusz a kézzel hozzárendeltek (`franchises.tmdb_collection_ids`,
-  „kézzel hozzárendelve · Eltávolítás”), a legkorábbi részük szerint sorban; a részek
-  megjelenési sorrendben (sorszám a borítón; megnézett / abbahagyott szürke + saját értékelés
-  borostyán, listán lévő „A listán”, hiányzó szaggatott kerettel „+ Hozzáadás” → `addTitle` +
-  a franchise beállítása; „A hiányzó N felvétele” kettesével). A listán lévő, de **nem ebbe a
-  franchise-ba rendelt** rész (2026-10-13, Norbi jelezte: korábban „A listán”-ként látszott) –
-  `listed` a `summarizeCollection`-ben, a `own` csak a franchise címe –: szaggatott türkiz keret, „A
-  listádon, franchise nélkül” + „+ Hozzárendelés” / „A listádon – „Név”” + „Áthelyezés ide”
-  (`updateTitle(franchise_id)`); lent „A listádon lévő N hozzárendelése” (csak a franchise nélküliek).
-  A számokban (sáv, csempe, ablak – `countsNote()`) csak a franchise címei számítanak: „· N hiányzik ·
-  N nincs hozzárendelve” (a franchise nélküliek; a másik franchise-ban lévő csak az összesbe). Teszt:
-  `munka/e2e/test-hozzarendeles.mjs`. „A franchise-od további címei”
-  (gyűjtemény nélkül: „A franchise-od címei”): a gyűjteményekben nem szereplő saját címek
-  (sorozatok – a TMDB-gyűjteményekben sosem szerepelnek –, gyűjtemény nélküli filmek), sorszám
-  nélkül, megjelenés szerint. „+ TMDB-gyűjtemény hozzáadása”: késleltetett keresés
-  (`search/collection`; magyarul gyakran nincs találat, angolul igen – pl. „Star Wars”) →
-  „Hozzárendelés” (`setFranchiseCollections`); üres keresőnél **„Javasolt gyűjtemények”** (terv-3 53,
-  2026-10-11): a route `?suggest=` módja a franchise nevével és a filmjei eredeti címének elejével
-  („Dune: Part Two” → „Dune” – `suggestQueries()`) keres, szavanként az első 4 találat, legfeljebb 10, egy
-  napig tárolva; a már hozzárendelt / látható gyűjtemények kimaradnak. A javasolt és a talált
-  gyűjtemény neve és borítója új lapon a TMDB-oldalára visz (`CollectionResults`). A számlálás a gyűjtemények részeinek
-  uniója + a további címek. Gyorsítótár: filmenként a gyűjtemény-azonosító és gyűjteményenként
-  a részek egy napig. (Az első változat franchise-onként csak egy gyűjteményt mutatott, és
-  Norbi 40 franchise-ából 15-nél kihagyott címeket – 2026-10-04.) Közös exportok (a Franchise-ok
-  ablak is használja): `collectionParams()`, `paramsKey()`, `fetchCollections()`,
-  `summarizeCollection()` (szakaszok, további címek, számok + `missing`), `CollectionMeter` (egy zöld
-  szakasz: megnézve / listán; `flex: none`. 2026-10-06-ig a második, „listán” szakasz a közös
-  `.on-list` címke stílusát örökölte – a margója miatt nem látszott, és teli mérő sem telt meg),
-  `CollectionDialog` – a franchise színében dereng (terv-3 51.10, 2026-10-09: ugyanaz a szín, mint
-  a Franchise-ok csempéjén – `franchisePosterPath`; az ablak háttere, kerete, a mögötte lévő
-  sötétítés, a szakaszcímek előtt jelölővonal; a mérő zöld, a fülek türkizek maradnak). A gyűjtemény-ablak két fülön (terv-3 28, Norbi döntése; `role="tablist"`,
-  nyilakkal is; a panelek rejtve megmaradnak): „Gyűjtemény” (a fenti) és „Nézési sorrend”
-  (`WatchOrder`); sorrend-szerkesztés közben kikattintásra nem zár, az Esc csak a szerkesztést zárja.
-  A fejlécben (terv-3 57, 2026-10-11) a Franchise-ok csempéjének műveletei – ikonos gombok (`FranchiseActions`), plusz
-  „Logó” (átnézés J8, lent): „Szűrés erre” (`onShow`, csak
-  a Franchise-ok ablakból nyitva – a sáv gombjáról már erre szűr; üres franchise-nál tiltva), „Átnevezés”
-  (helyben; Enter ment, az Esc csak a szerkesztést zárja), „Törlés” (megerősítéssel; utána az ablak a
-  szülőjével bezárul, a szűrő Összes); átnevezés / megerősítés közben kikattintásra nem zár; net nélkül
-  csak a „Szűrés erre”
-- `components/FranchiseActions.js` + `app/api/tmdb/logos/route.js` – a franchise műveletei ikonos ghost gombokként
-  (Norbi kérése, 2026-10-15; `FranchiseActions`: „Szűrés erre” – tölcsér, „Átnevezés” – ceruza, „Logó” – kép,
-  „Törlés” – kuka, pirosas `.danger-ghost`; `.fr-actions` / `.fr-action`) és a **franchise-logó kézi választása**
-  (átnézés J8, 2026-10-15 – `FranchiseLogoPicker`): a gyűjtemény-ablak fejlécének „Logó” gombja (`aria-expanded`,
-  újra kattintva zár) a fejléc alatt panelt nyit (`.logo-picker`): a franchise címeinek (megjelenés szerint az első 12)
-  TMDB-logói – a route `GET ?type&id` → `{ logos: [{ path, lang }] }`, címenként legfeljebb 4 (előbb a 6:1-nél nem
-  szélesebbek, angol / nyelv nélküli / magyar, szavazat szerint; egy napig gyorsítótárazva; 404 → üres), 3-asával –
-  és elöl „Csak a név”; sötét alapon (`.fr-logo`, sötét sziget), alattuk a cím; a kiválasztott türkiz keretes
-  (`aria-pressed`; logó nélkül – `null` vagy `''` – a „Csak a név”). A kattintás azonnal ment
-  (`setFranchiseLogo` → `onFranchiseUpdated`: a csempe, a sáv, a szűrő, a megosztott oldal is az új logót mutatja);
-  „Csak a név” = `logo_path: ''` (az automatikus logókeresés – `/api/franchises/logos`, `logoDue` – csak a `null`-t nézi,
-  így a kézi választást soha nem írja felül). „Kész” / újra „Logó” / Esc (a panelen belül) zárja; kikattintásra a
-  gyűjtemény-ablak ilyenkor is zár (nincs bevitel). Mentés közben a gombok nem tiltódnak (a fókusz a tiltott gombról a
-  body-ra esne, és az Esc az egész ablakot zárná). Net nélkül nincs „Logó”. Teszt: `munka/e2e/test-j8.mjs`
-- `components/WatchOrder.js` + `lib/watchOrder.js` – nézési sorrend (terv-3 28, 2026-10-06, Norbi
-  döntéseivel): a franchise **listán lévő** filmjei és a sorozatok **évadjai külön tételként**
-  (`franchiseItems()`; évad nélküli sorozat egy tétel; tételkulcs `címId:évad`, 0 = film),
-  számozott listában: jelölőnégyzet, sorszám, kis borító, „Loki – 2. évad”, év / „Bejelentve”.
-  `orderedItems()`: a tárolt sorrend (`franchise_order`), a benne nem szereplők (új cím / évad)
-  **a végére**, egymás közt megjelenés szerint (`releaseKey` – lib/titles.js; évad: `air_date`); amíg nincs tárolt sorrend, megjelenés szerint. A megnézett tétel **kihúzva a
-  helyén marad** (`data-done`), az első meg nem nézett, megjelent, nem abbahagyott „Következik”
-  (`nextItem()`); abbahagyott sorozat meg nem nézett évadja „Abbahagyva”, kihagyva; bejelentett
-  évad nem jelölhető. A pipa filmnél `updateTitle(status)` (vissza: Megnézendő), évadnál
-  `setSeasonStatus` (az előtte lévő üres évadokat is kitölti, „Visszavonás” a sávban – mint a
-  listán: az egész kattintást visszacsinálja); ha a cím megnézett lett és nincs értékelése, a tétel
-  alatt „Hogy tetszett?” (Norbi döntése; az ablak fölött a toast nem kattintható, ezért helyben, a
-  Watchlist `handleRowUpdated(row, false)`-szal nem kérdez újra). „Sorrend szerkesztése”: húzás a
-  fogantyúnál (pointer-események az ablakon – az átrendezéskor a fogantyú a DOM-ban máshová kerül;
-  `touch-action: none`; az ablak szélén görget) és ↑ / ↓ (a fókusz a gombon marad, felolvasónak
-  „…: 3. hely”); „Kész” egyben ment (`saveOrder` → `set_franchise_order` RPC), „Megjelenés
-  szerint” + „Kész” törli a saját sorrendet (`clearOrder` – a rendezés is eltűnik), „Mégse” / Esc
-  elveti. `loadOrders()` a Watchlist betöltésekor (hibánál a lista attól még működik),
-  `franchisesWithOrder()` – melyik franchise-nak van ma is érvényes sorrendje. A tétel feliratai
-  (`itemLabel()`, `itemMeta()`) is itt vannak (a megosztott oldal szerveroldalon használja)
-- `components/ShareAmbient.js` – a megosztott oldal `<main>`-je a franchise színében (terv-3 52.3, „A”):
-  `usePosterColor(poster_path)` (a `shared_watch_order` adja – `24_share_ambient.sql`); CSS: a fejléc kerete,
-  derengése, a „Nézési sorrend” felirat és a sorszámok (`.share-page[data-ambient]`; a háttérképes fejléc
-  sötét sziget, ott világosban is a pasztell)
-- `components/ShareOrder.js` + `lib/shares.js` + `app/sorrend/[token]/` – **megosztható nézési
-  sorrend** (terv-3 41, 2026-10-08, látványterv nélkül): a „Nézési sorrend” fül sávjában
-  „Megosztás” (élő linknél türkiz pötty a gombon) → alatta panel: link nélkül magyarázat + „Link
-  létrehozása”; utána a link (kijelölhető mező), „Link másolása” („✓ Másolva”; ha a vágólap nem
-  megy, kijelöli), „Küldés…” (csak ahol van `navigator.share` – telefon, de Windowson az asztali Chrome / Edge is), „Megnyitás” (új lapon),
-  „Megosztás visszavonása” → helyben megerősítés (Mégse / Visszavonás). A megerősítés és a kérések
-  alatt a gyűjtemény-ablak kikattintásra nem zár (`onBusyChange` → `CollectionDialog` `sharing`;
-  `useLayoutEffect`-ben, hogy a gyors kattintást is megelőzze). Franchise-onként egy link
-  (`loadShare` / `createShare` / `revokeShare`, `shareUrl(token)` = `/sorrend/<token>`); a
-  visszavont után az új link más tokent kap. A nyilvános oldal (`page.js`, szerverkomponens,
-  `connection()` – kérésenként, így a visszavonás és a sorrend változása azonnal látszik; a
-  keresők nem indexelik): a `shared_watch_order()` adataiból a `lib/watchOrder.js`
-  `orderedItems()`-ével (ugyanaz a sorrend, mint az appban), fölül sáv („Nézési sorrend”, logó vagy
-  név, a franchise legjobb címének háttérképe, „N tétel · saját sorrend / megjelenés szerint”),
-  alatta számozott lista: borító (w154), cím / „– 2. évad” (a TMDB-adatlapra – évadnál az évadéra
-  –, új lapon), év · Film / Sorozat · N rész / „Bejelentve” (szaggatott keretű borító); a megnézett
-  állapot, értékelés, letöltve, Mama nem; alul a `SiteFooter`. Visszavont / hibás link: 404
-  (`not-found.js`: „Ez a link már nem érvényes”). A service worker nem kezeli (csak a `/`-t).
-  Teszt: `munka/e2e/test-41.mjs` (böngésző), `test-20.mjs` (adatbázis)
-- `components/TopCast.js` + `app/api/tmdb/credits/route.js` – szereplők az adatlapon (terv-3 38,
-  2026-10-06, Norbi választása: „A” látványterv – `munka/terv-3/terv-38/`): a top cast első 3 tagja
-  (`pickCast()`: filmnél a credits, sorozatnál az aggregate_credits sorrendje; rendező nincs; egy
-  napig gyorsítótárazva; a TitleEditor egyszer kéri le, `afterTransition` után). Asztalon (≥ 900 px)
-  a bal oszlopban a „Hol nézhető?” alatt (`.cast.side`: kerek fotó, név, szerep), keskenyebben a
-  leírás alatt egy sor („Szereplők: …”, `.cast-line`). A névre (asztalon a fotóra is – `button.cast-person`,
-  telefonon `button.cast-name`) kattintva a színész lapja nyílik az ablakon belül (`onPerson`, terv-3 61). **Összes
-  szereplő** (terv-3 91, 2026-10-14): a route legfeljebb 20-at ad (`pickCast`, `CAST_MAX`; a kérés `v=2` – `CREDITS_V`, a
-  `lib/prefetch.js` is), az első 3 alatt „Összes szereplő (N)” / „Kevesebb” (`.cast-more`); kibontva asztalon a bal
-  oszlopban (az `.editor-side` ilyenkor nem ragad – `:has(.cast[data-open])`), keskenyebben a sor alatt fotóval
-  (`.cast-all`). Telefonon (≤ 640 px) nincs „Összes szereplő”, csak az első 3 név (Norbi kérése, 2026-10-15). Teszt:
-  `munka/e2e/test-91.mjs`
-- `components/TitleGallery.js` + `app/api/tmdb/images/route.js` – **képgaléria az adatlapon** (terv-3 95, 2026-10-14,
-  Norbi választása a látványterv után – https://claude.ai/artifact/BDEffdLNcJoJ4h3gtjsGWC: **asztalon „A”, telefonon
-  „B”**): a route `GET ?type&id` → `{ images }` (jelenetképek: előbb a felirat nélküliek, aztán az angolok, a legjobb
-  szavazatúak, legfeljebb 8; egy napig gyorsítótárazva; 404 → üres; a `lib/prefetch.js` is kéri); `galleryList()`: a
-  lap jelenetképe elöl + a többi. Asztalon (és jelenetkép nélkül telefonon is) `GalleryStrip` – „Képek N” sor a
-  Hasonló címek fölött (`.gallery`, 16:9-es képek, vízszintesen görgethető); telefonon (≤ 640 px, ha van jelenetkép)
-  `BackdropPager` – a fejléc képe lapozható (jobbra fent „‹ 1 / 8 ›” – `.backdrop-pager`, alul pöttyök, ujjal húzva,
-  koppintva nagy nézet – `.backdrop-zoom`). Nagy nézet: `GalleryLightbox` (`.gallery-lightbox`, a lapon belül, a
-  teljes képernyőn): ‹ › / nyilak / húzás, alul a kis képek, „× Bezárás”; az Esc (a window rögzítő fázisában – az
-  adatlap Esc-je előtt), a Vissza gomb és a vissza-gesztus (`useBackLayer`) csak a nagy nézetet zárja; az elhagyott
-  lapon bezárul. Sötét sziget mindkét témában (a lapozó és a pöttyök is). Teszt: `munka/e2e/test-95.mjs`
-- `components/PersonPage.js` + `app/api/tmdb/person/route.js` – **a színész lapja az adatlapon belül**
-  (terv-3 61, 2026-10-12, Norbi választása a látványterv után: „kevert” –
-  https://claude.ai/artifact/NKSkigYqGq9xnCoucYQVeM, `munka/terv-3/terv-61/`): a `TitleEditor` új lapja („‹ Vissza”,
-  a nyitó film színét tartja). Asztalon balra nagy fotó (w500, a borító helyén) + „Megnyitás a TMDB-n ↗”,
-  keskenyebben kerek fotó a név mellett (`.person-photo`) és a link az életrajz sorában; „Színész”, „Született:
-  … (N éves)” / „Elhunyt: …”, születési hely, életrajz 4 sorban („Tovább” / „Kevesebb”, ha nem fér el; magyar
-  híján angolul – „angolul”). **„A listádon (N)”** borítórácsban (`.person-grid`; telefonon 3 oszlop): halványzöld
-  keret, megnézett / abbahagyott szürke + „✓ Megnézve” + saját csillag (borostyán), a még meg nem jelent indigó
-  szaggatott + „Hamarosan”; **„További filmjei és sorozatai (N)”** soronként (`.person-row`: kis borító, cím, év ·
-  típus · szerep, jobbra „+ Hozzáadás” + „Már láttam” – terv-3 80, telefonon egymás alatt – / „✓ A listán”), ismertség (TMDB szavazatszám) szerint, 10 látszik, a többi
-  „Továbbiak mutatása (N)”-re. Norbi döntései: rendező nincs; a „további” címekből kimarad a `minor` (borító
-  nélküli, animáció / dokumentum / talkshow / hírek / valóságshow / szappanopera, sorozatban ≤ 2 rész –
-  vendégszereplés –, önmaga-szerep), a listán lévő akkor is látszik. A csoport a lap megnyitásakori listából: a
-  most felvett cím a helyén marad „✓ A listán”-nal. A borító az adatlapot nyitja (`onPreview`, újabb lap); felvétel
-  közben a lap nem hagyható el; `readOnly`-nál nincs „+ Hozzáadás”. A route: `GET ?id` → `{ person, credits }`
-  (`/person/{id}` + `combined_credits`, címenként egyszer, a szerepnevek összevonva, legfeljebb 400; egy napig
-  gyorsítótárazva; 404 → `{ person: null, credits: [] }`). Teszt: `munka/e2e/test-61.mjs`
-- `app/api/tmdb/videos/route.js` – `GET ?type&id` → `{ video: { key, name, lang } | null }`:
-  YouTube, „Trailer” előbb, hivatalos előbb, legfrissebb; magyar nyelvű, ha nincs, angol (ha a
-  cím már nincs a TMDB-n: `null`; a similar route is üres listát ad ilyenkor)
-- `components/WatchProviders.js` + `app/api/tmdb/providers/route.js` – „Hol nézhető?” az
-  adatlapon (terv-3 21-es pont, 2026-10-04): `GET ?type&id` → `{ providers: [{ id, name, logo,
-  free }] }` (`pickProviders()`: a TMDB `watch/providers` magyarországi `flatrate` +
-  `free` + `ads` szolgáltatói, a TMDB sorrendjében; egy napig gyorsítótárazva; ha a cím nincs
-  a TMDB-n: üres). Norbi döntései: csak az adatlapon; asztalon (≥ 900 px) a nagy borító alatt
-  (`.editor-side` burkoló: a borító + `.watch-providers.side`; a ragadás és a háttérképre
-  csúszás a burkolón), keskenyebben a fejlécben az „Előzetes megnézése” fölött
-  (`.watch-providers.inline`); kölcsönzés / vásárlás nincs; ha nincs szolgáltató, semmi nem
-  látszik; a logók (w92) nem kattinthatók, a név a súgóban / alt-ban („… (ingyenes)”). Alattuk
-  kötelező „Forrás: JustWatch” (TMDB-feltétel). A logók 56 px-esek (3,5 rem, Norbi kérése)
-- `lib/supabase.js` – Supabase kliens
-- `lib/api.js` – `apiGet()`: saját `/api` route hívása `Authorization: Bearer` tokennel,
-  hibánál a szerver magyar üzenetével dob
-- `lib/titles.js` – címműveletek: `titleKey()`, `addTitle()` (műfajok upsert → `titles`
-  insert → `title_genres` insert, hibánál a cím visszavonása), `updateTitle()`,
-  `deleteTitle()`, `createFranchise()`, `renameFranchise()`, `deleteFranchise()`; a címműveletek a `titles_with_genres` friss sorát adják
-  vissza (törlés kivételével). A franchise nevét a kliens keresi ki id alapján (nincs a nézetben).
-  Sorozatnál az `addTitle()` az évadokat is felveszi (`title_seasons`, `seasons_checked_at` = most;
-  a már megjelentek `aired_notified = true`, róluk nincs értesítés; a kézi `addSeason()` is).
-  Évadok: `setSeasonStatus()` (visszaad `{ row, filled, previous }`), `markAllSeasonsWatched()`,
-  `restoreSeasons()` (visszavonás), `setSeasonDownloaded()`, `addSeason()` (kézi, mai dátummal),
-  `removeLastSeason()`,
-  `refreshSeasons()` (háttér), `seasonAired()`, `NEXT_SEASON_STATUS`. A `refresh…()` háttérfrissítők utolsó paramétere
-  `isCancelled` (a `Watchlist` a lebomlását adja – körönként nézik, kódaudit #30).
-  Az `addTitle(item, details, { watched, franchise_id })` második paramétere a már lekérdezett `/api/tmdb/details` válasz
-  (az előnézeti adatlapé), ha van; `watched` (terv-3 80, „Már láttam”): Megnézve, `watched_at` = ma – sorozatnál a
-  már megjelent évadok megnézettek (a sorozat állapotát a trigger számolja), a bejelentettek nem. A 8 mp-es visszavonási idő alatt újra felvett cím: az `addTitle`
-  a törlést vonja vissza (`registerPendingDelete`, kódaudit #22).
-  Megjelenés: `refreshReleases()` (háttér), `releaseState(t)` – `{ kind: 'soon', date | year }`
-  (a moziba sem került még, vagy csak digitálisan jön; dátum nélkül jövőbeli / hiányzó év),
-  `{ kind: 'cinema', digital }` (moziban, digitálisan még nem; a mozis bemutató után 120 napig,
-  ha nincs digitális dátum), `null` (megjelent / sorozat / megnézett); `formatReleaseDate()`
-  („okt. 15.”, más évben „2027. márc. 3.”), `releaseLabel(state)` → `{ word, when, sub }`
-  („Hamarosan” / „Moziban”, a dátum, „digitálisan: …”).
-  `releaseKey(t, évad?)` (terv-3 55): a megjelenés szerinti rendezési kulcs (ISO szöveg) – előbb a
-  `release_date`, aztán a mozis / digitális dátum, sorozatnál az 1. évadé; csak évvel `"2008-12-32"` (az
-  év végén), semmi: null; évadnál az évad `air_date`-je. A fő lista rendezése és a nézési sorrend is ezt
-  használja. `DETAILS_V`: a `/api/tmdb/details` kérés `v` paramétere (a böngésző egy óráig tárolja a
-  választ) – a válasz mezőinek változásakor emeld.
-  `mamaApplies(t)` (terv-3 58): van-e értelme a Mama-jelölésnek – franchise nélküli film, vagy már van
-  értéke; az adatlap (a franchise mező aktuális értékével) és a táblázat Mama-cellája használja.
-  `franchise_id` (kódaudit #16): már a beszúráskor ebbe a franchise-ba kerül (a gyűjtemény-ablak „+ Hozzáadás”-a).
-  Közös segédek: `externalLink()`, `formatDate()`, `todayDate()` (budapesti idővel, a szerveren is – kódaudit #31),
-  `budapestDay(iso)`, `DEFAULT_STATUS`,
-  `DROPPED_STATUS` („Abbahagyva”, csak sorozatnál), `MAMA_OPTIONS`, `mamaLabel()`
-- `lib/server/auth.js` – `getUserFromRequest()`, `supabaseAsUser()` (a felhasználó nevében,
-  RLS-sel), `unauthorized()` (csak route handlerben). A `getUserFromRequest()` a tokent helyben
-  ellenőrzi (`auth.getClaims()`: a projekt ES256-tal ír alá, a nyilvános kulcs – JWKS – a
-  szerverpéldányban gyorsítótárazva; ~1 ms a korábbi ~60 ms-os Auth-kérés helyett; terv-3 34, E3,
-  Norbi döntése, 2026-10-06). Ára: egy máshol kijelentkeztetett munkamenet tokenje a lejáratáig
-  (≤ 1 óra) még elfogadott – az adatokat az RLS védi. `{ id, email }`-t ad (a route-ok csak azt
-  nézik, van-e)
-- `lib/refreshDue.js` – a háttérfrissítések „esedékes-e” szabályai (terv-3 34, E2, 2026-10-06):
-  `imdbDue` (van IMDb ID, 14 napnál régebbi / hiányzó), `backdropDue` (még nem néztük),
-  `seasonsDue` (sorozat, 7 nap), `releaseDue` (a megjelenési dátumoké), `detailsDue` (a TMDB-adatok – terv-3 83:
-  meg nem nézett, nem abbahagyott cím havonta, a még meg nem jelent / dátum nélküli hetente; az utolsó
-  ellenőrzés híján a `created_at` számít), `collectionDue` (a filmek
-  TMDB-gyűjteménye – terv-3 35), `collectionPartsDue` (franchise: a gyűjteményei új részei, 7 nap –
-  terv-3 36), `budapestToday()`. A
-  `lib/titles.js` `refresh…(titles, onUpdated)` függvényei csak akkor hívják a route-ot, ha a
-  betöltött listában van esedékes; a route-ok ugyanezt kérdezik (az IMDb / évad / háttérkép SQL-ben
-  – a napok innen –, a megjelenés ezzel a függvénnyel). Ha a szabályon változtatsz, mindkét helyen
-- `lib/fetchAll.js` – `fetchAll(build)`: a Supabase (PostgREST) egy kérésre legfeljebb **1000
-  sort** ad (mérve, 2026-10-06; Norbi listája ekkor 897 cím): ami ennél több is lehet, ezres
-  adagokban (`.range`), egyértelmű rendezéssel. Használja: a lista betöltése, a nézési sorrendek,
-  az elrejtett ajánlások, a `releases` route. **Új, a teljes listát lekérő lekérdezésnél ezt
-  használd**
-- `lib/server/tmdb.js` – `cachedResponse(body, másodperc)` (`Cache-Control: private, max-age` –
-  a böngésző tárolja a nyilvános TMDB-adatot adó GET-válaszokat; terv-3 34, 2026-10-05: providers,
-  videos, similar, collection, find 1 nap – `DAY_S`; discover, details 1 óra – `HOUR_S`; search 10
-  perc; hibaválasz soha – a részben hiányos sem: ha egy-egy tétel lekérése nem-404-es hibával
-  elbukott, a válasz `Response.json` tárolási jelölés nélkül; a collection és a featured route, kódaudit
-  #5, 2026-10-09, teszt: `munka/e2e/test-audit-5.mjs` + `fail-tmdb.mjs`), `tmdbFetch()`,
-  `tmdbErrorResponse()`, `yearOf()`, `pickReleaseDates()`
-  (mozi: 3, ha nincs 2; digitális: 4; előbb HU, ha nincs US; országon belül a legkorábbi), `cached(kulcs, ms,
-  betöltő, keep?)` (memóriában, a szerverpéldány élete alatt, legfeljebb 500 elem; az egyszerre érkező hiányok egy
-  betöltést várnak – kódaudit #29; a hibát nem tárolja,
-  és amire a `keep(érték)` hamis – pl. a hiányos kiemelt sávot – azt sem;
-  a videos és a similar 1 napig, a details TMDB-része és az OMDb-érték – `omdb:` kulcs – 1 óráig), `pickSeasons()`
-  (a TMDB évadjai a „0. évad” – különkiadások – nélkül) (csak route handlerben). A `tmdbFetch` és az
-  OMDb-hívás 10 mp után feladja (kódaudit #43). A `lib/server/` modulok `import 'server-only'`-t
-  kapnak (kódaudit #45): kliens-komponensből importálva a build hibával leáll – új szerveroldali
-  modulnál is tedd bele
-- `app/api/tmdb/search/route.js` – `GET ?q=` → `search/multi`, csak film/sorozat
-- `app/api/tmdb/details/route.js` – `GET ?type=movie|tv&id=` → a `titles` oszlopainak
-  megfelelő objektum + `genres [{id, name}]`, sorozatnál `seasons` is; magyar leírás híján
-  angol; az IMDb-értékelést is lekéri (OMDb), ha nem sikerül, a cím attól még felvehető;
-  filmnél a TMDB-gyűjtemény is (`tmdb_collection_id`, `collection_checked_at` – terv-3 35); a pontos
-  dátum (`release_date`: film `release_date`, sorozat `first_air_date` – terv-3 55)
-- `app/api/tmdb/seasons/route.js` – `POST`: a még nem vagy 7 napnál régebben ellenőrzött
-  sorozatok évadait frissíti a TMDB-ről (új – megjelent vagy bejelentett – évad, név,
-  epizódszám, dátum; az állapothoz / letöltve jelzőhöz nem nyúl), 10-esével; a frissített
-  sorokat adja vissza. A `Watchlist` betöltéskor hívja. Értesítés: ha egy már ismert évadlistájú
-  (nem abbahagyott) sorozathoz új, még meg nem jelent évad érkezik → `season_announced`; az új,
-  már megjelent évadot `aired_notified = false`-szal veszi fel (arról a gyűjtés szól); az első
-  feltöltésnél a megjelentekről nem szól
-- `app/api/tmdb/similar/route.js` – `GET ?type=movie|tv&id=` → a TMDB ajánlásai (ha kevés, a
-  hasonlókkal pótolva, forrásonként 2 oldalig), csak borítóval, legfeljebb 12, a kereséssel azonos
-  mezőnevekkel. Szűrés (Norbi kérése, 2026-10-07): csak 2000-es vagy újabb (sorozatnál az első évad
-  éve), legalább 6,0-s **TMDB**-értékelésű, legalább 50 szavazatos címek – filmnél és sorozatnál is
-  (az IMDb-érték címenként egy OMDb-kérés lenne, a napi 1000-es keretből; Norbi az A változatot
-  választotta); animációs cím nem (terv-3 60, 2026-10-12 – így a „Neked ajánlott” sorban sem). A kliens `v=3` paraméterrel kéri (a böngésző egynapos gyorsítótára miatt; a szűrés
-  következő változásakor emeld)
-- `app/api/tmdb/details-refresh/route.js` – **frissítés a TMDB-ről** (terv-3 83, 2026-10-14): `POST` törzs nélkül
-  a háttérfrissítés (40-esével, a `detailsDue` szerint; a `Watchlist` betöltéskor hívja – `refreshDetails()`,
-  legfeljebb 15 kör, a változott címek teljes sorát kapja), `{ id }`-vel egy cím kézzel (az adatlap „Frissítés a
-  TMDB-ről” linkje – `.tmdb-refresh` – ikonos ghost gomb a „Törlés a listáról” mellett, köztük nagyobb köz – átnézés J2; utána 4 mp-ig „✓ Frissítve” / „✓ Nincs
-  újdonság a TMDB-n”; `refreshTitleDetails(id)` → `{ row, changed }`). A felhasználó jogaival; a saját adatokhoz
-  nem nyúl. A **cím csak akkor** cserélődik a TMDB magyar címére, ha most az eredeti cím áll ott (felvételkor még
-  nem volt magyar – Norbi döntése, 2026-10-14: a kézzel adott címek, pl. „Pókember 2.1”, maradnak); a leírás
-  (`pickOverview` – `lib/server/tmdb.js`, a details route-tal közös: magyar, ha nincs, angol), a borító, a pontos
-  dátum (+ év) és a műfajok (`title_genres` cseréje), ha a TMDB-n más. Mindig beírja a `details_checked_at`-et;
-  a TMDB-n már nem létező címet csak megjelöli
-- `app/api/tmdb/backdrops/route.js` – `POST`: a még meg nem nézett címek (`backdrop_checked_at`
-  üres) háttérképét lekéri a TMDB-ről és elmenti (40-esével, a felhasználó jogaival; ha nincs
-  háttérkép vagy a cím már nincs a TMDB-n, csak megjelöli). A `Watchlist` betöltéskor hívja
-  (`refreshBackdrops()`, legfeljebb 30 kör). Az új címek felvételkor kapják meg (a details
-  route adja a `backdrop_path`-t és a `backdrop_checked_at`-et)
-- `app/api/tmdb/releases/route.js` – `POST`: a filmek megjelenési dátumai (`pickReleaseDates`)
-  40-esével, a felhasználó jogaival; esedékes: meg nem nézett, tavalyi / idei / jövőbeli (vagy
-  év nélküli) film, 3 napja nem néztük, és a digitális dátuma nem régebbi 30 napnál. A
-  `Watchlist` betöltéskor hívja (`refreshReleases()`, utána újra az értesítések). Az új filmek
-  felvételkor kapják meg (a details route `append_to_response=release_dates`)
-- `components/MoreMenu.js` – a fejléc „További műveletek” (⋮) menüje: kerek gomb (a harang
-  mintájára, `aria-haspopup="menu"`), alatta jobbra igazított lista (`role="menu"`); minden pont
-  ikonnal, címmel és rövid leírással (a korábbi súgók helyett; `aria-labelledby` /
-  `aria-describedby`). Kattintással vagy Enter / Szóköz / nyilakkal nyílik, a menüben nyilak,
-  Home / End, Esc (a fókusz vissza a gombra), Tab és kívülre kattintás bezárja. Választáskor a
-  fókusz a gombra kerül (a megnyíló ablak bezárásakor oda tér vissza). A pontok:
-  `{ id, label, description, icon, onSelect }` (ikonok: star, chart, list, download, history, stack,
-  book, key)
-- `components/PasswordDialog.js` – **„Jelszó módosítása”** (terv-3 27, 2026-10-12; a fejléc e-mail-címéről és
-  a ⋮ menüből – Norbi oldalán; Mama oldalán nincs): jelenlegi jelszó, új jelszó, még egyszer → „Jelszó
-  mentése”. Ellenőrzés: legalább 8 karakter, a kettő egyezik, nem ugyanaz; utána a jelenlegi jelszó egy
-  **külön, nem tároló Supabase-klienssel** (`checkPassword`: `persistSession: false`, saját `storageKey`;
-  utána `signOut({ scope: 'local' })`) – így a bejelentkezett munkamenet nem cserélődik –, végül
-  `supabase.auth.updateUser({ password })`; a Supabase hibakódjai magyarul (`same_password`,
-  `weak_password`, `reauthentication_needed` – a „Secure password change” ki van kapcsolva, nem kell
-  e-mail). Siker után „A jelszavad megváltozott…” + „Bezárás”; bejelentkezve marad. Kikattintásra csak
-  üresen (vagy siker után) zár, mentés közben nem; az Esc / Mégse mindig. Elfelejtett jelszó nincs
-  (Norbi döntése). Teszt: `munka/e2e/test-27.mjs` (a tesztfiók jelszavát átállítja, a végén mindenképp
-  visszaállítja – updateUser, végső esetben az adatbázisban)
-- `components/StatsDialog.js` + `lib/stats.js` – „Statisztika” ablak (a ⋮ menüből): csempék
-  a betöltött listából (`listStats()`, adatbázis-lekérdezés nélkül) – megnézve az utolsó 12
-  hónapban, havonta megnézett címek (saját SVG-oszlopdiagram, `watched_at`), műfajok (a
-  műfajszínekkel), saját és IMDb-átlag, letöltve de még nem látott (az abbahagyottak nélkül),
-  legtöbb cím franchise-onként, folyamatban lévő sorozatok évadhaladása; telefonon egy oszlop.
-  Csempénként saját, halk szín (terv-3 51.9, 2026-10-09, `.tile[data-tile]`: felső derengés, keret,
-  cím): megnézve / havonta zsálya, műfajok rózsa, értékelések / kedvenc műfajok borostyán, te és
-  az IMDb indigó, letöltve égkék (a nagy szám is), franchise korall, sorozatok türkiz; a havi
-  oszlopok közül a mostani hónapé teljes erővel (`bar current`), a korábbiak 72%-on; a
-  franchise-sávok a franchise saját színében (`FranchiseBar`, `franchisePosterPath`).
-  **Ízlésprofil** (terv-3 42, 2026-10-07; `tasteProfile()` a `listStats`-ban): két csempe az
-  „Értékelések” után – „Kedvenc műfajaid” (a saját csillagok átlaga műfajonként, a legjobb 5,
-  borostyán sáv, „8,8 · 6” = átlag · értékelt címek) és „Te és az IMDb műfajonként” (saját − IMDb
-  átlaga ugyanazokon a címeken: „Jobban tetszik neked” legfeljebb 3, borostyán; „Szigorúbb vagy”
-  legfeljebb 3, szürke; a ±0,1 alatti eltérés kimarad; „+2,0” / „−3,0” – `formatSigned`); egy
-  műfaj legalább 3 értékelt címtől számít (`TASTE_MIN`), különben magyarázó szöveg
-- `components/SimilarTitles.js` – „Hasonló címek” a szerkesztő ablak alján: lenyitó gomb (alapból
-  nyitva; ha becsukja, a böngésző megjegyzi: `localStorage`, `filmlista-hasonlok`; nyitva tölt be;
-  telefonon – ≤ 640 px – mindig csukva indul, Norbi kérése, és ott a nyitás / csukás nem
-  jegyződik meg),
-  vízszintesen görgethető borítósor (évszám, típus; a borító gomb az ablakon belül a cím adatlapját
-  nyitja – `onPreview`, előnézet vagy a listán lévőé –, a cím link a TMDB-oldalra), „+ Hozzáadás”
-  (`addTitle()`), a listán lévőknél „✓ A listán”; a többi borítón × („Nem érdekel”, terv-3 39)
-- `lib/hiddenSuggestions.js` + `components/HideSuggestion.js` – „Nem érdekel” (terv-3 39,
-  2026-10-06): elrejtett ajánlások (`hidden_suggestions`), közös tároló a `lib/toast.js` mintájára
-  (`useHiddenSuggestions()` – titleKey → sor; `loadHidden()` a Watchlist betöltésekor és
-  visszaállítás után, `resetHidden()` kilépéskor; `hideSuggestion()` / `unhideSuggestion()`
-  optimista, hibánál visszaáll). A Felfedezés és a Hasonló címek szűri (a keresés nem). `HideButton`
-  (× a borító jobb felső sarkában; egérrel csak rámutatáskor / fókusznál látszik), `HideNote` +
-  `useHideSuggestion()`: „„…” elrejtve – többé nem ajánljuk. Visszavonás” helyben, a szakasz tetején,
-  10 mp-ig (a szerkesztő ablakban az értesítősáv nem kattintható)
-- `lib/rowSaves.js` – `saveRow(sor, apply, kérés, show)`: egy sor gyors egymás utáni optimista
-  mentései (kódaudit #9, 2026-10-09). Soronként (cím-id) nyilvántartja a függő módosításokat: a
-  képernyőn az utolsó szerversor + a még függő módosítások (`apply(row)` – a sorból számol, nem a
-  kattintáskori pillanatképből); a kérések soronként egymás után mennek (a válaszok nem
-  cserélődhetnek fel), hibánál csak a sikertelen módosítás esik ki. Korábban egy elbukott mentés a
-  saját előtti állapotára állt vissza, és a közben tett másikat is eltüntette a képernyőről.
-  Használja: a táblázat soron belüli mentése (`TitleTable`), az évadműveletek (`useSeasonActions`
-  – táblázat és adatlap), a nézési sorrend pipája (`WatchOrder`). **Új optimista mentésnél ezt
-  használd.** `isOptimistic(row)`: a még nem mentett (optimista) sor – a mentés mellékhatását (pl. a nézési sorrendből
-  kivétel) csak a mentett sorra utánozd (kódaudit #21). Teszt: `munka/e2e/test-audit-9.mjs`
-- `lib/useStrike.js` – kihúzás (terv-3 40): `useStrike(status)` → hányszor vált megnézettre, amióta
-  látszik; a cím köré tett `.strike` span kulcsa és `data-strike` jelzője (PosterCard, TitleTable
-  sora – nézési sorrendben a tétel állapota): váltáskor a span újraépül, a CSS-animáció lefut,
-  betöltéskor nem. A nézési sorrendben (`WatchOrder`) a kipipált tétel `data-strike`-ot kap, a vonal
-  ott megmarad
-- `app/api/imdb/refresh/route.js` – `POST`: a hiányzó vagy 14 napnál régebbi IMDb-értékeléseket
-  frissíti (25-ösével, a felhasználó jogosultságaival); a `Watchlist` betöltéskor hívja
-- `lib/server/omdb.js` – `fetchImdbRating()`, `omdbEnabled()` (csak route handlerben)
-- `app/api/keepalive/route.js` + `vercel.json` (crons, naponta 04:17 UTC) – ébren tartás: egy
-  apró lekérdezés, hogy a Supabase ingyenes projektje ne szüneteljen tétlenség miatt. Ha a
-  Vercelen van `CRON_SECRET`, csak azzal hívható (a Vercel Cron automatikusan küldi)
-- `components/ImdbBadge.js` – „IMDb 8,0” jelvény (rámutatva a szavazatok száma)
-- `components/FranchiseFilter.js` – a franchise-szűrő saját lenyílója (listbox: nyilak, Home/End,
-  Enter, Esc) logókkal; `FranchiseLogo` betöltéskor megméri a logó világosságát (canvas, a TMDB
-  képszervere CORS-t enged), 0,5 alatt fehérre színezi (`.franchise-logo.dark`). Csoportok (terv-3 54, „A”):
-  az opció `group` ('open' | 'done') és `badge` mezője – „Van még megnézendő” (`N hátra`, türkiz címke) fölül,
-  „Mind megnézve” (zsálya címke, tompán, szürkén) alul; a csoportcím `li.franchise-group` (`role="presentation"`,
-  a nyilak átlépik); az opció neve felolvasónak „Név, 2 hátra” (a teszt: `frOption()`). A `Watchlist`
-  `franchiseOptions`-e számol (a listán lévő, nem megnézett, nem abbahagyott címek). `lead="icon"` +
-  `className="genre-filter"`: a **műfajszűrő** is ez (terv-3 56, „A”) – a logó helyett `GenreIcon` keskeny
-  oszlopban, a kiválasztotté a zárt gombon is. A gomb nyila `.franchise-filter-button > svg`.
-- `components/GenreIcon.js` – műfajikon (terv-3 56): egyvonalas SVG műfajonként (a TMDB magyar nevei + a
-  sorozatok angol nevei, ismeretlennél pötty), színe a műfaj pöttyéé (`--g` = `genreColor`), világosban
-  ugyanaz az árnyalat mélyebben (L 0,56)
-- `app/api/franchises/logos/route.js` – `POST`: a logó nélküli franchise-oknál a franchise első
-  (legkorábbi) filmjének TMDB-címlogóját menti (`pickLogo()`: legfeljebb 6:1 arány, angol); csak a `logo_path is
-  null` franchise-okat nézi – a kézzel választottat (`''` – „Csak a név” – is) nem írja felül (átnézés J8);
-  ha nincs logó, 7 napig nem próbálja újra. A `Watchlist` hívja (`logoDue` effekt, 1,5 mp
-  várakozással): betöltéskor, és rögtön, amikor egy logó nélküli franchise-hoz az első cím bekerül
-  (gyűjtemény, adatlap, sor, tömeges import) – franchise-onként munkamenetenként egyszer
-  (`logoTried`); üres franchise-nál nincs mit keresni (Norbi kérése, 2026-10-05: a Rocky logója csak
-  a következő betöltéskor jött le)
-- `components/ImdbRatingsImport.js` + `lib/imdbImport.js` – „IMDb import” a ⋮ menüből
-  (`ref.current.open()` → rejtett fájlválasztó; a komponens csak a fájlmezőt és az ablakot
-  rajzolja). `parseImdbExport()` felismeri a két IMDb-exportot:
-  - **értékelések** (CSV: `Const`, `Your Rating`): a böngészőben IMDb ID alapján párosít,
-    összefoglalót mutat, majd `applyMyRatings()` (csillagértékenként egy update). Norbi
-    döntései: csak a listán lévő címek, az IMDb csillaga felülírja a sajátot, az állapot nem
-    változik, új cím nem kerül fel;
-  - **figyelőlista / watchlist** (a `Position` oszlopról ismeri fel; epizód, játék, podcast,
-    klip kimarad; ismétlődés egyszer): `planWatchlistImport()` – a listán (IMDb ID-vel) lévők
-    kimaradnak, a többit 3-asával a `/api/tmdb/find`-dal keresi (a TMDB-azonosító szerint már
-    listán lévők is kimaradnak), kipipálható lista (borító, magyar cím, év, típus, eredeti cím;
-    alapból mind kipipálva), a TMDB-n nem találtak felsorolva → „N cím felvétele” (`addTitle()`
-    2-esével, Megnézendő; a sikertelenek hibaüzenettel). Terv-3 20-as pont, 2026-10-04.
-    Felvétel közben az Esc-et megfogja, de a Chrome a második Esc-re (kattintás nélkül) mindenképp
-    bezárja az ablakot: ilyenkor a felvétel a háttérben végigfut, az ablakhoz már nem nyúl (`runRef` –
-    futásazonosító, bezáráskor / új fájlnál változik; kódaudit #7, 2026-10-09: korábban összeomlott az
-    app; teszt: `munka/e2e/test-audit-7.mjs`). A Tömeges import ugyanígy (#38).
-  Teljesen automatikus szinkron nincs (az IMDb-nek nincs API-ja, az oldal gépi olvasása tiltott).
-  A párhuzamos feldolgozás (`mapLimit`) a `lib/bulkImport.js`-ben (a tömeges import is ezt használja).
-- `app/api/tmdb/find/route.js` – `GET ?imdb=tt…` → `{ result: { media_type, tmdb_id, title,
-  original_title, release_year, poster_path } | null }` (TMDB `find`, magyar cím; egy napig
-  gyorsítótárazva)
-- `components/NotificationBell.js` + `lib/notifications.js` – harang a fejlécben: a nem olvasott
-  értesítések száma borostyán jelvényben (`--accent-2`); kinyitva a legutóbbi 30 (új évad bejelentése / megjelenése,
-  új rész egy franchise TMDB-gyűjteményében – „Új rész a gyűjteményben – <franchise>” (+ „· várható: …”),
-  a sorban a rész címe (éve) és borítója az értesítésből, kattintva az előnézete nyílik, korall
-  filmcsapó ikon – terv-3 36,
-  film digitális megjelenése – „Digitálisan is megjelent – már letölthető”, Mama jelölése – „Mamát
-  érdekli”, terv-3 13; borítóval; fajtánként saját szín – terv-3 51.5, 2026-10-09, `data-kind`: megjelent
-  évad zsálya / lejátszás, bejelentett évad indigó / naptár, digitális égkék / letöltés, Mama borostyán /
-  „M” – a leírás ebben a színben, a borító sarkán kis kerek ikon – `.notif-pic` > `.notif-kind`; az
-  olvasatlant a cím előtti pötty – a fajta színében – és leheletnyi háttér jelzi, nem türkiz sor); kinyitáskor a betöltöttek olvasottak (az adatbázisban is, `markNotificationsRead(ids)` – csak azonosító
-  szerint, a közben keletkezett, még be nem töltött – pl. Mama jelölése – olvasatlan marad; kódaudit #2,
-  2026-10-09; teszt: `munka/e2e/test-audit-2.mjs`; a
-  közben beérkező régi lekérdezés sem írja vissza – `readIds` a Watchlistben); elemre
-  kattintva a sorozat szerkesztő ablaka; kívülre kattintás / Esc bezár. Csoportcímek (terv-3 76, „A”, 2026-10-13):
-  „Ma” / „Ezen a héten” (a hét hétfőtől) / „Korábban” az értesítés napja szerint, budapesti idővel (`dayGroup`;
-  `li.notif-group`, `role="presentation"`, kis ritkított nagybetűk). A lista a harang bal széléhez igazodik, ha ott
-  kilógna, a jobbhoz (`lib/popupSide.js`, nyitáskor mérve – a ⋮ menü is így); telefonon teljes
-  szélességű, közvetlenül a gomb alatt – a ⋮ menü is: telefonon a `document.body`-ba kerülnek (portál,
-  `lib/usePhonePopup.js`, a `top` a gombhoz mérve, görgetéskor követi; átnézés K1, 2026-10-15): az összecsukódó fejléc
-  gombsorának `translate` / `scale`-je a `position: fixed` listát a gombsorhoz igazította (≈200 px széles lett). A
-  kívülre kattintás vizsgálata ezért a lista elemét is nézi. A fejléc felugró listái (`z-index: 35`) a letapadó szűrősor (30) fölött vannak. `loadNotifications()`: előbb
-  `collect_season_notifications()` és `collect_release_notifications()` (RPC, párhuzamosan),
-  aztán a lista; a Watchlist betöltéskor, valamint az évadfrissítés és a megjelenésidátum-frissítés
-  után hívja – utóbbiakat csak, ha frissült sor (a `refreshSeasons` / `refreshReleases` a
-  frissített sorok számát adja; hibánál is újratölt; terv-3 34, E1). A telepített app ikonján `navigator.setAppBadge()` mutatja a számot.
-  Ha nő az olvasatlanok száma (betöltéskor is, ha van), a harang egyszer megrezzen (`.ringing`).
-  **Törlés** (Norbi kérése, 2026-10-07): soronként × (`.notif-del`; egérrel csak a sorra mutatva /
-  fókusznál látszik, érintőn mindig; utána a fókusz a következő × -re), a fejlécben „Összes törlése”
-  (`.notif-clear`, a látható – legfeljebb 30 – értesítés); `Watchlist.removeNotifications()`: azonnal
-  eltűnik, az értesítősávban „Visszavonás” (`dismissNotifications` / `restoreNotifications`; a
-  közben beérkező lekérdezés sem hozza vissza – `dismissedIds`). A sor nem törlődik, csak
-  `dismissed_at` kap (különben a gyűjtés újraírná)
-- `components/BulkImport.js` + `lib/bulkImport.js` – „Tömeges import” (csak asztali nézetben,
-  a ⋮ menüből: `ref.current.open()`): soronként egy cím (legfeljebb `MAX_LINES` = 150; a sor
-  végi évszám 1900–idén+5 szűr, pl. „Dűne 2021”; az ismétlődő sorok egyszer), TMDB-keresés
-  3-asával; `matchEntry()`: biztos = egyetlen pontos (ékezet / írásjel nélküli) cím- vagy
-  eredeticím-egyezés (évszámmal az évnek is egyeznie kell) – előre kijelölve; bizonytalan →
-  borítós választók, alapból kihagyás; a listán lévő kimarad (jelöltként nem választható);
-  felvétel `addTitle()`-lal 2-esével, a sikertelenek a szövegmezőben maradnak
-- `lib/exportList.js` – „Mentés letöltése”: a teljes lista CSV-ben (UTF-8 BOM, pontosvessző,
-  tizedesvessző – Excelben dupla kattintással jól nyílik): típus, cím, év, állapot, letöltve,
-  dátum, értékelések, Mama, franchise, műfajok, évadok, hozzáadva, IMDb / TMDB ID, megjegyzés
-- `components/BackupsDialog.js` + `lib/backups.js` – „Mentések” ablak (a ⋮ menüből): a mentések
-  listája (legújabb elöl: dátum, fajta – Heti / Kézi / Visszaállítás előtt / Feltöltött –, címek
-  száma; a tartalmuk nem töltődik le), „Mentés most” (`create_my_backup`), soronként
-  „Visszaállítás” → a sor helyén megerősítés (pirosas, Mégse / Visszaállítás) →
-  `restore_my_backup`, utána `Watchlist.reloadAfterRestore()` (lista, franchise-ok,
-  értesítések újra). A felirat a lista frissülése után jelenik meg (egyszerre változnak)
-- `.github/workflows/mentes.yml` – „Heti mentés” (GitHub Actions, hétfő 04:30 UTC, kézzel is
-  indítható): a `BACKUP_DB_URL` titokkal (`backup_reader`, psql) felhasználónként kiolvassa a
-  legfrissebb mentést egy JSON-ba, és 56 napra artifactként tárolja (utána a GitHub törli); ha
-  nincs 8 napon belüli mentés, a futás hibával áll le (a GitHub e-mailt küld). Visszatöltés:
-  `munka/e2e/mentes-feltoltes.mjs <fájl.json> <e-mail>` → „Feltöltött” mentés → a felületen
-  visszaállítható. A titkot Norbi beállította, az első (kézi) futás 2026-10-04-én sikeres, az
-  artifact letölthető. A `backup_reader` jelszavának cseréje: `mentes-olvaso.mjs`, utána a
-  GitHub-titkot is át kell írni. Az artifact a futás Summary oldalának alján van (a telefonos
-  GitHub-alkalmazás nem mutatja)
-- `components/ManualDialog.js` + `scripts/leiras.mjs` – **felhasználói leírás az appon belül**
-  (terv-3 48, 2026-10-08; Norbi döntése: belső ablak, nem új lap / külön oldal): a ⋮ menü
-  „Felhasználói leírás” pontja `dialog.editor.manual-dialog`-ot nyit (fent „Felhasználói leírás”,
-  „Tartalom” – a tartalomjegyzékhez görget –, „Bezárás”; alatta a görgethető leírás, `.manual`,
-  olvasható szélességben; telefonon teljes képernyő; kikattintásra mindig zár – nincs benne bevitel).
-  A HTML-t a `scripts/leiras.mjs` állítja elő a `FELHASZNALOI-LEIRAS.md`-ből (`marked`, csak
-  fejlesztői függőség) **a `npm run dev` / `npm run build` elején** (a Vercel is így buildel):
-  `public/leiras/leiras.html` + a `docs/kepek/` képei a `public/leiras/kepek/`-be (a mappa git-ből
-  kizárva). A főcím és a VS Code-os tipp kimarad; a fejlécek azonosítója a GitHub szabálya szerint,
-  `leiras-` előtaggal (a `#…` hivatkozások is); a képek lusta betöltéssel, méretezve (`width` /
-  `height` a JPEG-ből – a hivatkozásra ugráskor ne csússzon a lap); külső link új lapon; a szövegbeli
-  ①–⑳ jelek borostyán körben a számjeggyel (`span.jel`, a képek jelölőivel azonos szín mindkét
-  témában – `--marker-bg` / `--marker-ink`; terv-3 52.7, teszt: `munka/e2e/test-52-7.mjs`). A cél
-  nélküli belső hivatkozásra / hiányzó képre a szkript figyelmeztet. A belső hivatkozásokat a
-  `ManualDialog` kezeli (az ablakon belül görget, a fókusz a szakaszcímre, az URL nem változik).
-  Net nélkül a service worker tárolójából jön, ha már egyszer megnyílt, különben hibaüzenet +
-  „Újrapróbálás”. Teszt: `munka/e2e/test-48.mjs`
-- `supabase/*.sql` – a már lefuttatott adatbázis-szkriptek (dokumentáció)
-- `FELHASZNALOI-LEIRAS.md` – felhasználói leírás Norbinak: minden funkció témák szerint
-  (1–17. szakasz), a végén Változásnapló. Kezelési leírás, nem kód: gombnevek, lépések, szabályok.
-  Képes (terv-3 33, 2026-10-06): a képek a `docs/kepek/*.jpg` (33 db, a repóban, ~2,9 MB; legutóbb frissítve 2026-10-15; asztal
-  1440 × 900, telefon 390 × 844), a zsúfoltabbakon borostyán számozott jelölők (①②③), a szöveg
-  ugyanazokkal a számokkal magyaráz; a telefonos képek HTML-`<img width>`-del egymás mellett. Mind
-  egy szkriptből: `munka/terv-3/33-leiras/leiras-seed.mjs` (próbalista a tesztfiókba) +
-  `leiras-kepek.mjs` (a képek; argumentummal csak a nevükben azt tartalmazók, pl. `05-adatlap`)
+## Hol mi van
+- **`munka/ROADMAP.md`** – a hátralévő feladatok táblázatban, becsült idővel. Kész feladat után frissítsd.
+- **`munka/terv-3/TERV.md`** – a „terv-3 NN” pontok részletes terve, Norbi döntései, látványterv-linkek.
+- **`munka/audit-2026-10-15/ATNEZES.md`** – az átnézés pontjai (K/H/S/I/J kódok); a kész pontot ott is
+  jelöld: „kész (dátum, commit)”. A 2026-10-09-i kódaudit (`munka/audit-2026-10-09/AUDIT.md`) lezárult.
+- A `munka/` mappa helyi (git-ből kizárva), leírása: `munka/README.md`.
+- A kész munkák története: git log + TERV.md. **Ebbe a fájlba csak a mostani működés és a szabályok
+  kerüljenek**, tömören – történet, dátumok, commit-hashek nem.
 
-## Adatbázis (már létezik, lásd `supabase/`)
-- `genres (id integer PK = TMDB műfaj ID, name)` – bejelentkezve olvasható/írható
-- `statuses (code PK, name, sort_order)` – kódok: `to_watch`, `watching`, `watched`,
-  `dropped` (Abbahagyva – `09_dropped.sql`; a felület csak sorozatnál kínálja)
-- `titles` – `user_id` (default `auth.uid()`), `media_type` ('movie' | 'tv'), `title`,
-  `original_title`, `release_year`, `overview`, `poster_path`, `tmdb_id`, `imdb_id`,
-  `status` (FK → statuses), `is_downloaded`, `mama_status` (null | 'interested' | 'declined' |
-  'received', „Mama” jelző: üres / Érdekli / Nem érdekli / Megkapta – `03_mama.sql`, a 'declined'
-  `17_mama_access.sql`; a „Nem érdekli”-t Mama jelöli a saját oldalán, Norbinál tompa szürke: táblázat –
-  `select.mama-set:has(option[value=declined]:checked)` –, adatlap – `.mama-chips
-  input[value=declined]` –, nem borostyán), `franchise_id` (FK → franchises,
-  null = nincs; `on delete set null`), `imdb_rating` (numeric 0–10), `imdb_votes`,
-  `imdb_rating_updated_at` (`05_imdb_rating.sql`), `my_rating` (1–10), `notes`, `watched_at`,
-  `seasons_checked_at` (mikor nézte az app a TMDB-n a sorozat évadait – `08_title_seasons.sql`),
-  `backdrop_path` (a TMDB széles jelenetképe a szerkesztő ablakhoz), `backdrop_checked_at` (mikor
-  néztük meg – `11_backdrop.sql`), filmnél `theatrical_release` (mozis bemutató),
-  `digital_release` (digitális, letölthető megjelenés), `release_checked_at` (mikor néztük a
-  TMDB-n) – `14_release_dates.sql`, NULL-t engedők, filmnél `tmdb_collection_id` (a TMDB-gyűjtemény),
-  `collection_checked_at`, `franchise_suggestion_off` (a felajánlott franchise-t elutasította) –
-  `19_title_collection.sql` (terv-3 35), NULL-t engedők, `release_date` (a TMDB elsődleges dátuma – film:
-  `release_date`, sorozat: `first_air_date`; a rendezéshez – `23_release_date.sql`, terv-3 55, NULL-t enged;
-  felvételkor a details route adja, a meglévőket 2026-10-10-én egyszer, szkripttel töltöttük fel –
-  `munka/terv-3/terv-55/release-date-feltoltes.mjs`; a 83-as óta a TMDB-frissítés is frissíti), `details_checked_at`
-  (mikor frissítettük a TMDB-ről – `26_details_refresh.sql`, terv-3 83, NULL-t enged),
-  `created_at`, `updated_at` (trigger); egyedi: `(user_id, media_type, tmdb_id)`
-- `title_seasons (title_id FK → titles on delete cascade, season_number ≥ 1, user_id default
-  auth.uid(), name, episode_count, air_date, status FK → statuses, is_downloaded, watched_at,
-  created_at, updated_at)`, PK `(title_id, season_number)`, RLS – `08_title_seasons.sql`.
-  Triggerek: megnézettre állításkor (átváltáskor) az évad `is_downloaded` hamis lesz, a
-  `watched_at` a mai nap (más állapotnál üres); minden változás után a sorozat `status`,
-  `is_downloaded`, `watched_at` mezője az évadokból számolódik: minden megjelent
-  (`air_date` ≤ ma) évad megnézve → `watched`; van megkezdett / megnézett → `watching`;
-  különben `to_watch`; letöltve = van letöltött évad. Évadok nélkül a cím kézi marad.
-  A bejelentett évad (`air_date` üres vagy jövőbeli) nem számít a „minden megnézve” feltételbe.
-  Kivétel a `dropped` (Abbahagyva): kézi, az évadok változása nem írja felül (csak a letöltve
-  követi őket). Évados sorozat `status`-ának közvetlen írásakor (BEFORE UPDATE OF status trigger,
-  `titles_status_from_seasons`) a `dropped` kivételével mindig az évadokból számolt érték kerül
-  be (a `status`, `is_downloaded`, `watched_at` is) – így a „Mégis folytatom” bármit küldhet.
-  Közös számítás: `seasons_summary(title_id)` – `09_dropped.sql`.
-- `franchises (id, user_id default auth.uid(), name, created_at, logo_path, logo_checked_at,
-  tmdb_collection_ids integer[] default '{}', collections_checked_at)` – felhasználónkénti saját lista, a felületen
-  bővíthető; egyedi: `(user_id, lower(name))` – `04_franchises.sql`; logó:
-  `07_franchise_logo.sql`; kézzel hozzárendelt TMDB-gyűjtemények: `13_franchise_collections.sql`
-  (szándékosan NULL is lehet – az app üresnek veszi –, mert az oszlop előtti mentések
-  visszaállításakor NULL kerül bele). **Általános szabály:** mentett táblába új oszlop csak
-  NULL-t engedő (vagy a visszaállítás tölti ki), különben a régi mentések nem állíthatók vissza
-- `franchise_order (franchise_id FK → franchises on delete cascade, title_id FK → titles on delete
-  cascade, season_number ≥ 0 – 0: film / évad nélküli sorozat –, user_id default auth.uid(),
-  position)`, PK `(franchise_id, title_id, season_number)`, RLS (a cím és a franchise is a
-  felhasználóé) – `15_franchise_order.sql` (terv-3 28, 2026-10-06). Csak a sorrend; a megnézett
-  állapot a címekből / évadokból jön. `set_franchise_order(franchise, items jsonb)` (a felhasználó
-  jogaival, egy tranzakcióban cseréli). Trigger (`titles_franchise_order_moved`): más franchise-ba
-  került cím kikerül a régi sorrendből (visszakerülve a végére jön). A mentésben is (version 2)
-- `hidden_suggestions (user_id default auth.uid(), media_type, tmdb_id, title, poster_path,
-  release_year, created_at)`, PK `(user_id, media_type, tmdb_id)`, RLS – `16_hidden_suggestions.sql`
-  (terv-3 39, 2026-10-06): a „Nem érdekel”-lel elrejtett ajánlások; a cím / borító / év a
-  „Elrejtett ajánlások” listához (TMDB-lekérés nélkül). A mentésben is (version 3)
-- Trigger (`06_watched_clears_downloaded.sql`): amikor egy cím „Megnézve” állapotba kerül
-  (átváltáskor vagy megnézettként felvéve), az `is_downloaded` hamis lesz; ha utána kézzel
-  újra letöltöttnek jelölik, az megmarad. A felület is azonnal leveszi a pipát.
-- `notifications (id, user_id default auth.uid(), title_id FK → titles on delete cascade,
-  season_number, kind ('season_announced' | 'season_aired' | 'movie_digital' | 'mama_interested' |
-  'collection_new'), air_date, created_at, read_at, dismissed_at, franchise_id FK → franchises on delete
-  cascade, part_tmdb_id, part_title, part_poster_path, part_year)`, egyedi `(title_id, season_number,
-  kind)` és `(franchise_id, part_tmdb_id)`, RLS (a cím vagy a franchise a felhasználóé) – `10_notifications.sql`.
-  A `collection_new` (terv-3 36, `21_collection_parts.sql`): a rész nincs a listán, ezért `title_id`
-  üres, helyette a franchise és a rész adatai (`notifications_target_check`); a mentés az értesítéseket
-  a címeken át gyűjti, így ezek nincsenek benne (visszaállításkor a franchise-okkal kaszkádban törlődnek).
-  `franchise_collection_parts (franchise_id FK → franchises on delete cascade, collection_id, tmdb_id,
-  user_id, created_at)`, PK `(franchise_id, collection_id, tmdb_id)`, RLS: a franchise-ok gyűjteményeinek
-  ismert részei (ebből derül ki, mi az új); nincs a mentésben – visszaállítás után a következő
-  ellenőrzés újra „első”, tehát nem szól.
-  `dismissed_at` (`18_notification_dismiss.sql`, NULL-t enged): a harangból törölt – a lista nem
-  kéri le; a sor megmarad, így az egyedi kulcs miatt a gyűjtők nem írják újra (a `movie_digital`-t
-  14 napig újraírnák); Mama újbóli „Érdekel”-je (`mama_mark`) üríti.
-  `title_seasons.aired_notified`: szóltunk-e már az évad megjelenéséről.
-  `collect_season_notifications()` (a felhasználó jogaival): a még nem jelzett, már megjelent
-  évadokról értesítést ír (abbahagyott sorozatról és már megnézett évadról nem), és jelzettnek
-  állítja őket. `collect_release_notifications()` (a felhasználó jogaival, `14_release_dates.sql`):
-  `movie_digital` (filmnél `season_number = 0`, `air_date` = a digitális dátum) a friss –
-  14 napon belüli – digitális megjelenésről, ha a film a felvételkor még nem jelent meg és nincs
-  megnézve; filmenként egyszer (az egyedi kulcs)
-- `backups (id, user_id default auth.uid(), kind ('weekly' | 'manual' | 'before_restore' |
-  'imported'), created_at, title_count, data jsonb)` – `12_backups.sql`. A `data` a felhasználó
-  sorai változatlanul (`to_jsonb`): `{ version: 3, franchises, titles, title_genres, genres,
-  title_seasons, notifications, franchise_order, hidden_suggestions }` (`backup_snapshot(user)`;
-  a version 1-es – 2026-10-06 előtti – mentésekben nincs `franchise_order`, azok sorrend nélkül
-  állnak vissza; a version 1–2-esekben nincs `hidden_suggestions`: visszaállításukkor az elrejtett
-  ajánlások nem változnak – `16_hidden_suggestions.sql`). RLS: a sajátját látja és törölheti,
-  írni csak a függvények írnak. `write_backup(user, kind)`: üres listáról nem ment; mentés után
-  a 8 hétnél (55 nap 23 óránál) régebbieket törli – üres listánál nem, így a régiek megmaradnak.
-  `backup_all_users()`: pg_cron, `filmlista-heti-mentes`, hétfő 03:00 UTC. A felületről:
-  `create_my_backup()`, `restore_my_backup(id)` (előbb `before_restore` mentés; töröl és az
-  eredeti azonosítókkal visszatölt; a számlálókat továbbállítja). A belső függvényeket
-  (`backup_snapshot`, `write_backup`, `backup_all_users`) anon / authenticated nem hívhatja.
-  Visszaállítás alatt `set_config('filmlista.restoring', 'on', true)`: a
-  `clear_downloaded_when_watched`, `title_seasons_before_write`, `sync_title_from_seasons`
-  trigger ilyenkor nem módosít (különben a megnézett, de újra letöltött cím / évad jelét
-  levennék) – ha ezeket a függvényeket módosítod, a jelző-vizsgálat maradjon az elejükön.
-  `backup_reader` szerep: bejelentkezhet (jelszó csak a `.env.local`-ban és a GitHubon),
-  csak olvas, csak a `backups` táblát látja (saját RLS-szabály). A `session_replication_role`
-  itt nem állítható (nincs jog).
-- `franchise_shares (franchise_id PK → franchises on delete cascade, user_id default auth.uid(),
-  token text unique – 32 hexa jegy, `gen_random_uuid()`-ból –, created_at)`, RLS (a sajátját; a
-  franchise is a felhasználóé) – `20_franchise_share.sql` (terv-3 41, 2026-10-08): a megosztott
-  nézési sorrend linkje; visszavonás = a sor törlése. Nincs a mentésben (beállítás – mint a
-  `list_viewers`); visszaállításkor a franchise-ok újratöltése miatt a linkek megszűnnek.
-  **`shared_watch_order(token)`** (security definer, `anon` is hívhatja; `24_share_ambient.sql`: + `poster_path` –
-  a franchise színének borítója – és a címek `release_date`-je, hogy a sorrend az appéval egyezzen): a franchise neve,
-  `logo_path`, `backdrop_path` (a legjobb IMDb-értékelésű, háttérképes címé), `titles` (id,
-  media_type, tmdb_id, cím, év, borító, mozis / digitális dátum, `seasons`: szám, dátum,
-  epizódszám) és `order` (a `franchise_order` sorai); állapot, értékelés, letöltve, Mama,
-  megjegyzés, user_id soha; hibás / visszavont tokenre null. Teszt: `munka/e2e/test-20.mjs`
-- `list_viewers (viewer_id uuid PK → auth.users, owner_id → auth.users, created_at)` – ki kinek a
-  listáját nézi (terv-3 13, `17_mama_access.sql`): Mama (néző) → Norbi (gazda). RLS: a néző a saját
-  sorát látja (ebből tudja az app, hogy Mama lépett be); írni csak SQL-ből (`munka/e2e/mama-kapcsolas.mjs`).
-  A Mama-tesztfiók a tesztfiókhoz kötve. Nincs a mentésben (beállítás, nem lista-adat).
-  **`mama_list()`** (security definer, csak `authenticated`): a hívó gazdájának filmjei – (megnézendő,
-  franchise nélküli, jelöletlen, már megjelent – `title_released(t)`, a letöltöttek is) vagy
-  `mama_status = 'interested'` (bármilyen állapotban, a Megkaptáig); `created_at desc`; csak a
-  megjelenítéshez kellő oszlopok (`user_id`, saját értékelés, állapot soha). **`mama_mark(title_id,
-  choice)`** ('interested' / 'declined' / null): csak Mama listáján lévő (vagy „Nem érdekli”) filmre,
-  „Megkapta”-ra nem; csak a `mama_status`-t írja; „Érdekli”-re váltáskor `mama_interested` értesítés
-  Norbinak (újbóli jelöléskor újra olvasatlan). **`title_released(t)`**: a `releaseState()` szabálya
-  SQL-ben (ha az egyik változik, a másikat is módosítani kell). Mama a `titles` táblát közvetlenül nem
-  látja. Teszt: `munka/e2e/test-17.mjs` (`--live`)
-- `title_genres (title_id, genre_id)` – kapcsolótábla
-- `titles_with_genres` nézet (`security_invoker`): `titles.*` + `status_name` + `genres text[]`
-  + `seasons jsonb` (az évadok évadszám szerint; filmnél / évad nélkül `[]`)
-- Realtime (`25_realtime.sql`, terv-3 86): a `titles`, `title_seasons`, `notifications`, `franchises` a
-  `supabase_realtime` publikációban (replica identity default: a törlésről csak a kulcs megy ki).
-- Minden táblán RLS: a felhasználó csak a saját címeit látja/módosítja. A `titles` írásakor a
-  `franchise_id` is csak saját franchise lehet (`22_titles_franchise_check.sql`, kódaudit #41).
-- Sémamódosításnál új számozott SQL fájlt írj a `supabase/` mappába (pl. `05_...sql`).
-  Ha a nézet oszlopai változnak (a `t.*` is!), újra kell létrehozni (`drop view` + `create view`).
-- Futtatás: Claude a `SUPABASE_DB_URL`-lel (`.env.local`, Session pooler; teljes admin jog,
-  RLS nélkül) a `pg` csomaggal, egy tranzakcióban (hibánál `rollback`). A `pg` a scratchpadbe
-  települ, nem a projektbe. Csak a `supabase/` mappa számozott fájljait futtasd; adatot törlő
-  vagy táblát eldobó lépés előtt kérdezz rá (a nézet újralétrehozása kivétel). Utána ellenőrizd.
-  Push csak a séma után, mert az új kód az új oszlopokra/táblákra számít.
+## Fájlszerkezet
+
+### Alap
+- `app/layout.js` – Bricolage Grotesque (`--font-main`, `axes: ['opsz']`), `lang="hu"`, fül: „Megnézendő
+  filmek”, `viewport.themeColor` `#1a222d` (világosban a `lib/theme.js` cseréli `#fcf9f4`-re). A `<head>`-ben a
+  `THEME_BOOT_SCRIPT` (`lib/themeBoot.js`), ezért a `<html>`-en `suppressHydrationWarning`.
+- `app/page.js` – kliensoldali session: belépés vagy lista. A `list_viewers` saját sora alapján néző (Mama) →
+  `MamaView`, különben (hibánál is) `Watchlist`; amíg nem tudja: „Betöltés…”. A választ a `localStorage`
+  jegyzi (`filmlista-nezo:<userId>`). Net nélkül / lejárt tokennel / ha a `getSession()` nem válaszol (4 mp, net
+  nélkül 0,3 mp) a tárolt munkamenettel (`storedSession()`, `offline: true`) nyílik a `Watchlist`. Indításkor
+  `registerServiceWorker()`, `startBackClose()`, `initUserTheme(userId, néző)` (`useLayoutEffect`);
+  `SIGNED_OUT`-nál `clearSnapshots()` és `forgetThemeUser()`.
+- `app/icon.svg` + PNG-változatok (`app/apple-icon.png`, `public/icon-192.png`, `public/icon-512.png`,
+  `public/icon-maskable-512.png`) – mind a `munka/e2e/ikon.mjs`-ből; ikonváltozáskor ezzel generáld újra.
+- `app/manifest.js` – manifest (telepíthető app, `theme_color` = `--bg-top`). Gyorsindítók: `/?nyit=hozzaadas` |
+  `franchise-ok` | `statisztika` – a `Watchlist` a betöltés után egyszer megnyitja (`SHORTCUTS`) és kiveszi a
+  paramétert. Ellenőrzés: `munka/e2e/verify-ikon.mjs`.
+- `components/LoginForm.js` – e-mail + jelszó (regisztráció nincs, ki van kapcsolva), középre zárva,
+  vetítőfénnyel (`main.login::before` / `::after`).
+- `components/SiteFooter.js` – kötelező TMDB forrásmegjelölés, ne töröld; „sponsored by ADERTIS”
+  (https://www.adertis.hu, új lapon; `span.sponsor`, nem `p` – a teszt egy bekezdést vár a láblécben).
+
+### Téma
+- `lib/theme.js` + `lib/themeBoot.js` + `components/ThemeToggle.js` – világos / sötét (terv-3 50). Alap a sötét;
+  a világos a `<html data-theme="light">`. Választás felhasználónként (`filmlista-tema:<userId>`); ha nincs:
+  Mama (néző) világos, más sötét. Az utoljára használt (`filmlista-tema`) a boot-szkripté (nincs villanás) és a
+  belépési oldalé. A megosztott oldal (`/sorrend/…`) a `prefers-color-scheme`-et követi. `setTheme()`,
+  `useTheme()`. A `themeBoot.js` React nélküli (a szerverkomponens `layout.js` is használja). Norbinál kerek
+  ikongomb (`.theme-toggle`), Mamánál feliratos (`labeled`, `.theme-toggle-labeled`). Teszt: `test-50.mjs`.
+
+### Fő lista – `components/Watchlist.js`
+- **Betöltés**: `titles_with_genres` nézet (`loadTitles()`, `fetchAll`). A háttérfrissítések (`refresh…()`) csak
+  akkor hívják a szervert, ha van esedékes cím (`lib/refreshDue.js`). Csendes újratöltés (`reloadKey`, csontváz
+  nélkül, a szűrők / lapozás / nyitott adatlap marad): visszatéréskor, lehúzásra, élő szinkron újrakapcsolódásakor.
+- **Offline / csak olvasható** (terv-3 44): induláskor azonnal a helyben tárolt lista (`stale`), a friss a
+  háttérben („· frissítés…”); minden változás 1,5 mp után helyben is mentődik. `readOnly` (tárolt lista vagy nincs
+  net): nincs hozzáadás, az írási menüpontok kimaradnak (`ONLINE_ONLY`), az adatlap mezői tiltva (`Lock` –
+  `fieldset.lock`, `display: contents`), a háttérfrissítések nem indulnak, és minden írási hely (Hasonló címek,
+  gyűjtemény-ablak, nézési sorrend, Franchise-ok, harang, üres állapot) elrejti / tiltja az írást.
+  **Új írási gombnál a `readOnly`-t is kezeld.** Sikertelen betöltésnél `.offline-note` sáv, újrapróbálás a net
+  visszatérésekor és félpercenként. `main[data-list]`: `loading` | `stale` | `live` (a teszt erre vár).
+- **Fejléc** („Megnézendő filmek és sorozatok”, összecsukódó – terv-3 99, J6): `header.top.collapsing` negatív
+  `top`-pal ragad (`--head-h` mért magasság); a `--head-p` (0–1) szerint a nagy cím (`.top-title`) összemegy, a kis
+  cím (`.top-compact`) előtűnik, összecsukva `data-compact`. Telefonon a `--head-c` (3,6 rem) sáv fent marad;
+  asztalon (≥ 641 px) `main[data-head-away]` → `--head-c: 0rem` (a fejléc egészen felgördül; nyitott „Cím
+  hozzáadása” panelnél nem). „Kevesebb mozgás” módban nincs közbülső állapot. Teszt: `test-1015.mjs`.
+- **Fejléc gombjai**: „Cím hozzáadása”, harang, e-mail (`.account-email` gomb → „Jelszó módosítása”; telefonon
+  rejtve, net nélkül sima szöveg), Kilépés, téma, ⋮ (`MoreMenu`): Statisztika, Franchise-ok, IMDb import (telefonon
+  nincs), Tömeges import és Mentés letöltése (csak asztalon), Mentések, Jelszó módosítása (net nélkül nem),
+  Felhasználói leírás. Asztalon (≥ 900 px) a sor nem törik. Telefonon (≤ 640 px) lebegő „+” (`.fab`; lefelé
+  görgetéskor elhúzódik).
+- **Szűrősor**: Típus (Filmek / Sorozatok; franchise vagy keresés mellett „Filmek és sorozatok” – `type: 'all'`,
+  franchise választásakor magától, megszűnésekor vissza Filmek), állapot (gombok; telefonon lenyíló; „Abbahagyva”
+  csak sorozatos típusnál), Letöltés, Műfaj (az adott típus műfajai, ikonos lenyíló), Mama (csak ha van
+  Mama-jelölés; Sorozatok típusnál / franchise-ra szűrve nem látszik és nem szűr – `mamaFilter`), Franchise, ↺.
+  **Alapállapot** (`DEFAULT_FILTERS`, Norbi kérése): Filmek – Megnézendő – Nem letöltött – Összes műfaj – Franchise
+  nélkül. Az állapotgombok darabszámai a többi szűrőt figyelembe veszik.
+- **Telefonon** a szűrők összecsukva: „Szűrők” gomb + a beállított szűrők címkeként ×-szel (`activeFilters`,
+  `.active-filters`; a típuson nincs ×; „↺ Alaphelyzet”), kinyitva összefoglaló (`filterSummary`), legfeljebb a
+  képernyő 70%-a. A kereső összecsukva is látszik.
+- **Keresés a listán**: cím, eredeti cím, franchise neve; ékezet- és kisbetű-független (`fold()`), több szónál mind.
+  Elírás-tűrés és kiemelés (terv-3 66): `lib/listSearch.js` (`resolveWords`, Damerau–Levenshtein ≤ 1, 5+ betűs
+  szónál), `components/Highlight.js` (`mark.hl`, `<Hl>`, `SearchHighlight` kontextus), `.search-note`. Gépeléskor a
+  szűrők félreállnak (`SEARCH_FILTERS`), törléskor visszaállnak. Teszt: `test-1013.mjs`.
+- **Rendezés** (`SORTS`): legutóbb / legkorábban hozzáadott, legjobb értékelés, legújabb / legrégebbi megjelenés
+  (`releaseKey(t)` – pontos dátum, üres a végére). Franchise-ra szűrve: ha van nézési sorrendje, „Nézési sorrend”
+  (`WATCH_ORDER`, magától – `orderSort`), különben „Legrégebbi megjelenés” (`FRANCHISE_SORT`); az állapot ilyenkor
+  „Mind” (`statusBeforeFranchise` – megszűnéskor vissza, kézi választás után nem); kézi rendezés után az marad.
+  Nézési sorrendnél a lista tételekből áll (`visible`: `{ key, title, item }`; a sorozat évadonként külön tétel –
+  `.card-season`, `.season-tag`); a szűrők, a darabszámok és a `kept` tételenként.
+- **Nézetek**: ≥ 1400 px-en lista (`TitleTable`) | rács váltó (`localStorage` `filmlista-nezet`, alapból lista),
+  alatta mindig rács. Váltáskor a borítók a helyükre siklanak (`lib/viewSwitch.js`, `data-flip` kulcsok). Rács:
+  telefonon 3 oszlop, asztalon `minmax(185px)`.
+- **`kept`**: a most szerkesztett, már látható sor a szűrés változásáig a helyén marad, akkor is, ha már nem illik
+  a szűrőbe (így visszavehető); a szűrőbe nem illő, épp felvett cím nem kerül be.
+- **Üres állapot** (`EmptyState`): keresésnél „Keresés a TMDB-n: „…”” (`openAdd(q)`, `TitleSearch initialQuery`) +
+  „Keresés törlése”; szűrésnél „Szűrők törlése” + „Felfedezés”; üres listánál „Első cím hozzáadása” + Tömeges import
+  (a nevek szándékosan nem ütköznek a fejléc „Cím hozzáadása” gombjával).
+- Franchise-ra szűrve a lista fölött a `FranchiseCollection` sáv.
+- **Törlés visszavonással** (`requestDelete(t)`): azonnal lekerül, 8 mp-ig „Visszavonás”; az adatbázisból csak
+  lejáratkor / ×-re törlődik (ha a lapot közben bezárják, megmarad).
+- **„Hogy tetszett?”**: a táblázatból Megnézve-re váltott, értékelés nélküli címnél (`handleRowUpdated` →
+  `askRating`; a `titlesRef` miatt egyszer kérdez; a szerkesztő ablakból nem).
+- **Lapozás** (`components/Pagination.js`): 25 (`PAGE_SIZE` – telefon, keskeny rács), 10 (`TABLE_PAGE_SIZE` –
+  asztali lista), 22 (`GRID_PAGE_SIZE` – asztali rács). Asztalon (≥ 1400 px) a lapozó és a lábléc egy sávban alul
+  (`docked` → `.pagination.docked`, `main[data-docked]` – lapozó nélkül is; `--docked-footer-h`, `--pager-w`,
+  `--sponsor-w`; a `main` flex oszlop, `flex: 1`). A lapozás az oldal első címét jegyzi (`pageState.first`, így
+  nézetváltáskor ugyanaz a cím látszik); szűrés / rendezés / keresés váltásakor 1. oldal; lapozáskor a
+  `.filters-anchor`-hoz görget. Telefonon tömör (`.pg-step`, a `.pg-word` rejtve).
+- **Letapadt szűrősor** (`position: sticky`, `top: var(--head-c)`, `data-stuck`): átlátszó, mögötte fokozatos
+  elmosás (`components/ProgressiveBlur.js`, terv-3 102 – öt `backdrop-filter` réteg). **A sáv és az ősei nem
+  kaphatnak `backdrop-filter`-t, `filter`-t, `opacity`-t, maszkot** – különben a rétegek nem látnak át. A
+  `--filters-h` (ResizeObserver) a táblázat ragadós fejlécéé. Asztalon gyorsgombok (`.stuck-tools`): „↑”, kerek „+”
+  (nyitott „Cím hozzáadása” panelnél nem), harang (`NotificationBell quiet`), ⋮ (`moreItems`). A helyük nyugalomban
+  is foglalt (`data-off` → `visibility: hidden`), hogy letapadáskor a sor ne törjön másként – ezért asztalon
+  keskenyebb a kereső (10,5 rem) és kisebb a csoportköz (1,75 rem). A kerek gombszabályok csak `> button`-re. A
+  fejléc felugrói a szűrősor (`z-index: 30`) fölött. Teszt: `test-102-103.mjs`.
+- **Csúszó kijelölő** (`lib/useSlidingThumb.js`, terv-3 100): új gombcsoportnál `className="… sliding"` +
+  `ref={useSlidingThumb()}`; a kiválasztott közvetlen gyermek `aria-pressed` / `aria-selected`.
+- **„Folyékony üveg”** (terv-3 103): a lebegő gombok (`.stuck-tools`, `.fab`, `.backdrop-pager`) – `--lg-fill`,
+  `--glint`.
+- Az `<Toaster />` a `main` végén.
+
+### A lista elemei
+- `components/PosterCard.js` – kártya: borító (w342), állapotcsík, „Letöltve” jelvény; a borító és a ceruza a
+  szerkesztőt nyitja, a cím az IMDb- (vagy TMDB-) adatlapra visz; „Hozzáadva: <dátum>”, `StarsDisplay`,
+  `GenreList`; Mama „Érdekli”-nél borostyán „M” (`.poster-corner > .mama-mark`; a többi Mama-érték a kártyán nem
+  látszik). Rámutatva hangulatszín (`usePosterColor`). Meg nem jelent filmnél (`releaseState`, `data-release`)
+  szaggatott keret + `ReleaseBadge`. Évados sorozatnál évadcsík + „x/y évad”.
+- `components/TitleTable.js` – asztali lista (≥ 1400 px, `DESKTOP_QUERY`; `table-layout: fixed`): kártyaszerű
+  sorok, legfeljebb 1720 px, 100 px-es borító (w185; gomb → szerkesztő); a cím legfeljebb 2 sorban, az eredeti cím 1
+  sorban „…”-val (`title` a teljessel), a leírás 2 sorban; a sor halványan a film színében, a jelenetkép
+  (`--row-img`, `tr[data-img]`) a címcella jobb felén. A Franchise lenyíló a „Hozzáadva” sor végén (`.row-added`,
+  `--franchise-col` 11 rem; üresen láthatatlan, de helyet foglal – rámutatáskor nem ugrik). Oszlopok: Letöltve –
+  Állapot – Mama (9,75 rem; sorozatnál / franchise-os címnél üres – `mamaApplies`) – Értékelés (10 csillag + „8/10”)
+  – kuka (megerősítés nélkül, visszavonható). Az üres lenyílók és a kuka csak rámutatva (`@media (hover: hover)`).
+  Mentés: `saveRow`. Évados sorozatnál `SeasonDownloads` / `SeasonCell`. Megjegyzés mező nincs (a `notes` oszlop
+  megmaradt). Animált átrendeződés: `Reflow` (`reflowKey`).
+- `components/Seasons.js` – évadok: `hasSeasons`, `seasonCounts`, `seasonRange` („1–3., 5.”), `useSeasonActions`
+  (`saveRow`; megnézettre állításkor az előtte lévő üres évadok is, 10 mp „Visszavonás”), `SeasonStrip` (táblázatban
+  kattintva léptet: üres → Folyamatban → Megnézve; a bejelentett szaggatott, nem jelölhető), `SeasonList` („Mind
+  megnézve”, „Nem nézem tovább” / „Mégis folytatom”, „+ Évad hozzáadása”, „Utolsó évad törlése” megerősítéssel – a
+  TMDB-n is szereplőt a heti frissítés visszahozza), `SeasonTimeline` (≥ 2 évad; a tengely a mát mindig
+  tartalmazza), `SeasonCell`, `SeasonDownloads`. „Abbahagyva”: kézi, az évadjelölés és az új évad sem írja felül; a
+  „Mind megnézve” feloldja. Epizódszintű követés nem kell.
+- `components/ReleaseBadge.js` – „Hamarosan · okt. 15.” (indigó) / „Moziban · digitálisan: …” (korall),
+  `data-kind`; telefonon rövid. Szűrőgomb nem kell (Norbi döntése).
+- `components/GenreList.js` + `lib/genreColors.js` – műfajok színes pöttyel (`genreColor(név)`, OKLCH, a kulcs a
+  TMDB magyar műfajneve, ismeretlen szürke), felolvasónak vesszővel; megnézettnél szürke.
+  `components/GenreIcon.js` – műfajikonok (terv-3 56; `--g` = a műfaj színe).
+- `components/FranchiseSelect.js` – franchise lenyíló: meglévők / „+ Új franchise…” / törlés / átnevezés helyben
+  (Enter / Esc, ütközésnél hibaüzenet; `.franchise-new` módban az adatlap nem zár kikattintásra).
+- `components/FranchiseFilter.js` – franchise-szűrő saját listbox-a logókkal (`FranchiseLogo`: a sötét logót
+  fehérre színezi – `.dark`; világos felületen sötét sziluett); csoportok „Van még megnézendő” (`N hátra`) / „Mind
+  megnézve” (`li.franchise-group`, `role="presentation"`); felolvasónak „Név, 2 hátra” (a teszt `frOption()`-ja erre
+  épít). `lead="icon"` + `className="genre-filter"`: a műfajszűrő is ez.
+- `components/StarRating.js` – `StarRating` (rádiógombok, nyilakkal is; a kiválasztottra újra kattintva `null`;
+  `.pop` animáció csak kattintásra / nyílra) és `StarsDisplay`.
+- `components/Reflow.js` – animált átrendeződés szűréskor / rendezéskor (terv-3 49.3): saját FLIP
+  (osztálykomponens, `getSnapshotBeforeUpdate`), **nem View Transitions** (az a letapadt szűrősor fölé rajzolna, és
+  közben a lap nem kattintható). `data-flip="<kulcs>"`; a `.grid` / `.table-wrap` ezért `position: relative`; a
+  „kevesebb mozgás”-t maga nézi. Teszt: `test-49-3.mjs`.
+- `components/ListSkeleton.js` (csontváz), `components/EmptyState.js`, `components/ImdbBadge.js`.
+- `components/Toaster.js` + `lib/toast.js` – értesítősáv: `toast({ text, image, content, action: { label, onClick
+  }, hideClose, duration = 8000, onExpire, kind })` → id; `dismissToast(id, how)`; az `onExpire` lejáratkor és ×-re
+  fut (az action-re nem); legfeljebb 3; rámutatva megáll; `duration: null` – nem jár le; `kind`: 'delete' (piros) |
+  'rating' (borostyán); kilépéskor `clearToasts()`. **Nyitott `<dialog>` fölött a sáv nem kattintható** – ablakon
+  belül helyi visszajelzés kell.
+
+### Adatlap – `components/TitleEditor.js`
+- Natív `<dialog>`, **lapokat tart** (`stack`: `{ id, rowId, item, added }` vagy `{ id, person }`): mindig az
+  utolsó látszik, a többi rejtve megmarad a görgetésével (`.editor-page[hidden]`). A lap sora a `titles` propból jön
+  (`rowId`, különben TMDB-azonosító); ha nincs a listán: **előnézet** (`TitlePage preview`, `/api/tmdb/details`):
+  „Hozzáadás a listához” (`addTitle(item, details)`), „Már láttam”, „Bezárás”; felvétel után helyben rendes
+  adatlap (`.added-note`), nem zárul be. Előnézet a keresőből, a Felfedezésből, a Hasonló címekből, a harangból;
+  a franchise-gyűjteményből és az importokból nem. Új lapnál „‹ Vissza: …” (`.back-link`); a Szereplők nevéről
+  `PersonPage`.
+- Az elöl lévő lap `apiRef`-en adja a `canLeave`-et (törlés-megerősítés, franchise-név gépelése, felvétel közben
+  nem hagyható el). A cím `id="editor-title"`-je csak a látható lapé; megnyitáskor a fókusz a címen (keret nélkül),
+  nem a Franchise mezőn. A rejtett lapon nem szól az előzetes.
+- **Azonnali mentés** (terv-3 79): minden mező kattintásra ment (`save()` → `saveRow`, optimista), nincs Mentés /
+  Mégse. `SavedCheck` pipa 2 mp-ig, `.saved-note` („… – mentve · Visszavonás”, lépésenként – `undos`, 10 mp).
+  Franchise létrehozása / törlése után a `created` / `deleted` ref (a törölt franchise üresre állítása nem mentendő).
+- Mezők: Franchise + Saját értékelés (`.editor-pair`; 900 px alatt egymás alatt), vezérlősáv (`.editor-controls`):
+  Állapot | Letöltve | Mama (Mama csak `mamaApplies` esetén); évados sorozatnál az állapot helyett `SeasonList`. A
+  `watched_at` nem látszik (megnézettre állításkor a mai nap). „Abbahagyva” csak sorozatnál. Műfajok sima szövegként,
+  pötty nélkül (`.editor-genres`, a `.editor-titletext`-ben).
+- Alul ikonos ghost gombok: „Törlés a listáról” (`.danger-ghost`, megerősítéssel, utána `onDelete` →
+  `requestDelete`) és „Frissítés a TMDB-ről” (`.tmdb-refresh`, `refreshTitleDetails(id)`).
+- Részei: előzetes (`/api/tmdb/videos`, `youtube-nocookie.com`, `.trailer`), `WatchProviders`, `TopCast`,
+  `TitleGallery`, `SimilarTitles`, `SeasonTimeline`.
+- **Elrendezés**: asztalon (≥ 900 px) 66 rem széles, két oszlop (bal: nagy borító w500, „Hol nézhető?”, szereplők –
+  `.editor-side`). Jelenetképes lapon asztalon **moziszerű fejléc** (terv-3 104, `WIDE_QUERY`, `.editor-page.has-hero`):
+  a `header` a képre kerül (kisebb borító, nagy cím, adatok, 3 soros leírás „Tovább”-bal – ResizeObserver méri,
+  előzetes); nagy borító ilyenkor nincs. Ha a jelenetkép később jön, a fejléc áthelyeződik, a fókusz visszakerül a
+  címre. 900 px alatt egy oszlop, a borító kicsiben a jelenetkép aljára úszik (`.editor-titlebar` >
+  `.editor-hero-poster` + `.editor-titletext`; asztalon `display: contents`). Teszt: `test-104.mjs`.
+- Telefonon (≤ 640 px) alsó lap: fogantyú (`.sheet-handle`, lehúzva zár), nincs × és „Bezárás”.
+- **Bezárás**: ragadós × (`.editor-close-bar`), Esc, kikattintás asztalon (`useBackdropClose`), Vissza gomb
+  (`backHandler`). `closedby="none"` (Android – lásd `lib/backClose.js`).
+- **Nézetváltás** asztalon (`lib/viewTransition.js`): a kattintott borító átsiklik az adatlapra (`openEditor(t,
+  forrásElem)`), bezáráskor vissza (törléskor nem); ezért a `showModal()` `useLayoutEffect`-ben fut. Csak az első
+  lapról siklik vissza.
+- Hangulatszín (`usePosterColor` + `ambientProps`): az ablak a film színében dereng – az ablak saját háttere, nem
+  `::before` réteg (az görgetéskor felgördült).
+
+### Az adatlap részei
+- `components/TopCast.js` + `/api/tmdb/credits` – szereplők (`pickCast`, legfeljebb 20 – `CAST_MAX`; a kérés `v=2`
+  – `CREDITS_V`, a `lib/prefetch.js` is); az első 3, „Összes szereplő (N)” (telefonon nincs). A név (asztalon a fotó
+  is) a színész lapját nyitja (`onPerson`). Rendező nincs.
+- `components/PersonPage.js` + `/api/tmdb/person` – a színész lapja (terv-3 61): adatok, „A listádon (N)” rács,
+  „További filmjei és sorozatai (N)” (ismertség szerint, 10 + „Továbbiak mutatása”; kimarad a `minor`: borító
+  nélküli, animáció / dokumentum / talkshow / hírek / valóságshow / szappanopera, ≤ 2 részes sorozatszerep,
+  önmaga-szerep – a listán lévő akkor is látszik); „+ Hozzáadás” / „Már láttam”. Teszt: `test-61.mjs`.
+- `components/TitleGallery.js` + `/api/tmdb/images` – képgaléria (terv-3 95): asztalon `GalleryStrip`, telefonon
+  `BackdropPager`, nagy nézet `GalleryLightbox` (az Esc a window rögzítő fázisában és a Vissza csak ezt zárja).
+  Sötét sziget mindkét témában. Teszt: `test-95.mjs`.
+- `components/WatchProviders.js` + `/api/tmdb/providers` – „Hol nézhető?”: magyarországi `flatrate` + `free` +
+  `ads`; kölcsönzés / vásárlás nincs; ha nincs szolgáltató, semmi; a logók nem kattinthatók; alatta kötelező
+  „Forrás: JustWatch” (TMDB-feltétel).
+- `components/SimilarTitles.js` + `/api/tmdb/similar` – „Hasonló címek” (alapból nyitva, a csukást
+  `filmlista-hasonlok` jegyzi; telefonon mindig csukva indul és nem jegyzi); „+ Hozzáadás”, „✓ A listán”, ×.
+
+### Felfedezés, kereső
+- `components/TitleSearch.js` – „Cím hozzáadása” panel: 400 ms késleltetett TMDB-keresés, „Hozzáadás a listához” +
+  halk „Már láttam” (megnézettként, utána „Hogy tetszett?”), „✓ A listán”; `initialQuery`; a borító / cím
+  előnézetet nyit (`onPreview`); üres keresőnél `Discover`.
+- `components/Discover.js` + `/api/tmdb/discover` + `lib/server/discover.js` (`discoverList`, `DISCOVER_LISTS`) –
+  sorok: „Most a mozikban”, „Hamarosan a mozikban”, „Új digitálisan”, „Népszerű sorozatok”, „Neked ajánlott”;
+  soronként saját szín (`section[data-list]`). **Norbit csak a magyar szinkronos címek érdeklik** – közelítés: film =
+  magyarországi megjelenés (`region=HU`, `with_release_type` 2|3 vagy 4), sorozat = magyar előfizetéses streaming
+  (`watch_region=HU`, `flatrate`, 90 napon belüli rész); angol vagy magyar eredeti nyelv, van magyar leírás; nincs
+  dokumentum / valóságshow / talkshow / hírek / szappanopera / **animáció** (`ANIMATION_GENRE` = 16). Listánként ≤
+  16, egy óráig gyorsítótárazva. A `.discover` oszlopa `minmax(0, 1fr)` (különben telefonon az egész lap
+  kicsinyedik). A borítók rámutatási kerete csak `@media (hover: hover)` alatt. „Nem érdekel” (×) és „Elrejtett
+  ajánlások (N)”.
+- `components/FeaturedBand.js` + `/api/tmdb/featured` – kiemelt sáv (terv-3 46): a „Most a mozikban” első 6 nem
+  elrejtett, háttérképes címe (a route 10 jelöltet ad), jelenetkép, logó (`pickLogo`), „Adatlap” / „+ Hozzáadás”,
+  ×; magától nem lapoz; a lenti sorból a kiemeltek kimaradnak; hibánál a sáv elmarad.
+- „Neked ajánlott” (terv-3 37): a 8+ saját értékelésűek legjobb 10-e (`recommendSeeds`) `/api/tmdb/similar`
+  ajánlásai, gyakoriság szerint, ≤ 16; a magyar megjelenést itt nem szűri.
+- `lib/hiddenSuggestions.js` + `components/HideSuggestion.js` – „Nem érdekel” (terv-3 39): `useHiddenSuggestions`,
+  `loadHidden` (betöltéskor, visszaállítás után), `resetHidden` (kilépéskor), `hideSuggestion` / `unhideSuggestion`
+  (optimista), `HideButton`, `HideNote` + `useHideSuggestion` (helyi visszavonás). A Felfedezés és a Hasonló címek
+  szűri, a keresés nem.
+
+### Franchise-ok
+- `components/FranchisesDialog.js` – a ⋮ „Franchise-ok” ablaka: csempék ábécérendben, **névelő nélkül** („A” / „Az”
+  / „The” nem számít); logó, név, mérő, „x/y megnézve · m hiányzik” (y = a listán lévők); hangulatszín
+  (`FranchiseTile`, `franchisePosterPath`); a hiányzók a TMDB-gyűjteményekből 3-asával (`paramsKey` szerint
+  megjegyezve). Csempére kattintva `CollectionDialog` az ablakon belül (a még be nem töltött soron kívül –
+  `openFranchise`, `rushed`, „· megnyitás…”; teszt: `test-h9.mjs`). Csempénként `FranchiseActions` (`compact`).
+  Kereső, „+ Új franchise”, fölül `FranchiseSuggestions`. A külső `onClose` csak a saját eseményére zár.
+- `components/FranchiseSuggestions.js` + `lib/franchiseSuggest.js` – franchise-javaslat (terv-3 35): **csak
+  felajánlja**, magától soha nem rendel hozzá, a meglévőt nem írja át. `collectionFranchiseMap()` (több jelöltnél:
+  kézi, több film, név), `suggestedFranchiseId`, `franchiseSuggestions`, `article()` („a” / „az”). Felvétel után
+  (`handleAdded`) 1,2 mp-cel sáv; nyitott `<dialog>` alatt a bezárásáig vár. „Nem kell” → `franchise_suggestion_off`.
+- `components/FranchiseCollection.js` + `/api/tmdb/collection` + `/api/tmdb/collection-search` – a franchise-sáv
+  a lista fölött (háttérkép – `franchiseBackdrop()`, franchise-szín, zöld mérő: megnézett / listán) és a
+  `CollectionDialog`: gyűjteményenként szakasz (a franchise összes – ≤ 60 – filmjének `belongs_to_collection`-je + a
+  kézzel hozzárendeltek), a részek megjelenés szerint; hiányzó „+ Hozzáadás” (`addTitle` a franchise-szal), a
+  listán lévő, de nem ide rendelt rész „+ Hozzárendelés” / „Áthelyezés ide” (`listed` vs `own`); „A franchise-od
+  további címei”; „+ TMDB-gyűjtemény hozzáadása” (üresen „Javasolt gyűjtemények” – `suggestQueries()`, a „: Part
+  Two”-féle végződés levágva). A számokban csak a franchise címei (`countsNote()`). Két fül: Gyűjtemény / Nézési
+  sorrend (`role="tablist"`). Fejlécben `FranchiseActions` + „Logó”. Felvételkor az ablak nyitva marad, a korábbi
+  gyűjteményekkel (fül, görgetés, kereső megmarad). Közös exportok: `collectionParams`, `paramsKey`,
+  `fetchCollections`, `summarizeCollection`, `CollectionMeter`. Teszt: `test-hozzarendeles.mjs`, `test-audit-6.mjs`.
+- `components/FranchiseActions.js` + `/api/tmdb/logos` – ikonos gombok (Szűrés erre, Átnevezés, Logó, Törlés –
+  `.danger-ghost`) és `FranchiseLogoPicker` (J8): a franchise címeinek TMDB-logói + „Csak a név” (`logo_path: ''`);
+  azonnal ment (`setFranchiseLogo`). Mentés közben a gombok nem tiltódnak (a fókusz a body-ra esne, és az Esc az
+  egész ablakot zárná). Net nélkül nincs „Logó”. Teszt: `test-j8.mjs`.
+- `/api/franchises/logos` – a `logo_path is null` franchise-ok automatikus logója (`pickLogo()`, ≤ 6:1, angol); a
+  kézzel választottat (`''`-t is) nem írja felül; logó híján 7 napig nem próbálja. A `Watchlist` `logoDue` effektje
+  hívja, franchise-onként munkamenetenként egyszer (`logoTried`).
+- `components/WatchOrder.js` + `lib/watchOrder.js` – nézési sorrend (terv-3 28): a franchise listán lévő filmjei és
+  a sorozatok évadjai külön tételként (`franchiseItems()`; kulcs `címId:évad`, 0 = film). `orderedItems()`: a tárolt
+  sorrend, az újak a végére megjelenés szerint. A megnézett kihúzva a helyén marad, „Következik” (`nextItem()`);
+  abbahagyott sorozat évadja kihagyva. Pipa: filmnél `updateTitle(status)`, évadnál `setSeasonStatus`; utána helyben
+  „Hogy tetszett?”. Szerkesztés: húzás (pointer-események az ablakon, `touch-action: none`) és ↑ / ↓; „Kész” →
+  `set_franchise_order` RPC; „Megjelenés szerint” → `clearOrder`; Esc csak a szerkesztést zárja. `loadOrders()`,
+  `franchisesWithOrder()`, `itemLabel()`, `itemMeta()` (a megosztott oldal is).
+- `components/ShareOrder.js` + `lib/shares.js` + `app/sorrend/[token]/` – megosztható nézési sorrend (terv-3 41):
+  franchise-onként egy link (`loadShare` / `createShare` / `revokeShare`, `shareUrl(token)`). A nyilvános oldal
+  szerverkomponens (`connection()`, nem indexelt) a `shared_watch_order()`-ből, ugyanazzal az `orderedItems()`-szel;
+  állapot, értékelés, letöltve, Mama nem látszik. Hibás / visszavont link: 404 (`not-found.js`). A service worker nem
+  kezeli. `components/ShareAmbient.js`: a franchise színe. Teszt: `test-41.mjs`, `test-20.mjs`.
+
+### Egyéb ablakok és menük
+- `components/MoreMenu.js` – ⋮ menü (`role="menu"`): pontok `{ id, label, description, icon, onSelect }`; nyilak,
+  Home / End, Esc; választás után a fókusz a gombra.
+- `components/NotificationBell.js` + `lib/notifications.js` – harang: olvasatlanok száma (borostyán), a legutóbbi
+  30, fajtánként színnel (`data-kind`), csoportcímek „Ma” / „Ezen a héten” / „Korábban” (`dayGroup`, budapesti idő).
+  Kinyitáskor a betöltöttek olvasottak (`markNotificationsRead(ids)` – csak azonosító szerint; `readIds`). Törlés: ×
+  és „Összes törlése” (`removeNotifications`, visszavonható; `dismissed_at`, `dismissedIds`). `loadNotifications()`:
+  előbb `collect_season_notifications()` és `collect_release_notifications()`. `navigator.setAppBadge()`. Új
+  olvasatlannál egyszer megrezzen (`.ringing`). A `collection_new` elemre kattintva előnézet.
+- `lib/popupSide.js` + `lib/usePhonePopup.js` – a harang és a ⋮ listájának iránya; telefonon portálon a `body`-ba
+  (a fejléc gombsorának transzformja a `position: fixed` listát különben a gombsorhoz igazítaná); a kívülre kattintás
+  vizsgálata a lista elemét is nézi.
+- `components/StatsDialog.js` + `lib/stats.js` – Statisztika a betöltött listából (`listStats()`; `tasteProfile()` –
+  műfaj legalább 3 értékelt címtől, `TASTE_MIN`); színes csempék (`.tile[data-tile]`), `FranchiseBar`.
+- `components/BackupsDialog.js` + `lib/backups.js` – Mentések: lista, „Mentés most” (`create_my_backup`),
+  „Visszaállítás” helyben megerősítve (`restore_my_backup`), utána `Watchlist.reloadAfterRestore()`.
+- `components/PasswordDialog.js` – jelszócsere (terv-3 27): a jelenlegi jelszót egy **külön, nem tároló
+  Supabase-kliens** ellenőrzi (`checkPassword`: `persistSession: false`, saját `storageKey`, utána `signOut({ scope:
+  'local' })`), aztán `updateUser`; a hibakódok magyarul. Elfelejtett jelszó nincs. Teszt: `test-27.mjs` (a
+  tesztfiók jelszavát a végén mindenképp visszaállítja).
+- `components/ManualDialog.js` + `scripts/leiras.mjs` – felhasználói leírás az appban: a `FELHASZNALOI-LEIRAS.md`-ből
+  a `npm run dev` / `npm run build` elején készül a `public/leiras/leiras.html` + képek (a mappa git-ből kizárva;
+  `marked` – fejlesztői függőség). Fejlécazonosítók `leiras-` előtaggal; ①–⑳ → `span.jel`. A belső linkek az
+  ablakon belül görgetnek. Teszt: `test-48.mjs`.
+- `components/BulkImport.js` + `lib/bulkImport.js` – Tömeges import (csak asztalon): soronként egy cím (≤ 150 –
+  `MAX_LINES`; a sor végi évszám szűr), `matchEntry()` (biztos = egyetlen pontos egyezés), felvétel 2-esével;
+  `mapLimit`.
+- `components/ImdbRatingsImport.js` + `lib/imdbImport.js` – IMDb import: értékelések (`applyMyRatings` – csak a
+  listán lévők, az IMDb csillaga felülírja a sajátot, az állapot nem változik, új cím nem kerül fel) vagy
+  figyelőlista (`planWatchlistImport`, `/api/tmdb/find`, kipipálható lista, felvétel 2-esével). Bezárás után a futás
+  a háttérben végigfut, az ablakhoz nem nyúl (`runRef`; a Tömeges import is). Automatikus IMDb-szinkron nincs (nincs
+  API, a gépi olvasás tiltott).
+- `lib/exportList.js` – „Mentés letöltése”: CSV (UTF-8 BOM, pontosvessző, tizedesvessző – Excelben jól nyílik).
+
+### Mama
+- `components/MamaView.js` + `components/MamaDetail.js` – Mama oldala (terv-3 13, „B”): „Norbi filmjei”, téma,
+  Kilépés; rendezés, kereső, menü, harang nincs. Fülek: „Filmek” (jelöletlenek, alapból) / „Érdekel” (`.mama-tabs`;
+  `kept` a fülváltásig). A `mama_list()` filmjei, 24-esével; soronként „Érdekel” (borostyán) / „Nem érdekel” (a sor
+  eltűnik, „Visszavonás”); optimista `mama_mark()`, hibánál visszaáll. Adatlap (`dialog.editor.mama-detail`):
+  háttérkép, előzetes, „Hol nézhető?”, a két nagy gomb; a film színében dereng; telefonon alsó lap. Helyben nem tárol
+  (net nélkül üres / hiba). E2e: „Mama oldala (terv-3 13)…” a Mama-tesztfiókkal.
+
+### Közös könyvtárak
+- `lib/supabase.js` – kliens. `lib/api.js` – `apiGet()`: saját `/api` route `Authorization: Bearer` tokennel,
+  hibánál a szerver magyar üzenetével dob.
+- `lib/titles.js` – címműveletek (a `titles_with_genres` friss sorát adják vissza, törlés kivételével):
+  `addTitle(item, details?, { watched, franchise_id })` (műfajok upsert → `titles` → `title_genres`, hibánál
+  visszavonás; sorozatnál az évadok is – a megjelentek `aired_notified = true`; `watched`: Megnézve, ma, a
+  megjelent évadok megnézve; a függő törlést visszavonja – `registerPendingDelete`), `updateTitle`, `deleteTitle`,
+  `createFranchise`, `renameFranchise`, `deleteFranchise`; évadok: `setSeasonStatus` (→ `{ row, filled, previous
+  }`), `markAllSeasonsWatched`, `restoreSeasons`, `setSeasonDownloaded`, `addSeason`, `removeLastSeason`,
+  `seasonAired`, `NEXT_SEASON_STATUS`; háttér: `refreshSeasons`, `refreshReleases`, … (utolsó paraméter
+  `isCancelled`; a frissített sorok számát adják). `releaseState(t)` (`{ kind: 'soon' | 'cinema' }` / null; a
+  mozis bemutató után 120 napig moziban), `formatReleaseDate`, `releaseLabel`, `releaseKey(t, évad?)` (rendezési
+  kulcs; csak évnél `"YYYY-12-32"`), `mamaApplies(t)`, `DETAILS_V` (**a details válasz mezőinek változásakor
+  emeld**), `externalLink`, `formatDate`, `todayDate()` (budapesti idővel, szerveren is), `budapestDay`,
+  `DEFAULT_STATUS`, `DROPPED_STATUS`, `MAMA_OPTIONS`, `mamaLabel`, `isPendingDelete`. A franchise nevét a kliens
+  keresi ki (nincs a nézetben).
+- `lib/rowSaves.js` – `saveRow(sor, apply, kérés, show)`: soronként sorba állított optimista mentés; a képernyőn az
+  utolsó szerversor + a függő módosítások; hibánál csak a sikertelen esik ki. `hasPendingSave`, `isOptimistic(row)`
+  (mellékhatást csak mentett sorra). **Új optimista mentésnél ezt használd.** Teszt: `test-audit-9.mjs`.
+- `lib/fetchAll.js` – a PostgREST kérésenként legfeljebb **1000 sort** ad: ezres adagok (`.range`), egyértelmű
+  rendezéssel. **Új, a teljes listát lekérő lekérdezésnél ezt használd.**
+- `lib/refreshDue.js` – „esedékes-e” szabályok: `imdbDue` (14 nap), `backdropDue`, `seasonsDue` (7 nap),
+  `releaseDue`, `detailsDue` (havonta, a meg nem jelentnél hetente), `collectionDue`, `collectionPartsDue` (7 nap),
+  `budapestToday`. **A route-ok ugyanezt kérdezik (részben SQL-ben) – változtatáskor mindkét helyen.**
+- `lib/posterColor.js` – `usePosterColor(poster_path, enabled)`: hangulatszín a w92-es borítóból, **saját
+  gyorsítótár-kulccsal (`?szin`)** – ha ugyanaz a kép CORS nélkül is a gyorsítótárban lenne (pl. a harang képei), a
+  vászon tiltást kapna; OKLCH, L 0,72, C 0,04–0,13; borítónként egyszer. `ambientProps(szín)` → `--ambient` +
+  `data-ambient`. `franchisePosterPath(id, titles)` – a franchise színének borítója (a legjobb IMDb-értékelésű,
+  borítós cím).
+- `lib/viewTransition.js` – `canMorph`, `MORPH_NAME`, `trackTransition`, `afterTransition()`: **a szerkesztő
+  megnyitásakor érkező új, nem sürgős állapotfrissítést ezzel késleltesd** (terhelt gépen akadást okozott).
+- `lib/useMediaQuery.js`, `lib/useStrike.js` (kihúzás-animáció, terv-3 40: a `.strike` span kulcsa / `data-strike`).
+- `lib/useBackdropClose.js` – `useBackdropClose(dialogRef, { onClose, canClose, onBlocked })` → `{ onPointerDown,
+  onClick }`: kikattintásra zár (a lenyomás is kívül legyen), telefonon (≤ 640 px) nem; a beágyazott ablak
+  kattintása nem számít kívülnek. Mikor nem zár: adatlap (megerősítés / név gépelése / felvétel), Franchise-ok
+  (szerkesztés, megerősítés, nyitott gyűjtemény-ablak), gyűjtemény-ablak (rész felvétele, sorrend-szerkesztés,
+  megosztás visszavonásának megerősítése, fejléc szerkesztése; a nyitott TMDB-keresőnél zár, a Franchise-ok ablakból
+  nyitva mindkettő – `onOutsideClose`), Mentések (művelet / megerősítés), Jelszó (beírt jelszó / mentés);
+  Statisztika és Leírás mindig zár; az importablakok soha (Norbi döntése).
+- `lib/backClose.js` – a Vissza gomb a legfelső réteget zárja (terv-3 62): rétegenként egy `history.pushState`
+  bejegyzés (az URL nem változik); ha máshogy zárul, `history.back()`. A modális `<dialog>`-okat MutationObserver
+  kezeli (a Vissza az Esc-et utánozza) – **új ablakhoz nem kell semmi**; saját szabály: `dialog.backHandler` →
+  'stay' | 'stepped' | 'closing'. Nem dialog réteg: `useBackLayer(open, close)` (⋮, harang, „Cím hozzáadása”
+  panel). Saját visszalépés alatt új bejegyzés nem kerül fel, csak utána. **Android**: nyitott modális ablaknál a
+  vissza-gesztus `cancel`-ként az ablakhoz jut, ezért az adatlap `closedby="none"`, az Esc-et `keydown` kezeli; az
+  adatlap újabb lapjai saját bejegyzést kapnak (`pushDialogPage` / `popDialogPage`, bezáráskor `history.go(-n)`).
+  Teszt: `test-1013b.mjs`, `test-gesztus.mjs`.
+- `lib/appVersion.js` + `/api/version` – `useAppFreshness`: legalább 5 perc rejtés után csendes újratöltés; a
+  build-azonosító (`NEXT_PUBLIC_APP_VERSION`, `next.config.mjs`) eltérésekor „Frissült az app” sáv (munkamenetenként
+  egyszer, `duration: null`).
+- `lib/prefetch.js` – `usePrefetchOnHover(t)`: ~150 ms rámutatás után a providers / credits / videos / images route
+  előtöltése **ugyanazzal az URL-lel, mint a `TitleEditor` – ha ott a paraméterek változnak, itt is**.
+- `components/PullRefresh.js` – lehúzás frissítéshez, csak érintéssel és a telepített appban (`isStandalone()`);
+  nyitott `dialog`-nál / belül görgetett elemben nem; `<html data-pull-refresh>`. Teszt: `test-1014.mjs`.
+- `lib/liveSync.js` – élő szinkron (Supabase Realtime, terv-3 86): `useLiveSync(enabled, userId, { onTitles(ids,
+  deletedIds), onNotifications, onFranchises, onResync })`; a törlésről csak a kulcs jön; 0,4 mp-ig gyűjt. A
+  `Watchlist` a saját visszhangot, a függő mentésű (`hasPendingSave`) és a függő törlésű (`isPendingDelete`) címet
+  kihagyja; a meglévőt a `replaceTitle`-lel cseréli; az újbóli beszúrás a törlést érvényteleníti.
+- `public/sw.js` + `lib/offline.js` – service worker (csak a kiadott változatban; `next.config.mjs`: `/sw.js`
+  `no-cache`): az oldal hálózatról 3 mp-es korláttal, a `/_next/static/` és a TMDB-képek (≤ 1500) tárolóból; az
+  `/api` és a Supabase nem. A lap elküldi a használt programfájlokat (`assets`), a régiek törlődnek. **A tárolás
+  módjának változásakor emeld a `VERSION`-t.** Lista: IndexedDB `filmlista` / `snapshots` (`loadSnapshot` /
+  `saveSnapshot` / `clearSnapshots`), `useOnline()`. Teszt: `test-44.mjs`.
+
+### Szerveroldal
+- Minden `lib/server/` modul `import 'server-only'`-val kezdődik (új szerveroldali modulba is tedd bele).
+- `lib/server/auth.js` – `getUserFromRequest()` (a tokent helyben, `auth.getClaims()`-szel ellenőrzi, JWKS
+  gyorsítótárazva; egy máshol kijelentkeztetett token a lejáratáig elfogadott – az adatot az RLS védi),
+  `supabaseAsUser()`, `unauthorized()`. Az `/api/tmdb/*` token nélkül 401.
+- `lib/server/tmdb.js` – `tmdbFetch()` (10 mp-es időkorlát, az OMDb is), `tmdbErrorResponse()`,
+  `cachedResponse(body, mp)` (`Cache-Control: private, max-age`; `DAY_S`, `HOUR_S`; **hibás vagy részben hiányos
+  válasz soha nem tárolható** – ilyenkor sima `Response.json`), `cached(kulcs, ms, betöltő, keep?)` (memória, ≤ 500
+  elem; az egyszerre érkező hiányok egy betöltést várnak; hibát és `keep` szerint hamisat nem tárol),
+  `pickReleaseDates()` (mozi 3, ha nincs 2; digitális 4; HU, ha nincs US), `pickSeasons()` (0. évad nélkül),
+  `pickOverview()` (magyar, ha nincs angol), `yearOf()`, `ANIMATION_GENRE`.
+- `lib/server/omdb.js` – `fetchImdbRating()`, `omdbEnabled()`. `lib/server/collections.js` – `loadCollection()`.
+- Lekérő route-ok (`app/api/tmdb/…`, GET): `search` (multi, csak film / sorozat), `details` (a `titles` oszlopai +
+  `genres`, sorozatnál `seasons`; magyar leírás híján angol; OMDb – ha nem sikerül, a cím attól még felvehető;
+  filmnél gyűjtemény, `release_date`), `find` (IMDb ID → TMDB), `similar` (≥ 2000, TMDB ≥ 6,0, ≥ 50 szavazat,
+  animáció nélkül, ≤ 12; a kliens `v=3` – **a szűrés változásakor emeld**), `videos` (YouTube, Trailer és hivatalos
+  előbb, magyar, ha nincs angol), `providers`, `credits`, `images`, `person`, `logos`, `discover`, `featured`,
+  `collection`, `collection-search` (`?suggest=`). Ha a cím már nincs a TMDB-n: üres / null.
+- Háttérfrissítő `POST` route-ok (a felhasználó jogaival, kötegekben; a `Watchlist` betöltéskor hívja,
+  körszám-korláttal): `imdb/refresh` (25), `tmdb/seasons` (10; új évadot, nevet, epizódszámot, dátumot ír, az
+  állapothoz nem nyúl; ismert sorozat új jövőbeli évada → `season_announced`, új megjelent évad `aired_notified =
+  false`), `tmdb/backdrops` (40), `tmdb/releases` (40), `tmdb/title-collections` (40), `tmdb/collection-parts` (8
+  franchise; új rész → `collection_new`, ha nincs a listán és nincs elrejtve; első ellenőrzéskor és új gyűjteménynél
+  csak megjegyzi; **előbb az értesítést írja, utána az ismert részeket**; a 404-es gyűjtemény üres; ha egy
+  gyűjtemény nem tölthető le, nem jelöli ellenőrzöttnek), `tmdb/details-refresh` (40; `{ id }`-vel egy cím kézzel;
+  a címet **csak akkor** cseréli a magyarra, ha most az eredeti áll ott – a kézzel adott címek maradnak; leírás,
+  borító, dátum, műfajok; a saját adatokhoz nem nyúl; mindig beírja a `details_checked_at`-et), `franchises/logos`.
+- `app/api/keepalive` + `vercel.json` (napi cron) – a Supabase ingyenes projekt ébren tartása (`CRON_SECRET`, ha
+  van).
+- `.github/workflows/mentes.yml` – heti külső mentés (hétfő 04:30 UTC, `BACKUP_DB_URL`): felhasználónként a
+  legfrissebb mentés JSON-ba, artifact 56 napig (a futás Summary oldalának alján); 8 napnál régebbi mentésnél hibával
+  áll le. Visszatöltés: `munka/e2e/mentes-feltoltes.mjs <fájl.json> <e-mail>` → „Feltöltött” mentés. A
+  `backup_reader` jelszavának cseréje: `mentes-olvaso.mjs`, utána a GitHub-titok is.
+
+### Dokumentáció
+- `supabase/*.sql` – a már lefuttatott adatbázis-szkriptek (számozva).
+- `FELHASZNALOI-LEIRAS.md` – felhasználói leírás Norbinak (képek: `docs/kepek/*.jpg`, a
+  `munka/terv-3/33-leiras/leiras-seed.mjs` + `leiras-kepek.mjs <név>` készíti); frissítése: Konvenciók →
+  „Felhasználói leírás”.
+
+## Adatbázis (lásd `supabase/`)
+- `genres (id = TMDB műfaj ID, name)`. `statuses (code, name, sort_order)`: `to_watch`, `watching`, `watched`,
+  `dropped` (Abbahagyva – a felület csak sorozatnál kínálja). Új állapotnál szín és CSS is kell (Konvenciók).
+- `titles` – `user_id` (default `auth.uid()`), `media_type` ('movie' | 'tv'), `title`, `original_title`,
+  `release_year`, `release_date` (film: `release_date`, sorozat: `first_air_date`), `overview`, `poster_path`,
+  `backdrop_path`, `tmdb_id`, `imdb_id`, `status`, `is_downloaded`, `mama_status` (null | 'interested' | 'declined' |
+  'received'; a 'declined'-et Mama jelöli, Norbinál tompa szürke), `franchise_id` (on delete set null; csak saját
+  franchise lehet), `imdb_rating`, `imdb_votes`, `my_rating` (1–10), `notes`, `watched_at`; filmnél
+  `theatrical_release`, `digital_release`, `tmdb_collection_id`, `franchise_suggestion_off`; ellenőrzési
+  időbélyegek: `imdb_rating_updated_at`, `seasons_checked_at`, `backdrop_checked_at`, `release_checked_at`,
+  `collection_checked_at`, `details_checked_at`; `created_at`, `updated_at` (trigger). Egyedi: `(user_id,
+  media_type, tmdb_id)`.
+- Trigger: „Megnézve”-re váltáskor (vagy megnézettként felvéve) az `is_downloaded` hamis lesz; utána kézzel újra
+  bejelölhető. A felület is azonnal leveszi a pipát.
+- `title_seasons (title_id → titles cascade, season_number ≥ 1, user_id, name, episode_count, air_date, status,
+  is_downloaded, watched_at, aired_notified, …)`, PK `(title_id, season_number)`. Triggerek: megnézettre váltáskor az
+  évad `is_downloaded` hamis, `watched_at` = ma; minden változás után a sorozat `status` / `is_downloaded` /
+  `watched_at` az évadokból számolódik (`seasons_summary(title_id)`): minden megjelent (`air_date` ≤ ma) évad
+  megnézve → `watched`; van megkezdett / megnézett → `watching`; különben `to_watch`; letöltve = van letöltött évad;
+  a bejelentett évad nem számít. Kivétel a `dropped`: kézi, csak a letöltve követi az évadokat. Évados sorozat
+  `status`-ának közvetlen írásakor (`titles_status_from_seasons`) a `dropped` kivételével mindig az évadokból
+  számolt érték kerül be (így a „Mégis folytatom” bármit küldhet). Évadok nélkül a cím kézi.
+- `franchises (id, user_id, name, created_at, logo_path – null: még nincs / '' : „Csak a név”, logo_checked_at,
+  tmdb_collection_ids integer[] – NULL is lehet, üresnek veendő –, collections_checked_at)`; egyedi `(user_id,
+  lower(name))`.
+- `franchise_order (franchise_id, title_id, season_number ≥ 0 – 0: film / évad nélküli sorozat –, user_id,
+  position)`: csak a sorrend. `set_franchise_order(franchise, items jsonb)` – egy tranzakcióban cserél. Trigger: más
+  franchise-ba került cím kikerül a régi sorrendből.
+- `franchise_collection_parts (franchise_id, collection_id, tmdb_id, user_id)`: a gyűjtemények ismert részei (ebből
+  derül ki, mi az új); nincs a mentésben.
+- `hidden_suggestions (user_id, media_type, tmdb_id, title, poster_path, release_year)`: „Nem érdekel”-lel
+  elrejtett ajánlások.
+- `notifications (id, user_id, title_id → titles cascade, season_number, kind, air_date, created_at, read_at,
+  dismissed_at, franchise_id → franchises cascade, part_tmdb_id, part_title, part_poster_path, part_year)`. `kind`:
+  'season_announced' | 'season_aired' | 'movie_digital' (filmnél `season_number = 0`) | 'mama_interested' |
+  'collection_new' (ilyenkor `title_id` üres, a franchise és a rész adatai – `notifications_target_check`). Egyedi
+  `(title_id, season_number, kind)` és `(franchise_id, part_tmdb_id)`. A törölt (`dismissed_at`) sor megmarad, így a
+  gyűjtők nem írják újra; Mama újbóli „Érdekel”-je üríti. `collect_season_notifications()` (a megjelent, még nem
+  jelzett évadokról; abbahagyottról és megnézettről nem), `collect_release_notifications()` (14 napon belüli
+  digitális megjelenés, ha a felvételkor még nem jelent meg és nincs megnézve).
+- `backups (id, user_id, kind ('weekly' | 'manual' | 'before_restore' | 'imported'), created_at, title_count,
+  data jsonb)`. A `data` a felhasználó sorai változatlanul (`backup_snapshot(user)`, version 3: `franchises, titles,
+  title_genres, genres, title_seasons, notifications, franchise_order, hidden_suggestions`; a régebbi verziókban az
+  utóbbi kettő hiányozhat – visszaállításkor azok nem változnak). RLS: a sajátját látja / törli, írni csak a
+  függvények. `write_backup(user, kind)` (üres listáról nem ment; a 8 hétnél régebbieket törli),
+  `backup_all_users()` (pg_cron `filmlista-heti-mentes`, hétfő 03:00 UTC), `create_my_backup()`,
+  `restore_my_backup(id)` (előbb `before_restore` mentés; eredeti azonosítókkal tölt vissza). A belső függvényeket
+  anon / authenticated nem hívhatja. **Visszaállítás alatt `set_config('filmlista.restoring', 'on', true)`**: a
+  `clear_downloaded_when_watched`, `title_seasons_before_write`, `sync_title_from_seasons` trigger ilyenkor nem
+  módosít – ha ezeket módosítod, a jelző-vizsgálat maradjon az elejükön. `backup_reader` szerep: csak a `backups`
+  táblát olvassa. A `session_replication_role` itt nem állítható.
+- `franchise_shares (franchise_id PK, user_id, token – 32 hexa jegy, created_at)`: visszavonás = a sor törlése;
+  nincs a mentésben. `shared_watch_order(token)` (security definer, `anon` is): a franchise neve, logója,
+  háttérképe, `poster_path`-ja, a címek (megjelenítési adatok, évadok) és az `order`; állapot, értékelés, letöltve,
+  Mama, megjegyzés, user_id soha; hibás tokenre null.
+- `list_viewers (viewer_id PK, owner_id, created_at)`: Mama (néző) → Norbi (gazda); írni csak SQL-ből
+  (`munka/e2e/mama-kapcsolas.mjs`); a Mama-tesztfiók a tesztfiókhoz kötve; nincs a mentésben. `mama_list()`
+  (security definer, csak `authenticated`): a gazda megnézendő, franchise nélküli, jelöletlen, már megjelent
+  (`title_released(t)`) filmjei, valamint az `interested`-ek (a Megkaptáig), `created_at desc`, csak megjelenítési
+  oszlopok. `mama_mark(title_id, choice)`: csak a `mama_status`-t írja, „Megkapta”-ra nem; „Érdekli”-re
+  `mama_interested` értesítés. **`title_released(t)` a `releaseState()` szabálya SQL-ben – ha az egyik változik, a
+  másikat is.** Mama a `titles` táblát közvetlenül nem látja. Teszt: `test-17.mjs` (`--live`).
+- `title_genres (title_id, genre_id)`. `titles_with_genres` nézet (`security_invoker`): `titles.*` + `status_name` +
+  `genres text[]` + `seasons jsonb`.
+- Realtime: a `titles`, `title_seasons`, `notifications`, `franchises` a `supabase_realtime` publikációban (a
+  törlésről csak a kulcs megy ki).
+- Minden táblán RLS: a felhasználó csak a saját sorait látja / módosítja.
+- **Szabályok:**
+  - Sémamódosításnál új számozott SQL fájl a `supabase/` mappába. Ha a nézet oszlopai változnak (a `t.*` is!), a
+    nézetet újra kell létrehozni (`drop view` + `create view`).
+  - **Mentett táblába új oszlop csak NULL-t engedő** (vagy a visszaállítás tölti ki), különben a régi mentések nem
+    állíthatók vissza.
+  - Futtatás: Claude a `SUPABASE_DB_URL`-lel (Session pooler, admin, RLS nélkül) a `pg` csomaggal (a scratchpadbe
+    telepítve), egy tranzakcióban (hibánál `rollback`). Csak a `supabase/` számozott fájljait futtasd; adatot törlő
+    vagy táblát eldobó lépés előtt kérdezz rá (a nézet újralétrehozása kivétel). Utána ellenőrizd.
+  - Push csak a séma után (az új kód az új oszlopokra számít).
 
 ## Konvenciók
-- Felületi szövegek magyarul, mondatkezdő nagybetűvel, cselekvő igékkel
-  (pl. „Hozzáadás a listához”, nem „Submit”).
-- Hibaüzenet mondja meg, mi a baj és mit tegyen a felhasználó.
-- Az alapállapot (`to_watch`, `DEFAULT_STATUS`) a felületen **üresen** jelenik meg: nincs
-  „Megnézendő” felirat a soron/kártyán/ablakban, és nincs színe. Csak a szűrőgomb nevezi meg.
-  A szerkesztő ablakban a kiválasztott állapotra/Mamára újra kattintva lesz üres.
-- A megnézett (`watched`) és az abbahagyott (`dropped`) címek háttérbe húzódnak (sor és kártya):
-  fekete-fehér, fakó borító,
-  tompított, de olvasható szöveg (`--watched-text`, ≥ 4,5:1), halványabb vezérlők, szürke
-  műfajpötty, szürke „M” (Mama) – nem az egész sor átlátszó. Rámutatáskor és fókusznál
-  minden teljes színű.
-- **Két téma** (terv-3 50, 2026-10-08): a sötét az alap (`:root`), a világos („B – meleg papír”) a
-  `globals.css` „Világos téma” szakaszában, `:root[data-theme='light']` alatt (mély türkiz `#00788c`
-  fehér gombfelirattal, mély borostyán `#8e4900`, halvány szöveg `#574a40` – Norbi kérésére sötétebb, mint a látványtervben –, krémes háttér). **Új színtokennél a világos
-  szakaszba is kell érték**, és a kontrasztot mérd (`munka/terv-3/terv-50/kontraszt.mjs`, `VEGLEGES=1`).
-  **Beégetett színt ne használj**: a fátylak, keretek, árnyékok, üvegek RGB-csatorna tokenekkel mennek
-  – `rgb(var(--tint) / 0.05)` (világos fátyol sötéten – világosban sötét fátyol), `rgb(var(--shade) /
-  calc(0.6 * var(--shade-k)))` (árnyék – világosban halványabb), `rgb(var(--glass) / 0.8)` (sötét üveg
-  – világosban világos), `::backdrop`-ban `rgb(var(--scrim) / calc(0.62 * var(--scrim-k)))`; a teli
-  piros gomb felirata `--danger-ink`. **A film / franchise színe (`--ambient`) világosban** (terv-3 52.6,
-  „A”): a keverési arány `min(100%, calc(N% * var(--ambient-k)))` (sötétben 1, világosban 1,7 – a
-  pasztell a krémes papíron különben csak ~58%-os erővel üt el), a teli színnel rajzolt vonal / ikon
-  `var(--ambient-ink)` (világosban a mélyebb árnyalat, L 0,58: 4–4,5:1; sötétben = `--ambient`); a
-  Statisztika franchise-sávja (`--fr`) ugyanígy. **Új `--ambient`-es szabálynál is így**; a mezőcímke
-  (`--ambient-label`) és a `::backdrop` kivétel. **Sötét szigetek**: a képes sávok világosban is sötétek (a
-  filmlogók fehérek) – `.featured-slide`, `.featured-sk`, `.collection-banner[data-backdrop]`,
-  `.share-hero[data-backdrop]`, `.fr-logo`: a sötét tokeneket a `:root` szabály kiválasztója adja
-  nekik (és a P3-asé); áttetsző sötét alapjuk világosban tömör (`var(--bg)`). Új képes sávnál ide
-  is fel kell venni. A franchise-logók világos felületen sötét sziluettet kapnak (a `FranchiseLogo`
-  `.dark` mérése alapján), a szigeteken a sötét téma szabálya marad.
-- Design: sötét téma a `:root` változókkal; kiemelőszín (`--accent`) neon türkiz `#33e0ef`
-  (nem sárga), a „Folyamatban” is ez (`--st-watching: var(--accent)`); állapotszínek
-  `--st-<kód>` változókban (Abbahagyva: halvány lila `--st-dropped`).
-  Új állapotnál ide is kell egy szín, és a `[data-status=...]` szabály (kártya és táblázatsor is használja).
-- Második kiemelőszín (`--accent-2`, borostyán `#ffb547`, `-ink`, `-soft`, `-line`): **csak a
-  saját jelöléseken** – saját értékelés csillagai, Mama (szerkesztő chip, táblázat lenyíló,
-  kártya, a harang Mama-értesítése – terv-3 51.5), a harang száma, a Statisztika értékelés-csempéi
-  (terv-3 51.9). Soha nem gombszín; a türkiz marad a gomboké, az állapotoké, a
-  kiválasztott szűrőké és a fókuszkereté.
-- Tartalomfajták színei (terv-3 51, 2026-10-08): `--c-coral` mozi, `--c-indigo` bejelentett /
-  hamarosan (terv-3 52.1: a még meg nem jelent évad / rész mindenhol indigó szaggatott – évadcsík,
-  idővonal, évadlista, nézési sorrend, gyűjtemény-ablak, megosztott oldal; az elem `data-upcoming`), `--c-sky` digitális / letöltve, `--c-sage` megjelent (= `--st-watched`), `--c-rose`
-  ajánlás – egyforma világosság, mérsékelt telítettség, világos témás értékkel. Mindig ugyanazt
-  jelentik, **soha nem gombszínek**; teljes erővel csak apró jelölésen, nagy felületen halvány
-  árnyalatként.
-- A színtokenek OKLCH-ban (`oklch(L% C h)`), mellettük megjegyzésben a hex: hagyományos (sRGB)
-  kijelzőn pontosan az a szín. Széles színterű (P3) kijelzőn a `@media (color-gamut: p3)` szabály
-  élénkebb `--accent` / `--accent-2`-t ad (ugyanaz a világosság és árnyalat, nagyobb
-  telítettség). A build (Lightning CSS) a böngészőknek hex / `lab()` tartalékot is generál, ezért
-  a számított érték `lab(…)` lehet – a teszt a színeket vásznon át, sRGB-ben hasonlítja (`rgbOf`).
-  Új színt OKLCH-ban adj meg (hexből: `munka/dizajn-2/eszkozok/oklch.mjs`).
+- Felületi szövegek magyarul, mondatkezdő nagybetűvel, cselekvő igékkel (pl. „Hozzáadás a listához”, nem
+  „Submit”). A hibaüzenet mondja meg, mi a baj és mit tegyen a felhasználó.
+- Az alapállapot (`to_watch`, `DEFAULT_STATUS`) a felületen **üresen** jelenik meg: nincs „Megnézendő” felirat a
+  soron / kártyán / ablakban, és nincs színe; csak a szűrőgomb nevezi meg. Az adatlapon a kiválasztott állapotra /
+  Mamára újra kattintva üres lesz.
+- A megnézett és az abbahagyott címek háttérbe húzódnak (sor és kártya): fekete-fehér, fakó borító, tompított, de
+  olvasható szöveg (`--watched-text`, ≥ 4,5:1), halványabb vezérlők, szürke műfajpötty és „M” – nem az egész sor
+  átlátszó. Rámutatáskor és fókusznál minden teljes színű.
+- **Két téma**: a sötét az alap (`:root`), a világos a `globals.css` „Világos téma” szakaszában
+  (`:root[data-theme='light']`). **Új színtokennél a világos szakaszba is kell érték**, és a kontrasztot mérd
+  (`munka/terv-3/terv-50/kontraszt.mjs`, `VEGLEGES=1`). **Beégetett színt ne használj**: fátyol `rgb(var(--tint) /
+  0.05)`, árnyék `rgb(var(--shade) / calc(0.6 * var(--shade-k)))`, üveg `rgb(var(--glass) / 0.8)`, `::backdrop`
+  `rgb(var(--scrim) / calc(0.62 * var(--scrim-k)))`; teli piros gomb felirata `--danger-ink`.
+- **A film / franchise színe (`--ambient`)**: keverési arány `min(100%, calc(N% * var(--ambient-k)))` (sötétben 1,
+  világosban 1,7), teli színű vonal / ikon `var(--ambient-ink)`; a mezőcímke (`--ambient-label`) és a `::backdrop`
+  kivétel. **Új `--ambient`-es szabálynál is így.**
+- **Sötét szigetek**: a képes sávok világosban is sötétek (a filmlogók fehérek) – `.featured-slide`, `.featured-sk`,
+  `.collection-banner[data-backdrop]`, `.share-hero[data-backdrop]`, `.fr-logo`, galéria: a sötét tokeneket a
+  `:root` szabály kiválasztója adja nekik (a P3-asé is). Új képes sávnál ide is fel kell venni.
+- Színek: kiemelőszín (`--accent`) neon türkiz `#33e0ef`, a „Folyamatban” is ez; állapotszínek `--st-<kód>`
+  (Abbahagyva halvány lila). Új állapotnál szín és `[data-status=...]` szabály is kell (kártya és sor).
+- Második kiemelőszín (`--accent-2`, borostyán `#ffb547`, `-ink`, `-soft`, `-line`): **csak a saját jelöléseken** –
+  saját értékelés, Mama, a harang száma és Mama-értesítése, a Statisztika értékelés-csempéi. Soha nem gombszín; a
+  türkiz marad a gomboké, az állapotoké, a kiválasztott szűrőké és a fókuszkereté.
+- Tartalomfajták színei: `--c-coral` mozi, `--c-indigo` bejelentett / hamarosan (a még meg nem jelent évad / rész
+  mindenhol indigó szaggatott, `data-upcoming`), `--c-sky` digitális / letöltve, `--c-sage` megjelent (=
+  `--st-watched`), `--c-rose` ajánlás. Mindig ugyanazt jelentik, **soha nem gombszínek**; teljes erővel csak apró
+  jelölésen, nagy felületen halvány árnyalatként.
+- A színtokenek OKLCH-ban (mellettük megjegyzésben a hex); P3 kijelzőn (`@media (color-gamut: p3)`) élénkebb
+  `--accent` / `--accent-2`. A build hex / `lab()` tartalékot generál, ezért a teszt a színeket vásznon át, sRGB-ben
+  hasonlítja (`rgbOf`). Új színt OKLCH-ban adj meg (hexből: `munka/dizajn-2/eszkozok/oklch.mjs`).
 - Teli türkiz csak a fő műveleteknél (Cím hozzáadása, Hozzáadás a listához, Belépés); a kiválasztott állapot
-  (szűrőgomb, aktuális oldal, választott lehetőség) `--accent-soft` háttér + `--accent-line` keret.
-  A gombok kerek végűek, rámutatva világosodnak, lenyomva sötétednek (`--accent-hover/-press`,
-  `--hover-tint/--press-tint`).
-- Saját lenyíló-nyíl (`--chevron`, `appearance: none`) és jelölőnégyzet (`--check-mark`); ahol egy
-  szabály `background` rövidítést ad egy lenyílónak, a nyilat is újra meg kell adni. Windows nagy
-  kontrasztú módban a beépített vezérlők maradnak. **A natív `<select>` listája** (terv-3 108, 2026-10-15) a
-  testreszabható lenyílóval (`appearance: base-select`, `@supports` mögött – Chrome / Edge 135+; máshol a mai lista) az
-  app stílusában nyílik: lekerekített, árnyékos panel (`::picker(select)`, `popup-in`), a kiválasztott türkiz, pipával
-  (`option::checkmark`); a zárt mező nem változik (a beépített `::picker-icon` rejtve). A szűrősor lenyílóinak opciói
-  előtt érték szerinti ikon (`.type-select`, `.download-select`, `.sort-select` – `--opt-icon` maszk) / az állapot és
-  Mama színe (`.status-select`, `.mama-select` – `--opt-dot`); új opciókódnál ide is kell ikon. A React-jelölés nem
-  változott (az ikon CSS-ből jön).
-- Mozgás: legfeljebb ~0,2 s-os átmenetek. Kivételek („Mozgás” szakasz a `globals.css`-ben):
-  az aurora (a lap tetején három elmosott fényfolt – türkiz, lila, borostyán – 36 s-os lassú
-  lebegéssel, `body::before`; a belépési oldalon nincs, kétoldalt 4% hely + maszk, hogy ne
-  legyen éle és vízszintes görgetés; nyitott ablaknál áll – az elmosott háttér mögött úgysem
-  látszik, és így az elmosást nem kell képkockánként újraszámolni); a nézetváltás borító ↔ szerkesztő (0,3 s); a lista
-  ↔ rács váltás (terv-3 73: a borítók 0,42 s alatt, borítónként 22 ms-mal később siklanak – `lib/viewSwitch.js`,
-  JS-ből, a „kevesebb mozgás”-t maga nézi); a lenyílók és menük nyílása (terv-3 74: 0,16 s, `popup-in`; franchise- és
-  műfajszűrő, harang, ⋮); a borítófal
-  kártyáinak beúszása (a görgetés vezérli: `animation-timeline: view()`); lapozáskor a kártyák /
-  táblázatsorok lépcsőzetes beúszása (terv-3 49.8, 2026-10-08: 0,3 s + elemenként 22 ms,
-  `sibling-index()`; a `Watchlist` ~1,2 s-ig `data-paging` jelzőt ad a rácsra / a `tbody`-ra –
-  `pageAnim` –, addig ez váltja a görgetéses beúszást); szűréskor / rendezéskor az animált
-  átrendeződés (terv-3 49.3, 2026-10-08: csúszás 0,32 s, beúszás 0,28 s, halványulás 0,2 s –
-  `components/Reflow.js`, JS-ből, ezért a „kevesebb mozgás”-t maga nézi); a csillagok
-  pattanása (0,34 s, egymás után); a pipa bepattanása (átmenet, betöltéskor nem mozog); a harang
-  rezzenése (0,9 s, egyszer); a csontváz csillogása (1,4 s, ismétlődik); az értesítősáv
-  fogyó csíkja (a sáv ideje, 8 s, lineáris – a hátralévő időt mutatja); a kihúzás (terv-3 40,
-  Norbi kérése, 2026-10-06): megnézettre váltáskor zöld vonal fut végig a címen (0,26 s), majd
-  elhalványul – összesen 0,75 s, a kártyán és a soron (`.strike`, háttér-vonal, a színe a
-  regisztrált `--strike-ink` változó); a nézési sorrendben 0,3 s alatt húzódik be és megmarad. A `globals.css`
-  végén egy közös `prefers-reduced-motion: reduce` szabály minden átmenetet és animációt
-  kikapcsol (a nézetváltás álelemeit is; a nézetváltást a kód el sem indítja).
-- Görgetősáv (terv-3 49.10, 2026-10-08): saját, a `globals.css` elején – `::-webkit-scrollbar` (10 px,
-  átlátszó sín, 6 px-es lekerekített halvány fogantyú, rámutatva türkiz, húzva teli türkiz); Firefoxban
-  `scrollbar-width: thin`. Chrome / Edge alatt a `::-webkit-scrollbar` csak ott érvényes, ahol nincs
-  `scrollbar-width` / `scrollbar-color` – ezeket ne add meg elemre (a `.discover-list`-ről ezért került le).
+  `--accent-soft` háttér + `--accent-line` keret. A gombok kerek végűek, rámutatva világosodnak, lenyomva sötétednek
+  (`--accent-hover/-press`, `--hover-tint/--press-tint`).
+- Saját lenyíló-nyíl (`--chevron`, `appearance: none`) és jelölőnégyzet (`--check-mark`); ahol egy szabály
+  `background` rövidítést ad egy lenyílónak, a nyilat is újra meg kell adni. Windows nagy kontrasztú módban a
+  beépített vezérlők maradnak. A natív `<select>` listája `appearance: base-select`-tel (`@supports` mögött) az app
+  stílusában nyílik; a szűrősor lenyílóinak opciói előtt érték szerinti ikon (`--opt-icon`) / szín (`--opt-dot`) –
+  **új opciókódnál ide is kell ikon**.
+- **Mozgás**: legfeljebb ~0,2 s-os átmenetek. Kivételek a `globals.css` „Mozgás” szakaszában (aurora, nézetváltás,
+  lista ↔ rács, lenyílók, beúszások, átrendeződés, csillag, pipa, harang, csontváz, toast-csík, kihúzás). A
+  `globals.css` végén egy közös `prefers-reduced-motion: reduce` szabály mindent kikapcsol; a JS-ből indított
+  mozgások (`Reflow`, `viewSwitch`, nézetváltás) a „kevesebb mozgás”-t maguk nézik.
+- Görgetősáv: saját (`::-webkit-scrollbar`, a `globals.css` elején). Elemre ne adj `scrollbar-width` /
+  `scrollbar-color`-t (Chrome-ban akkor a `::-webkit-scrollbar` nem érvényes).
 - Hiányzó borító: a `.thumb:empty` / `.poster-fallback` filmikont kap (`--icon-film`).
-- Anyag: leheletnyi, álló filmszemcse a háttéren (`body::after`, rögzítve, a tartalom mögött);
-  „squircle” sarkok (`corner-shape: squircle`, `@supports` mögött – Chrome / Edge 139+, máshol
-  kerek): borító 22 px, kis borító 13 px, szerkesztő ablak 32 px, panelek 20 px, mezők 12 px;
-  új lekerekített elemnél ide is kell (és a `::before` / `::after` keretnek is).
-- Új dizájnötletnél: előbb előtte–utána képek (`munka/dizajn-2/eszkozok/`: pillanatkép,
-  előnézet, kontrasztmérés), beépítés csak Norbi jóváhagyása után.
-- A két megjelenési kör (2026-10-03–04) lezárult. Amit Norbi nem kért (magadtól ne
-  javasold újra): álló betűs eredeti cím, színskálás IMDb-jelvény, OLED fekete (a világos / sötét
-  téma váltását viszont Norbi 2026-10-08-án maga kérte – 50-es pont), 3D billenés a borítókon, plakátszerű tipográfia, számláló a fejlécben, „Ma este”
-  kiemelt sáv, haladásgyűrű a sorozatoknál, egyedi helykitöltő a hiányzó borítóhoz; a kurzort
-  követő fénylő kártyaélt beépítés után visszavonatta.
-- **Új ablak (`<dialog>`) esetén mindig vizsgáld a kikattintásos bezárást** (Norbi kérése,
-  2026-10-05): kell-e, és mikor ne zárjon (bevitel / szerkesztés / megerősítés / folyamatban lévő
-  művelet közben) – `lib/useBackdropClose.js` (`canClose`); ha egy ablak szándékosan nem zár
-  kikattintásra (pl. importablak beírt szöveggel), írd oda megjegyzésben és a CLAUDE.md-be. Ha az
-  ablak egy másik `<dialog>`-on belül nyílik a React-fában, a külső `onClose` csak a sajátjára
-  zárjon (`e.target === e.currentTarget`), mert a React a belső „close” eseményét is továbbítja.
-- Képekhez sima `<img>`, nem `next/image`.
-- Nincs middleware / proxy; az auth kliensoldali.
-- **Felhasználói leírás** (`FELHASZNALOI-LEIRAS.md`): **időszakosan frissül, nem minden fejlesztés
-  után** (Norbi döntése, 2026-10-06: a felület gyakrabban változik, mint amilyen gyakran a leírásnak
-  követnie kell). A fejlesztés commitjában a leíráshoz (szöveg, képek, Változásnapló) ne nyúlj; a
-  frissítés a roadmap végén álló, számozás nélküli **„Időszakos kézikönyv-frissítés”** pont, Norbi
-  kérésére. Menete: a leírás legutóbbi commitja óta készült változások
-  (`git log $(git log -1 --format=%H -- FELHASZNALOI-LEIRAS.md)..HEAD`) alapján a témák szerinti
-  szakaszok (ha nincs ilyen, új szakasz a tartalomjegyzékkel együtt), a változott felület képei, az
-  „Utolsó frissítés” dátuma, és a Változásnaplóba a közben elkészült változások (a saját napjukkal,
-  legújabb felül). Norbi szemszögéből, a felület pontos feliratainak idézésével; tervezett, még el
-  nem készült funkció nem kerül bele. **Hangnem** (Norbi kérése, 2026-10-06): könnyed, barátságos, tegező –
-  rövid bevezető mondatok, „miért jó ez neked”, de a tények (feliratok, szabályok) pontosak
-  maradnak; a Változásnapló sorai tömörek. A címsorokat ne írd át (a tartalomjegyzék és a
-  Változásnapló hivatkozásai rájuk mutatnak). **Képek** (a frissítéskor): a változott felület
-  `docs/kepek/` képeit generáld újra (`leiras-seed.mjs`, majd `leiras-kepek.mjs <név>`; a jelölők
-  és a szöveg számai egyezzenek); új funkcióhoz, ha érdemes, új kép a szkriptbe. Utána a
-  tesztfiókot ürítsd ki.
+- Anyag: álló filmszemcse (`body::after`); „squircle” sarkok (`corner-shape: squircle`, `@supports` mögött): borító
+  22 px, kis borító 13 px, szerkesztő ablak 32 px, panelek 20 px, mezők 12 px; új lekerekített elemnél (és a
+  `::before` / `::after` keretnek) is kell.
+- Új dizájnötletnél: előbb látványterv / előtte–utána képek (`munka/dizajn-2/eszkozok/`), beépítés csak Norbi
+  jóváhagyása után.
+- **Új ablaknál (`<dialog>`) mindig vizsgáld a kikattintásos bezárást** (`useBackdropClose`, `canClose`): mikor ne
+  zárjon (bevitel / szerkesztés / megerősítés / folyamatban lévő művelet). Ha szándékosan nem zár, írd oda
+  megjegyzésben és ide. Ha egy másik `<dialog>`-on belül nyílik a React-fában, a külső `onClose` csak a sajátjára
+  zárjon (`e.target === e.currentTarget`) – a React a belső „close” eseményét is továbbítja.
+- Képekhez sima `<img>`, nem `next/image`. Nincs middleware / proxy; az auth kliensoldali.
+- **Felhasználói leírás** (`FELHASZNALOI-LEIRAS.md`): **időszakosan frissül, nem minden fejlesztés után**. A
+  fejlesztés commitjában a leíráshoz ne nyúlj; a frissítés a roadmap végén álló „Időszakos kézikönyv-frissítés”,
+  Norbi kérésére. Menete: a leírás utolsó commitja óta készült változások (`git log $(git log -1 --format=%H --
+  FELHASZNALOI-LEIRAS.md)..HEAD`) alapján a témák szerinti szakaszok, a változott felület képei (`leiras-seed.mjs`,
+  majd `leiras-kepek.mjs <név>`; a jelölők és a szöveg számai egyezzenek), az „Utolsó frissítés” dátuma és a
+  Változásnapló (legújabb felül). Norbi szemszögéből, a pontos feliratokkal; tervezett funkció nem kerül bele.
+  Hangnem: könnyed, barátságos, tegező, de a tények pontosak; a Változásnapló tömör. A címsorokat ne írd át (a
+  hivatkozások rájuk mutatnak). Utána a tesztfiókot ürítsd ki.
+- Roadmap listázásakor minden pont mellé becsült időt írj (teszttel és doksival együtt).
 
-## Állapot
-Kész: adatbázis, projektváz, belépés, lista + szűrők, GitHub, Vercel deploy,
-TMDB kereső és hozzáadás (az `/api/tmdb/*` route-ok token nélkül 401-et adnak),
-hozzáadás dátuma a kártyán, cím szerkesztése és törlése (`TitleEditor`),
-asztali soros nézet soron belüli szerkesztéssel (`TitleTable`), csillagos értékelés,
-„Mama” jelző, rendezés (hozzáadás, értékelés, megjelenés éve), letisztított szűrősor,
-franchise-ok (beállítás + szűrő + törlés), neon türkiz színvilág,
-TMDB leírás a cím mellett, IMDb-értékelés (OMDb) + rendezés szerinte, lapozás,
-saját IMDb-értékelések és az IMDb-figyelőlista betöltése CSV-ből, franchise-logók a szűrőben,
-megjelenés-frissítés (18 javaslat, 2026-10-03), keresés a listán, középre zárt belépés,
-évadok a sorozatoknál (évadonkénti állapot és letöltve, a sorozat állapota ebből számolódik,
-új évadok hetente a TMDB-ről; epizódszintű követés Norbi kérésére nem kell),
-„Abbahagyva” állapot sorozatoknál, szűrők alapállapota + ↺ gomb, Letöltés szűrő (Összes /
-Letöltött / Nem letöltött), mobilon a borító a szerkesztőt nyitja (az IMDb-re a cím visz),
-asztali nézetben lista / rács váltó, telefonon 3 kártya egy sorban, értesítések haranggal (új
-évad bejelentése / megjelenése), tömeges import, mentés letöltése (CSV), franchise átnevezése,
-Mama-szűrő, hasonló címek a szerkesztő ablakban (TMDB-ajánlások, egy kattintással a listára),
-app-ikon (filmcsapó) és manifest: Norbi asztali alkalmazásként a Chrome-ból telepítette
-(Electron-csomag helyett), megjelenés 2. kör – színek (2026-10-04): borostyán második
-kiemelőszín, OKLCH-színek + élénkebb neon P3 kijelzőn, műfajszínek, hangulatszín a borítóból,
-aurora a lap tetején; anyag és mélység: letapadó üveg szűrősor, filmszemcse, squircle sarkok;
-új felületek: háttérkép a szerkesztő ablakban, statisztika, telefonon alsó lap és lebegő „+”;
-mozgás: nézetváltás borító ↔ szerkesztő, beúszó kártyák, mikroanimációk
-(csillag, pipa, harang), csontváz-betöltés; listanézetben nagyobb borító (72 px) és cím (20 px);
-automatikus heti mentés (2026-10-04): az adatbázisban 8 hétig (pg_cron), „Mentések” ablak
-(mentés most, visszaállítás), külső másolat a GitHubon (artifact, 56 nap); a 3. tervkörből
-(2026-10-04): értesítősáv, törlés visszavonása, „Hogy tetszett?” megnézéskor, barátságos üres
-állapotok, gyorsgombok a letapadt szűrősorban, előzetes a szerkesztőben, évadok idővonala,
-Felfedezés (magyar szinkronos közelítés), franchise-gyűjtemény a hiányzó részekkel.
-Franchise-filmek importja (franchise.xlsx): 194 cím, 34 franchise; hozzáadás dátuma = megjelenés.
-Marvel-import (2026-10-06, Norbi listája képről, szkripttel – `munka/terv-3/29-marvel/`): 85 cím a
-„Marvel” franchise-ban (81 új, Megnézendő, hozzáadás dátuma = megjelenés; a TMDB magyar címei, a
-változatjelölés – „Pókember 2.1”, „Bővített változat” – Norbi címéből; a Bosszúállók, Fekete Özvegy,
-Shang-Chi, Morbius már a listán volt) és a 88 tételes nézési sorrend (filmek + évadok, Norbi
-sorrendjében); előtte „Kézi” mentés.
-Norbi listája (norbert.tutor@gmail.com) 2026-10-02-án Excelből importálva: 512 cím.
-IMDb-értékelések importja (2026-10-13, Norbi kérése, szkripttel – `munka/terv-3/imdb-import-1013/`): az IMDb-export
-listán nem lévő 82 filmje és 4 sorozata (Megnézve, a saját értékelés az IMDb-csillag, a megnézés és a hozzáadás dátuma
-az IMDb-értékelés napja, franchise nélkül; a sorozatok megjelent évadai megnézve); előtte „Kézi” mentés (id 459). Az
-epizódok, videók, különkiadások (23) kimaradtak. A lista 939 → 1025 cím.
-Hibajavítás (2026-10-13): a gyűjtemény-ablak a listán lévő, de a franchise-ba nem rendelt részt „+ Hozzárendelés”
-gombbal jelzi (nem „A listán”-ként), a számok csak a franchise címeit számolják; a „Javasolt gyűjtemények”
-keresőszavai újra levágják a „: Part Two”-féle végződést (a 53-as óta hiányoztak a regex fordított perjelei).
-Hibajavítás (2026-10-14, Norbi jelezte): Androidon a vissza-gesztus az adatlapon lapot léptet (színész lapjáról
-nyitott filmről a színészre), nem zárja be az egész ablakot; franchise-ra szűrve felvett, majd az adatlapján mentett
-film nem kerül be ideiglenesen a szűrt listába (a „helyén marad” – `kept` – csak a már látható sort tartja meg).
-Azonnali mentés az adatlapon (terv-3 79, „B”, 2026-10-14): nincs „Mentés” / „Mégse”; a módosított gombon türkiz pipa,
-alul „… – mentve · Visszavonás” (lépésenként). Az IMDb-importablak a gyorsan újra választott fájlnál nem ürül ki (a
-késve érkező „close” esemény – `ImdbRatingsImport`).
-Kényelmi kör, 2. rész (2026-10-14): lehúzás frissítéshez a telepített appban (85), élő szinkron a gépek között –
-Supabase Realtime (86), frissítés a TMDB-ről – magyar cím (ha még az eredeti állt ott), leírás, borító, műfajok,
-magától és az adatlapról (83); „Már láttam” – megnézettként felvétel a keresőből, az előnézetből és a színész
-lapjáról (80). Képgaléria az adatlapon – asztalon „Képek” sor, telefonon lapozható jelenetkép, nagy nézet (95);
-összes szereplő az adatlapon (91); élő szinkron: a mentés visszaállítása után a címek nem tűnnek el (hibajavítás).
-Moziszerű adatlap-fejléc asztalon: nagy jelenetkép, rajta a borító, a nagy cím, az adatok és az előzetes (terv-3 104,
-2026-10-15). Fokozatos elmosás a letapadt szűrősor és a dokkolt lapozó alatt (102); „folyékony üveg” a lebegő gombokon –
-„+”, „↑”, galérialapozó (103) – 2026-10-15. Összecsukódó főcím (99), csúszó kijelölő a gombcsoportokon (100), telefonon a
-beállított szűrők címkeként ×-szel (101), az app stílusában nyíló lenyílók ikonokkal (108) – 2026-10-15.
-Átnézés, első javítások (2026-10-15): telefonon újra teljes szélességű a harang listája és a ⋮ menü (K1), az adatlap
-derengése görgetéskor nem ér véget éles széllel (K2), az évadok idővonalán a „ma” jelölő a tengelyen belül (K3), egyoldalas
-találatnál is a keskeny lábléc (K4), a táblázatban a „Nem érdekli” egy sorban (K7), bezáró × az adatlap jobb felső sarkában
-(J1; telefonon nincs × és „Bezárás”), az adatlap alján a „Frissítés a TMDB-ről” elválasztva a „Törlés a listáról”-tól (J2); telefonon az adatlapon nincs „Összes szereplő” (Norbi kérése).
-2026-10-15–16: a lapozó és a lábléc egy sávban; a franchise műveletei ikonos gombok, a franchise-logó kézzel választható
-(J8); asztalon lejjebb görgetve a fejléc sávja is felgördül, a „+”, a harang és a ⋮ a letapadt szűrősorban („A – Egy sáv”, J6).
-A még meg nem jelent filmek szaggatott kerettel és dátumos jelvénnyel, a harang szól a digitális
-megjelenésről (2026-10-04, terv-3 10-es pontja szűrőgomb nélkül). Asztalon az adatlap
-kikattintásra bezárul (terv-3 24-es pontja, 2026-10-04). „Hol
-nézhető?” az adatlapon (magyar streamingszolgáltatók logóval, terv-3 21), IMDb-figyelőlista
-importja (terv-3 20), „Franchise-ok” ablak a ⋮ menüben (terv-3 23, 2026-10-05), kikattintásra záródó ablakok (terv-3 32),
-adatlap a listára vétel előtt – előnézet a találatokból, a Felfedezésből és a Hasonló címekből,
-„Vissza” gombbal (terv-3 31, 2026-10-05). Optimalizálás (terv-3 34, 2026-10-05–06): gyorsítótárak,
-háttérfrissítés csak ha esedékes, helyi tokenellenőrzés, 1000 cím fölött is teljes lista. Nézési sorrend a franchise-okban: a gyűjtemény-ablak
-„Nézési sorrend” fülén filmek és évadok saját sorrendben, a megnézett kihúzva, a fő listán „Nézési
-sorrend” rendezés évadonkénti tételekkel (terv-3 28, 2026-10-06). „Nem érdekel” (×) a Felfedezés
-és a Hasonló címek borítóin, „Elrejtett ajánlások” a Felfedezés alján (terv-3 39); kihúzás-animáció
-megnézettre váltáskor (terv-3 40, 2026-10-06). Képes, barátságos hangvételű felhasználói leírás
-(terv-3 33, 2026-10-06). Kiemelt sáv a Felfedezés tetején (terv-3 46, „A” változat, 2026-10-07).
-Gyorsindítók a telepített app ikonján (terv-3 43, 2026-10-07). Ízlésprofil a Statisztikában (terv-3
-42, 2026-10-07). **Mama külön hozzáférése** (terv-3 13, 2026-10-07): Mama
-(tutorne.eva@gmail.com) saját fiókkal a „Norbi filmjei” oldalt látja („B” változat – nagy sorok,
-Érdekel / Nem érdekel a sorban és az adatlapon); Norbinál „Nem érdekli” jelölés és „Mamát érdekli”
-harang; a Mama-tesztfiók a tesztfiókhoz kötve. Értesítések törlése a harangból (×, „Összes törlése”,
-visszavonható – 2026-10-07). Franchise-javaslat felvételkor és „Javasolt hozzárendelések” a
-Franchise-ok ablakban (terv-3 35, csak felajánlja), „Neked ajánlott” sor a Felfedezésben (terv-3 37,
-2026-10-07). Offline indulás (terv-3 44, 2026-10-08): service worker + a legutóbbi lista helyben –
-azonnal megnyílik, net nélkül csak olvasható, utána magától frissül. Felhasználói leírás az appon
-belül, a ⋮ menüből (terv-3 48, 2026-10-08). Megosztható nézési sorrend: csak olvasható nyilvános link
-egy franchise sorrendjéhez (`/sorrend/<token>`), visszavonható (terv-3 41, 2026-10-08). Világos / sötét téma
-(terv-3 50, 2026-10-08): váltógomb a ⋮ mellett, a világos „B – meleg papír”, Mama alapja világos.
-Animált átrendeződés szűréskor / rendezéskor: a kártyák és sorok a helyükre csúsznak, a kiesők
-elhalványulnak, az újak beúsznak (terv-3 49.3, 2026-10-08) – ezzel a 49-es kinézeti kör lezárult.
-Színesebb felület (terv-3 51, 2026-10-08–09, Norbi választása látványterv után): a tartalomfajták
-színei (korall mozi, indigó hamarosan, égkék digitális, zsálya megjelent, rózsa ajánlás) a Felfedezés
-soraiban, a „Hamarosan” / „Moziban” jelvényen és a harang értesítésfajtáin; a film színe az adatlap
-belsejében, a franchise színe a gyűjtemény-ablakban és a Statisztika franchise-sávjain; színes
-Statisztika-csempék; vetítőfény a belépési oldalon. Új rész egy franchise TMDB-gyűjteményében →
-harang, kattintva előnézet (terv-3 36, 2026-10-09). A „bejelentett” (még meg nem jelent évad / rész)
-mindenhol indigó (terv-3 52.1, 2026-10-09). Mama adatlapja a film színében dereng, mint Norbié (terv-3
-52.4, „A” változat, 2026-10-09). Világos témában a film- és franchise-színek ugyanolyan erősek, mint
-sötétben, a jelölővonalak / ikonok jól láthatók (terv-3 52.6, „A” változat, 2026-10-09). Az appon
-belüli leírásban a ①②③ jelek borostyán körben, mint a képeken (terv-3 52.7, 2026-10-09). A
-„Legrégebbi / Legújabb megjelenés” rendezés pontos dátum szerint (terv-3 55, 2026-10-10, hibajavítás).
-Kinézeti kör (2026-10-11): franchise-sáv és megosztott sorrend a franchise színében, színes értesítősáv
-fajtánként, franchise-szűrő csoportokkal („N hátra” / „Mind megnézve”), műfajikonok, látványosabb asztali
-listanézet 10 címmel oldalanként. Javasolt TMDB-gyűjtemények a gyűjtemény-ablakban, link a TMDB-oldalra (terv-3
-53); „Szűrés erre” / „Átnevezés” / „Törlés” a gyűjtemény-ablak fejlécében (terv-3 57). Az ajánlásokban
-(Felfedezés, kiemelt sáv, Hasonló címek, „Neked ajánlott”) nincs animációs cím (terv-3 60, 2026-10-12).
-Mama-jelölés csak a franchise nélküli filmeknél (adatlap, táblázat, Mama-szűrő – terv-3 58, 2026-10-12).
-Jelszó módosítása a fejléc e-mail-címéről és a ⋮ menüből (terv-3 27, 2026-10-12).
-A színész lapja az adatlapon belül: a Szereplők nevére kattintva adatai, a listán lévő filmjei rácsban, a többi
-soronként, egy kattintással a listára (terv-3 61, 2026-10-13, „kevert” változat).
-Kényelmi és kinézeti kör (2026-10-13, látványterv után): okosabb keresés a listán – elírás, franchise neve, kiemelés
-(66 A); telefonon a borító a jelenetkép aljára úszik az adatlapon (72 A); lista ↔ rács váltáskor a borítók
-lépcsőzetesen a helyükre siklanak (73 B); mikro-átmenetek – állapotváltáskor a szín és a szürkülés 0,2 s alatt úszik
-át, a menük halványan nyílnak (74); csoportcímek a harangban (76 A). A Vissza gomb a legfelső ablakot / menüt zárja,
-nem lép ki az appból (62); visszatéréskor friss lista és „Frissült az app” sáv új kiadásnál (63); rámutatáskor az
-adatlap adatai előre töltődnek (69) – 2026-10-13.
-Fejléc: „Megnézendő filmek és sorozatok” (a böngészőfül: „Megnézendő filmek”).
-
-## Következő feladat
-A 28-as (nézési sorrend) és a 29-es (a Marvel betöltése – Claude szkripttel, 2026-10-06) kész; a
-29-es felületi része (tömeges import franchise-választóval, sorrend szövegből) Norbi döntése szerint
-nem kell (2026-10-06) – ilyet Claude szkripttel tölt be; magadtól ne javasold újra.
-A 34-es (erőforrás-optimalizálás + kinézeti hibák) is kész (2026-10-05 és 2026-10-06: E1–E6, K3,
-az 1000 soros korlát kezelése); a C2 / C3 (látható változással járó könnyítések) Norbi döntése
-szerint nem kell. A vizsgálat: `munka/optimalizalas/VIZSGALAT.md`.
-**Becsült idő** (Norbi kérése, 2026-10-06: a roadmap listázásakor mindig írd mellé; teszttel és
-doksival együtt; ha egy pont tartalma változik, frissítsd): a pontok mellett „~… óra”.
-**51: színesebb felület – kész** (Norbi kérése és döntései, 2026-10-08–09; látványterv:
-https://claude.ai/artifact/EvrrxJcn68Gvars1m6NqDZ; részletek: `munka/terv-3/TERV.md` 51-es pont, napló:
-`munka/terv-3/terv-51/ALLAPOT.md`; a próba-stílusok: `terv-51/javaslatok.css`). **Kész (2026-10-09,
-commitra vár; teszt: `munka/e2e/test-51.mjs`):** az 1-es színtokenjei (`--c-*`), 51.4 – a Felfedezés sorai saját
-színnel, 51.5 – színes értesítésfajták, 51.8 – hangulatszín az adatlapon, 51.9 – színesebb
-Statisztika, 51.10 – a gyűjtemény-ablak a franchise színében, 51.11 – vetítőfény a belépési oldalon. **Elengedve** (Norbi, 2026-10-09 – magadtól ne
-javasold újra): 51.6 – borító-visszfény / „halk padlófény” a borítófalon (beépítve, de a borítók
-betöltésekor a kártya szövege és képe apró moccanást mutatott) és 51.7 – élő aurora a borítók
-színéből; nem kellett: 51.2 – a türkiz tehermentesítése, 51.3 – állapotszín a kiválasztásban.
-**52: színhasználat, 2. kör** (Norbi kérése, 2026-10-09; Claude írásos javaslataiból mind a hét a roadmapre
-került – részletek: `munka/terv-3/TERV.md` 52-es pont): **52.1 – a „bejelentett” mindenhol indigó** (~1 óra,
-Norbi kérésére látványterv nélkül) – kész (2026-10-09; teszt: `munka/e2e/test-52-1.mjs`, előtte
-`seed-52-1.mjs`). **52.4 – Mama adatlapja a film színében** – kész (2026-10-09, Norbi választása a
-látványterv után: „A” – mint Norbi adatlapja; https://claude.ai/artifact/UUMAk1iGQk1cdvEc9JGK18; teszt:
-`munka/e2e/test-52-4.mjs`). **52.6 – a világos téma színei** – kész (2026-10-09, Norbi választása: „A” –
-kiegyenlített; https://claude.ai/artifact/YDFYeYGMTxdmKfN16QJv38; teszt: `munka/e2e/test-52-6.mjs`; a
-mérés és az átalakító szkript: `munka/terv-3/terv-52-6/`). **52.7 – a leírásban a ①②③ jelek borostyán
-körben** – kész (2026-10-09, Norbi kérésére látványterv nélkül; teszt: `munka/e2e/test-52-7.mjs`).
-**Kinézeti kör, 2026-10-11 – kész** (`db63d69`; Norbi választása a látványterv után –
-https://claude.ai/artifact/C1WkebV3iwP7BzwLfbs9H7, makett: `munka/terv-3/tervek-1011/`; teszt:
-`munka/e2e/test-1011.mjs` + `test.mjs` 115/115; `24_share_ambient.sql` élesben): **52.2 B** – a lista fölötti
-franchise-sáv a franchise színében (színes keret, pálca, szám, gomb), **52.3 A** – a megosztott sorrend a
-franchise színében (fejléc, felirat, sorszámok), **52.5 B** – az értesítősáv a fajtája szerint (törlés piros,
-„Hogy tetszett?” borostyán, ikonnal), **54 A** – a franchise-szűrőben „Van még megnézendő” / „Mind
-megnézve” csoport, „N hátra” címke, **56 A** – műfajikonok a műfajszűrőben (saját lenyíló), **59 B** –
-látványosabb listanézet (keskenyebb, kártyaszerű sorok a film színében, jelenetkép, 100 px-es borító,
-10 cím / oldal).
-**53 – javasolt TMDB-gyűjtemények** és **57 – műveletek a gyűjtemény-ablakban – kész** (2026-10-11, `64f340b`;
-teszt: `munka/e2e/test-53-57.mjs`, `test.mjs` 115/115).
-**55 – pontos dátum szerinti rendezés – kész** (2026-10-10, `f4be52b`; `23_release_date.sql` élesben, a
-meglévő 918 cím dátuma feltöltve; teszt: `munka/e2e/test-55.mjs`; részletek: TERV.md 55-ös pont).
-**58 – Mama jelölése csak ott, ahol értelme van – kész** (Norbi kérése, 2026-10-10; kész 2026-10-12, `c5829a7`;
-teszt: `munka/e2e/test-58.mjs` 7/7, `test.mjs` 115/115): franchise-os címnél és sorozatnál az adatlapon
-nincs Mama-csoport, a táblázatban üres a Mama-cella (ha már van értéke, marad, hogy törölhető legyen –
-`mamaApplies(t)`), a Mama-szűrő Sorozatok típusnál és franchise-ra szűrve nem látszik és nem szűr (az értéke
-megmarad) – Mama oldala úgyis csak a franchise nélküli filmeket kínálja.
-**60 – animációs filmek kiszedése az ajánlásokból – kész** (Norbi kérése, 2026-10-11; kész 2026-10-12,
-`ec2e516`; teszt: `munka/e2e/test-60.mjs` 11/11): a Felfedezés sorai, a kiemelt sáv, a Hasonló címek és a
-„Neked ajánlott” nem kínál animációs címet (TMDB-műfaj 16); a kézi keresés, az importok, a listán lévők és a
-harang („Új rész a gyűjteményben”) nem változnak.
-**Norbi kérései (2026-10-04)** – mind kész; a részletek a `munka/terv-3/TERV.md`-ben:
-- **27 – jelszó módosítása – kész** (2026-10-12, `942c3d5`; teszt: `munka/e2e/test-27.mjs` 6/6, `test.mjs`
-  115/115): csak bejelentkezve (e-mail-cím / ⋮ → „Jelszó módosítása”: jelenlegi + új kétszer; előbb
-  ellenőrző belépés külön klienssel, utána `updateUser`). Elfelejtett jelszó a belépési oldalon **nem kell**
-  (Norbi döntése, 2026-10-08) – magadtól ne javasold újra; Supabase-beállítás sem kellett.
-(A 2026-10-05-i 33-as – képes felhasználói leírás – kész, 2026-10-06. A 13-as – Mama külön
-hozzáférése – kész, 2026-10-07: Mama fiókja – tutorne.eva@gmail.com – Norbiéhoz kötve, élesben 141 film
-látszik nála, ebből 24 „Érdekel”; napló: `munka/terv-3/13-mama/ALLAPOT.md`.)
-**Norbi kérései (2026-10-05, funkciójavaslatokból)** – mind kész (a 35-ös – franchise-javaslat – és a
-37-es – „Neked ajánlott” – 2026-10-07; a **36-os – új rész egy franchise-od TMDB-gyűjteményében → harang** –
-2026-10-09, commitra vár; `21_collection_parts.sql` élesben).
-**Norbi kérései (2026-10-06, javaslatokból)** – mind kész: a 41-es – megosztható nézési sorrend –
-2026-10-08-án.
-(A 39-es – „Nem érdekel” – és a 40-es – kihúzás – kész, 2026-10-06; a „Neked ajánlott” sorban is
-van ×. A 46-os – kiemelt sáv –, a 43-as – gyorsindítók – és a 42-es – ízlésprofil – kész, 2026-10-07; a
-44-es – offline indulás – kész, 2026-10-08. A 48-as – felhasználói leírás a ⋮ menüből – kész,
-2026-10-08.)
-**Norbi kérése (2026-10-08, Claude kinézeti javaslataiból)** – **kész** (a 49.3 is, 2026-10-08):
-- ~~49 – látványosabb felület~~ (a 49.3, a 49.8 és a 49.10 kész, a 49.1 elvetve):
-   - ~~49.1 – logó a cím helyett az adatlapon~~ – **elvetve** (Norbi, 2026-10-08: elkészült, de
-     kipróbálás után visszavonatta – nem kell);
-   - ~~49.3 – animált átrendeződés szűréskor / rendezéskor~~ – **kész (2026-10-08, látványterv
-     nélkül – Norbi kérése)**: a kártyák és sorok a helyükre csúsznak, a kiesők elhalványulnak, az
-     újak beúsznak;
-   - ~~49.8 – lépcsőzetes beúszás lapozáskor~~ – **kész (2026-10-08, látványterv nélkül – Norbi kérése)**;
-   - ~~49.10 – saját görgetősáv~~ – **kész (2026-10-08, látványterv nélkül)**.
-(Az 50-es – világos / sötét téma, Norbi kérésére előrehozva – kész, 2026-10-08: látványterv után a
-„B – meleg papír”; napló: `munka/terv-3/terv-50/ALLAPOT.md`.)
-**Norbi kérése (2026-10-12, Claude funkciójavaslataiból):**
-- **61 – színész oldala az appon belül – kész** (2026-10-13, `ec77ce6`; teszt: `munka/e2e/test-61.mjs` 8/8,
-  `test.mjs` 115/115): a Szereplők nevére kattintva az adatlapon belül új lap („‹ Vissza”) – Norbi választása a
-  látványterv után (https://claude.ai/artifact/NKSkigYqGq9xnCoucYQVeM): „kevert” – a listáján lévők rácsban, a
-  többi soronként; rendező nincs; ismertség szerint; vendégszereplés és animáció nélkül. Terv:
-  `munka/terv-3/TERV.md` 61-es pont.
-**Norbi kérése (2026-10-13): kényelmi és kinézeti kör – 62–78, mind a roadmapen** (Claude javaslataiból;
-Norbi: a funkciók már lefedik az igényeit, QoL és kinézet kell). **A kinézetet érintő pontokhoz Norbi
-látványtervet kér** (beépítés csak a választása után) – lent „látványterv”. **Látványterv** (2026-10-13): https://claude.ai/artifact/5VU52v4Fk1hc2vAXXW4pFA (helyben `munka/terv-3/tervek-1013/`).
-**Norbi választása (2026-10-13):** 66 A, 72 A, 73 B, 74, 76 A – **kész** (2026-10-13, `b293c84`; `test.mjs` 115/115). **Elvetve** a látványterv után (magadtól
-ne javasold újra): 67 – kattintható Statisztika-csempék, 70 – „Automatikus” téma, 71 – két magasságú alsó lap, 75 –
-„Továbbiak” görgetéssel telefonon, 77 – érintési célok. Részletek: `munka/terv-3/TERV.md`
-„62–78” szakasz. Javasolt sorrend a számozás szerint (a 62–63 hozza a legtöbbet). **Elvetve** (Norbi,
-2026-10-13 – magadtól ne javasold újra): 64 – IMDb- / TMDB-link beillesztése a keresőbe, 65 – előző /
-következő cím az adatlapon, 68 – tömeges szerkesztés a listanézetben.
-- **62 – a Vissza gomb zárja az ablakot / adatlapot – kész** (telefon, telepített app, böngésző) (2026-10-13, `676ab21`; teszt: `munka/e2e/test-1013b.mjs` 11/11)
-- **63 – friss adatok visszatéréskor + „Frissült az app” sáv – kész** (2026-10-13, `676ab21`; teszt: `munka/e2e/test-1013b.mjs` 11/11)
-- **66 – okosabb keresés a listán – kész** (franchise neve, elírás, kiemelés) – **„A”** (halk: türkiz aláhúzás) (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
-- **69 – gyorsabb adatlap: előtöltés rámutatáskor – kész** (2026-10-13, `676ab21`; teszt: `munka/e2e/test-1013b.mjs` 11/11)
-- **72 – látványosabb telefonos adatlap-fejléc – kész** – **„A”** (a borító balra a jelenetkép aljára úszik, mellette a cím) (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
-- **73 – animált váltás lista ↔ rács – kész** – **„B”** (a borítók lépcsőzetesen siklanak) (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
-- **74 – mikro-átmenetek – kész** (≤ 0,2 s) – **a javaslat** (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
-- **76 – a harang csoportjai – kész** („Ma” / „Ezen a héten” / „Korábban”) – **„A”** (kis, ritkított nagybetűs csoportcím) (2026-10-13, `b293c84`; teszt: `munka/e2e/test-1013.mjs` 12/12)
-- **78 – nyitott kódaudit-pontok** (`munka/audit-2026-10-09/AUDIT.md`) – **a látható hatásúak kész** (2026-10-15:
-  #15, #16, #20, #23, #31, #32, #34, #35, #36, #37; a #40 elvetve, a #19 elavult; teszt: `munka/e2e/test-audit-78.mjs`
-  11/11, `test.mjs` 115/115) és **a rejtettek is kész** (2026-10-15: #14, #21, #25–#30, #33, #39; a #13 elvetve; teszt:
-  `munka/e2e/test-audit-78b.mjs` 9/9). **Az audit minden pontja lezárult.**
-**Norbi kérése (2026-10-14): kényelmi kör, 2. rész – 79–88** (Claude javaslataiból; részletek:
-`munka/terv-3/TERV.md` „79–88” szakasz; látványterv, ahol a kinézet változik). **Elvetve** (Norbi, 2026-10-14 –
-magadtól ne javasold újra): 81 – évszám a „Cím hozzáadása” keresőben, 82 – lapozó nyilak a vízszintes sorokon,
-87 – „Cím másolása” az adatlapon, 88 – „Nemrég megnyitott” adatlapok.
-- **79 – azonnali mentés az adatlapon – kész** (2026-10-14, „B” – pipa a módosított gombon, „… – mentve · Visszavonás”;
-  teszt: `test.mjs` 115/115, `test-gesztus` 5/5, `test-1013b` 11/11, `test-audit-10` 9/9, `test-58` 7/7)
-- **80 – „Hozzáadás megnézettként” – kész** (2026-10-14; „Már láttam” a keresőben, az előnézeten, a színész lapján;
-  teszt: `munka/e2e/test-80.mjs` 5/5)
-- **83 – frissítés a TMDB-ről – kész** (2026-10-14; a cím csak ha az eredeti állt ott – Norbi döntése; `26_details_refresh.sql`
-  élesben; teszt: `munka/e2e/test-1014.mjs` 10/10)
-- **84 – új évad dátuma a sorozat kártyáján / során** („3. évad · márc. 5.”) – ~1,5–2 óra (látványterv)
-- **85 – lehúzás frissítéshez a telefonos appban – kész** (2026-10-14, Norbi kérésére látványterv nélkül; teszt: `test-1014.mjs`)
-- **86 – élő szinkron a gépek között – kész** (2026-10-14, Supabase Realtime; `25_realtime.sql` élesben; teszt: `test-1014.mjs`)
-**Norbi kérése (2026-10-14): ötletkör – 89–98** (Claude javaslataiból; részletek: `munka/terv-3/TERV.md` „89–98”).
-**Elvetve** (Norbi, 2026-10-14 – magadtól ne javasold újra): 89 – „Következőnek” kitűzés, 90 – „Következik” a
-franchise-sávon, 92 – megosztás az adatlapról, 93 – IMDb-küszöb szűrő, 94 – hangalapú keresés, 96 – „Új” jelvény, 97 –
-franchise-idővonal, 98 – rezgés jelöléskor.
-- **91 – összes szereplő az adatlapon – kész** (2026-10-14; teszt: `munka/e2e/test-91.mjs` 4/4)
-- **95 – képgaléria az adatlapon – kész** (2026-10-14; asztalon „A” – „Képek” sor, telefonon „B” – lapozható jelenetkép;
-  https://claude.ai/artifact/BDEffdLNcJoJ4h3gtjsGWC; teszt: `munka/e2e/test-95.mjs` 6/6)
-**Norbi kérése (2026-10-14): korszerűbb felület – 99–108** (a meglévők átalakítása mai trendek szerint, Claude
-javaslataiból; részletek: `munka/terv-3/TERV.md` „99–108”). Látványterv (csak sötét téma):
-https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs (helyben `munka/terv-3/terv-99/`); **Norbi választása (2026-10-15):
-a „Javaslat” nézet** – beépítéskor annak megfelelően. **Elvetve** (magadtól ne javasold újra): 105 – összecsukódó
-adatlap-fejléc, 106 – egymásra rétegzett értesítősáv; a 107 (bento Statisztika) és a 109 (tipográfia) nagyrészt
-már megvan.
-- **99 – összecsukódó főcím – kész** (2026-10-15; a letapadt sor „+”-a megszűnt – a fejléc sávjában ott a „Cím
-  hozzáadása”; teszt: `munka/e2e/test-1015.mjs` 18/18, `test.mjs` 115/115)
-- **100 – csúszó kijelölő a gombcsoportokon – kész** (2026-10-15; teszt: `test-1015.mjs`)
-- **101 – aktív szűrők címkeként ×-szel (telefon) – kész** (2026-10-15; teszt: `test-1015.mjs`)
-- **102 – fokozatos elmosás a letapadt sávok alatt – kész** (2026-10-15; teszt: `munka/e2e/test-102-103.mjs` 8/8)
-- **103 – „folyékony üveg” a lebegő gombokon – kész** (2026-10-15; teszt: `test-102-103.mjs`, `test.mjs` 115/115)
-- **104 – moziszerű adatlap-fejléc asztalon – kész** (2026-10-15; teszt: `munka/e2e/test-104.mjs` 9/9, `test.mjs` 115/115,
-  `test-1013` 12/12)
-- **108 – egységes lenyílók – kész** (2026-10-15; `appearance: base-select`, ikonok CSS-ből; teszt: `test-1015.mjs`)
-**Átnézés, 2026-10-15 – mind a roadmapen** (Norbi kérése: „minden mehet ezekkel a kódokkal a roadmapre”; a
-pontonkénti részletek – hely, mit lát Norbi, ok, javítás, bizonyosság –: `munka/audit-2026-10-15/ATNEZES.md`; a kódok
-állandók, a kész pontot itt és ott is jelöld: „kész (dátum, commit)”). Kategóriák:
-- **K – Látható hibák (kinézet)** – ~3 óra
-  - K1 – Telefonon a harang és a ⋮ menü keskeny (≈200 px) lenyíló – a 99 (összecsukódó fejléc) óta – **kész** (2026-10-15, `1f26dca`)
-  - K2 – Az adatlap derengő háttere görgetéskor éles, lekerekített széllel véget ér (Mama adatlapján is) – **kész** (2026-10-15, `1f26dca`)
-  - K3 – Évadok idővonala: a „ma” jelölő a tengelyen túl (vízszintes kilógás a sorozat adatlapján) – **kész** (2026-10-15, `1f26dca`)
-  - K4 – Egyoldalas találatnál a lábléc a magas, vonalas változat (nem a keskeny, dokkolt) – **kész** (2026-10-15, `1f26dca`)
-  - K5 – 641–899 px: az adatlapon a műfajok a borító alá csúsznak, a Franchise mező két sorba törik – **kész** (2026-10-16)
-  - K6 – Asztali listanézet 1900 px alatt: a cím egy sorra vágva, az eredeti cím 2–3 sorban – **kész** (2026-10-16; a cím 2 sorig, a franchise a „Hozzáadva” sorban)
-  - K7 – Táblázat: a „Nem érdekli” két sorba törik a Mama-lenyílóban – **kész** (2026-10-15, `1f26dca`)
-- **H – Kódhibák, hibakezelés** – ~5 óra
-  - H1 – Csillagos értékelés billentyűzettel: a nyíl azonnal ment („Hogy tetszett?” → 1 csillag) – ~1–1,5 óra
-  - H2 – TMDB-hibánál a franchise-sáv / csempe „nincs TMDB-gyűjtemény”-t ír – ~0,5 óra
-  - H3 – Nincs magyar hibalap (`app/error.js`, a megosztott oldalé is) – ~0,5 óra
-  - H4 – Jelszó módosítása: net nélkül is „A jelenlegi jelszó nem jó.” – ~0,25 óra
-  - H5 – Mama hibaüzenete angol technikai szöveg (+ a gyors kattintások sorrendje) – ~0,4 óra
-  - H6 – Tömeges import: a sikertelen keresés „nincs találat”-nak számít, és eltűnik – ~0,5 óra
-  - H7 – Franchise törlése a gyűjtemény-ablakból → a Franchise-ok ablak nem zár kikattintásra – ~0,25 óra
-  - H8 – Franchise-ok ablak: szerkesztés közben az Esc / Vissza az egész ablakot zárja – ~0,5 óra
-  - H9 – Még be nem töltött franchise-csempe: kattintásra semmi, később magától nyílik – **kész** (2026-10-16; soron kívül töltődik, „megnyitás…”)
-  - H10 – „Frissítés a TMDB-ről”: félrevezető visszajelzések – ~0,25 óra
-  - H11 – A színész-route egy napig tárolja a hiányos (életrajz nélküli) választ – ~0,15 óra
-- **S – Állapot, szinkron, offline** – ~4 óra
-  - S1 – Az élő szinkron csendben leállhat egy rövid hálózatkiesés után – ~0,25 óra
-  - S2 – Net nélküli időszak után semmi nem pótolja a közben történt változásokat – ~0,5 óra
-  - S3 – Sikertelen csendes frissítésnél hibaüzenet kerül a jó lista helyére – ~0,25 óra
-  - S4 – Mama visszavont „Érdekel”-je után a harangban megmarad a „Mamát érdekli” – ~0,25 óra
-  - S5 – Az elrejtett ajánlások minden csendes frissítéskor rövid időre visszajönnek – ~0,25 óra
-  - S6 – A teljes újratöltés nem figyel a függő törlésre / mentésre (törölt cím visszajön) – ~0,5 óra
-  - S7 – „Kilépés” net nélkül nem csinál semmit – ~0,25 óra
-  - S8 – Élő szinkron: sorrendvédelem, 1000 feletti köteg (gyanú – előbb mérni) – ~0,5 óra
-  - S9 – Másik gépen törölt franchise-ra szűrve a szűrő beragad – ~0,25 óra
-  - S10 – „Nincs internetkapcsolat” szerverhibánál és frissítés közben is – ~0,25 óra
-  - S11 – Írási utak `saveRow` nélkül; a „Hogy tetszett?” sáv sikertelen mentés után is marad – ~0,5 óra
-  - S12 – A „Frissült az app” sáv kiszorulhat, és többé nem jön vissza – ~0,25 óra
-  - S13 – Net nélkül az adatlap „Visszavonás”-a csendben elnyeli a lépést – ~0,1 óra
-- ~~A – Akadálymentesség~~ (A1–A4) – **lekerült a roadmapről** (Norbi döntése, 2026-10-15; magadtól ne javasold újra)
-- **I – Következetlenségek (szöveg, gomb, stílus)** – ~2–3 óra
-  - I1 – A „Bezárás” gomb helye és színe ablakonként más (gyűjtemény-ablak, Mentések: teli türkiz) – ~0,1–0,5 óra
-  - I2 – Azonos szerepű feliratok eltérnek („Igen, törlés” / „Törlés”, „Újra” / „Újrapróbálás” …) – ~0,5 óra
-  - I3 – A sorozatok műfajai angolul („Action & Adventure”, „Sci-Fi & Fantasy”), a Statisztikában külön – ~0,5–1 óra
-  - I4 – Franchise-ra szűrve háromféle számlálás magyarázat nélkül (2/4, 3, 3/6) – ~0,25 óra
-  - I5 – Kisebb stíluseltérések (gombok, linkek, „angolul” jelzés, pipa a lenyílókban) – ~0,5 óra
-  - I6 – Az üres keresés magyarázata elavult (a franchise nevét nem említi) – ~0,05 óra
-  - I7 – Statisztika: a „(· értékelt címek)” magyarázat nehezen érthető – ~0,05 óra
-- **J – Javaslatok (lehetne szebb / jobb)** – ~7–8 óra
-  - J1 – Bezáró × az adatlap tetején (most csak a lap alján „Bezárás”) – **kész** (2026-10-15, `1f26dca`; telefonon nincs × és „Bezárás” – Norbi kérése)
-  - J2 – „Törlés a listáról” és „Frissítés a TMDB-ről” közé nagyobb köz – **kész** (2026-10-15, `1f26dca`)
-  - J3 – Net nélkül a tiltott vezérlők halványítása + jelzés az adatlapon – ~0,25 óra
-  - J4 – 641–1000 px között is a telefonos, összecsukható szűrő – ~1 óra
-  - J5 – Rácsnézetben a hosszú cím 2–3 soros vágása – ~0,25 óra
-  - J6 – Összecsukott fejlécben az elrejtett e-mail-cím helye ne maradjon üresen – **kész** (2026-10-16, „A – Egy sáv”: asztalon a sáv felgördül; csak nyitott „Cím hozzáadása” panelnél marad meg)
-  - J7 – Telefonon nyitott „Cím hozzáadása” panelnél a lebegő „+” elrejtése – ~0,1 óra
-  - J8 – Franchise-logó kézi választása (most az első film logója, alcímmel) – **kész** (2026-10-15; a gyűjtemény-ablak „Logó” gombja)
-  - J9 – Statisztika telefonon: olvashatóbb hónapnevek – ~0,25 óra
-  - J10 – Ismétlődő kód és kézzel ismételt gyorsítótár-verziók egyesítése – ~1–2 óra
-  - J11 – A TMDB-frissítés ne kérje le körönként az összes leírást – ~0,5 óra
-  - J12 – Service worker: a nagy képek ne szorítsák ki a borítókat a tárolóból – ~0,5 óra
-  - J13 – Mama oldala is frissüljön magától, és szóljon az új kiadásról – ~0,5 óra
-  - J14 – Apróságok (SVG nyilak a kiemelt sávon, halványuló szél a szűrőcímkéken, kisebb első letöltés, a tiltott bezárás visszajelzése) – ~0,5–1 óra
-
-Javasolt sorrend: K1–K4 → S1–S5 → H2–H5, H11, S10, S12 (együtt ~5 óra, ez hozza a legtöbbet), utána a többi; mind együtt
-~21–23,5 óra. **Kész (2026-10-15):** K1–K4, K7, J1 és J2 (Norbi kérésére a J1 előre véve; teszt: `munka/e2e/test-atnezes-k.mjs` 11/11).
-Hátravan: az átnézés többi pontja (K5–K6, H, S, I, J3–J14, fent) – ~18–21,5 óra; 84 – ~1,5–2 óra (látványterv).
-**Lekerült a roadmapről** (Norbi döntése, 2026-10-08: a közeljövőben nincs tervben; magadtól ne
-javasold újra): **25 – admin jogosultság**, **26 – regisztráció** (a meglévőkön kívül más felhasználó
-nem lesz, Mama fiókja pedig a 13-as óta korlátozott). A részletes tervük a TERV.md-ben megmaradt.
-**Számozás nélkül, mindig a roadmap végén** (Norbi kérése, 2026-10-06):
-- **Időszakos kézikönyv-frissítés** (~1–2 óra, a közben összegyűlt változásoktól függően): a
-  `FELHASZNALOI-LEIRAS.md` szövege, képei és Változásnaplója a legutóbbi frissítése óta elkészült
-  fejlesztésekkel (menete: Konvenciók → „Felhasználói leírás”). Norbi kéri, amikor esedékes; utána
-  is a lista végén marad.
-
-## Fejlesztési terv, 3. kör (2026-10-04)
-**`munka/terv-3/TERV.md`** (helyi mappa) – a hátralévő pontok (a „Következő feladat” pontjai)
-részletes leírása: mit lát Norbi, megvalósítás (fájlok, SQL, TMDB-hívások), teszt, méret; közös
-alapok és „hogyan kezdj neki”. Előnézet a kör eredeti 21 javaslatáról (privát):
-https://claude.ai/artifact/XWwxnuv2juKRmSEJR3WLUa (helyben `munka/terv-3/tervek.html`).
-Megvalósításkor a pont mellé a TERV.md-be: „kész (commit)”, és ide az Állapotba; a
-`FELHASZNALOI-LEIRAS.md`-be csak az időszakos kézikönyv-frissítéskor kerül (lásd Konvenciók).
-**Kész (2026-10-04), Norbi döntéseivel:** 1 – törlés visszavonása (a szerkesztő ablakban marad
-a megerősítés), 4 – értékelés kérése (nem kikapcsolható), 7 – előzetes, 8 – Felfedezés (csak
-magyar szinkronos – közelítés, külön sorozat-sorral), 9 – franchise-gyűjtemény, 14 – üres
-állapotok, 15 – gyorsgombok a letapadt szűrősorban, 16 – évadok idővonala; 10 – a még meg nem
-jelent filmek (szaggatott keret + jelvény + harang; szűrőgomb Norbi kérésére nincs); 24 –
-kikattintásra bezáruló adatlap; 20 – IMDb-figyelőlista importja; 21 – „Hol nézhető?” csak az
-adatlapon; 22 – telefonon nincs „IMDb import”; 23 – „Franchise-ok” ablak (2026-10-05); 32 – kikattintás a Statisztika, Franchise-ok, gyűjtemény és
-Mentések ablakon is (2026-10-05); 31 – adatlap a listára vétel előtt (a találatokból, a
-Felfedezésből és a Hasonló címekből; felvétel után helyben rendes adatlap, 2026-10-05); 28 –
-nézési sorrend a franchise-gyűjteményben (külön fül, a fő listán évadonkénti tételekkel, 2026-10-06).
-29 – Marvel betöltve a sorrenddel (szkripttel, 2026-10-06); 39 – „Nem érdekel” az ajánlásokon, 40 –
-kihúzás-animáció (2026-10-06, videó nélkül – Norbi kérése). 34 – optimalizálás (E1–E6, K3, 1000 soros korlát, 2026-10-05–06). 51 – színesebb felület kész (2026-10-09: 4, 5, 8–11; a 6–7 elengedve, a 2–3 nem kellett). Vár még: 27; 36 – új rész a gyűjteményben → harang kész (2026-10-09); 49 – kinézeti újítások kész (2026-10-08: 49.3, 49.8, 49.10; a 49.1 elvetve) („Következő feladat”; a 25 és a 26 lekerült – Norbi, 2026-10-08); 50 – világos / sötét téma kész (2026-10-08, „B – meleg papír”, Mama alapja világos); 41 – megosztható nézési sorrend kész (2026-10-08, látványterv nélkül); 48 – felhasználói leírás a ⋮ menüből kész (2026-10-08, belső ablakban); 44 – offline indulás kész (2026-10-08); 35 – franchise-javaslat és 37 – „Neked ajánlott” kész (2026-10-07); 13 – Mama külön hozzáférése kész (2026-10-07, 5 lépésben, „B” változat); 42 – ízlésprofil kész (2026-10-07); 43 – gyorsindítók kész (2026-10-07); 46 – kiemelt sáv a Felfedezés tetején kész (2026-10-07, „A” változat); 33 – képes, barátságos felhasználói leírás kész (2026-10-06); 47 – csempék hangulatszíne kész (2026-10-06, látványterv nélkül); 38 – szereplők az adatlapon kész (2026-10-06, „A” változat); 45 – háttérképes franchise-sáv kész (2026-10-06, látványterv nélkül – Norbi kérése); 30 – tömörebb adatlap kész
-(B – vezérlősáv, 2026-10-05).
-**Elvetve (Norbi, 2026-10-05):** „Elérhető az előfizetéseimen” szűrő, megosztás telefonról az
-appba (share target), adatminőség-ellenőrző; nem választotta: „Letölthető most” gyorsnézet,
-megjelenési naptár, figyelmeztetés hasonló címre, mentett szűrő-összeállítások, díjak az
-adatlapon, alsó navigációs sáv telefonon, aktivitás-hőtérkép, rámutatásra leírás a borítófalon,
-sűrűségváltó, fülek az adatlapon telefonon – magadtól ne javasold újra. A 34-esből elvetve
-(Norbi, 2026-10-06): C2 – csak a borító siklik a megnyitáskor, C3 – kisebb üvegelmosás. A 2026-10-06-i javaslatokból nem választotta: újranézés-napló, „Rég láttad”
-ajánló, változásnapló visszavonással, görgetésre mozduló háttérkép az adatlapon, előzetes rámutatásra a
-Felfedezésben – magadtól ne javasold újra. A 2026-10-08-i kinézeti javaslatokból (49) elvetve: mozgó
-borítófal a belépési oldalon, elmosottból kiélesedő borítók, kedvencek borostyán kerete, szikrák 10
-csillagnál, felpörgő számok / felnövő oszlopok a Statisztikában, feltöltődő franchise-mérők, címlogó az adatlapon
-(49.1 – beépítve, majd visszavonva) –
-magadtól ne javasold újra. A 2026-10-12-i funkciójavaslatokból (a 61-es mellett) nem választotta: Mama
-filmet kérhet, „Megkaptam” fül Mamánál, franchise-ugrás (Gyűjtemény / Nézési sorrend link) az adatlapról,
-Felfedezés műfaj szerint, „Kedvenceim” megosztható link, jelölés net nélkül (offline írás), automatikus
-füstteszt élesítés után – magadtól ne javasold újra.
-**Elvetve (Norbi kérésére, 2026-10-04) – nem kell, magadtól ne javasold újra:** 2 – gyorsműveletek a borítón, 3 – parancspaletta (Ctrl+K) és billentyűparancsok, 5 – „Mit nézzek ma?”, 6 – játékidő a soron és szűrő rá, 11 – saját címkék, 12 – szinkron / felirat jelölése, 17 – csoportosítás hónapok szerint, 18 – évértékelő, 19 – értesítés a telefonra (web push).
+## Elvetett ötletek – magadtól ne javasold újra
+Norbi döntései; a részletek a TERV.md-ben.
+- **Kinézet**: álló betűs eredeti cím, színskálás IMDb-jelvény, OLED fekete, 3D billenés a borítókon, plakátszerű
+  tipográfia, számláló a fejlécben, „Ma este” kiemelt sáv, haladásgyűrű a sorozatoknál, egyedi helykitöltő a hiányzó
+  borítóhoz, a kurzort követő fénylő kártyaél, mozgó borítófal a belépésnél, elmosottból kiélesedő borítók,
+  kedvencek borostyán kerete, szikrák 10 csillagnál, felpörgő számok / felnövő oszlopok a Statisztikában, feltöltődő
+  franchise-mérők, címlogó az adatlapon (49.1), borító-visszfény a borítófalon (51.6), élő aurora a borítók színéből
+  (51.7), a türkiz tehermentesítése (51.2), állapotszín a kiválasztásban (51.3), csak a borító siklik megnyitáskor
+  (C2), kisebb üvegelmosás (C3), görgetésre mozduló háttérkép, „Automatikus” téma (70), két magasságú alsó lap (71),
+  érintési célok (77), összecsukódó adatlap-fejléc (105), egymásra rétegzett értesítősáv (106); akadálymentességi kör
+  (A1–A4).
+- **Funkciók**: gyorsműveletek a borítón, parancspaletta / billentyűparancsok, „Mit nézzek ma?”, játékidő és szűrő
+  rá, saját címkék, szinkron / felirat jelölése, csoportosítás hónapok szerint, évértékelő, web push; „Elérhető az
+  előfizetéseimen” szűrő, share target, adatminőség-ellenőrző, „Letölthető most” gyorsnézet, megjelenési naptár,
+  figyelmeztetés hasonló címre, mentett szűrő-összeállítások, díjak az adatlapon, alsó navigációs sáv telefonon,
+  aktivitás-hőtérkép, rámutatásra leírás a borítófalon, sűrűségváltó, fülek az adatlapon telefonon; újranézés-napló,
+  „Rég láttad” ajánló, változásnapló visszavonással, előzetes rámutatásra a Felfedezésben; tömeges import
+  franchise-választóval / sorrend szövegből (ilyet Claude szkripttel tölt be); admin jogosultság (25), regisztráció
+  (26), elfelejtett jelszó; Mama filmet kérhet, „Megkaptam” fül Mamánál, franchise-ugrás az adatlapról, Felfedezés
+  műfaj szerint, „Kedvenceim” link, jelölés net nélkül (offline írás), automatikus füstteszt élesítés után;
+  IMDb- / TMDB-link beillesztése a keresőbe (64), előző / következő cím az adatlapon (65), kattintható
+  Statisztika-csempék (67), tömeges szerkesztés (68), „Továbbiak” görgetéssel telefonon (75); évszám a keresőben
+  (81), lapozó nyilak a vízszintes sorokon (82), „Cím másolása” (87), „Nemrég megnyitott” (88); „Következőnek”
+  kitűzés (89), „Következik” a franchise-sávon (90), megosztás az adatlapról (92), IMDb-küszöb szűrő (93), hangalapú
+  keresés (94), „Új” jelvény (96), franchise-idővonal (97), rezgés jelöléskor (98); epizódszintű követés;
+  szűrőgomb a még meg nem jelent filmekre; megjegyzés mező a felületen; C2 / C3 optimalizálás.
 
 ## Fejlesztői megjegyzés
-- Ha a terminál nem ismeri a `node`/`npm` parancsot, a VS Code-ot újra kell indítani
-  (a Node a `C:\Program Files\nodejs` mappában van).
-- Tesztfelhasználó: `TEST_USER_EMAIL` / `TEST_USER_PASSWORD` a `.env.local`-ban – külön
-  Supabase-fiók, az RLS miatt Norbi listáját nem látja. Soha ne írd ki az értékeit.
-  Böngészős teszt: `playwright-core` a scratchpadbe telepítve (nem a projektbe), a gépen
-  lévő Chrome-mal (`C:\Program Files\Google\Chrome\Application\chrome.exe`), a helyben
-  futó `npx next start -p 3123` ellen. A teszt végén a tesztfiók listáját ürítsd ki.
-  A teszt és a segédszkriptek a helyi `munka/` mappában vannak (git-ből kizárva, lásd
-  `munka/README.md`): a scratchpadbe másolva, ott `npm install` után futtathatók.
-  Szkriptből (supabase-js) kilépéskor `signOut({ scope: 'local' })` kell – az alapértelmezett
-  `global` a böngészőben futó munkamenetet is lezárja, és az `/api` route-ok 401-et adnak.
-  A böngészős teszt „kevesebb mozgás” módban fut (`emulateMedia({ reducedMotion: 'reduce' })`),
-  hogy a nézetváltás és az animációk ne zavarják a lépéseket; a mozgást a saját lépése kapcsolja
-  vissza és ellenőrzi. Újratöltéskor előbb a helyben tárolt lista látszik (terv-3 44): a teszt
-  `page.reload`-ja megvárja a frisset (`main[data-list]`: `loading` | `stale` | `live`), a
-  `plainReload` nem vár; a `clearSnapshot()` törli a tárolt listát (pl. a csontváz próbájához).
-  Fix várakozás (`waitForTimeout`) helyett a teszt a mentés utáni friss sorra (`rowRefetched`) vagy két
-  képkockára (`settle`) vár – „kevesebb mozgás” módban az átmenetek úgyis kikapcsolnak; képernyőkép csak
-  `SHOTS=1`-gyel készül; a futás végén kiírja a leglassabb lépéseket (kb. 2¼ perc, 115 lépés, 2026-10-09).
-  **Teljes tesztkör** (Norbi kérése, 2026-10-15): `munka/e2e/teljes.sh` (a scratchpadbe másolt e2e mappából, Git
-  Bash-ben; ~25 perc): az adatbázis-tesztek (`--live` / visszagörgetve), a böngészős tesztek (a próbalistát igénylők
-  `leiras-seed` + `seed-52-1` után), a `test-audit-5` hibás TMDB-vel, a `test-1013b` két verzióval; minden teszt után
-  üríti a tesztfiókot, a végén rendes fordítás. Összesítő: `teljes/osszesito.txt`. 2026-10-15: 50 fájl, ~500 lépés, a
-  javítások után mind rendben (az elavult tesztek – műfajszűrő-gomb, 53-as találatlista, a 83 óta frissülő próbalista
-  – igazítva). A `leiras-seed` a címeket `details_checked_at`-tel veszi fel (a TMDB-frissítés ne írja át őket).
-  Képernyőkép / videó a tesztfiókról: a fejléc e-mail-címét mintacímre kell cserélni
+- Ha a terminál nem ismeri a `node`/`npm` parancsot, a VS Code-ot újra kell indítani (a Node a
+  `C:\Program Files\nodejs` mappában van).
+- Tesztfelhasználó: `TEST_USER_EMAIL` / `TEST_USER_PASSWORD` a `.env.local`-ban – külön Supabase-fiók, az RLS miatt
+  Norbi listáját nem látja. Soha ne írd ki az értékeit. A teszt végén a tesztfiók listáját ürítsd ki.
+- Böngészős teszt: `playwright-core` a scratchpadbe telepítve (nem a projektbe), a gépen lévő Chrome-mal
+  (`C:\Program Files\Google\Chrome\Application\chrome.exe`), a helyben futó `npx next start -p 3123` ellen. A tesztek
+  és segédszkriptek a `munka/` mappában: a scratchpadbe másolva, ott `npm install` után futtathatók.
+- Szkriptből (supabase-js) kilépéskor `signOut({ scope: 'local' })` kell – az alapértelmezett `global` a böngészőben
+  futó munkamenetet is lezárja, és az `/api` route-ok 401-et adnak.
+- A böngészős teszt „kevesebb mozgás” módban fut (`emulateMedia({ reducedMotion: 'reduce' })`); a mozgást a saját
+  lépése kapcsolja vissza. A `page.reload` megvárja a friss listát (`main[data-list]`), a `plainReload` nem; a
+  `clearSnapshot()` törli a tárolt listát. Fix várakozás helyett a mentés utáni friss sorra (`rowRefetched`) vagy két
+  képkockára (`settle`) vár; képernyőkép csak `SHOTS=1`-gyel. Fő teszt: `munka/e2e/test.mjs`.
+- **Teljes tesztkör**: `munka/e2e/teljes.sh` (a scratchpadbe másolt e2e mappából, Git Bash-ben, ~25 perc):
+  adatbázis- és böngészős tesztek (a próbalistát igénylők `leiras-seed` + `seed-52-1` után), a `test-audit-5` hibás
+  TMDB-vel, a `test-1013b` két verzióval; minden teszt után üríti a tesztfiókot. Összesítő: `teljes/osszesito.txt`.
+  A `leiras-seed` a címeket `details_checked_at`-tel veszi fel (a TMDB-frissítés ne írja át őket).
+- Képernyőkép / videó a tesztfiókról: a fejléc e-mail-címét mintacímre kell cserélni
   (`munka/dizajn-2/eszkozok/mask.mjs`); videóhoz a Playwright ffmpeg-je a scratchpadbe kerül
   (`PLAYWRIGHT_BROWSERS_PATH`), lásd `munka/dizajn-2/eszkozok/video*.mjs`.
 
