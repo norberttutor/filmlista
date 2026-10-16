@@ -189,7 +189,7 @@ function TitleRow({
             {t.poster_path && <img src={THUMB_BASE + t.poster_path} alt="" loading="lazy" />}
           </button>
           <div className="row-text">
-            {/* mindig egy sorban; ha így sem fér ki, "…" és rámutatva a teljes cím */}
+            {/* legfeljebb 2 sorban; ha így sem fér ki, "…" és rámutatva a teljes cím (átnézés K6) */}
             <p className="row-name" title={t.title}>
               <span key={strike} className="strike" data-strike={strike ? '' : undefined}>
                 {link ? (
@@ -202,7 +202,7 @@ function TitleRow({
               </span>
             </p>
             {t.original_title && t.original_title !== t.title && (
-              <p className="original">
+              <p className="original" title={t.original_title}>
                 <Hl text={t.original_title} />
               </p>
             )}
@@ -214,36 +214,39 @@ function TitleRow({
               {release && <ReleaseBadge state={release} />}
             </p>
             <GenreList className="row-genres" genres={t.genres} />
-            <p className="added">
-              Hozzáadva: <time dateTime={t.created_at}>{formatDate(t.created_at)}</time>
-            </p>
+            <div className="row-added">
+              <p className="added">
+                Hozzáadva: <time dateTime={t.created_at}>{formatDate(t.created_at)}</time>
+              </p>
+              {/* a franchise a „Hozzáadva” sor végén (átnézés K6, 2026-10-16: korábban saját oszlopban a cím mellett – a cím
+                  1440 px-en így ~170 px-et kapott); üresen csak rámutatáskor látszik, de a helyét megtartja, így a sor
+                  nem ugrik */}
+              {/* keresésnél: ha a cím a franchise neve miatt illik, a franchise mezője kiemelve (terv-3 66) */}
+              <div
+                className={['franchise-field', !t.franchise_id && 'empty', searchHit?.has(t.id) && 'search-hit']
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                {!t.franchise_id && <span aria-hidden="true">Franchise</span>}
+                <Lock on={readOnly}>
+                  <FranchiseSelect
+                    className="franchise-select"
+                    label={`Franchise – ${t.title}`}
+                    value={t.franchise_id}
+                    franchises={franchises}
+                    onChange={(id) => save({ franchise_id: id })}
+                    onCreate={onCreateFranchise}
+                    onDelete={onDeleteFranchise}
+                    onRename={onRenameFranchise}
+                  />
+                </Lock>
+              </div>
+            </div>
             {error && (
               <p className="error small" role="alert">
                 {error}
               </p>
             )}
-          </div>
-          {/* saját, fix szélességű oszlop a cím és a leírás között, középre igazítva – így
-              a sorok nem ugrálnak; üresen csak rámutatáskor látszik, de a helyét megtartja */}
-          {/* keresésnél: ha a cím a franchise neve miatt illik, a franchise mezője kiemelve (terv-3 66) */}
-          <div
-            className={['franchise-field', !t.franchise_id && 'empty', searchHit?.has(t.id) && 'search-hit']
-              .filter(Boolean)
-              .join(' ')}
-          >
-            {!t.franchise_id && <span aria-hidden="true">Franchise</span>}
-            <Lock on={readOnly}>
-              <FranchiseSelect
-                className="franchise-select"
-                label={`Franchise – ${t.title}`}
-                value={t.franchise_id}
-                franchises={franchises}
-                onChange={(id) => save({ franchise_id: id })}
-                onCreate={onCreateFranchise}
-                onDelete={onDeleteFranchise}
-                onRename={onRenameFranchise}
-              />
-            </Lock>
           </div>
           {/* leírás: széles képernyőn a cím mellett, keskenyebben alatta (CSS); a teljes
               szöveg rámutatáskor látszik */}

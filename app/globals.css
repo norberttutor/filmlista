@@ -3349,14 +3349,35 @@ mark.hl {
   height: 9rem; /* = a borító magassága */
 }
 
+/* borító | a cím és az adatai (fölül) + a leírás (alul) – a franchise a „Hozzáadva” sor végén (.row-added, átnézés K6,
+   2026-10-16): korábban saját, 11rem-es oszlopban a cím mellett, így 1440 px-en a cím ~170 px-et kapott (az üres,
+   láthatatlan mező is foglalta a helyet), most ~365-öt */
 .row-title {
-  grid-template-columns: 6.25rem minmax(0, 1fr) var(--franchise-col);
+  grid-template-columns: 6.25rem minmax(0, 1fr);
   column-gap: 1.25rem;
 }
 
 .row-title .thumb {
   grid-row: span 2;
   width: 6.25rem;
+}
+
+.row-added {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.9rem;
+  margin-top: 0.2rem;
+}
+
+.row-text .row-added .added {
+  margin: 0;
+}
+
+/* a „Hozzáadva” mellett balra zárva, a lenyíló a franchise-oszlop szélességéig */
+.row-added .franchise-field {
+  justify-content: flex-start;
+  max-width: var(--franchise-col);
 }
 
 .row-name {
@@ -3372,7 +3393,7 @@ mark.hl {
 }
 
 .row-overview {
-  grid-column: 2 / -1;
+  grid-column: 2;
   max-width: 62rem;
   margin: 0.45rem 0 0;
   font-size: 0.92rem;
@@ -3416,7 +3437,8 @@ mark.hl {
   margin: 0;
 }
 
-/* a cím mindig egy sorban; ha a hely így sem elég, "…" (a teljes cím rámutatáskor látszik) */
+/* a cím legfeljebb 2 sorban; ha így sem fér ki, "…" (a teljes cím rámutatáskor látszik) – átnézés K6, 2026-10-16:
+   korábban egy sorban, és a hosszú cím vészett el, miközben az eredeti cím 2–3 sorba tört */
 .row-name {
   min-width: 0;
   max-width: 100%;
@@ -3424,8 +3446,11 @@ mark.hl {
   font-size: 1.25rem;
   font-weight: 650;
   line-height: 1.25;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  text-wrap: balance;
 }
 
 /* soros nézet: másodlagos szövegek mérete; az évszámok és dátumok számjegyei egyforma
@@ -3433,6 +3458,13 @@ mark.hl {
 .titles-table .original,
 .titles-table .meta {
   font-size: 0.8rem;
+}
+
+/* az eredeti cím egy sorban, "…"-val (a teljes rámutatáskor) – átnézés K6 */
+.titles-table .original {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .titles-table .added {
@@ -7318,11 +7350,15 @@ body:has(.editor[open]) {
   margin-bottom: 0.35rem;
 }
 
-@media (max-width: 640px) {
+/* 900 px alatt (az adatlap ilyenkor keskeny, egyoszlopos) a Franchise és a Saját értékelés egymás alatt: mellette a
+   tíz csillag a Franchise lenyílót összenyomta, a neve két sorba tört (átnézés K5, 2026-10-16) */
+@media (max-width: 899px) {
   .editor-pair {
     grid-template-columns: minmax(0, 1fr);
   }
+}
 
+@media (max-width: 640px) {
   .editor-controls > * {
     padding: 0.55rem 0.7rem 0.65rem;
   }

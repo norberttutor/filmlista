@@ -684,13 +684,15 @@ function TitlePage({
             {/* előnézetnél csak a TMDB-adatokkal (a találatban nincs megjelenési dátum) */}
             {(!preview || details) && <ReleaseBadge state={releaseState(t)} />}
           </p>
+          {/* műfajok, pötty nélkül (mint Mama adatlapján; Norbi kérése, 2026-10-08) – előnézetnél a
+              TMDB-adatokból ({ id, name }), amint megjöttek. A cím szövegoszlopában: keskenyebben (< 900 px) így
+              a borító mellett, a cím adatai alatt marad – korábban a borító alá csúszott, a „Hol nézhető?” fölé
+              (átnézés K5, 2026-10-16); asztalon a burkoló display: contents, ott nem változik semmi */}
+          {t.genres?.length > 0 && (
+            <p className="editor-genres">{t.genres.map((g) => (typeof g === 'string' ? g : g.name)).join(' · ')}</p>
+          )}
         </div>
       </div>
-      {/* műfajok, pötty nélkül (mint Mama adatlapján; Norbi kérése, 2026-10-08) – előnézetnél a
-          TMDB-adatokból ({ id, name }), amint megjöttek */}
-      {t.genres?.length > 0 && (
-        <p className="editor-genres">{t.genres.map((g) => (typeof g === 'string' ? g : g.name)).join(' · ')}</p>
-      )}
       {entry.added && (
         <p className="added-note" role="status">
           {entry.added === 'watched'

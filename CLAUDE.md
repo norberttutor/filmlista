@@ -327,7 +327,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   csempéje, a Statisztika franchise-sávja és a gyűjtemény-ablak közös forrása
 - `components/TitleEditor.js` – natív `<dialog>` (fejlécben a leírás; a cím adatai – `.meta` – alatt a
   műfajok sima szövegként, „Akció · Sci-Fi”, **pötty nélkül**, mint Mama adatlapján – `.editor-genres`,
-  Norbi kérése, 2026-10-08; előnézetnél a TMDB-adatokból, amint megjöttek; próba: `munka/e2e/test-mufaj.mjs`). **Adatlapok egymás mögött**
+  Norbi kérése, 2026-10-08; előnézetnél a TMDB-adatokból, amint megjöttek; próba: `munka/e2e/test-mufaj.mjs`; a cím
+  szövegoszlopában – `.editor-titletext` –, így 900 px alatt a kis borító mellett marad, átnézés K5, 2026-10-16). **Adatlapok egymás mögött**
   (terv-3 31-es pont, 2026-10-05): az ablak (`TitleEditor`) lapokat tart (`stack`: `{ id, rowId, item,
   added }`), mindig az utolsó látszik, a többi rejtve megmarad (`.editor-page[hidden]`, a görgetési
   helyével); a lap sora a `titles` propból jön (a listáról nyitottnál `rowId` szerint, különben
@@ -404,7 +405,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   Franchise és a Saját értékelés egymás mellett (`.editor-pair`), alatta keretes sáv
   (`.editor-controls`): Állapot | Letöltve | Mama, elválasztóvonalakkal (évados sorozatnál az
   Évadok a sáv fölött, a sávban csak a Mama; asztalon egy sorban; a csoportok – telefonon is – középre zárva); a mezők címkéi kis, ritkított nagybetűk; telefonon
-  a pár egymás alatt, a sávban fent az Állapot, alatta a Letöltve és a Mama. Asztalon a
+  a pár egymás alatt (900 px alatt – átnézés K5, 2026-10-16: mellette a tíz csillag a Franchise lenyílót összenyomta),
+  a sávban fent az Állapot, alatta a Letöltve és a Mama. Asztalon a
   vezérlőblokk 341 → 168 px (látványtervek: `munka/terv-3/terv-30/`). A Mama-csoport csak franchise
   nélküli filmnél (terv-3 58, `mamaApplies` – a franchise mező átállításakor azonnal; a meglévő érték
   mellett marad); évados sorozatnál így a sáv el is marad.
@@ -438,8 +440,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (`border-spacing`), lekerekített sorok, 100 px-es borító (w185), 24 px-es cím, a leírás mindig a cím alatt
   2 sorban, a sor mindig halványan a film színében (a szín azonnal számolódik, nem az első rámutatáskor),
   a film jelenetképe (`backdrop_path`, w780, `--row-img`, `tr[data-img]`) halványan a címcella jobb felén
-  (megnézettnél szürkén); a megnézett sor vezérlőinek halványítása a cella tartalmán (nem a cellán). A
-  korábbi leírás: balra borító (72 px
+  (megnézettnél szürkén); a megnézett sor vezérlőinek halványítása a cella tartalmán (nem a cellán).
+  **Átnézés K6 (2026-10-16, felülírja az alábbiakat):** a cím legfeljebb 2 sorban (`line-clamp`, utána „…” + tooltip), az
+  eredeti cím 1 sorban „…”-val (`title` a teljessel); a Franchise lenyíló nem saját oszlopban, hanem a „Hozzáadva: …” sor
+  végén (`.row-added` – flex sor; a mező legfeljebb `--franchise-col` = 11rem, üresen láthatatlan, de a helyét megtartja,
+  így rámutatáskor nem ugrik a sor); a `.row-title` rácsa borító | cím és adatok (a leírás alattuk, ugyanabban az
+  oszlopban) – 1440 px-en a cím így ~365 px-et kap (korábban ~170-et: az üres franchise-oszlop foglalta mellette a helyet).
+  A korábbi leírás: balra borító (72 px
   széles – Norbi kérése, 2026-10-04: így olyan magas, mint mellette az adatok; gomb:
   rákattintva a szerkesztő ablak – részletek, hasonló címek; rámutatva türkiz keret) +
   adatok (a cím 20 px-es, mindig egy sorban, ha így sem fér ki „…” + tooltip; a műfajok külön
@@ -1683,8 +1690,8 @@ pontonkénti részletek – hely, mit lát Norbi, ok, javítás, bizonyosság �
   - K2 – Az adatlap derengő háttere görgetéskor éles, lekerekített széllel véget ér (Mama adatlapján is) – **kész** (2026-10-15, `1f26dca`)
   - K3 – Évadok idővonala: a „ma” jelölő a tengelyen túl (vízszintes kilógás a sorozat adatlapján) – **kész** (2026-10-15, `1f26dca`)
   - K4 – Egyoldalas találatnál a lábléc a magas, vonalas változat (nem a keskeny, dokkolt) – **kész** (2026-10-15, `1f26dca`)
-  - K5 – 641–899 px: az adatlapon a műfajok a borító alá csúsznak, a Franchise mező két sorba törik – ~0,5 óra
-  - K6 – Asztali listanézet 1900 px alatt: a cím egy sorra vágva, az eredeti cím 2–3 sorban – ~0,5 óra
+  - K5 – 641–899 px: az adatlapon a műfajok a borító alá csúsznak, a Franchise mező két sorba törik – **kész** (2026-10-16)
+  - K6 – Asztali listanézet 1900 px alatt: a cím egy sorra vágva, az eredeti cím 2–3 sorban – **kész** (2026-10-16; a cím 2 sorig, a franchise a „Hozzáadva” sorban)
   - K7 – Táblázat: a „Nem érdekli” két sorba törik a Mama-lenyílóban – **kész** (2026-10-15, `1f26dca`)
 - **H – Kódhibák, hibakezelés** – ~5 óra
   - H1 – Csillagos értékelés billentyűzettel: a nyíl azonnal ment („Hogy tetszett?” → 1 csillag) – ~1–1,5 óra
