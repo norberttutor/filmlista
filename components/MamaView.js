@@ -10,7 +10,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import { useSlidingThumb } from '@/lib/useSlidingThumb';
 
 const POSTER = 'https://image.tmdb.org/t/p/w185';
-const PAGE = 24; // ennyi film látszik, utána „További filmek”
+const PAGE = 5; // a „Filmek” fülön ennyi film látszik egyszerre, utána „További filmek” (+5; Norbi kérése, M1)
 
 // a szűrő (Norbi kérése, 2026-10-07): alapból a még eldöntendők, külön az „Érdekel”-re jelöltek
 const TABS = [
@@ -31,8 +31,10 @@ async function mamaMark(id, choice) {
 // listájából a mama_list() filmjei (franchise nélküli, megnézendő, jelöletlen, már megjelent + az
 // „Érdekli”-k a Megkaptáig), a legutóbb hozzáadott elöl; szűrő: „Filmek” (jelöletlen, alapból) /
 // „Érdekel”. Soronként borító, cím, év, műfaj, IMDb, leírás és a két gomb; a sorra kattintva az
-// adatlap (MamaDetail). „Nem érdekel” → a sor eltűnik, az értesítősávban „Visszavonás”; az „Érdekel”
-// újra kattintva visszavonható – a jelölt sor ezért a szűrő váltásáig a helyén marad (kept).
+// adatlap (MamaDetail). A „Filmek” fülön egyszerre 5 film (M1): az „Érdekel” és a „Nem érdekel” is
+// leveszi a sort (az adatlapot is zárja), a helyére jön a következő, az értesítősávban „Visszavonás”.
+// Az „Érdekel” fül egyben mutat mindent; ott a „✓ Érdekel” újra kattintva visszavonható – a sor
+// ezért a fül váltásáig a helyén marad (kept).
 export default function MamaView() {
   const [list, setList] = useState(null); // null: tölt
   const [loadError, setLoadError] = useState('');
@@ -96,6 +98,32 @@ export default function MamaView() {
       return;
     }
     setStatus(item.id, choice);
+    if (tab === 'open' && choice === 'interested') {
+      // a „Filmek” fülről a sor átkerül az „Érdekel” fülre (a helyére a következő jön)
+      if (openId === item.id) setOpenId(null);
+      try {
+        await mamaMark(item.id, choice);
+      } catch (err) {
+        setStatus(item.id, previous);
+        toast({ text: err.message });
+        return;
+      }
+      toast({
+        text: `„${item.title}” – érdekel.`,
+        action: {
+          label: 'Visszavonás',
+          onClick: async () => {
+            try {
+              await mamaMark(item.id, previous);
+              setStatus(item.id, previous);
+            } catch (err) {
+              toast({ text: err.message });
+            }
+          },
+        },
+      });
+      return;
+    }
     setKept((k) => new Set(k).add(item.id));
     try {
       await mamaMark(item.id, choice);
@@ -108,6 +136,7 @@ export default function MamaView() {
   const opened = list?.find((t) => t.id === openId);
   const current = TABS.find((x) => x.code === tab);
   const visible = list ? list.filter((t) => current.match(t) || kept.has(t.id)) : [];
+  const limit = tab === 'open' ? shown : visible.length; // az „Érdekel” fül egyben
 
   return (
     <main className="mama-page">
@@ -150,7 +179,7 @@ export default function MamaView() {
       ) : (
         <>
           <ul className="mama-rows">
-            {visible.slice(0, shown).map((t) => {
+            {visible.slice(0, limit).map((t) => {
               const yes = t.mama_status === 'interested';
               return (
                 <li key={t.id} className={yes ? 'interested' : undefined}>
@@ -186,7 +215,7 @@ export default function MamaView() {
               );
             })}
           </ul>
-          {visible.length > shown && (
+          {visible.length > limit && (
             <button type="button" className="ghost mama-more" onClick={() => setShown((n) => n + PAGE)}>
               További filmek
             </button>

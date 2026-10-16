@@ -351,9 +351,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 
 ### Mama
 - `components/MamaView.js` + `components/MamaDetail.js` – Mama oldala (terv-3 13, „B”): „Norbi filmjei”, téma,
-  Kilépés; rendezés, kereső, menü, harang nincs. Fülek: „Filmek” (jelöletlenek, alapból) / „Érdekel” (`.mama-tabs`;
-  `kept` a fülváltásig). A `mama_list()` filmjei, 24-esével; soronként „Érdekel” (borostyán) / „Nem érdekel” (a sor
-  eltűnik, „Visszavonás”); optimista `mama_mark()`, hibánál visszaáll. Adatlap (`dialog.editor.mama-detail`):
+  Kilépés; rendezés, kereső, menü, harang nincs. Fülek: „Filmek” (jelöletlenek, alapból; egyszerre 5, „További
+  filmek” +5) / „Érdekel” (egyben minden; `.mama-tabs`). A `mama_list()` filmjei; soronként „Érdekel” (borostyán) /
+  „Nem érdekel”: a „Filmek” fülön mindkettő leveszi a sort (az adatlapot is zárja), helyére jön a következő, 8 mp
+  „Visszavonás”; az „Érdekel” fülön a „✓ Érdekel” újra kattintva visszavon, a sor a fülváltásig marad (`kept`);
+  optimista `mama_mark()`, hibánál visszaáll. Adatlap (`dialog.editor.mama-detail`):
   háttérkép, előzetes, „Hol nézhető?”, a két nagy gomb; a film színében dereng; telefonon alsó lap. Helyben nem tárol
   (net nélkül üres / hiba). E2e: „Mama oldala (terv-3 13)…” a Mama-tesztfiókkal.
 
