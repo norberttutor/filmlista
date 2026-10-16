@@ -143,7 +143,7 @@ export default function PasswordDialog({ email, onClose }) {
         <div className="editor-actions">
           <span className="spacer" />
           {done ? (
-            <button type="button" className="primary" onClick={() => dialogRef.current.close()}>
+            <button type="button" className="ghost" onClick={() => dialogRef.current.close()}>
               Bezárás
             </button>
           ) : (

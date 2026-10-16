@@ -197,7 +197,7 @@ export default function ImdbRatingsImport({ titles, onApplied, onAdded, ref }) {
                   {plan.overwritten} felülírt)
                 </li>
                 <li>{plan.same} már egyezik</li>
-                <li>{plan.notOnList} film nincs a listádon – ezeket nem veszem fel</li>
+                <li>{plan.notOnList} cím nincs a listádon – ezeket nem veszem fel</li>
               </ul>
               <p className="muted small">Az állapotokat (pl. „Megnézve”) nem módosítom.</p>
 
@@ -335,7 +335,7 @@ export default function ImdbRatingsImport({ titles, onApplied, onAdded, ref }) {
                 </button>
               </>
             ) : (
-              <button type="button" className="primary" disabled={watch?.phase === 'adding'} onClick={close}>
+              <button type="button" className="ghost" disabled={watch?.phase === 'adding'} onClick={close}>
                 Bezárás
               </button>
             )}

@@ -287,7 +287,7 @@ export default function BulkImport({ existingKeys, onAdded, ref }) {
             )}
             <span className="spacer" />
             {phase === 'done' ? (
-              <button type="button" className="primary" onClick={() => dialogRef.current.close()}>
+              <button type="button" className="ghost" onClick={() => dialogRef.current.close()}>
                 Bezárás
               </button>
             ) : (

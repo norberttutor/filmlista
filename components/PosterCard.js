@@ -73,7 +73,7 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
       <button
         type="button"
         className="edit-btn"
-        aria-label={`Szerkesztés: ${label}`}
+        aria-label={`${label} adatlapja`}
         onClick={() => onEdit(t, posterRef.current)}
       >
         <svg

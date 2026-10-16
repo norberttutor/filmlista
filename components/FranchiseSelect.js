@@ -155,7 +155,7 @@ export default function FranchiseSelect({
           Mégse
         </button>
         <button type="button" className="danger mini" disabled={busy} onClick={remove}>
-          Igen, törlés
+          Törlés
         </button>
         {errorText}
       </div>

@@ -183,7 +183,8 @@ export default function NotificationBell({ notifications, titles, franchiseName,
             {items.length === 0 ? (
               <p className="notif-empty">
                 Még nincs értesítés. Itt jelzem, ha egy sorozatodhoz új évadot jelentenek be, ha
-                egy évad megjelenik, vagy ha egy várt film digitálisan is elérhető lesz.
+                egy évad megjelenik, ha egy várt film digitálisan is elérhető lesz, ha Mamát érdekel
+                egy film, vagy ha új rész jelenik meg egy franchise-od gyűjteményében.
               </p>
             ) : (
               <ul className="notif-list" ref={listRef}>

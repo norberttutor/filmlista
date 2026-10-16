@@ -140,7 +140,7 @@ export default function MamaView() {
         <div className="mama-empty">
           <p role="alert">{loadError}</p>
           <button type="button" className="ghost" onClick={load}>
-            Újra
+            Újrapróbálás
           </button>
         </div>
       ) : list === null ? (
@@ -154,7 +154,7 @@ export default function MamaView() {
               const yes = t.mama_status === 'interested';
               return (
                 <li key={t.id} className={yes ? 'interested' : undefined}>
-                  <button type="button" className="mama-open" onClick={() => setOpenId(t.id)} aria-label={`${t.title} – részletek`}>
+                  <button type="button" className="mama-open" onClick={() => setOpenId(t.id)} aria-label={`${t.title} adatlapja`}>
                     <span className="mama-poster">{t.poster_path && <img src={POSTER + t.poster_path} alt="" loading="lazy" />}</span>
                   </button>
                   <div className="mama-text">

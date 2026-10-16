@@ -218,6 +218,8 @@ export default function PersonPage({ person: cast, titles, active, apiRef, back,
             </div>
             {p.biography && (
               <>
+                {/* a nyelvjelzés az életrajz előtt – a „Tovább” után „Tovább angolul”-nak olvasódott (I5) */}
+                {p.bio_lang === 'en' && <p className="trailer-lang person-bio-lang">Életrajz · angolul</p>}
                 <p ref={bioRef} className={bioOpen ? 'editor-overview person-bio open' : 'editor-overview person-bio'}>
                   {p.biography}
                 </p>
@@ -227,7 +229,6 @@ export default function PersonPage({ person: cast, titles, active, apiRef, back,
                       {bioOpen ? 'Kevesebb' : 'Tovább'}
                     </button>
                   )}
-                  {p.bio_lang === 'en' && <span className="trailer-lang">angolul</span>}
                   {tmdbLink('inline')}
                 </div>
               </>

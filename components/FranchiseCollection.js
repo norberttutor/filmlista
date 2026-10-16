@@ -8,6 +8,7 @@ import { usePosterColor, ambientProps, franchisePosterPath } from '@/lib/posterC
 import WatchOrder from '@/components/WatchOrder';
 import { useSlidingThumb } from '@/lib/useSlidingThumb';
 import { FranchiseActions, FranchiseLogoPicker } from '@/components/FranchiseActions';
+import { article } from '@/lib/franchiseSuggest';
 
 const IMG = 'https://image.tmdb.org/t/p/';
 const byYear = (a, b) => (a.release_year ?? 9999) - (b.release_year ?? 9999);
@@ -135,7 +136,7 @@ export default function FranchiseCollection({ franchise, franchiseNames, titles,
           <b>
             {watched}/{onList}
           </b>{' '}
-          megnézve
+          cím megnézve
           {countsNote(counts)}
           {sections.length === 0 && ' · nincs hozzá TMDB-gyűjtemény'}
         </span>
@@ -391,7 +392,7 @@ export function CollectionDialog({
             <b>
               {counts.watched}/{counts.onList}
             </b>{' '}
-            megnézve
+            cím megnézve
             {countsNote(counts)}
           </span>
         </p>
@@ -412,7 +413,9 @@ export function CollectionDialog({
           </form>
         ) : edit?.mode === 'delete' ? (
           <div className="fr-edit fr-confirm collection-actions">
-            <span className="confirm-text">Törlöd a franchise-t? A címekről lekerül, a címek maradnak.</span>
+            <span className="confirm-text">
+              Törlöd {article(franchise.name)} „{franchise.name}” franchise-t? A címekről lekerül, a címek maradnak.
+            </span>
             <button type="button" className="ghost mini" autoFocus onClick={() => setEdit(null)}>
               Mégse
             </button>
@@ -617,7 +620,7 @@ export function CollectionDialog({
           </button>
         )}
         <span className="spacer" />
-        <button type="button" className="primary" onClick={() => dialogRef.current.close()}>
+        <button type="button" className="ghost" onClick={() => dialogRef.current.close()}>
           Bezárás
         </button>
       </div>

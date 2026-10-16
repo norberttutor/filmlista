@@ -837,7 +837,12 @@ function TitlePage({
                       {t.my_rating ? `${t.my_rating}/10` : 'Nincs'}
                     </span>
                     {t.my_rating && (
-                      <button type="button" className="link small" onClick={() => changeRating(null)}>
+                      <button
+                        type="button"
+                        className="link small"
+                        aria-label="Saját értékelés törlése"
+                        onClick={() => changeRating(null)}
+                      >
                         Törlés
                       </button>
                     )}
@@ -958,7 +963,7 @@ function TitlePage({
                   Mégse
                 </button>
                 <button type="button" className="danger" disabled={busy} onClick={handleDelete}>
-                  Igen, törlés
+                  Törlés
                 </button>
               </>
             ) : (

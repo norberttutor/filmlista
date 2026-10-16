@@ -14,7 +14,7 @@ import {
 import { mapLimit } from '@/lib/bulkImport';
 import { useBackdropClose } from '@/lib/useBackdropClose';
 import { usePosterColor, ambientProps, franchisePosterPath } from '@/lib/posterColor';
-import { franchiseSuggestions } from '@/lib/franchiseSuggest';
+import { article, franchiseSuggestions } from '@/lib/franchiseSuggest';
 import FranchiseSuggestions from '@/components/FranchiseSuggestions';
 import { FranchiseActions } from '@/components/FranchiseActions';
 
@@ -272,7 +272,9 @@ export default function FranchisesDialog({
                   </form>
                 ) : editing?.mode === 'delete' ? (
                   <div className="fr-edit fr-confirm">
-                    <span className="confirm-text">Törlöd? A címekről lekerül, a címek maradnak.</span>
+                    <span className="confirm-text">
+                      Törlöd {article(f.name)} „{f.name}” franchise-t? A címekről lekerül, a címek maradnak.
+                    </span>
                     <button type="button" className="ghost mini" autoFocus onClick={() => setEdit(null)}>
                       Mégse
                     </button>

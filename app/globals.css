@@ -2159,6 +2159,21 @@ body:has(.filters[data-stuck]):not(:has(.filters [aria-expanded='true'])) .title
   color: var(--accent);
 }
 
+/* a kiválasztott pipát kap a sor végén, mint a natív lenyílókban (option::checkmark – I5); a helye
+   minden sorban foglalt, hogy a lista szélessége ne függjön attól, melyik a kiválasztott */
+.franchise-listbox li[role='option']::after {
+  content: '✓';
+  flex: none;
+  margin-left: auto;
+  padding-left: 0.2rem;
+  font-weight: 700;
+  visibility: hidden;
+}
+
+.franchise-listbox li[aria-selected='true']::after {
+  visibility: visible;
+}
+
 /* csoportok és címkék (terv-3 54, Norbi választása: „A”): „Van még megnézendő” fölül „N hátra”
    címkével, „Mind megnézve” alul, tompán (rámutatva / kiválasztva teljes színű) */
 .franchise-listbox:has(.franchise-badge) {
@@ -6763,6 +6778,9 @@ body:has(.editor[open]) {
 .cast-more {
   justify-self: start;
   width: fit-content;
+  /* mint a „Tovább” a leírásnál és az életrajznál (I5) */
+  font-weight: 600;
+  text-decoration: none;
 }
 
 .cast-all {
@@ -6850,6 +6868,10 @@ body:has(.editor[open]) {
   overflow: hidden;
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
+}
+
+.person-bio-lang {
+  margin: 0.6rem 0 -0.3rem;
 }
 
 .person-bio-row {

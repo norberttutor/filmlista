@@ -47,7 +47,7 @@ export function HideButton({ item, onHide }) {
       type="button"
       className="hide-btn"
       aria-label={`Nem érdekel: ${item.title}`}
-      title="Nem érdekel – többé nem ajánlja"
+      title="Nem érdekel – többé nem ajánljuk"
       onClick={() => onHide(item)}
     >
       <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true">

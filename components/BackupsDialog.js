@@ -168,7 +168,7 @@ export default function BackupsDialog({ titleCount, onRestored, onClose }) {
           <span className="spacer" />
           <button
             type="button"
-            className="primary"
+            className="ghost"
             disabled={busy !== null}
             onClick={() => dialogRef.current.close()}
           >

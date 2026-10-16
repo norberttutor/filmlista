@@ -56,7 +56,9 @@ export default function WatchOrder({
     ? [...draft.map((k) => byKey.get(k)).filter(Boolean), ...items.filter((i) => !draft.includes(i.key))]
     : items;
   const next = nextItem(shown);
-  const watched = items.filter(itemDone).length;
+  // a számlálóban csak a megjelent tételek (a bejelentett évad még nem nézhető – I4)
+  const aired = items.filter((i) => i.aired);
+  const watched = aired.filter(itemDone).length;
 
   useEffect(() => {
     if (!moved) return;
@@ -236,9 +238,9 @@ export default function WatchOrder({
         ) : (
           <p className="wo-summary">
             <b>
-              {watched}/{items.length}
+              {watched}/{aired.length}
             </b>{' '}
-            megnézve · {stored ? 'saját sorrend' : 'megjelenés szerint'}
+            rész megnézve · {stored ? 'saját sorrend' : 'megjelenés szerint'}
           </p>
         )}
         <span className="spacer" />

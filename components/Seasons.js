@@ -410,7 +410,7 @@ export function SeasonList({ title, actions }) {
               Mégse
             </button>
             <button type="button" className="danger mini" onClick={remove}>
-              Igen, törlés
+              Törlés
             </button>
           </span>
         </div>
