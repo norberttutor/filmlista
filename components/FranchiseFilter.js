@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useEffect, useId, useRef, useState } from 'react';
+import { Fragment, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 
 const LOGO_BASE = 'https://image.tmdb.org/t/p/w185';
 const DARK_LIMIT = 0.5; // ennél sötétebb logót fehérre színezünk, hogy a sötét háttéren látsszon
@@ -55,8 +55,28 @@ const GROUP_LABELS = { open: 'Van még megnézendő', done: 'Mind megnézve' };
 // options: [{ value, label, logo, group, badge }] – billentyűzet: nyilak, Home/End, Enter/Szóköz, Esc.
 // group ('open' | 'done', terv-3 54): csoportcím a csoport első eleme előtt („Van még megnézendő” /
 // „Mind megnézve” – a kész franchise tompán); badge: címke jobbra („2 hátra” / „✓ Mind megnézve”).
-// lead="icon" (a műfajszűrő, terv-3 56): a logó helyett kis ikon (o.icon – GenreIcon) keskeny oszlopban
-export default function FranchiseFilter({ labelId, value, options, onChange, lead = 'logo', className }) {
+// lead="icon" (a műfajszűrő, terv-3 56): a logó helyett kis ikon (o.icon – GenreIcon) keskeny oszlopban.
+// Asztalon a szűrősor többi lenyílója is ez (M3, Norbi választása, 2026-10-17 – látványterv:
+// https://claude.ai/artifact/KSVj66nfYKQDykEBn312AJ):
+//   labelId – külső felirat; label – a gombon belüli kis címke az érték fölött (kétszintű felirat);
+//   ariaLabel – látható felirat nélkül (Típus, Rendezés); changed – nem alapértelmezett érték (halvány türkiz);
+//   icon – a gomb ikonja, ha a kiválasztottnak nincs saját logója / ikonja; layout="grid" – rácsos panel
+//   (asztalon); rootClass – a gyökér osztálya (a franchise- és a műfajszűrőé „franchise-filter”, a többié
+//   „filter-select”); o.count – darabszám a sor végén (0-nál a sor halvány)
+export default function FranchiseFilter({
+  labelId,
+  label,
+  ariaLabel,
+  value,
+  options,
+  onChange,
+  lead = 'logo',
+  className,
+  rootClass = 'franchise-filter',
+  changed = false,
+  icon,
+  layout,
+}) {
   const id = useId();
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -65,6 +85,8 @@ export default function FranchiseFilter({ labelId, value, options, onChange, lea
   const listRef = useRef(null);
   const selectedIndex = Math.max(0, options.findIndex((o) => o.value === value));
   const selected = options[selectedIndex];
+  // a lista és a gomb felirata: külső felirat, vagy a gombon belüli (látható / rejtett) címke
+  const labelledBy = labelId ?? `${id}-label`;
 
   // kattintás a lenyílón kívül: bezár
   useEffect(() => {
@@ -78,6 +100,16 @@ export default function FranchiseFilter({ labelId, value, options, onChange, lea
 
   useEffect(() => {
     if (open) listRef.current?.focus();
+  }, [open]);
+
+  // ha a panel jobbra kilógna a lapból (pl. a széles műfajrács), annyival balra tolódik (--shift, CSS)
+  useLayoutEffect(() => {
+    const el = listRef.current;
+    if (!open || !el) return;
+    el.style.removeProperty('--shift');
+    const r = el.getBoundingClientRect();
+    const over = r.right - (document.documentElement.clientWidth - 12);
+    if (over > 0) el.style.setProperty('--shift', `${-Math.min(over, Math.max(0, r.left - 12))}px`);
   }, [open]);
 
   useEffect(() => {
@@ -97,9 +129,13 @@ export default function FranchiseFilter({ labelId, value, options, onChange, lea
 
   function handleListKey(event) {
     const last = options.length - 1;
+    const next = () => setActive((a) => Math.min(a + 1, last));
+    const prev = () => setActive((a) => Math.max(a - 1, 0));
     const keys = {
-      ArrowDown: () => setActive((a) => Math.min(a + 1, last)),
-      ArrowUp: () => setActive((a) => Math.max(a - 1, 0)),
+      ArrowDown: next,
+      ArrowUp: prev,
+      // rácsban oldalra is (sorfolytonosan)
+      ...(layout === 'grid' && { ArrowRight: next, ArrowLeft: prev }),
       Home: () => setActive(0),
       End: () => setActive(last),
       Enter: () => choose(active),
@@ -118,14 +154,16 @@ export default function FranchiseFilter({ labelId, value, options, onChange, lea
   }
 
   return (
-    <div className={className ? `franchise-filter ${className}` : 'franchise-filter'} ref={rootRef}>
+    <div className={className ? `${rootClass} ${className}` : rootClass} ref={rootRef}>
       <button
         ref={buttonRef}
         type="button"
         className="franchise-filter-button"
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-labelledby={`${labelId} ${id}-value`}
+        aria-labelledby={`${labelledBy} ${id}-value`}
+        data-changed={changed || undefined}
+        data-labeled={label ? '' : undefined}
         onClick={() => (open ? setOpen(false) : openList())}
         onKeyDown={(e) => {
           if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -134,9 +172,26 @@ export default function FranchiseFilter({ labelId, value, options, onChange, lea
           }
         }}
       >
-        {selected.logo && <FranchiseLogo path={selected.logo} />}
-        {selected.icon}
-        <span id={`${id}-value`}>{selected.label}</span>
+        {selected.logo ? <FranchiseLogo path={selected.logo} /> : (selected.icon ?? icon)}
+        {label ? (
+          <span className="ff-text">
+            <span id={`${id}-label`} className="ff-label">
+              {label}
+            </span>
+            <span id={`${id}-value`} className="ff-value">
+              {selected.label}
+            </span>
+          </span>
+        ) : (
+          <>
+            {ariaLabel && (
+              <span id={`${id}-label`} className="sr-only">
+                {ariaLabel}
+              </span>
+            )}
+            <span id={`${id}-value`}>{selected.label}</span>
+          </>
+        )}
         <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true">
           <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6" />
         </svg>
@@ -145,10 +200,10 @@ export default function FranchiseFilter({ labelId, value, options, onChange, lea
       {open && (
         <ul
           ref={listRef}
-          className="franchise-listbox"
+          className={layout === 'grid' ? 'franchise-listbox ff-grid' : 'franchise-listbox'}
           role="listbox"
           tabIndex={-1}
-          aria-labelledby={labelId}
+          aria-labelledby={labelledBy}
           aria-activedescendant={`${id}-opt-${active}`}
           onKeyDown={handleListKey}
         >
@@ -163,6 +218,7 @@ export default function FranchiseFilter({ labelId, value, options, onChange, lea
                 id={`${id}-opt-${i}`}
                 data-index={i}
                 data-done={o.group === 'done' || undefined}
+                data-zero={o.count === 0 || undefined}
                 role="option"
                 aria-selected={o.value === value}
                 className={i === active ? 'active' : undefined}
@@ -175,6 +231,12 @@ export default function FranchiseFilter({ labelId, value, options, onChange, lea
                   <span className="logo-slot">{o.logo && <FranchiseLogo path={o.logo} />}</span>
                 )}
                 <span className="franchise-name">{o.label}</span>
+                {o.count !== undefined && (
+                  <>
+                    <span className="sr-only">, </span>
+                    <span className="ff-count">{o.count}</span>
+                  </>
+                )}
                 {o.badge && (
                   <>
                     <span className="sr-only">, </span>

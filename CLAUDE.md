@@ -105,6 +105,14 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   Mama-jelölés; Sorozatok típusnál / franchise-ra szűrve nem látszik és nem szűr – `mamaFilter`), Franchise, ↺.
   **Alapállapot** (`DEFAULT_FILTERS`, Norbi kérése): Filmek – Megnézendő – Nem letöltött – Összes műfaj – Franchise
   nélkül. Az állapotgombok darabszámai a többi szűrőt figyelembe veszik.
+- **Asztalon (≥ 641 px, M3)**: az állapot „Mind” gombja külön (`.status-all`, `.status-sep`), az állapotok közös
+  sávban (`.status-track`, csúszó kijelölő) ikonnal (`components/FilterIcons.js`) és darabszám-pirulával; a Letöltés
+  gombcsoport (`.download-seg`, „Mind” / „Letöltött” / „Nem letöltött”); a Típus, a Mama és a Rendezés is
+  `FranchiseFilter` (`rootClass="filter-select"`, `.type-filter` / `.mama-filter` / `.sort-filter`); a Műfaj, a Mama
+  és a Franchise gombján belső címke, a nem alapértelmezett érték halvány türkiz (`changed`); a panel üveges,
+  darabszámokkal (`facetCounts` – a többi szűrővel), a műfajpanel rácsos (`layout="grid"`, a 0 darabos halvány).
+  2560 px-en egy sor (mérve, Mamával). **Telefonon a régi**: beépített `<select>`-ek (`isPhone`), külső felirat.
+  Teszt: `test-m3.mjs`.
 - **Telefonon** a szűrők összecsukva: „Szűrők” gomb + a beállított szűrők címkeként ×-szel (`activeFilters`,
   `.active-filters`; a típuson nincs ×; „↺ Alaphelyzet”), kinyitva összefoglaló (`filterSummary`), legfeljebb a
   képernyő 70%-a. A kereső összecsukva is látszik.
@@ -143,7 +151,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `--filters-h` (ResizeObserver) a táblázat ragadós fejlécéé. Asztalon gyorsgombok (`.stuck-tools`): „↑”, kerek „+”
   (nyitott „Cím hozzáadása” panelnél nem), harang (`NotificationBell quiet`), ⋮ (`moreItems`). A helyük nyugalomban
   is foglalt (`data-off` → `visibility: hidden`), hogy letapadáskor a sor ne törjön másként – ezért asztalon
-  keskenyebb a kereső (10,5 rem) és kisebb a csoportköz (1,75 rem). A kerek gombszabályok csak `> button`-re. A
+  keskenyebb a kereső (10,5 rem) és kisebb a csoportköz (1,5 rem). A kerek gombszabályok csak `> button`-re. A
   fejléc felugrói a szűrősor (`z-index: 30`) fölött. Teszt: `test-102-103.mjs`.
 - **Csúszó kijelölő** (`lib/useSlidingThumb.js`, terv-3 100): új gombcsoportnál `className="… sliding"` +
   `ref={useSlidingThumb()}`; a kiválasztott közvetlen gyermek `aria-pressed` / `aria-selected`.
@@ -183,7 +191,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/FranchiseFilter.js` – franchise-szűrő saját listbox-a logókkal (`FranchiseLogo`: a sötét logót
   fehérre színezi – `.dark`; világos felületen sötét sziluett); csoportok „Van még megnézendő” (`N hátra`) / „Mind
   megnézve” (`li.franchise-group`, `role="presentation"`); felolvasónak „Név, 2 hátra” (a teszt `frOption()`-ja erre
-  épít). `lead="icon"` + `className="genre-filter"`: a műfajszűrő is ez.
+  épít). `lead="icon"` + `className="genre-filter"`: a műfajszűrő is ez. Asztalon a szűrősor többi lenyílója is (M3):
+  `label` (belső címke), `ariaLabel` (felirat nélkül), `changed`, `icon` (alapikon), `layout="grid"`, `rootClass`,
+  `o.count`; ha a panel jobbra kilógna, `--shift`-tel balra tolódik. A `.grid` osztálynév foglalt (borítórács) –
+  a rácsos panelé `.ff-grid`.
 - `components/StarRating.js` – `StarRating` (rádiógombok, nyilakkal is; a kiválasztottra újra kattintva `null`;
   `.pop` animáció csak kattintásra / nyílra) és `StarsDisplay`.
 - `components/Reflow.js` – animált átrendeződés szűréskor / rendezéskor (terv-3 49.3): saját FLIP
@@ -611,8 +622,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - Saját lenyíló-nyíl (`--chevron`, `appearance: none`) és jelölőnégyzet (`--check-mark`); ahol egy szabály
   `background` rövidítést ad egy lenyílónak, a nyilat is újra meg kell adni. Windows nagy kontrasztú módban a
   beépített vezérlők maradnak. A natív `<select>` listája `appearance: base-select`-tel (`@supports` mögött) az app
-  stílusában nyílik; a szűrősor lenyílóinak opciói előtt érték szerinti ikon (`--opt-icon`) / szín (`--opt-dot`) –
-  **új opciókódnál ide is kell ikon**.
+  stílusában nyílik; a szűrősor (telefonos) lenyílóinak opciói előtt érték szerinti ikon (`--opt-icon`) / szín
+  (`--opt-dot`) – **új opciókódnál ide is kell ikon, és asztalra a `components/FilterIcons.js`-be is**.
 - **Mozgás**: legfeljebb ~0,2 s-os átmenetek. Kivételek a `globals.css` „Mozgás” szakaszában (aurora, nézetváltás,
   lista ↔ rács, lenyílók, beúszások, átrendeződés, csillag, pipa, harang, csontváz, toast-csík, kihúzás). A
   `globals.css` végén egy közös `prefers-reduced-motion: reduce` szabály mindent kikapcsol; a JS-ből indított
@@ -680,7 +691,9 @@ Norbi döntései; a részletek a TERV.md-ben.
 - A böngészős teszt „kevesebb mozgás” módban fut (`emulateMedia({ reducedMotion: 'reduce' })`); a mozgást a saját
   lépése kapcsolja vissza. A `page.reload` megvárja a friss listát (`main[data-list]`), a `plainReload` nem; a
   `clearSnapshot()` törli a tárolt listát. Fix várakozás helyett a mentés utáni friss sorra (`rowRefetched`) vagy két
-  képkockára (`settle`) vár; képernyőkép csak `SHOTS=1`-gyel. Fő teszt: `munka/e2e/test.mjs`.
+  képkockára (`settle`) vár; képernyőkép csak `SHOTS=1`-gyel. Fő teszt: `munka/e2e/test.mjs`. A szűrősor lenyílóit
+  a tesztek a `munka/e2e/szuro.mjs`-sel kezelik (`typeFilter`, `sortFilter`, `mamaFilterSelect`, `downloadFilter`:
+  asztalon a saját panel / gombcsoport, telefonon a `<select>`, ugyanazokkal a módszerekkel).
 - **Teljes tesztkör**: `munka/e2e/teljes.sh` (a scratchpadbe másolt e2e mappából, Git Bash-ben, ~25 perc):
   adatbázis- és böngészős tesztek (a próbalistát igénylők `leiras-seed` + `seed-52-1` után), a `test-audit-5` hibás
   TMDB-vel, a `test-1013b` két verzióval; minden teszt után üríti a tesztfiókot. Összesítő: `teljes/osszesito.txt`.

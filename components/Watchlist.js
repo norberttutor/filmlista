@@ -39,6 +39,16 @@ import {
 } from '@/lib/titles';
 import FranchiseFilter from '@/components/FranchiseFilter';
 import GenreIcon from '@/components/GenreIcon';
+import {
+  ALL_GENRES_ICON,
+  DOWNLOAD_ICONS,
+  FRANCHISE_ICON,
+  MAMA_ICON,
+  MamaDot,
+  SORT_ICONS,
+  STATUS_ICONS,
+  TYPE_ICONS,
+} from '@/components/FilterIcons';
 import FranchiseCollection from '@/components/FranchiseCollection';
 import NotificationBell from '@/components/NotificationBell';
 import BulkImport from '@/components/BulkImport';
@@ -225,9 +235,10 @@ const SHORTCUTS = {
 // 2026-10-06) – ugyanúgy magától, mint a nézési sorrend; kézi választás után az marad
 const FRANCHISE_SORT = 'year_asc';
 
-function Chip({ active, onClick, label, count }) {
+function Chip({ active, onClick, label, count, icon, className }) {
   return (
-    <button type="button" className="chip" aria-pressed={active} onClick={onClick}>
+    <button type="button" className={className ? `chip ${className}` : 'chip'} aria-pressed={active} onClick={onClick}>
+      {icon}
       {label}
       {count !== undefined && <span className="n">{count}</span>}
     </button>
@@ -774,6 +785,42 @@ export default function Watchlist({ session }) {
     return counts;
   }, [itemsBeforeStatus, beforeStatus]);
 
+  // a műfaj- és a Mama-lenyíló darabszámai (M3): címenként, a többi szűrővel (az adott szűrő nélkül)
+  const facetCounts = useMemo(() => {
+    const genre_ = { all: 0 };
+    const mama_ = { all: 0 };
+    for (const t of ofType) {
+      if (
+        (franchise && (franchise === NO_FRANCHISE ? t.franchise_id != null : String(t.franchise_id) !== franchise)) ||
+        (searching && !matchTitle(words, searchIdx.get(t.id))) ||
+        (status !== 'all' && t.status !== status) ||
+        (downloaded !== 'all' && t.is_downloaded !== (downloaded === 'yes'))
+      )
+        continue;
+      const gs = t.genres ?? [];
+      if (!mamaFilter || t.mama_status === mamaFilter) {
+        genre_.all++;
+        for (const g of gs) genre_[g] = (genre_[g] ?? 0) + 1;
+      }
+      if (!genre || gs.includes(genre)) {
+        mama_.all++;
+        if (t.mama_status) mama_[t.mama_status] = (mama_[t.mama_status] ?? 0) + 1;
+      }
+    }
+    return { genre: genre_, mama: mama_ };
+  }, [ofType, franchise, searching, words, searchIdx, status, downloaded, mamaFilter, genre]);
+
+  const typeOptions = franchiseChosen || searching ? [BOTH_TYPES, ...TYPES] : TYPES;
+  const sortOptions = orderAvailable ? [WATCH_ORDER, ...SORTS] : SORTS;
+  function changeSort(code) {
+    if (code === WATCH_ORDER.code) {
+      setOrderSort(true);
+    } else {
+      setSort(code);
+      setOrderSort(false);
+    }
+  }
+
   // ha a szűrés vagy a rendezés változik (más kulcs): 1. oldal, és a megtartott sorok elengedve
   const filterKey = [type, status, genre, mamaFilter, franchise, downloaded, activeSort, words.join(' ')].join('|');
 
@@ -857,6 +904,7 @@ export default function Watchlist({ session }) {
   // csúszó kijelölő az állapotgombokon és a lista / rács váltón (terv-3 100)
   const statusThumb = useSlidingThumb();
   const viewThumb = useSlidingThumb();
+  const downloadThumb = useSlidingThumb(); // asztalon a Letöltés is gombcsoport (M3)
   const gridRef = useRef(null); // a borítófal (animált átrendeződés, terv-3 49.3)
   // nézetváltás után (csak akkor – a többi függőség szándékosan nincs benne): a borítók a régi helyükről
   // az újra siklanak (terv-3 73)
@@ -1631,18 +1679,31 @@ export default function Watchlist({ session }) {
               )}
             </div>
 
-            <select
-              className="type-select"
-              aria-label="Típus"
-              value={type}
-              onChange={(e) => changeType(e.target.value)}
-            >
-              {(franchiseChosen || searching ? [BOTH_TYPES, ...TYPES] : TYPES).map((t) => (
-                <option key={t.code} value={t.code}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
+            {/* asztalon a lenyílók saját panellel nyílnak (M3); telefonon a beépített lenyíló marad */}
+            {isPhone ? (
+              <select
+                className="type-select"
+                aria-label="Típus"
+                value={type}
+                onChange={(e) => changeType(e.target.value)}
+              >
+                {typeOptions.map((t) => (
+                  <option key={t.code} value={t.code}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <FranchiseFilter
+                rootClass="filter-select"
+                className="type-filter"
+                ariaLabel="Típus"
+                lead="icon"
+                value={type}
+                onChange={changeType}
+                options={typeOptions.map((t) => ({ value: t.code, label: t.name, icon: TYPE_ICONS[t.code] }))}
+              />
+            )}
 
             {/* mobilon az állapotgombok helyett lenyíló (CSS kapcsolja), a típus mellett */}
             <select
@@ -1660,76 +1721,138 @@ export default function Watchlist({ session }) {
             </select>
 
             <div className="filter-group">
-              <div className="chips status-chips sliding" ref={statusThumb} role="group" aria-label="Állapot">
+              {/* állapot (M3): a „Mind” külön, utána az állapotok egy közös sávban, ikonnal és darabszámmal; a
+                  csúszó kijelölő a sávon (a „Mind”-nek saját kiemelése van) */}
+              <div className="chips status-chips" role="group" aria-label="Állapot">
                 <Chip
+                  className="status-all"
                   active={status === 'all'}
                   onClick={() => pickStatus('all')}
                   label="Mind"
                   count={(itemsBeforeStatus ?? beforeStatus).length}
                 />
-                {shownStatuses.map((s) => (
-                  <Chip
-                    key={s.code}
-                    active={status === s.code}
-                    onClick={() => pickStatus(s.code)}
-                    label={s.name}
-                    count={countByStatus[s.code] ?? 0}
-                  />
-                ))}
+                <span className="status-sep" aria-hidden="true" />
+                <span className="status-track sliding" ref={statusThumb}>
+                  {shownStatuses.map((s) => (
+                    <Chip
+                      key={s.code}
+                      active={status === s.code}
+                      onClick={() => pickStatus(s.code)}
+                      icon={STATUS_ICONS[s.code]}
+                      label={s.name}
+                      count={countByStatus[s.code] ?? 0}
+                    />
+                  ))}
+                </span>
               </div>
 
-              <label className="inline-field">
-                Letöltés
-                <select className="download-select" value={downloaded} onChange={(e) => setDownloaded(e.target.value)}>
+              {isPhone ? (
+                <label className="inline-field">
+                  Letöltés
+                  <select className="download-select" value={downloaded} onChange={(e) => setDownloaded(e.target.value)}>
+                    {DOWNLOAD_FILTERS.map((d) => (
+                      <option key={d.code} value={d.code}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                // asztalon gombcsoport (M3, Norbi kérése: egy kattintással váltható)
+                <div className="download-seg sliding" ref={downloadThumb} role="group" aria-label="Letöltés">
                   {DOWNLOAD_FILTERS.map((d) => (
-                    <option key={d.code} value={d.code}>
-                      {d.name}
-                    </option>
+                    <button
+                      key={d.code}
+                      type="button"
+                      aria-pressed={downloaded === d.code}
+                      onClick={() => setDownloaded(d.code)}
+                    >
+                      {DOWNLOAD_ICONS[d.code]}
+                      {d.code === 'all' ? 'Mind' : d.name}
+                    </button>
                   ))}
-                </select>
-              </label>
+                </div>
+              )}
             </div>
 
             {genres.length > 0 && (
               // saját lenyíló műfajikonokkal (terv-3 56, Norbi választása: „A”), a franchise-szűrő mintájára
+              // asztalon (M3) a felirat a gombon belül, a panel rácsos, darabszámokkal (a 0 darabos halvány)
               <div className="inline-field">
-                <span id="genre-filter-label">Műfaj</span>
+                {isPhone && <span id="genre-filter-label">Műfaj</span>}
                 <FranchiseFilter
-                  labelId="genre-filter-label"
+                  labelId={isPhone ? 'genre-filter-label' : undefined}
+                  label={isPhone ? undefined : 'Műfaj'}
                   className="genre-filter"
                   lead="icon"
+                  layout={isPhone ? undefined : 'grid'}
+                  changed={!!genre}
+                  icon={isPhone ? undefined : ALL_GENRES_ICON}
                   value={genre}
                   onChange={setGenre}
                   options={[
-                    { value: '', label: 'Összes' },
-                    ...genres.map((g) => ({ value: g, label: g, icon: <GenreIcon name={g} /> })),
+                    {
+                      value: '',
+                      label: 'Összes',
+                      icon: isPhone ? undefined : ALL_GENRES_ICON,
+                      count: isPhone ? undefined : facetCounts.genre.all,
+                    },
+                    ...genres.map((g) => ({
+                      value: g,
+                      label: g,
+                      icon: <GenreIcon name={g} />,
+                      count: isPhone ? undefined : (facetCounts.genre[g] ?? 0),
+                    })),
                   ]}
                 />
               </div>
             )}
 
             {/* csak ha van a listán Mama-jelölés, és nem Sorozatok / franchise-ra szűrve (terv-3 58) */}
-            {(mamaUsed || mama) && !mamaOff && (
-              <label className="inline-field">
-                Mama
-                <select className="mama-select" value={mama} onChange={(e) => setMama(e.target.value)}>
-                  <option value="">Összes</option>
-                  {MAMA_OPTIONS.map((o) => (
-                    <option key={o.code} value={o.code}>
-                      {o.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
+            {(mamaUsed || mama) && !mamaOff &&
+              (isPhone ? (
+                <label className="inline-field">
+                  Mama
+                  <select className="mama-select" value={mama} onChange={(e) => setMama(e.target.value)}>
+                    <option value="">Összes</option>
+                    {MAMA_OPTIONS.map((o) => (
+                      <option key={o.code} value={o.code}>
+                        {o.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <FranchiseFilter
+                  rootClass="filter-select"
+                  className="mama-filter"
+                  label="Mama"
+                  lead="icon"
+                  changed={!!mama}
+                  value={mama}
+                  onChange={setMama}
+                  options={[
+                    { value: '', label: 'Összes', icon: MAMA_ICON, count: facetCounts.mama.all },
+                    ...MAMA_OPTIONS.map((o) => ({
+                      value: o.code,
+                      label: o.name,
+                      icon: <MamaDot code={o.code} />,
+                      count: facetCounts.mama[o.code] ?? 0,
+                    })),
+                  ]}
+                />
+              ))}
 
             {/* a Franchise és mellette az alaphelyzet gomb együtt törik új sorba */}
             <div className="filter-end">
               {usedFranchises.length > 0 && (
                 <div className="inline-field">
-                  <span id="franchise-filter-label">Franchise</span>
+                  {isPhone && <span id="franchise-filter-label">Franchise</span>}
                   <FranchiseFilter
-                    labelId="franchise-filter-label"
+                    labelId={isPhone ? 'franchise-filter-label' : undefined}
+                    label={isPhone ? undefined : 'Franchise'}
+                    changed={franchise !== DEFAULT_FILTERS.franchise}
+                    icon={isPhone ? undefined : FRANCHISE_ICON}
                     value={franchise}
                     onChange={changeFranchise}
                     options={[
@@ -1824,25 +1947,30 @@ export default function Watchlist({ session }) {
                 value={query}
                 onChange={(e) => changeQuery(e.target.value)}
               />
-              <select
-                className="sort-select"
-                aria-label="Rendezés"
-                value={activeSort}
-                onChange={(e) => {
-                  if (e.target.value === WATCH_ORDER.code) {
-                    setOrderSort(true);
-                  } else {
-                    setSort(e.target.value);
-                    setOrderSort(false);
-                  }
-                }}
-              >
-                {(orderAvailable ? [WATCH_ORDER, ...SORTS] : SORTS).map((s) => (
-                  <option key={s.code} value={s.code}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+              {isPhone ? (
+                <select
+                  className="sort-select"
+                  aria-label="Rendezés"
+                  value={activeSort}
+                  onChange={(e) => changeSort(e.target.value)}
+                >
+                  {sortOptions.map((s) => (
+                    <option key={s.code} value={s.code}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <FranchiseFilter
+                  rootClass="filter-select"
+                  className="sort-filter"
+                  ariaLabel="Rendezés"
+                  lead="icon"
+                  value={activeSort}
+                  onChange={changeSort}
+                  options={sortOptions.map((s) => ({ value: s.code, label: s.name, icon: SORT_ICONS[s.code] }))}
+                />
+              )}
               {/* lista / rács váltó felirat nélkül (keskenyebben mindig rács) */}
               {isDesktop && (
                 <div className="view-toggle sliding" ref={viewThumb} role="group" aria-label="Nézet">
