@@ -50,6 +50,7 @@ import BackupsDialog from '@/components/BackupsDialog';
 import MoreMenu from '@/components/MoreMenu';
 import ThemeToggle from '@/components/ThemeToggle';
 import FranchisesDialog from '@/components/FranchisesDialog';
+import PeopleDialog from '@/components/PeopleDialog';
 import Toaster from '@/components/Toaster';
 import EmptyState from '@/components/EmptyState';
 import StarRating from '@/components/StarRating';
@@ -60,6 +61,7 @@ import { useMediaQuery } from '@/lib/useMediaQuery';
 import { canMorph, MORPH_NAME, trackTransition } from '@/lib/viewTransition';
 import { franchisesWithOrder, loadOrders, orderedItems } from '@/lib/watchOrder';
 import { loadHidden, resetHidden } from '@/lib/hiddenSuggestions';
+import { loadFollowed, refreshPeople, resetFollowed } from '@/lib/people';
 import { fetchAll } from '@/lib/fetchAll';
 import { article, collectionFranchiseMap, suggestedFranchiseId } from '@/lib/franchiseSuggest';
 import { loadSnapshot, saveSnapshot, useOnline } from '@/lib/offline';
@@ -78,8 +80,9 @@ const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 
 const TOAST_THUMB = 'https://image.tmdb.org/t/p/w92';
 
-// a ⋮ menü pontjai, amelyek net nélkül nem működnének (csak olvasható módban nem látszanak)
-const ONLINE_ONLY = ['imdb', 'bulk', 'backups', 'password'];
+// a ⋮ menü pontjai, amelyek net nélkül nem működnének (csak olvasható módban nem látszanak); a
+// Színészek ablak a TMDB-ről számol (M4)
+const ONLINE_ONLY = ['imdb', 'bulk', 'backups', 'password', 'people'];
 
 // a tárolt listán állva (a szerver nem érhető el) ennyi időnként újrapróbálja
 const RETRY_MS = 30_000;
@@ -262,6 +265,7 @@ export default function Watchlist({ session }) {
   const [addQuery, setAddQuery] = useState(''); // a „Cím hozzáadása” panel kezdő keresése
   const [showStats, setShowStats] = useState(false); // a statisztika ablak nyitva
   const [showFranchises, setShowFranchises] = useState(false); // a Franchise-ok ablak nyitva
+  const [showPeople, setShowPeople] = useState(false); // a Színészek és rendezők ablak nyitva (M4)
   const [showBackups, setShowBackups] = useState(false); // a mentések ablak nyitva
   const [showManual, setShowManual] = useState(false); // a felhasználói leírás ablak nyitva
   const [showPassword, setShowPassword] = useState(false); // a jelszó módosítása ablak nyitva (terv-3 27)
@@ -337,6 +341,9 @@ export default function Watchlist({ session }) {
     setMama(f.mama);
     setFranchise(f.franchise);
   }
+
+  // kilépéskor a követések tárolója kiürül (a következő belépő ne lássa – M4)
+  useEffect(() => () => resetFollowed(), []);
 
   // a helyben tárolt lista: azonnal látszik, amíg a friss meg nem jön
   useEffect(() => {
@@ -483,6 +490,14 @@ export default function Watchlist({ session }) {
           (count) => count > 0 && reloadNotifications(),
           (err) => console.warn('A gyűjtemények új részeinek ellenőrzése sikertelen:', err.message)
         );
+
+        // a követett színészek / rendezők (M4): betöltés, aztán hetente az új filmjeik; ha jött új, a harang szól
+        loadFollowed()
+          .then(() => !cancelled && refreshPeople(stopped))
+          .then(
+            (count) => count > 0 && reloadNotifications(),
+            (err) => console.warn('A követett személyek ellenőrzése sikertelen:', err.message)
+          );
       }
       setLoading(false);
       reloadDone.current?.();
@@ -1388,6 +1403,13 @@ export default function Watchlist({ session }) {
       icon: 'stack',
       onSelect: () => setShowFranchises(true),
     },
+    {
+      id: 'people',
+      label: 'Színészek és rendezők',
+      description: 'Akiket követsz: a filmjeik megjelenés szerint; szólok, ha újat jelentenek be',
+      icon: 'people',
+      onSelect: () => setShowPeople(true),
+    },
     // a CSV-fájl betöltése asztali / tableten végzett teendő: telefonon nincs (Norbi kérése)
     ...(isPhone
       ? []
@@ -2050,6 +2072,14 @@ export default function Watchlist({ session }) {
           onFranchiseUpdated={(f) => setFranchises((fs) => fs.map((x) => (x.id === f.id ? { ...x, ...f } : x)))}
           onClose={() => setShowFranchises(false)}
           readOnly={readOnly}
+        />
+      )}
+      {showPeople && (
+        <PeopleDialog
+          titles={titles}
+          onClose={() => setShowPeople(false)}
+          onPreview={(item) => openEditor(item)}
+          onAdded={handleAdded}
         />
       )}
       {showStats && (

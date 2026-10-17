@@ -15,17 +15,22 @@ const PHONE_QUERY = '(max-width: 640px)';
 // Összes szereplő (terv-3 91, 2026-10-14): ha több van (a route legfeljebb 20-at ad), alattuk „Összes szereplő
 // (N)” – kibontva a többi is (asztalon a bal oszlopban, keskenyebben a sor alatt, fotóval), „Kevesebb” csukja.
 // Telefonon (≤ 640 px) nincs: csak az első 3 név (Norbi kérése, 2026-10-15).
-export default function TopCast({ cast, variant, onPerson }) {
+// Rendező (M4, filmnél): alattuk „Rendező” (keskenyebben „Rendező: …” sor); a nevére kattintva a lapja
+// (role: 'director' – a rendezett filmjei, követhető).
+export default function TopCast({ cast, directors, variant, onPerson }) {
   const [expanded, setOpen] = useState(false);
   const phone = useMediaQuery(PHONE_QUERY);
-  if (!cast?.length) return null;
+  if (!cast?.length && !directors?.length) return null;
+  cast ??= [];
+  directors ??= [];
   const top = cast.slice(0, TOP);
   const rest = phone ? [] : cast.slice(TOP);
   const open = expanded && rest.length > 0;
+  const openDirector = (d) => onPerson({ ...d, role: 'director' });
 
-  const person = (p) => (
+  const person = (p, onClick = onPerson) => (
     <li key={p.id}>
-      <button type="button" className="cast-person" onClick={() => onPerson(p)}>
+      <button type="button" className="cast-person" onClick={() => onClick(p)}>
         <span className="cast-photo">{p.profile_path && <img src={PHOTO_BASE + p.profile_path} alt="" loading="lazy" />}</span>
         <span className="cast-text">
           <span className="cast-name">{p.name}</span>
@@ -43,22 +48,37 @@ export default function TopCast({ cast, variant, onPerson }) {
   if (variant === 'inline') {
     return (
       <div className="cast-inline" data-open={open ? '' : undefined}>
-        <p className="cast-line">
-          <b>Szereplők:</b>{' '}
-          {top.map((p, i) => (
-            <span key={p.id}>
-              {i > 0 && ', '}
-              <button type="button" className="cast-name" onClick={() => onPerson(p)}>
-                {p.name}
-              </button>
-            </span>
-          ))}
-          {toggle && <> · {toggle}</>}
-        </p>
+        {top.length > 0 && (
+          <p className="cast-line">
+            <b>Szereplők:</b>{' '}
+            {top.map((p, i) => (
+              <span key={p.id}>
+                {i > 0 && ', '}
+                <button type="button" className="cast-name" onClick={() => onPerson(p)}>
+                  {p.name}
+                </button>
+              </span>
+            ))}
+            {toggle && <> · {toggle}</>}
+          </p>
+        )}
         {open && (
           <ul className="cast-all" aria-label="További szereplők">
-            {rest.map(person)}
+            {rest.map((p) => person(p))}
           </ul>
+        )}
+        {directors.length > 0 && (
+          <p className="cast-line cast-director">
+            <b>{directors.length > 1 ? 'Rendezők:' : 'Rendező:'}</b>{' '}
+            {directors.map((d, i) => (
+              <span key={d.id}>
+                {i > 0 && ', '}
+                <button type="button" className="cast-name" onClick={() => openDirector(d)}>
+                  {d.name}
+                </button>
+              </span>
+            ))}
+          </p>
         )}
       </div>
     );
@@ -66,14 +86,26 @@ export default function TopCast({ cast, variant, onPerson }) {
 
   return (
     <div className="cast side" data-open={open ? '' : undefined}>
-      <span className="watch-title" aria-hidden="true">
-        Szereplők
-      </span>
-      <ul aria-label="Szereplők">
-        {top.map(person)}
-        {open && rest.map(person)}
-      </ul>
-      {toggle}
+      {top.length > 0 && (
+        <>
+          <span className="watch-title" aria-hidden="true">
+            Szereplők
+          </span>
+          <ul aria-label="Szereplők">
+            {top.map((p) => person(p))}
+            {open && rest.map((p) => person(p))}
+          </ul>
+          {toggle}
+        </>
+      )}
+      {directors.length > 0 && (
+        <div className="cast-directors">
+          <span className="watch-title" aria-hidden="true">
+            {directors.length > 1 ? 'Rendezők' : 'Rendező'}
+          </span>
+          <ul aria-label={directors.length > 1 ? 'Rendezők' : 'Rendező'}>{directors.map((d) => person(d, openDirector))}</ul>
+        </div>
+      )}
     </div>
   );
 }

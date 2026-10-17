@@ -38,9 +38,9 @@ const POSTER_BASE = 'https://image.tmdb.org/t/p/w500'; // a nagy borító (aszta
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/'; // a háttérkép (telefonon w780, asztalon w1280)
 const PHONE_QUERY = '(max-width: 640px)';
 const WIDE_QUERY = '(min-width: 900px)'; // a kétoszlopos asztali adatlap (globals.css)
-// a /api/tmdb/credits kérés v paramétere (a böngésző egy napig tárolja a választ – a 91-es óta 20 szereplőt ad);
-// a lib/prefetch.js is ezzel kéri
-const CREDITS_V = 2;
+// a /api/tmdb/credits kérés v paramétere (a böngésző egy napig tárolja a választ – a 91-es óta 20 szereplőt ad,
+// az M4 óta a rendezőt is); a lib/prefetch.js is ezzel kéri
+const CREDITS_V = 3;
 
 // Rádiógombok "chip" formában; a kiválasztottra újra kattintva visszaáll üresre.
 const DOWNLOADED_OPTIONS = [{ code: 'yes', name: 'Letöltve' }];
@@ -493,11 +493,19 @@ function TitlePage({
   }, [t.overview, hero, overviewOpen]);
 
   // szereplők (terv-3 38): a top cast első 3 tagja, szintén a háttérben, a mozgás után
+  // filmnél a rendező is (M4 – a nevére kattintva a lapja, követhető)
   const [cast, setCast] = useState(null);
+  const [directors, setDirectors] = useState(null);
   useEffect(() => {
     const controller = new AbortController();
     apiGet('/api/tmdb/credits', { type: t.media_type, id: t.tmdb_id, v: CREDITS_V }, { signal: controller.signal })
-      .then((data) => afterTransition().then(() => !controller.signal.aborted && setCast(data.cast)))
+      .then((data) =>
+        afterTransition().then(() => {
+          if (controller.signal.aborted) return;
+          setCast(data.cast);
+          setDirectors(data.directors ?? []);
+        })
+      )
       .catch((err) => err.name !== 'AbortError' && console.warn('Szereplők:', err.message));
     return () => controller.abort();
   }, [t.media_type, t.tmdb_id]);
@@ -740,7 +748,7 @@ function TitlePage({
         )
       )}
       {/* keskenyebben (< 900 px) a szereplők egy sorban a leírás alatt */}
-      <TopCast cast={cast} variant="inline" onPerson={onPerson} />
+      <TopCast cast={cast} directors={directors} variant="inline" onPerson={onPerson} />
     </header>
   );
 
@@ -772,7 +780,7 @@ function TitlePage({
             </div>
           )}
           <WatchProviders providers={providers} className="side" />
-          <TopCast cast={cast} variant="side" onPerson={onPerson} />
+          <TopCast cast={cast} directors={directors} variant="side" onPerson={onPerson} />
         </div>
         <div className="editor-main">
           {!hero && header}

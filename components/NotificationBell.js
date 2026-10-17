@@ -10,6 +10,7 @@ import { shownNotifications } from '@/lib/notifications';
 import { article } from '@/components/Seasons';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w92';
+const PHOTO_BASE = 'https://image.tmdb.org/t/p/w45'; // a követett személy fotója a borító sarkán (M4)
 
 // a harang csoportjai (terv-3 76, Norbi választása: „A”, 2026-10-13): az értesítés napja (budapesti
 // idővel) szerint „Ma” / „Ezen a héten” (a hét hétfőtől számít) / „Korábban”
@@ -30,6 +31,11 @@ function describe(n, franchiseName) {
     const soon = n.air_date && n.air_date > budapestToday(); // helyi nappal (kódaudit #31)
     return `Új rész a gyűjteményben – ${name}${soon ? ` · várható: ${formatDate(n.air_date)}` : ''}`;
   }
+  if (n.kind === 'person_new') {
+    // követett színész / rendező új filmje (M4); csak dátummal bejelentett filmről szól
+    const soon = n.air_date && n.air_date > budapestToday();
+    return `${n.person_name} új filmje · ${soon ? 'várható' : 'megjelent'}: ${formatDate(n.air_date)}`;
+  }
   if (n.kind === 'movie_digital') return 'Digitálisan is megjelent – már letölthető';
   if (n.kind === 'mama_interested') return 'Mamát érdekli'; // Mama jelölte a saját oldalán (terv-3 13)
   const nth = `${article(n.season_number)} ${n.season_number}.`;
@@ -48,6 +54,7 @@ function describe(n, franchiseName) {
 // TMDB-tétellel; a TitleEditor a TMDB-azonosító szerint dönti el, listán van-e már).
 // Fajtánként saját szín (terv-3 51.5, 2026-10-09): megjelent évad zsálya, bejelentett évad indigó,
 // digitális megjelenés égkék, Mama borostyán, új rész korall – a borító sarkán ikon, a leírás színe (CSS: data-kind).
+// Követett személy új filmje (M4, person_new): mint az új rész, a borító sarkán a személy kerek fotója (indigó gyűrű).
 // Kattintás kívül / Esc: bezár.
 // readOnly: net nélkül (terv-3 44) csak olvasni lehet – nincs törlés, és a kinyitás sem jelöli
 // olvasottnak (az adatbázisba úgysem jutna el; kódaudit #8)
@@ -184,7 +191,8 @@ export default function NotificationBell({ notifications, titles, franchiseName,
               <p className="notif-empty">
                 Még nincs értesítés. Itt jelzem, ha egy sorozatodhoz új évadot jelentenek be, ha
                 egy évad megjelenik, ha egy várt film digitálisan is elérhető lesz, ha Mamát érdekel
-                egy film, vagy ha új rész jelenik meg egy franchise-od gyűjteményében.
+                egy film, ha új rész jelenik meg egy franchise-od gyűjteményében, vagy ha egy követett
+                színészed, rendeződ új filmjét bejelentik.
               </p>
             ) : (
               <ul className="notif-list" ref={listRef}>
@@ -192,9 +200,11 @@ export default function NotificationBell({ notifications, titles, franchiseName,
                   // csoportcím, ahol a nap kategóriája változik (a lista a legújabbal kezdődik)
                   const group = dayGroup(n.created_at, today);
                   const head = index === 0 || dayGroup(items[index - 1].created_at, today) !== group;
-                  // a gyűjtemény új része nincs a listán: az értesítés adataiból (TMDB-tétel – előnézet)
+                  // a gyűjtemény új része / a követett személy új filmje nincs a listán: az értesítés
+                  // adataiból (TMDB-tétel – előnézet)
+                  const part = n.kind === 'collection_new' || n.kind === 'person_new';
                   const t =
-                    n.kind === 'collection_new'
+                    part
                       ? {
                           media_type: 'movie',
                           tmdb_id: n.part_tmdb_id,
@@ -203,7 +213,7 @@ export default function NotificationBell({ notifications, titles, franchiseName,
                           release_year: n.part_year,
                         }
                       : byId.get(n.title_id);
-                  const label = n.kind === 'collection_new' && n.part_year ? `${t.title} (${n.part_year})` : t.title;
+                  const label = part && n.part_year ? `${t.title} (${n.part_year})` : t.title;
                   const isNew = fresh.has(n.id);
                   return (
                     <Fragment key={n.id}>
@@ -228,7 +238,11 @@ export default function NotificationBell({ notifications, titles, franchiseName,
                           <span className="notif-thumb">
                             {t.poster_path && <img src={THUMB_BASE + t.poster_path} alt="" loading="lazy" />}
                           </span>
-                          <span className="notif-kind" aria-hidden="true" />
+                          <span className="notif-kind" aria-hidden="true">
+                            {n.kind === 'person_new' && n.person_profile_path && (
+                              <img src={PHOTO_BASE + n.person_profile_path} alt="" loading="lazy" />
+                            )}
+                          </span>
                         </span>
                         <span className="notif-text">
                           <span className="notif-title">

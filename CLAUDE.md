@@ -95,7 +95,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   asztalon (≥ 641 px) `main[data-head-away]` → `--head-c: 0rem` (a fejléc egészen felgördül; nyitott „Cím
   hozzáadása” panelnél nem). „Kevesebb mozgás” módban nincs közbülső állapot. Teszt: `test-1015.mjs`.
 - **Fejléc gombjai**: „Cím hozzáadása”, harang, e-mail (`.account-email` gomb → „Jelszó módosítása”; telefonon
-  rejtve, net nélkül sima szöveg), Kilépés, téma, ⋮ (`MoreMenu`): Statisztika, Franchise-ok, IMDb import (telefonon
+  rejtve, net nélkül sima szöveg), Kilépés, téma, ⋮ (`MoreMenu`): Statisztika, Franchise-ok, Színészek és rendezők (net nélkül nem), IMDb import (telefonon
   nincs), Tömeges import és Mentés letöltése (csak asztalon), Mentések, Jelszó módosítása (net nélkül nem),
   Felhasználói leírás. Asztalon (≥ 900 px) a sor nem törik. Telefonon (≤ 640 px) lebegő „+” (`.fab`; lefelé
   görgetéskor elhúzódik).
@@ -235,13 +235,18 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `::before` réteg (az görgetéskor felgördült).
 
 ### Az adatlap részei
-- `components/TopCast.js` + `/api/tmdb/credits` – szereplők (`pickCast`, legfeljebb 20 – `CAST_MAX`; a kérés `v=2`
-  – `CREDITS_V`, a `lib/prefetch.js` is); az első 3, „Összes szereplő (N)” (telefonon nincs). A név (asztalon a fotó
-  is) a színész lapját nyitja (`onPerson`). Rendező nincs.
-- `components/PersonPage.js` + `/api/tmdb/person` – a színész lapja (terv-3 61): adatok, „A listádon (N)” rács,
-  „További filmjei és sorozatai (N)” (ismertség szerint, 10 + „Továbbiak mutatása”; kimarad a `minor`: borító
-  nélküli, animáció / dokumentum / talkshow / hírek / valóságshow / szappanopera, ≤ 2 részes sorozatszerep,
-  önmaga-szerep – a listán lévő akkor is látszik); „+ Hozzáadás” / „Már láttam”. Teszt: `test-61.mjs`.
+- `components/TopCast.js` + `/api/tmdb/credits` – szereplők (`pickCast`, legfeljebb 20 – `CAST_MAX`) és filmnél a
+  rendező(k) (`pickDirectors`, ≤ 3; a kérés `v=3` – `CREDITS_V`, a `lib/prefetch.js` is); az első 3, „Összes
+  szereplő (N)” (telefonon nincs), alattuk „Rendező” (keskenyebben „Rendező: …” sor). A név (asztalon a fotó is) a
+  személy lapját nyitja (`onPerson`; rendezőnél `role: 'director'`).
+- `components/PersonPage.js` + `/api/tmdb/person` (`?role=director`, a kliens `v=2` – `PERSON_V`; közös forrás:
+  `lib/server/people.js` `loadPerson`) – a színész / rendező lapja (terv-3 61, M4): adatok, „Követem”
+  (`FollowButton`), „A listádon (N)” rács, „További filmjei és sorozatai (N)” (ismertség szerint, 10 +
+  „Továbbiak mutatása”; kimarad a `minor`: borító nélküli, animáció / dokumentum / talkshow / hírek / valóságshow /
+  szappanopera, ≤ 2 részes sorozatszerep, önmaga-szerep – a listán lévő akkor is látszik). Alapból csak a
+  főszerepek (`lead`: filmben a stáblista első 3 helye, sorozatban ≥ 6 rész; rendezőnél mind), „Főszerepek | Összes
+  szerep” (`RoleSwitch`; rendezőnél nincs). „+ Hozzáadás” / „Már láttam” (`CreditStatus`, `useAddCredit` – az
+  idővonal is). Teszt: `test-61.mjs`, `test-m4.mjs`.
 - `components/TitleGallery.js` + `/api/tmdb/images` – képgaléria (terv-3 95): asztalon `GalleryStrip`, telefonon
   `BackdropPager`, nagy nézet `GalleryLightbox` (az Esc a window rögzítő fázisában és a Vissza csak ezt zárja).
   Sötét sziget mindkét témában. Teszt: `test-95.mjs`.
@@ -315,6 +320,21 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   állapot, értékelés, letöltve, Mama nem látszik. Hibás / visszavont link: 404 (`not-found.js`). A service worker nem
   kezeli. `components/ShareAmbient.js`: a franchise színe. Teszt: `test-41.mjs`, `test-20.mjs`.
 
+### Kedvenc színészeim / alkotóim (M4)
+- `lib/people.js` – közös tároló (mint a `hiddenSuggestions`): `useFollowed()` (`followKey(id, role)` → sor),
+  `loadFollowed` (a `Watchlist` betöltéskor), `resetFollowed` (kilépéskor), `followPerson` / `unfollowPerson`
+  (optimista; követéskor rögtön `refreshPeople` – az első ellenőrzés csak megjegyez), `refreshPeople` (a
+  `/api/people/refresh`, ha van esedékes – `personDue`; egyszerre egy futás), `personSummary(credits, sorok, ma,
+  összes?)` → `{ shown, onList, watched, more, soon }` (a listán lévők mindig; `more`: nem listás, megjelent
+  főszerep; `soon`: a legközelebbi dátummal bejelentett), `PERSON_V`.
+- `components/PeopleDialog.js` – ⋮ „Színészek és rendezők” (Norbi választása: asztalon portrérács – álló fotó,
+  telefonon vízszintes csempék – kerek fotó; csak a CSS más): két csoport ábécérendben, kereső; csempénként mérő,
+  „x/y megnézve · m további főszerep / film”, indigó bejelentett film; a számok a `/api/tmdb/person`-ből 3-asával.
+  Csempére kattintva az ablakon belül az idővonal (`PersonTimeline`): „Hamarosan” fölül (indigó szaggatott), utána
+  évenként a legújabb elöl, „Főszerepek | Összes szerep”, 20 + „Továbbiak mutatása”; a borító az adatlapot nyitja az
+  ablak fölött (`onPreview` → `openEditor`). Az Esc / Vissza az idővonalról a csempékhez lép. Net nélkül a menüpont
+  nincs (`ONLINE_ONLY`). A harang `person_new` eleme: a borító sarkán a személy fotója. Teszt: `test-m4.mjs`.
+
 ### Egyéb ablakok és menük
 - `components/MoreMenu.js` – ⋮ menü (`role="menu"`): pontok `{ id, label, description, icon, onSelect }`; nyilak,
   Home / End, Esc; választás után a fókusz a gombra.
@@ -382,7 +402,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   rendezéssel. **Új, a teljes listát lekérő lekérdezésnél ezt használd.**
 - `lib/refreshDue.js` – „esedékes-e” szabályok: `imdbDue` (14 nap), `backdropDue`, `seasonsDue` (7 nap),
   `releaseDue`, `detailsDue` (havonta, a meg nem jelentnél hetente), `collectionDue`, `collectionPartsDue` (7 nap),
-  `budapestToday`. **A route-ok ugyanezt kérdezik (részben SQL-ben) – változtatáskor mindkét helyen.**
+  `personDue` (7 nap), `budapestToday`. **A route-ok ugyanezt kérdezik (részben SQL-ben) – változtatáskor mindkét helyen.**
 - `lib/posterColor.js` – `usePosterColor(poster_path, enabled)`: hangulatszín a w92-es borítóból, **saját
   gyorsítótár-kulccsal (`?szin`)** – ha ugyanaz a kép CORS nélkül is a gyorsítótárban lenne (pl. a harang képei), a
   vászon tiltást kapna; OKLCH, L 0,72, C 0,04–0,13; borítónként egyszer. `ambientProps(szín)` → `--ambient` +
@@ -393,7 +413,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `lib/useMediaQuery.js`, `lib/useStrike.js` (kihúzás-animáció, terv-3 40: a `.strike` span kulcsa / `data-strike`).
 - `lib/useBackdropClose.js` – `useBackdropClose(dialogRef, { onClose, canClose, onBlocked })` → `{ onPointerDown,
   onClick }`: kikattintásra zár (a lenyomás is kívül legyen), telefonon (≤ 640 px) nem; a beágyazott ablak
-  kattintása nem számít kívülnek. Mikor nem zár: adatlap (megerősítés / név gépelése / felvétel), Franchise-ok
+  kattintása nem számít kívülnek. Mikor nem zár: adatlap (megerősítés / név gépelése / felvétel), Színészek és
+  rendezők (felvétel az idővonalon), Franchise-ok
   (szerkesztés, megerősítés, nyitott gyűjtemény-ablak), gyűjtemény-ablak (rész felvétele, sorrend-szerkesztés,
   megosztás visszavonásának megerősítése, fejléc szerkesztése; a nyitott TMDB-keresőnél zár, a Franchise-ok ablakból
   nyitva mindkettő – `onOutsideClose`), Mentések (művelet / megerősítés), Jelszó (beírt jelszó / mentés);
@@ -453,7 +474,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   csak megjegyzi; **előbb az értesítést írja, utána az ismert részeket**; a 404-es gyűjtemény üres; ha egy
   gyűjtemény nem tölthető le, nem jelöli ellenőrzöttnek), `tmdb/details-refresh` (40; `{ id }`-vel egy cím kézzel;
   a címet **csak akkor** cseréli a magyarra, ha most az eredeti áll ott – a kézzel adott címek maradnak; leírás,
-  borító, dátum, műfajok; a saját adatokhoz nem nyúl; mindig beírja a `details_checked_at`-et), `franchises/logos`.
+  borító, dátum, műfajok; a saját adatokhoz nem nyúl; mindig beírja a `details_checked_at`-et), `franchises/logos`,
+  `people/refresh` (8 követett személy; a főszerepben / rendezőként jegyzett filmjei – animáció, dokumentum,
+  önmaga nélkül – az ismertekhez mérve; ha még nincs ismert filmje, csak megjegyzi; új, **dátummal** bejelentett,
+  30 napnál nem régebbi, nem listás, nem elrejtett film → `person_new`; előbb az értesítés, utána az ismertek).
 - `app/api/keepalive` + `vercel.json` (napi cron) – a Supabase ingyenes projekt ébren tartása (`CRON_SECRET`, ha
   van).
 - `.github/workflows/mentes.yml` – heti külső mentés (hétfő 04:30 UTC, `BACKUP_DB_URL`): felhasználónként a
@@ -499,18 +523,23 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   derül ki, mi az új); nincs a mentésben.
 - `hidden_suggestions (user_id, media_type, tmdb_id, title, poster_path, release_year)`: „Nem érdekel”-lel
   elrejtett ajánlások.
+- `followed_people (user_id, person_id, role 'actor' | 'director', name, profile_path, created_at, checked_at)`, PK
+  `(user_id, person_id, role)`: a követések (M4). `followed_person_credits (user_id, person_id, role, tmdb_id)` → a
+  követés cascade: a személy ismert filmjei; nincs a mentésben (visszaállításkor üres – a következő ellenőrzés
+  „első”).
 - `notifications (id, user_id, title_id → titles cascade, season_number, kind, air_date, created_at, read_at,
-  dismissed_at, franchise_id → franchises cascade, part_tmdb_id, part_title, part_poster_path, part_year)`. `kind`:
-  'season_announced' | 'season_aired' | 'movie_digital' (filmnél `season_number = 0`) | 'mama_interested' |
-  'collection_new' (ilyenkor `title_id` üres, a franchise és a rész adatai – `notifications_target_check`). Egyedi
-  `(title_id, season_number, kind)` és `(franchise_id, part_tmdb_id)`. A törölt (`dismissed_at`) sor megmarad, így a
+  dismissed_at, franchise_id → franchises cascade, part_tmdb_id, part_title, part_poster_path, part_year, person_id,
+  person_name, person_profile_path)`. `kind`: 'season_announced' | 'season_aired' | 'movie_digital' (filmnél
+  `season_number = 0`) | 'mama_interested' | 'collection_new' (ilyenkor `title_id` üres, a franchise és a rész
+  adatai) | 'person_new' (`title_id` üres, a személy és a film adatai; `notifications_target_check`). Egyedi
+  `(title_id, season_number, kind)`, `(franchise_id, part_tmdb_id)` és `(user_id, person_id, part_tmdb_id)`. A törölt (`dismissed_at`) sor megmarad, így a
   gyűjtők nem írják újra; Mama újbóli „Érdekel”-je üríti. `collect_season_notifications()` (a megjelent, még nem
   jelzett évadokról; abbahagyottról és megnézettről nem), `collect_release_notifications()` (14 napon belüli
   digitális megjelenés, ha a felvételkor még nem jelent meg és nincs megnézve).
 - `backups (id, user_id, kind ('weekly' | 'manual' | 'before_restore' | 'imported'), created_at, title_count,
-  data jsonb)`. A `data` a felhasználó sorai változatlanul (`backup_snapshot(user)`, version 3: `franchises, titles,
-  title_genres, genres, title_seasons, notifications, franchise_order, hidden_suggestions`; a régebbi verziókban az
-  utóbbi kettő hiányozhat – visszaállításkor azok nem változnak). RLS: a sajátját látja / törli, írni csak a
+  data jsonb)`. A `data` a felhasználó sorai változatlanul (`backup_snapshot(user)`, version 4: `franchises, titles,
+  title_genres, genres, title_seasons, notifications, franchise_order, hidden_suggestions, followed_people`; a
+  régebbi verziókban az utóbbi három hiányozhat – visszaállításkor azok nem változnak). RLS: a sajátját látja / törli, írni csak a
   függvények. `write_backup(user, kind)` (üres listáról nem ment; a 8 hétnél régebbieket törli),
   `backup_all_users()` (pg_cron `filmlista-heti-mentes`, hétfő 03:00 UTC), `create_my_backup()`,
   `restore_my_backup(id)` (előbb `before_restore` mentés; eredeti azonosítókkal tölt vissza). A belső függvényeket

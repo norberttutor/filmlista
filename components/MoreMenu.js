@@ -15,6 +15,8 @@ const ICONS = {
   history: <path d="M3.5 12a8.5 8.5 0 1 0 2.5-6M3 3.5V8h4.5M12 7.5V12l3 2" />,
   // egymásra tett lapok (franchise-ok: filmsorozatok gyűjteménye)
   stack: <path d="M12 3l9 4.5-9 4.5-9-4.5zM3 12l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5" />,
+  // két alak (követett színészek és rendezők – M4)
+  people: <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c.6-3.8 3.4-6 7-6s6.4 2.2 7 6M16 3.5a4 4 0 0 1 0 7.5M18.5 15c1.9.8 3.1 2.8 3.5 6" />,
   // nyitott könyv (felhasználói leírás)
   book: <path d="M12 6.5C10 4.8 7 4.3 3 4.5v14c4-.2 7 .3 9 2 2-1.7 5-2.2 9-2v-14c-4-.2-7 .3-9 2zM12 6.5v14" />,
   // kulcs (jelszó módosítása)
