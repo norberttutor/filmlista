@@ -11,9 +11,9 @@ import {
 import { discoverList } from '@/lib/server/discover';
 
 const HOUR = 60 * 60 * 1000;
-// ennyi jelöltet készítünk elő: a sávban 6 látszik, az elrejtettek („Nem érdekel”) helyére a
-// következő lép (a szűrés a böngészőben van)
-const CANDIDATES = 10;
+// ennyi jelöltet készítünk elő: a sávban 6 látszik, a listán lévők (M2) és az elrejtettek („Nem érdekel”)
+// helyére a következő lép (a szűrés a böngészőben van)
+const CANDIDATES = 20;
 
 // a cím logója: magyar, ha van (kompakt arányú), különben a közös szabály (angol / nyelv nélküli)
 function logoOf(logos = []) {
@@ -59,7 +59,7 @@ async function loadFeatured() {
 
 // GET /api/tmdb/featured
 // Kiemelt sáv a Felfedezés tetején (terv-3 46, Norbi választása: „A” látványterv): a „Most a
-// mozikban” lista első címei széles jelenetképpel, logóval, leírással, műfajjal, játékidővel és a
+// mozikban” lista első (legfeljebb 20) címe széles jelenetképpel, logóval, leírással, műfajjal, játékidővel és a
 // mozis bemutató napjával. Egy óráig gyorsítótárazva (a szerveren és a böngészőben is) – ha
 // valamelyik részlet nem jött le, a hiányos listát egyik sem tárolja.
 // Válasz: { results: [{ media_type, tmdb_id, title, …, backdrop_path, overview, genres, runtime,
@@ -68,7 +68,7 @@ export async function GET(request) {
   if (!(await getUserFromRequest(request))) return unauthorized();
   try {
     const day = new Date().toISOString().slice(0, 10);
-    const { results, complete } = await cached(`featured:${day}`, HOUR, loadFeatured, (v) => v.complete);
+    const { results, complete } = await cached(`featured:v2:${day}`, HOUR, loadFeatured, (v) => v.complete);
     return complete ? cachedResponse({ results }, HOUR_S) : Response.json({ results });
   } catch (err) {
     return tmdbErrorResponse(err);

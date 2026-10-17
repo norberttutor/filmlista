@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { titleKey } from '@/lib/titles';
 import { unhideSuggestion, useHiddenSuggestions } from '@/lib/hiddenSuggestions';
@@ -22,6 +22,8 @@ const SECTIONS = [
 
 const SEEDS = 10; // ennyi saját értékelés ajánlásaiból
 const FOR_YOU = 16; // a sor legfeljebb ennyi címe
+const ROW = 16; // a többi sor legfeljebb ennyi címe (a szerver ~30 jelöltet ad – M2)
+const DISCOVER_V = 2; // a /api/tmdb/discover és /featured válaszának változásakor emeld (böngésző-gyorsítótár)
 
 // a „Neked ajánlott” sor kiinduló címei: a 8+ csillagos saját értékelések, a legjobbak, azon belül a
 // legutóbb megnézettek elöl, legfeljebb 10
@@ -78,7 +80,10 @@ const FEATURED = 6; // a kiemelt sáv címei (terv-3 46)
 // „Mégis érdekel”. Fölül a kiemelt sáv (`FeaturedBand`, terv-3 46): a „Most a mozikban” első 6
 // (nem elrejtett) címe nagyban – a lenti mozis sor ezek nélkül, a következőtől folytatódik.
 // seeds: a „Neked ajánlott” sor kiinduló címei (recommendSeeds); ha nincs, a sor nem látszik.
+// A megnyitáskor már listán lévők minden sorból és a kiemelt sávból kimaradnak (M2, Norbi kérése); a most
+// felvettek „✓ A listán”-nal a helyükön maradnak.
 export default function Discover({ existingKeys, seeds = [], rowState, onAdd, onPreview }) {
+  const [onListAtOpen] = useState(() => new Set(existingKeys));
   const [lists, setLists] = useState({}); // list → { results } | { error }
   const [featured, setFeatured] = useState(undefined); // undefined: tölt, null: nincs / hiba
   const hidden = useHiddenSuggestions();
@@ -99,13 +104,13 @@ export default function Discover({ existingKeys, seeds = [], rowState, onAdd, on
     const controller = new AbortController();
     for (const s of SECTIONS) {
       if (s.list === 'foryou') continue; // ezt a böngésző gyűjti (lent)
-      apiGet('/api/tmdb/discover', { list: s.list }, { signal: controller.signal })
+      apiGet('/api/tmdb/discover', { list: s.list, v: DISCOVER_V }, { signal: controller.signal })
         .then((data) => setLists((l) => ({ ...l, [s.list]: { results: data.results } })))
         .catch((err) => {
           if (err.name !== 'AbortError') setLists((l) => ({ ...l, [s.list]: { error: err.message } }));
         });
     }
-    apiGet('/api/tmdb/featured', {}, { signal: controller.signal })
+    apiGet('/api/tmdb/featured', { v: DISCOVER_V }, { signal: controller.signal })
       .then((data) => setFeatured(data.results))
       .catch((err) => {
         // hibánál a sáv elmarad, a sorok attól még működnek
@@ -114,14 +119,12 @@ export default function Discover({ existingKeys, seeds = [], rowState, onAdd, on
     return () => controller.abort();
   }, []);
 
-  // „Neked ajánlott”: a betöltéskor listán lévők kimaradnak (a most felvettek „✓ A listán”-nal maradnak)
-  const existingRef = useRef(existingKeys);
-  existingRef.current = existingKeys;
+  // „Neked ajánlott”: a megnyitáskor listán lévők kimaradnak (a most felvettek „✓ A listán”-nal maradnak)
   const seedKey = seeds.map(titleKey).join(',');
   useEffect(() => {
     if (!seedKey) return;
     const controller = new AbortController();
-    loadForYou(seeds, new Set(existingRef.current), controller.signal)
+    loadForYou(seeds, onListAtOpen, controller.signal)
       .then((results) => setLists((l) => ({ ...l, foryou: { results } })))
       .catch((err) => {
         if (err.name !== 'AbortError') setLists((l) => ({ ...l, foryou: { error: err.message } }));
@@ -130,7 +133,8 @@ export default function Discover({ existingKeys, seeds = [], rowState, onAdd, on
     // a kiinduló címek kulcsa változásakor (seedKey) tölt újra, nem a tömb minden új példányánál
   }, [seedKey]);
 
-  const featuredItems = featured?.filter((r) => !hidden.has(titleKey(r))).slice(0, FEATURED) ?? [];
+  const featuredItems =
+    featured?.filter((r) => !hidden.has(titleKey(r)) && !onListAtOpen.has(titleKey(r))).slice(0, FEATURED) ?? [];
   const featuredKeys = new Set(featuredItems.map(titleKey));
 
   return (
@@ -157,9 +161,14 @@ export default function Discover({ existingKeys, seeds = [], rowState, onAdd, on
       {SECTIONS.map((s) => {
         if (s.list === 'foryou' && !seedKey) return null;
         const data = lists[s.list];
-        const results = data?.results?.filter(
-          (r) => !hidden.has(titleKey(r)) && !(s.list === 'cinema' && featuredKeys.has(titleKey(r)))
-        );
+        const results = data?.results
+          ?.filter(
+            (r) =>
+              !hidden.has(titleKey(r)) &&
+              !onListAtOpen.has(titleKey(r)) &&
+              !(s.list === 'cinema' && featuredKeys.has(titleKey(r)))
+          )
+          .slice(0, s.list === 'foryou' ? FOR_YOU : ROW);
         if (results?.length === 0) return null;
         return (
           <section key={s.list} className="discover-row" data-list={s.list} aria-labelledby={`discover-${s.list}`}>

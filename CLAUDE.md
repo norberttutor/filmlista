@@ -276,12 +276,15 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   soronként saját szín (`section[data-list]`). **Norbit csak a magyar szinkronos címek érdeklik** – közelítés: film =
   magyarországi megjelenés (`region=HU`, `with_release_type` 2|3 vagy 4), sorozat = magyar előfizetéses streaming
   (`watch_region=HU`, `flatrate`, 90 napon belüli rész); angol vagy magyar eredeti nyelv, van magyar leírás; nincs
-  dokumentum / valóságshow / talkshow / hírek / szappanopera / **animáció** (`ANIMATION_GENRE` = 16). Listánként ≤
-  16, egy óráig gyorsítótárazva. A `.discover` oszlopa `minmax(0, 1fr)` (különben telefonon az egész lap
+  dokumentum / valóságshow / talkshow / hírek / szappanopera / **animáció** (`ANIMATION_GENRE` = 16). A szerver
+  listánként ≤ 30 jelöltet ad (egy óráig gyorsítótárazva; a kliens `v=2` – `DISCOVER_V`, a válasz változásakor
+  emeld); a böngésző a **megnyitáskor már listán lévőket** (`onListAtOpen`, M2) és az elrejtetteket kihagyja, és
+  16-ot mutat; a most felvett „✓ A listán”-nal a helyén marad. A Hasonló címek és a kereső nem szűr így. Teszt:
+  `test-m2.mjs`. A `.discover` oszlopa `minmax(0, 1fr)` (különben telefonon az egész lap
   kicsinyedik). A borítók rámutatási kerete csak `@media (hover: hover)` alatt. „Nem érdekel” (×) és „Elrejtett
   ajánlások (N)”.
 - `components/FeaturedBand.js` + `/api/tmdb/featured` – kiemelt sáv (terv-3 46): a „Most a mozikban” első 6 nem
-  elrejtett, háttérképes címe (a route 10 jelöltet ad), jelenetkép, logó (`pickLogo`), „Adatlap” / „+ Hozzáadás”,
+  elrejtett, nem listán lévő, háttérképes címe (a route 20 jelöltet ad), jelenetkép, logó (`pickLogo`), „Adatlap” / „+ Hozzáadás”,
   ×; magától nem lapoz; a lenti sorból a kiemeltek kimaradnak; hibánál a sáv elmarad.
 - „Neked ajánlott” (terv-3 37): a 8+ saját értékelésűek legjobb 10-e (`recommendSeeds`) `/api/tmdb/similar`
   ajánlásai, gyakoriság szerint, ≤ 16; a magyar megjelenést itt nem szűri.
