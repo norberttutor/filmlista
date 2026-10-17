@@ -6,6 +6,7 @@ import { fetchAll } from '@/lib/fetchAll';
 const BATCH = 40; // egy kérésben legfeljebb ennyi cím (a szerverfüggvény időkorlátja miatt)
 const PARALLEL = 8;
 const FIELDS = 'id, media_type, tmdb_id, status, title, original_title, overview, poster_path, release_date, release_year, details_checked_at, created_at';
+const DUE_FIELDS = 'id, tmdb_id, status, release_date, details_checked_at, created_at'; // = detailsDue() mezői
 
 // POST /api/tmdb/details-refresh  (törzs nélkül: a háttérfrissítés; { id }: egy cím, kézzel – az adatlap
 // „Frissítés a TMDB-ről” linkje, esedékességtől függetlenül)
@@ -37,15 +38,25 @@ export async function POST(request) {
     }
     batch = [data];
   } else {
-    // az összes cím (ezres adagokban – lib/fetchAll.js), az esedékesek közül az első 40
-    const { data, error } = await fetchAll(() => db.from('titles').select(FIELDS).order('id'));
+    // az esedékesség csak a kis oszlopokból (ezres adagokban – lib/fetchAll.js), a teljes sor (leírással)
+    // csak az első 40 esedékesé (átnézés J11)
+    const { data, error } = await fetchAll(() => db.from('titles').select(DUE_FIELDS).order('id'));
     if (error) {
       console.error(error);
       return Response.json({ error: 'Nem sikerült lekérdezni a címeket.' }, { status: 500 });
     }
     const today = budapestToday();
     const due = data.filter((t) => detailsDue(t, today));
-    batch = due.slice(0, BATCH);
+    const ids = due.slice(0, BATCH).map((t) => t.id);
+    batch = [];
+    if (ids.length) {
+      const { data: rows, error: rowsError } = await db.from('titles').select(FIELDS).in('id', ids).order('id');
+      if (rowsError) {
+        console.error(rowsError);
+        return Response.json({ error: 'Nem sikerült lekérdezni a címeket.' }, { status: 500 });
+      }
+      batch = rows;
+    }
     batch.remaining = due.length - batch.length;
   }
 

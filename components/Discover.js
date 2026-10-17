@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiGet } from '@/lib/api';
-import { titleKey } from '@/lib/titles';
+import { titleKey, SIMILAR_V } from '@/lib/titles';
 import { unhideSuggestion, useHiddenSuggestions } from '@/lib/hiddenSuggestions';
 import { HideButton, HideNote, useHideSuggestion } from '@/components/HideSuggestion';
 import FeaturedBand from '@/components/FeaturedBand';
@@ -47,7 +47,7 @@ async function loadForYou(seeds, exclude, signal) {
     3,
     async (s) => {
       try {
-        const { results } = await apiGet('/api/tmdb/similar', { type: s.media_type, id: s.tmdb_id, v: 3 }, { signal });
+        const { results } = await apiGet('/api/tmdb/similar', { type: s.media_type, id: s.tmdb_id, v: SIMILAR_V }, { signal });
         results.forEach((r, pos) => {
           const key = titleKey(r);
           if (exclude.has(key)) return;

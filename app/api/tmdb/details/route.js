@@ -1,5 +1,5 @@
 import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
-import { tmdbFetch, tmdbErrorResponse, yearOf, pickSeasons, pickReleaseDates, pickOverview, cached, cachedResponse, HOUR_S } from '@/lib/server/tmdb';
+import { tmdbFetch, tmdbErrorResponse, yearOf, pickSeasons, pickReleaseDates, pickOverview, cached, cachedResponse, HOUR_S, titleParams } from '@/lib/server/tmdb';
 
 const HOUR = HOUR_S * 1000;
 import { omdbEnabled, fetchImdbRating } from '@/lib/server/omdb';
@@ -26,15 +26,8 @@ async function imdbFields(imdbId) {
 export async function GET(request) {
   if (!(await getUserFromRequest(request))) return unauthorized();
 
-  const params = new URL(request.url).searchParams;
-  const type = params.get('type');
-  const id = Number(params.get('id'));
-  if ((type !== 'movie' && type !== 'tv') || !Number.isInteger(id) || id <= 0) {
-    return Response.json(
-      { error: 'Hibás kérés: a type legyen movie vagy tv, az id pozitív egész szám.' },
-      { status: 400 }
-    );
-  }
+  const { type, id, bad } = titleParams(request);
+  if (bad) return bad;
 
   let title;
   try {

@@ -1,5 +1,5 @@
 import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
-import { tmdbFetch, tmdbErrorResponse, cached, pickCast, pickDirectors, cachedResponse, DAY_S } from '@/lib/server/tmdb';
+import { tmdbFetch, tmdbErrorResponse, cached, pickCast, pickDirectors, cachedResponse, DAY_S, titleParams } from '@/lib/server/tmdb';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -13,15 +13,8 @@ const DAY = 24 * 60 * 60 * 1000;
 export async function GET(request) {
   if (!(await getUserFromRequest(request))) return unauthorized();
 
-  const params = new URL(request.url).searchParams;
-  const type = params.get('type');
-  const id = Number(params.get('id'));
-  if ((type !== 'movie' && type !== 'tv') || !Number.isInteger(id) || id <= 0) {
-    return Response.json(
-      { error: 'Hibás kérés: a type legyen movie vagy tv, az id pozitív egész szám.' },
-      { status: 400 }
-    );
-  }
+  const { type, id, bad } = titleParams(request);
+  if (bad) return bad;
 
   try {
     // (a kulcs az M4 óta más: a korábbi, rendező nélküli válasz ne jöjjön a memóriából)

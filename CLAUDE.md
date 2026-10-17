@@ -116,7 +116,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - **Telefonon** a szűrők összecsukva: „Szűrők” gomb + a beállított szűrők címkeként ×-szel (`activeFilters`,
   `.active-filters`; a típuson nincs ×; „↺ Alaphelyzet”), kinyitva összefoglaló (`filterSummary`), legfeljebb a
   képernyő 70%-a. A kereső összecsukva is látszik.
-- **Keresés a listán**: cím, eredeti cím, franchise neve; ékezet- és kisbetű-független (`fold()`), több szónál mind.
+- **Keresés a listán**: cím, eredeti cím, franchise neve; ékezet- és kisbetű-független (`fold()` – közös, a `lib/listSearch.js`-ből), több szónál mind.
   Elírás-tűrés és kiemelés (terv-3 66): `lib/listSearch.js` (`resolveWords`, Damerau–Levenshtein ≤ 1, 5+ betűs
   szónál), `components/Highlight.js` (`mark.hl`, `<Hl>`, `SearchHighlight` kontextus), `.search-note`. Gépeléskor a
   szűrők félreállnak (`SEARCH_FILTERS`), törléskor visszaállnak. Teszt: `test-1013.mjs`.
@@ -228,7 +228,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   pötty nélkül (`.editor-genres`, a `.editor-titletext`-ben).
 - Alul ikonos ghost gombok: „Törlés a listáról” (`.danger-ghost`, megerősítéssel, utána `onDelete` →
   `requestDelete`) és „Frissítés a TMDB-ről” (`.tmdb-refresh`, `refreshTitleDetails(id)`).
-- Részei: előzetes (`/api/tmdb/videos`, `youtube-nocookie.com`, `.trailer`), `WatchProviders`, `TopCast`,
+- Részei: előzetes (`/api/tmdb/videos`; `components/Trailer.js` – `TrailerButton`, `TrailerPlayer`, Mamáé is;
+  `youtube-nocookie.com`, `.trailer`), `WatchProviders`, `TopCast`,
   `TitleGallery`, `SimilarTitles`, `SeasonTimeline`.
 - **Elrendezés**: asztalon (≥ 900 px) 66 rem széles, két oszlop (bal: nagy borító w500, „Hol nézhető?”, szereplők –
   `.editor-side`). Jelenetképes lapon asztalon **moziszerű fejléc** (terv-3 104, `WIDE_QUERY`, `.editor-page.has-hero`):
@@ -236,7 +237,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   előzetes); nagy borító ilyenkor nincs. Ha a jelenetkép később jön, a fejléc áthelyeződik, a fókusz visszakerül a
   címre. 900 px alatt egy oszlop, a borító kicsiben a jelenetkép aljára úszik (`.editor-titlebar` >
   `.editor-hero-poster` + `.editor-titletext`; asztalon `display: contents`). Teszt: `test-104.mjs`.
-- Telefonon (≤ 640 px) alsó lap: fogantyú (`.sheet-handle`, lehúzva zár), nincs × és „Bezárás”.
+- Telefonon (≤ 640 px) alsó lap: fogantyú (`.sheet-handle`, lehúzva zár – `lib/useSheetDrag.js`, Mamáé is), nincs ×
+  és „Bezárás”.
 - **Bezárás**: ragadós × (`.editor-close-bar`), Esc, kikattintás asztalon (`useBackdropClose`), Vissza gomb
   (`backHandler`). `closedby="none"` (Android – lásd `lib/backClose.js`).
 - **Nézetváltás** asztalon (`lib/viewTransition.js`): a kattintott borító átsiklik az adatlapra (`openEditor(t,
@@ -247,7 +249,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 
 ### Az adatlap részei
 - `components/TopCast.js` + `/api/tmdb/credits` – szereplők (`pickCast`, legfeljebb 20 – `CAST_MAX`) és filmnél a
-  rendező(k) (`pickDirectors`, ≤ 3; a kérés `v=3` – `CREDITS_V`, a `lib/prefetch.js` is); az első 3, „Összes
+  rendező(k) (`pickDirectors`, ≤ 3; a kérés `v` paramétere `CREDITS_V` – `lib/titles.js`, a `lib/prefetch.js` is); az első 3, „Összes
   szereplő (N)” (telefonon nincs), alattuk „Rendező” (keskenyebben „Rendező: …” sor). A név (asztalon a fotó is) a
   személy lapját nyitja (`onPerson`; rendezőnél `role: 'director'`).
 - `components/PersonPage.js` + `/api/tmdb/person` (`?role=director`, a kliens `v=2` – `PERSON_V`; közös forrás:
@@ -405,8 +407,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `seasonAired`, `NEXT_SEASON_STATUS`; háttér: `refreshSeasons`, `refreshReleases`, … (utolsó paraméter
   `isCancelled`; a frissített sorok számát adják). `releaseState(t)` (`{ kind: 'soon' | 'cinema' }` / null; a
   mozis bemutató után 120 napig moziban), `formatReleaseDate`, `releaseLabel`, `releaseKey(t, évad?)` (rendezési
-  kulcs; csak évnél `"YYYY-12-32"`), `mamaApplies(t)`, `DETAILS_V` (**a details válasz mezőinek változásakor
-  emeld**), `externalLink`, `formatDate`, `todayDate()` (budapesti idővel, szerveren is), `budapestDay`,
+  kulcs; csak évnél `"YYYY-12-32"`), `mamaApplies(t)`, `DETAILS_V`, `CREDITS_V`, `SIMILAR_V` (**a válasz mezőinek /
+  szűrésének változásakor emeld**; a kérők mind innen veszik), `externalLink`, `formatDate`, `todayDate()` (budapesti idővel, szerveren is), `budapestDay`,
   `DEFAULT_STATUS`, `DROPPED_STATUS`, `MAMA_OPTIONS`, `mamaLabel`, `isPendingDelete`. A franchise nevét a kliens
   keresi ki (nincs a nézetben).
 - `lib/rowSaves.js` – `saveRow(sor, apply, kérés, show)`: soronként sorba állított optimista mentés; a képernyőn az
@@ -445,7 +447,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   build-azonosító (`NEXT_PUBLIC_APP_VERSION`, `next.config.mjs`) eltérésekor „Frissült az app” sáv (munkamenetenként
   egyszer, `duration: null`).
 - `lib/prefetch.js` – `usePrefetchOnHover(t)`: ~150 ms rámutatás után a providers / credits / videos / images route
-  előtöltése **ugyanazzal az URL-lel, mint a `TitleEditor` – ha ott a paraméterek változnak, itt is**.
+  előtöltése **ugyanazzal az URL-lel, mint a `TitleEditor` – ha ott a paraméterek változnak, itt is** (a `v` közös
+  konstans).
 - `components/PullRefresh.js` – lehúzás frissítéshez, csak érintéssel és a telepített appban (`isStandalone()`);
   nyitott `dialog`-nál / belül görgetett elemben nem; `<html data-pull-refresh>`. Teszt: `test-1014.mjs`.
 - `lib/liveSync.js` – élő szinkron (Supabase Realtime, terv-3 86): `useLiveSync(enabled, userId, { onTitles(ids,
@@ -467,7 +470,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `lib/server/auth.js` – `getUserFromRequest()` (a tokent helyben, `auth.getClaims()`-szel ellenőrzi, JWKS
   gyorsítótárazva; egy máshol kijelentkeztetett token a lejáratáig elfogadott – az adatot az RLS védi),
   `supabaseAsUser()`, `unauthorized()`. Az `/api/tmdb/*` token nélkül 401.
-- `lib/server/tmdb.js` – `tmdbFetch()` (10 mp-es időkorlát, az OMDb is), `tmdbErrorResponse()`,
+- `lib/server/tmdb.js` – `tmdbFetch()` (10 mp-es időkorlát, az OMDb is), `tmdbErrorResponse()`, `titleParams(request)`
+  (`?type=movie|tv&id=` → `{ type, id }` vagy `{ bad }` 400-as válasz – a címhez tartozó route-ok),
   `cachedResponse(body, mp)` (`Cache-Control: private, max-age`; `DAY_S`, `HOUR_S`; **hibás vagy részben hiányos
   válasz soha nem tárolható** – ilyenkor sima `Response.json`), `cached(kulcs, ms, betöltő, keep?)` (memória, ≤ 500
   elem; az egyszerre érkező hiányok egy betöltést várnak; hibát és `keep` szerint hamisat nem tárol),
@@ -477,7 +481,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - Lekérő route-ok (`app/api/tmdb/…`, GET): `search` (multi, csak film / sorozat), `details` (a `titles` oszlopai +
   `genres`, sorozatnál `seasons`; magyar leírás híján angol; OMDb – ha nem sikerül, a cím attól még felvehető;
   filmnél gyűjtemény, `release_date`), `find` (IMDb ID → TMDB), `similar` (≥ 2000, TMDB ≥ 6,0, ≥ 50 szavazat,
-  animáció nélkül, ≤ 12; a kliens `v=3` – **a szűrés változásakor emeld**), `videos` (YouTube, Trailer és hivatalos
+  animáció nélkül, ≤ 12; a kliens `SIMILAR_V` – **a szűrés változásakor emeld**), `videos` (YouTube, Trailer és hivatalos
   előbb, magyar, ha nincs angol), `providers`, `credits`, `images`, `person`, `logos`, `discover`, `featured`,
   `collection`, `collection-search` (`?suggest=`). Ha a cím már nincs a TMDB-n: üres / null.
 - Háttérfrissítő `POST` route-ok (a felhasználó jogaival, kötegekben; a `Watchlist` betöltéskor hívja,
@@ -486,7 +490,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   false`), `tmdb/backdrops` (40), `tmdb/releases` (40), `tmdb/title-collections` (40), `tmdb/collection-parts` (8
   franchise; új rész → `collection_new`, ha nincs a listán és nincs elrejtve; első ellenőrzéskor és új gyűjteménynél
   csak megjegyzi; **előbb az értesítést írja, utána az ismert részeket**; a 404-es gyűjtemény üres; ha egy
-  gyűjtemény nem tölthető le, nem jelöli ellenőrzöttnek), `tmdb/details-refresh` (40; `{ id }`-vel egy cím kézzel;
+  gyűjtemény nem tölthető le, nem jelöli ellenőrzöttnek), `tmdb/details-refresh` (40; az esedékességet a kis oszlopokból dönti el, a teljes sort csak a 40-é kéri; `{ id }`-vel egy cím kézzel;
   a címet **csak akkor** cseréli a magyarra, ha most az eredeti áll ott – a kézzel adott címek maradnak; leírás,
   borító, dátum, műfajok; a saját adatokhoz nem nyúl; mindig beírja a `details_checked_at`-et), `franchises/logos`,
   `people/refresh` (8 követett személy; a főszerepben / rendezőként jegyzett filmjei – animáció, dokumentum,

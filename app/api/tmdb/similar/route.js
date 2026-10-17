@@ -7,6 +7,7 @@ import {
   cachedResponse,
   DAY_S,
   ANIMATION_GENRE,
+  titleParams,
 } from '@/lib/server/tmdb';
 
 const LIMIT = 12; // ennyi ajánlás a szerkesztő ablakban
@@ -26,15 +27,8 @@ const MAX_PAGES = 2; // forrásonként ennyi oldalig pótol, ha a szűrés után
 export async function GET(request) {
   if (!(await getUserFromRequest(request))) return unauthorized();
 
-  const params = new URL(request.url).searchParams;
-  const type = params.get('type');
-  const id = Number(params.get('id'));
-  if ((type !== 'movie' && type !== 'tv') || !Number.isInteger(id) || id <= 0) {
-    return Response.json(
-      { error: 'Hibás kérés: a type legyen movie vagy tv, az id pozitív egész szám.' },
-      { status: 400 }
-    );
-  }
+  const { type, id, bad } = titleParams(request);
+  if (bad) return bad;
 
   try {
     const results = await cached(`similar3:${type}:${id}`, DAY_S * 1000, () => loadSimilar(type, id));

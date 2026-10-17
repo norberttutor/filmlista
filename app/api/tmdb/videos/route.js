@@ -1,5 +1,5 @@
 import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
-import { tmdbFetch, tmdbErrorResponse, cached, cachedResponse, DAY_S } from '@/lib/server/tmdb';
+import { tmdbFetch, tmdbErrorResponse, cached, cachedResponse, DAY_S, titleParams } from '@/lib/server/tmdb';
 
 const DAY = DAY_S * 1000;
 
@@ -20,15 +20,8 @@ function pickTrailer(videos) {
 export async function GET(request) {
   if (!(await getUserFromRequest(request))) return unauthorized();
 
-  const params = new URL(request.url).searchParams;
-  const type = params.get('type');
-  const id = Number(params.get('id'));
-  if ((type !== 'movie' && type !== 'tv') || !Number.isInteger(id) || id <= 0) {
-    return Response.json(
-      { error: 'Hibás kérés: a type legyen movie vagy tv, az id pozitív egész szám.' },
-      { status: 400 }
-    );
-  }
+  const { type, id, bad } = titleParams(request);
+  if (bad) return bad;
 
   try {
     const video = await cached(`videos:${type}:${id}`, DAY, async () => {

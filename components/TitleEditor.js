@@ -12,6 +12,7 @@ import {
   DROPPED_STATUS,
   MAMA_OPTIONS,
   DETAILS_V,
+  CREDITS_V,
   mamaApplies,
   mamaLabel,
   refreshTitleDetails,
@@ -30,6 +31,8 @@ import SimilarTitles from '@/components/SimilarTitles';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
 import { canMorph, MORPH_NAME, afterTransition } from '@/lib/viewTransition';
 import { useBackdropClose } from '@/lib/useBackdropClose';
+import { useSheetDrag } from '@/lib/useSheetDrag';
+import { TrailerButton, TrailerPlayer } from '@/components/Trailer';
 import { pushDialogPage, popDialogPage } from '@/lib/backClose';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 import { galleryList, GalleryStrip, BackdropPager, GalleryLightbox } from '@/components/TitleGallery';
@@ -38,9 +41,6 @@ const POSTER_BASE = 'https://image.tmdb.org/t/p/w500'; // a nagy borító (aszta
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/'; // a háttérkép (telefonon w780, asztalon w1280)
 const PHONE_QUERY = '(max-width: 640px)';
 const WIDE_QUERY = '(min-width: 900px)'; // a kétoszlopos asztali adatlap (globals.css)
-// a /api/tmdb/credits kérés v paramétere (a böngésző egy napig tárolja a választ – a 91-es óta 20 szereplőt ad,
-// az M4 óta a rendezőt is); a lib/prefetch.js is ezzel kéri
-const CREDITS_V = 3;
 
 // Rádiógombok "chip" formában; a kiválasztottra újra kattintva visszaáll üresre.
 const DOWNLOADED_OPTIONS = [{ code: 'yes', name: 'Letöltve' }];
@@ -96,7 +96,6 @@ export default function TitleEditor({
   ...pageProps
 }) {
   const dialogRef = useRef(null);
-  const drag = useRef(null); // telefonon a lehúzás: { y, t, dy }
   const pageRef = useRef(null); // az elöl lévő lap: { canLeave(), nudge() }
   const nextId = useRef(1);
   const closeRef = useRef(null); // a mostani close (az Esc-figyelőnek)
@@ -162,6 +161,8 @@ export default function TitleEditor({
     canClose: () => pageRef.current?.canLeave() ?? true,
     onBlocked: () => pageRef.current?.nudge(),
   });
+  // telefonon az ablak alsó lap: a fogantyút lefelé húzva bezárul
+  const sheetDrag = useSheetDrag(dialogRef, close);
 
   // lapváltás előtt: törlés-megerősítés, franchise-név gépelése, felvétel közben a lap nem hagyható el
   // (mint a kikattintásnál)
@@ -231,36 +232,6 @@ export default function TitleEditor({
     setStack((s) => s.map((entry) => (entry.id === id ? { ...entry, added: watched ? 'watched' : true } : entry)));
   }
 
-  // telefonon az ablak alsó lap: a fogantyút lefelé húzva bezárul (elég messzire vagy gyorsan),
-  // különben visszaugrik
-  function dragStart(e) {
-    if (!window.matchMedia(PHONE_QUERY).matches) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    drag.current = { y: e.clientY, t: performance.now(), dy: 0 };
-    dialogRef.current.style.transition = 'none';
-  }
-
-  function dragMove(e) {
-    if (!drag.current) return;
-    drag.current.dy = Math.max(0, e.clientY - drag.current.y);
-    dialogRef.current.style.translate = `0 ${drag.current.dy}px`;
-  }
-
-  function dragEnd() {
-    if (!drag.current) return;
-    const { dy, t } = drag.current;
-    drag.current = null;
-    const dialog = dialogRef.current;
-    dialog.style.transition = '';
-    const fast = dy / (performance.now() - t) > 0.6; // px/ms
-    if (dy > 110 || (fast && dy > 30)) {
-      dialog.style.translate = '0 100%';
-      setTimeout(close, 180);
-    } else {
-      dialog.style.translate = '';
-    }
-  }
-
   return (
     <dialog
       ref={dialogRef}
@@ -282,14 +253,7 @@ export default function TitleEditor({
       {...ambientProps(ambient)}
     >
       {/* telefonon: fogantyú – lefelé húzva bezárja az ablakot (az Esc / Vissza ugyanaz; telefonon nincs × és „Bezárás”) */}
-      <div
-        className="sheet-handle"
-        aria-hidden="true"
-        onPointerDown={dragStart}
-        onPointerMove={dragMove}
-        onPointerUp={dragEnd}
-        onPointerCancel={dragEnd}
-      />
+      <div className="sheet-handle" aria-hidden="true" {...sheetDrag} />
       {/* bezáró × a jobb felső sarokban, görgetéskor is látszik (átnézés J1, 2026-10-15 – a „Bezárás” a hosszú lap
           alján van); mint az Esc: törlés-megerősítés / felvétel közben nem zár */}
       <div className="editor-close-bar">
@@ -650,16 +614,7 @@ function TitlePage({
     </p>
   );
 
-  const player = playing && trailer && (
-    <div className="trailer">
-      <iframe
-        src={`https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1&rel=0&hl=hu&cc_lang_pref=hu`}
-        title={`Előzetes: ${t.title}`}
-        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-        allowFullScreen
-      />
-    </div>
-  );
+  const player = <TrailerPlayer trailer={trailer} playing={playing} title={t.title} />;
 
   // a cím, a borító és az adatok: asztalon (≥ 900 px) a jelenetképes lapon a képen (terv-3 104, moziszerű fejléc),
   // különben a jobb oszlop tetején
@@ -710,20 +665,7 @@ function TitlePage({
       )}
       {/* keskenyebben (< 900 px, nincs nagy borító) itt, az előzetes fölött */}
       <WatchProviders providers={providers} className="inline" />
-      {trailer && (
-        <button
-          type="button"
-          className="ghost trailer-btn"
-          aria-expanded={playing}
-          onClick={() => setPlaying((p) => !p)}
-        >
-          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-            <path d={playing ? 'M6 6l12 12M18 6 6 18' : 'M8 5v14l11-7z'} fill={playing ? 'none' : 'currentColor'} stroke="currentColor" strokeWidth={playing ? 2.4 : 0} strokeLinecap="round" />
-          </svg>
-          {playing ? 'Előzetes bezárása' : 'Előzetes megnézése'}
-          {!playing && trailer.lang !== 'hu' && <span className="trailer-lang">angolul</span>}
-        </button>
-      )}
+      <TrailerButton trailer={trailer} playing={playing} onToggle={() => setPlaying((p) => !p)} />
       {!hero && player}
       {t.overview ? (
         <>

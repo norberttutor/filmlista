@@ -12,14 +12,13 @@ import {
   summarizeCollection,
 } from '@/components/FranchiseCollection';
 import { mapLimit } from '@/lib/bulkImport';
+import { fold } from '@/lib/listSearch'; // kis- és nagybetű, ékezet nélkül (a kereséshez)
 import { useBackdropClose } from '@/lib/useBackdropClose';
 import { usePosterColor, ambientProps, franchisePosterPath } from '@/lib/posterColor';
 import { article, franchiseSuggestions } from '@/lib/franchiseSuggest';
 import FranchiseSuggestions from '@/components/FranchiseSuggestions';
 import { FranchiseActions } from '@/components/FranchiseActions';
 
-// kis- és nagybetű, ékezet nélkül (a kereséshez)
-const fold = (s) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 // ábécérend névelő nélkül (Norbi döntése): „A majmok bolygója” az M-nél, „The Purge” a P-nél
 const sortKey = (name) => name.replace(/^(a|az|the)\s+/i, '');
 const byNameNoArticle = (a, b) => sortKey(a.name).localeCompare(sortKey(b.name), 'hu', { sensitivity: 'base' });

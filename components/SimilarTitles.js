@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
-import { addTitle, titleKey } from '@/lib/titles';
+import { addTitle, titleKey, SIMILAR_V } from '@/lib/titles';
 import { afterTransition } from '@/lib/viewTransition';
 import { useHiddenSuggestions } from '@/lib/hiddenSuggestions';
 import { HideButton, HideNote, useHideSuggestion } from '@/components/HideSuggestion';
@@ -50,9 +50,7 @@ export default function SimilarTitles({ title, existingKeys, onAdded, onPreview,
     setLoad({ status: 'loading', results: [], error: '' });
     apiGet(
       '/api/tmdb/similar',
-      // v: a szűrés változásakor (2026-10-07: 2000 utáni, 6,0+; 2026-10-12: animáció nélkül) új cím,
-      // hogy a böngésző egy napig tárolt régi válasza ne jöjjön
-      { type: title.media_type, id: title.tmdb_id, v: 3 },
+      { type: title.media_type, id: title.tmdb_id, v: SIMILAR_V },
       { signal: controller.signal }
     )
       // a megnyitás mozgása alatt nem rajzolunk újra (afterTransition)
