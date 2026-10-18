@@ -19,7 +19,7 @@ const DUE_FIELDS = 'id, tmdb_id, status, release_date, details_checked_at, creat
 // Esedékes: lib/refreshDue.js detailsDue() (a böngésző is azzal dönti el, hív-e). Ha a cím már nincs a
 // TMDB-n, csak megjelöli.
 // Válasz: { updated: [a változott címek sora a titles_with_genres nézetből], remaining } | egy címnél
-// { row, changed }
+// { row, changed, gone } (gone: a cím már nincs meg a TMDB-n)
 export async function POST(request) {
   if (!(await getUserFromRequest(request))) return unauthorized();
   const db = supabaseAsUser(request);
@@ -32,10 +32,11 @@ export async function POST(request) {
   let batch;
   if (single != null) {
     const { data, error } = await db.from('titles').select(FIELDS).eq('id', single).maybeSingle();
-    if (error || !data) {
-      if (error) console.error(error);
-      return Response.json({ error: 'Ez a cím nincs a listádon.' }, { status: 404 });
+    if (error) {
+      console.error(error);
+      return Response.json({ error: 'Nem sikerült lekérdezni a címet. Próbáld újra később.' }, { status: 500 });
     }
+    if (!data) return Response.json({ error: 'Ez a cím nincs a listádon.' }, { status: 404 });
     batch = [data];
   } else {
     // az esedékesség csak a kis oszlopokból (ezres adagokban – lib/fetchAll.js), a teljes sor (leírással)
@@ -73,12 +74,15 @@ export async function POST(request) {
   for (const l of links) genresOf.get(l.title_id)?.add(l.genre_id);
 
   const changedIds = [];
+  const goneIds = [];
   let failed = false; // pl. a TMDB nem elérhető: most nem próbálkozunk tovább
   for (let i = 0; i < batch.length && !failed; i += PARALLEL) {
     await Promise.all(
       batch.slice(i, i + PARALLEL).map(async (t) => {
         try {
-          if (await refreshOne(db, t, genresOf.get(t.id))) changedIds.push(t.id);
+          const { changed, gone } = await refreshOne(db, t, genresOf.get(t.id));
+          if (changed) changedIds.push(t.id);
+          if (gone) goneIds.push(t.id);
         } catch (err) {
           console.error(err);
           failed = true;
@@ -100,12 +104,13 @@ export async function POST(request) {
     }
     let row = rows[0];
     if (!row) ({ data: row } = await db.from('titles_with_genres').select('*').eq('id', single).single());
-    return Response.json({ row, changed: changedIds.length > 0 });
+    return Response.json({ row, changed: changedIds.length > 0, gone: goneIds.length > 0 });
   }
   return Response.json({ updated: rows, remaining: failed ? 0 : batch.remaining });
 }
 
-// egy cím frissítése; igaz, ha valami változott (a details_checked_at mindig bekerül)
+// egy cím frissítése → { changed: valami változott, gone: a TMDB-n már nincs meg } (a details_checked_at
+// mindig bekerül)
 async function refreshOne(db, t, genreIds) {
   let data = null;
   try {
@@ -147,5 +152,5 @@ async function refreshOne(db, t, genreIds) {
     .update({ ...changes, details_checked_at: new Date().toISOString() })
     .eq('id', t.id);
   if (error) throw error;
-  return genresChanged || Object.keys(changes).length > 0;
+  return { changed: genresChanged || Object.keys(changes).length > 0, gone: !data };
 }

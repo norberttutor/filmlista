@@ -46,7 +46,8 @@ export default function FranchisesDialog({
   const dialogRef = useRef(null);
   const headingRef = useRef(null);
   const [query, setQuery] = useState('');
-  // franchise id → { key, collections } (a legutóbb betöltött; a kulcs a lekérés paraméterei)
+  // franchise id → { key, collections, failed } (a legutóbb betöltött; a kulcs a lekérés paraméterei;
+  // failed: a TMDB nem válaszolt – átnézés H2)
   const [loaded, setLoaded] = useState(() => new Map());
   const pending = useRef(new Set());
   const controllerRef = useRef(null);
@@ -74,17 +75,36 @@ export default function FranchisesDialog({
     };
   }, []);
 
-  // egy franchise gyűjteményeinek betöltése (hibánál üresen – a számok a saját címekből)
+  // egy franchise gyűjteményeinek betöltése (hibánál üresen – a számok a saját címekből –, megjelölve,
+  // hogy ne „nincs TMDB-gyűjtemény” látsszon; újrapróbálás: retryOne)
   async function loadOne({ id, key, params, token }, signal) {
     let collections = [];
+    let failed = false;
     try {
       collections = await fetchCollections(params, signal);
     } catch (err) {
       if (err.name === 'AbortError') return;
       console.warn('Gyűjtemény:', err.message);
+      failed = true;
     }
     pending.current.delete(token);
-    setLoaded((m) => new Map(m).set(id, { key, collections }));
+    setLoaded((m) => {
+      // újrapróbáláskor a korábbi (sikeres) gyűjtemények maradnak
+      const before = m.get(id);
+      if (failed && before?.key === key && before.collections.length) collections = before.collections;
+      return new Map(m).set(id, { key, collections, failed });
+    });
+  }
+
+  // sikertelen betöltés újra (a csempére kattintva / a gyűjtemény-ablak „Újrapróbálás”-ára)
+  function retryOne(f) {
+    const params = collectionParams(f, titles);
+    const key = paramsKey(params);
+    const token = `${f.id}:${key}`;
+    if (pending.current.has(token)) return;
+    rushed.current.add(token);
+    pending.current.add(token);
+    loadOne({ id: f.id, key, params, token }, controllerRef.current.signal);
   }
 
   // a még be nem töltött csempére kattintva (átnézés H9, 2026-10-16): a franchise soron kívül, azonnal töltődik – a
@@ -93,7 +113,11 @@ export default function FranchisesDialog({
   const rushed = useRef(new Set());
   function openFranchise(f) {
     setOpenId(f.id);
-    if (loaded.has(f.id)) return; // a korábbi gyűjteményekkel nyílik, az újratöltés közben is (kódaudit #6)
+    if (loaded.has(f.id)) {
+      // a korábbi gyűjteményekkel nyílik, az újratöltés közben is (kódaudit #6)
+      if (loaded.get(f.id).failed) retryOne(f);
+      return;
+    }
     const params = collectionParams(f, titles);
     const key = paramsKey(params);
     const token = `${f.id}:${key}`;
@@ -127,6 +151,7 @@ export default function FranchisesDialog({
     return {
       f,
       ready: entry?.key === key,
+      failed: Boolean(entry?.failed),
       ownCount: titles.filter((t) => t.franchise_id === f.id).length,
       summary: summarizeCollection(f, titles, entry?.collections ?? []),
     };
@@ -134,6 +159,19 @@ export default function FranchisesDialog({
   const q = fold(query.trim());
   const shown = q ? rows.filter((r) => fold(r.f.name).includes(q)) : rows;
   const open = rows.find((r) => r.f.id === openId);
+
+  // a nyitott gyűjtemény-ablak franchise-a törlődött (a fejléc „Törlés”-ével vagy máshol – átnézés
+  // H7): az ablak eltűnik, az openId is nullázódik (különben a Franchise-ok ablak nem zárna
+  // kikattintásra); az épp létrehozott, még nem látott franchise-t nem bántja
+  const knownIds = useRef(new Set());
+  useEffect(() => {
+    const ids = new Set(franchises.map((f) => f.id));
+    if (openId != null && knownIds.current.has(openId) && !ids.has(openId)) {
+      setOpenId(null);
+      headingRef.current?.focus();
+    }
+    knownIds.current = ids;
+  }, [franchises, openId]);
 
   async function saveRename(event) {
     event.preventDefault();
@@ -187,6 +225,14 @@ export default function FranchisesDialog({
       aria-labelledby="franchises-title"
       // a benne nyíló gyűjtemény-ablak „close” eseményét a React ide is továbbítja: csak a sajátjára zárunk
       onClose={(e) => e.target === e.currentTarget && onClose()}
+      // szerkesztés / megerősítés közben az Esc és a Vissza gomb („cancel”) csak azt zárja, a beírt
+      // név ne vesszen el (átnézés H8); a belső gyűjtemény-ablak eseménye is ideér – az nem számít
+      onCancel={(e) => {
+        if (e.target !== e.currentTarget || (!edit && !creating)) return;
+        e.preventDefault();
+        if (edit && !edit.busy) setEdit(null);
+        if (creating && !creating.busy) setCreating(null);
+      }}
       {...backdrop}
     >
       <div>
@@ -220,7 +266,7 @@ export default function FranchisesDialog({
         )}
 
         <ul className="fr-grid" aria-label="Franchise-ok">
-          {shown.map(({ f, ready, ownCount, summary }) => {
+          {shown.map(({ f, ready, failed, ownCount, summary }) => {
             const { counts, sections } = summary;
             const editing = edit?.id === f.id ? edit : null;
             // rákattintott, de a gyűjteményei még töltődnek (átnézés H9): a betöltés után nyílik
@@ -247,7 +293,9 @@ export default function FranchisesDialog({
                         </b>{' '}
                         megnézve
                         {ready ? countsNote(counts) : opening ? ' · megnyitás…' : ' · …'}
-                        {ready && sections.length === 0 && counts.total > 0 && ' · nincs TMDB-gyűjtemény'}
+                        {ready && failed
+                          ? ' · a TMDB nem válaszolt'
+                          : ready && sections.length === 0 && counts.total > 0 && ' · nincs TMDB-gyűjtemény'}
                       </>
                     )}
                   </span>
@@ -359,6 +407,8 @@ export default function FranchisesDialog({
           onRename={onRename}
           onDelete={onDelete}
           readOnly={readOnly}
+          loadFailed={open.failed}
+          onRetry={() => retryOne(open.f)}
         />
       )}
     </dialog>

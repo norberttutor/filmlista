@@ -4,18 +4,28 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { useBackdropClose } from '@/lib/useBackdropClose';
+import { signInErrorKind } from '@/lib/authErrors';
 
 const MIN_LENGTH = 8;
 
 // a jelenlegi jelszó ellenőrzése egy külön, semmit nem tároló klienssel: így a bejelentkezett
-// munkamenet (és a token) nem cserélődik, és a lap nem kap „SIGNED_IN” eseményt
+// munkamenet (és a token) nem cserélődik, és a lap nem kap „SIGNED_IN” eseményt;
+// hibánál a hiba szövege (null: jó a jelszó)
+const CHECK_ERRORS = {
+  offline: 'Nem sikerült elérni a szervert. Ellenőrizd az internetkapcsolatot, és próbáld újra.',
+  rate: 'Túl sok próbálkozás. Várj néhány percet, és próbáld újra.',
+  invalid: 'A jelenlegi jelszó nem jó. Írd be újra.',
+  other: 'A jelenlegi jelszót most nem sikerült ellenőrizni. Próbáld újra néhány perc múlva.',
+};
+
 async function checkPassword(email, password) {
   const probe = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false, storageKey: 'filmlista-jelszo-ellenorzes' },
   });
   const { error } = await probe.auth.signInWithPassword({ email, password });
-  if (!error) await probe.auth.signOut({ scope: 'local' }); // az ellenőrző munkamenet ne maradjon élve
-  return !error;
+  if (error) return CHECK_ERRORS[signInErrorKind(error)];
+  await probe.auth.signOut({ scope: 'local' }); // az ellenőrző munkamenet ne maradjon élve
+  return null;
 }
 
 // a Supabase hibái magyarul (a kódjuk szerint)
@@ -65,8 +75,9 @@ export default function PasswordDialog({ email, onClose }) {
     if (next === current) return setError('Az új jelszó ugyanaz, mint a mostani. Adj meg egy másikat.');
     setBusy(true);
     try {
-      if (!(await checkPassword(email, current))) {
-        setError('A jelenlegi jelszó nem jó. Írd be újra.');
+      const wrong = await checkPassword(email, current);
+      if (wrong) {
+        setError(wrong);
         return;
       }
       const { error } = await supabase.auth.updateUser({ password: next });

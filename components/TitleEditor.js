@@ -522,8 +522,14 @@ function TitlePage({
     setTmdbRefresh('busy');
     setError('');
     try {
-      const { row: fresh, changed } = await refreshTitleDetails(t.id);
+      const { row: fresh, changed, gone } = await refreshTitleDetails(t.id);
       if (fresh) onChanged(fresh);
+      if (gone) {
+        // átnézés H10: ne „Nincs újdonság” legyen, ha a TMDB-n már nincs meg
+        setTmdbRefresh(null);
+        setError('Ez a cím már nincs meg a TMDB-n, ezért az adatai nem frissíthetők.');
+        return;
+      }
       setTmdbRefresh(changed ? 'changed' : 'same');
       tmdbTimer.current = setTimeout(() => setTmdbRefresh(null), 4000);
     } catch (err) {

@@ -13,7 +13,7 @@ const TAGS = {
   unsure: 'Válassz',
   onList: 'Már a listán',
   none: 'Nincs találat',
-  error: 'Hiba',
+  error: 'Sikertelen keresés',
 };
 
 function Candidate({ c, name, checked, onPick }) {
@@ -46,7 +46,7 @@ export default function BulkImport({ existingKeys, onAdded, ref }) {
   const [rows, setRows] = useState([]); // [{ line, query, year, status, candidates, choice, open }]
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [error, setError] = useState('');
-  const [result, setResult] = useState(null); // { added, failed: [{ line, message }] }
+  const [result, setResult] = useState(null); // { added, failed: [{ line, message }], left }
   // a futás azonosítója: megnyitáskor és bezáráskor változik – a háttérben tovább futó régi keresés /
   // felvétel (pl. két Esc után bezárt ablaknál) már nem írja felül az újranyitott ablakot (kódaudit
   // #38). A felvétel ettől még végigfut, a címek felkerülnek.
@@ -128,9 +128,12 @@ export default function BulkImport({ existingKeys, onAdded, ref }) {
       (done) => current() && setProgress((p) => ({ ...p, done }))
     );
     if (!current()) return;
-    setResult({ added, failed });
-    // a sikertelenek maradnak a szövegmezőben (újrapróbálhatók), a többi kikerül
-    setText(failed.map((f) => f.line).join('\n'));
+    // a szövegmezőben marad (javítható, újrakereshető – átnézés H6): a sikertelen felvétel, a
+    // találat nélküli és a sikertelen keresésű sor; a többi kikerül
+    const failedLines = new Set(failed.map((f) => f.line));
+    const left = rows.filter((r) => failedLines.has(r.line) || r.status === 'none' || r.status === 'error').map((r) => r.line);
+    setResult({ added, failed, left: left.length });
+    setText(left.join('\n'));
     setPhase('done');
   }
 
@@ -179,8 +182,8 @@ export default function BulkImport({ existingKeys, onAdded, ref }) {
             <>
               <p>
                 <b>{rows.length}</b> cím: {count('sure')} biztos, {count('unsure')} bizonytalan
-                (válassz), {count('onList')} már a listán, {count('none') + count('error')} nincs
-                találat.
+                (válassz), {count('onList')} már a listán, {count('none')} nincs találat
+                {count('error') > 0 && `, ${count('error')} keresése nem sikerült (próbáld újra később)`}.
               </p>
               <ul className="bulk-rows" aria-label="Találatok">
                 {rows.map((r, i) => {
@@ -270,6 +273,12 @@ export default function BulkImport({ existingKeys, onAdded, ref }) {
                   ))}
                 </ul>
               )}
+              {result.left > 0 && (
+                <p className="muted">
+                  {result.left} sor maradt a szövegmezőben (nincs találat, vagy nem sikerült) – javíthatod, és
+                  újrakeresheted.
+                </p>
+              )}
             </div>
           )}
 
@@ -280,7 +289,7 @@ export default function BulkImport({ existingKeys, onAdded, ref }) {
           )}
 
           <div className="editor-actions">
-            {phase === 'review' && (
+            {(phase === 'review' || (phase === 'done' && text)) && (
               <button type="button" className="ghost" onClick={() => setPhase('input')}>
                 Vissza a szerkesztéshez
               </button>

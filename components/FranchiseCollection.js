@@ -89,6 +89,9 @@ export default function FranchiseCollection({ franchise, franchiseNames, titles,
   const { movies, extra } = params;
   const needsFetch = Boolean(movies || extra);
   const [collections, setCollections] = useState(needsFetch ? null : []); // null: betöltés alatt
+  // a TMDB nem válaszolt (átnézés H2): ilyenkor nem írjuk, hogy „nincs TMDB-gyűjtemény”
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0); // „Újrapróbálás”
   const [open, setOpen] = useState(false);
   // a franchise színe (terv-3 52.2, „B”; a korai visszatérés előtt – hook): ugyanaz, mint a Franchise-ok csempéjén és a gyűjtemény-ablakban
   const { style: ambientStyle, ...ambientData } = ambientProps(usePosterColor(franchisePosterPath(franchise.id, titles)));
@@ -100,14 +103,21 @@ export default function FranchiseCollection({ franchise, franchiseNames, titles,
     }
     const controller = new AbortController();
     fetchCollections({ movies, extra }, controller.signal)
-      .then(setCollections)
+      .then((c) => {
+        setCollections(c);
+        setLoadFailed(false);
+      })
       .catch((err) => {
         if (err.name === 'AbortError') return;
         console.warn('Gyűjtemény:', err.message);
-        setCollections([]);
+        // újrapróbáláskor a korábbi (sikeres) gyűjtemények maradnak
+        setCollections((c) => c ?? []);
+        setLoadFailed(true);
       });
     return () => controller.abort();
-  }, [movies, extra]);
+  }, [movies, extra, attempt]);
+
+  const retry = () => setAttempt((n) => n + 1);
 
   if (collections === null) return null;
 
@@ -138,8 +148,13 @@ export default function FranchiseCollection({ franchise, franchiseNames, titles,
           </b>{' '}
           cím megnézve
           {countsNote(counts)}
-          {sections.length === 0 && ' · nincs hozzá TMDB-gyűjtemény'}
+          {loadFailed ? ' · a TMDB-gyűjtemények nem töltődtek be' : sections.length === 0 && ' · nincs hozzá TMDB-gyűjtemény'}
         </span>
+        {loadFailed && (
+          <button type="button" className="ghost collection-retry" onClick={retry}>
+            Újrapróbálás
+          </button>
+        )}
         <button type="button" className="ghost" onClick={() => setOpen(true)}>
           Gyűjtemény
         </button>
@@ -162,6 +177,8 @@ export default function FranchiseCollection({ franchise, franchiseNames, titles,
           onRename={onRename}
           onDelete={onDelete}
           readOnly={readOnly}
+          loadFailed={loadFailed}
+          onRetry={retry}
         />
       )}
     </>
@@ -228,6 +245,9 @@ export function CollectionDialog({
   // net nélkül (terv-3 44): csak nézni lehet – felvétel, gyűjtemény hozzárendelése / eltávolítása,
   // átnevezés, törlés nincs, a nézési sorrend csak olvasható (kódaudit #8)
   readOnly,
+  // a TMDB-gyűjtemények betöltése nem sikerült (átnézés H2) – onRetry: újra
+  loadFailed,
+  onRetry,
 }) {
   const dialogRef = useRef(null);
   const headingRef = useRef(null);
@@ -354,11 +374,17 @@ export function CollectionDialog({
       aria-labelledby="collection-title"
       {...ambientProps(ambient)}
       onClose={onClose}
-      // sorrend-szerkesztés közben az Esc csak a szerkesztést zárja (a vázlat elvész)
+      // sorrend-szerkesztés közben az Esc csak a szerkesztést zárja (a vázlat elvész); a Vissza gomb
+      // („cancel”) az átnevezést / törlés-megerősítést / logóválasztót is csak bezárja (átnézés H8 –
+      // az Esc-et ezeknél a lenti keydown kezeli)
       onCancel={(e) => {
-        if (e.target === e.currentTarget && ordering) {
+        if (e.target !== e.currentTarget) return;
+        if (ordering) {
           e.preventDefault();
           setOrdering(false);
+        } else if (edit) {
+          e.preventDefault();
+          if (!edit.busy) setEdit(null);
         }
       }}
       // az átnevezés mezőjében / a törlés megerősítésénél az Esc csak azt zárja
@@ -378,13 +404,23 @@ export function CollectionDialog({
           {franchise.name}
         </h2>
         <p className="collection-sub">
-          {sections.length
+          {loadFailed && !sections.length
+            ? 'Nem sikerült betölteni a TMDB-gyűjteményeket'
+            : sections.length
             ? `${sections.length} TMDB-gyűjtemény, a részek megjelenési sorrendben`
             : readOnly
               ? 'Nincs hozzá TMDB-gyűjtemény'
               : 'Nincs hozzá TMDB-gyűjtemény – lent kézzel hozzárendelhetsz egyet'}
           {' · '}
           {counts.total} cím
+          {loadFailed && onRetry && (
+            <>
+              {' · '}
+              <button type="button" className="link" onClick={onRetry}>
+                Újrapróbálás
+              </button>
+            </>
+          )}
         </p>
         <p className="collection-prog">
           <CollectionMeter {...counts} />

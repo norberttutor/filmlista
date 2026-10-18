@@ -18,13 +18,30 @@ const TABS = [
   { code: 'interested', label: 'Érdekel', match: (t) => t.mama_status === 'interested', empty: 'Még nem jelöltél meg filmet. A „Filmek” közül az „Érdekel” gombbal teheted ide.' },
 ];
 
-// Mama jelölése a saját függvényével (supabase/17_mama_access.sql): 'interested' / 'declined' / null
-async function mamaMark(id, choice) {
-  const { error } = await supabase.rpc('mama_mark', { p_title_id: id, p_choice: choice });
+// Mama jelölése a saját függvényével (supabase/17_mama_access.sql): 'interested' / 'declined' / null.
+// Címenként sorba állítva: gyors kattintásoknál (jelölés + visszavonás) a kérések sorrendje
+// így biztosan az, amit a felület mutat.
+const markQueues = new Map();
+
+async function sendMark(id, choice) {
+  let error;
+  try {
+    ({ error } = await supabase.rpc('mama_mark', { p_title_id: id, p_choice: choice }));
+  } catch (err) {
+    error = err;
+  }
   if (error) {
     console.error(error);
-    throw new Error(`Nem sikerült menteni: ${error.message} Próbáld újra.`);
+    throw new Error('Nem sikerült menteni. Ellenőrizd az internetkapcsolatot, és próbáld újra.');
   }
+}
+
+function mamaMark(id, choice) {
+  const run = (markQueues.get(id) ?? Promise.resolve()).catch(() => {}).then(() => sendMark(id, choice));
+  markQueues.set(id, run);
+  const done = () => markQueues.get(id) === run && markQueues.delete(id);
+  run.then(done, done);
+  return run;
 }
 
 // Mama oldala (terv-3 13, Norbi választása: „B” látványterv – munka/terv-3/terv-13/): Norbi

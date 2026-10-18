@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 
 const STARS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
@@ -12,12 +12,16 @@ function Star() {
   );
 }
 
-// Szerkeszthető 10 csillagos értékelés. Valójában rádiógombok (billentyűzettel a
-// nyilakkal állítható), a kiválasztott csillagra újra kattintva törlődik (null).
+const STEP = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+
+// Szerkeszthető 10 csillagos értékelés. Valójában rádiógombok, a kiválasztott csillagra
+// újra kattintva törlődik (null). Billentyűzettel a nyilak (Home / End) csak előnézetet
+// mutatnak – a natív rádiógomb minden lépésnél mentene –, az Enter / Szóköz véglegesít.
 export default function StarRating({ name, label, value, onChange }) {
   const [hover, setHover] = useState(0);
   // az imént választott érték: a csillagai egymás után "pattannak" (betöltéskor nem)
   const [popped, setPopped] = useState(0);
+  const hintId = useId();
   const shown = hover || value || 0;
 
   function choose(n) {
@@ -25,13 +29,36 @@ export default function StarRating({ name, label, value, onChange }) {
     onChange(n);
   }
 
+  function onKeyDown(e) {
+    const n = Number(e.target.dataset.n);
+    if (!n) return;
+    let to;
+    if (e.key in STEP) to = Math.min(STARS.length, Math.max(1, n + STEP[e.key]));
+    else if (e.key === 'Home') to = 1;
+    else if (e.key === 'End') to = STARS.length;
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (n !== value) choose(n);
+      return;
+    } else return;
+    e.preventDefault();
+    setHover(to);
+    e.currentTarget.querySelector(`input[data-n="${to}"]`)?.focus();
+  }
+
   return (
     <div
       className={hover ? 'stars previewing' : 'stars'}
       role="radiogroup"
       aria-label={label}
+      aria-describedby={hintId}
       onMouseLeave={() => setHover(0)}
+      onKeyDown={onKeyDown}
+      onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setHover(0)}
     >
+      <span id={hintId} className="sr-only">
+        Nyilakkal válassz, Enter vagy Szóköz: mentés.
+      </span>
       {STARS.map((n) => (
         <label
           key={n}
@@ -44,6 +71,7 @@ export default function StarRating({ name, label, value, onChange }) {
             type="radio"
             className="sr-only"
             name={name}
+            data-n={n}
             aria-label={`${n} csillag`}
             checked={value === n}
             onChange={() => choose(n)}

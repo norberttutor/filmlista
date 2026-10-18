@@ -5580,6 +5580,11 @@ button.season:hover {
   margin-left: auto;
 }
 
+/* „Újrapróbálás” (átnézés H2): a két gomb együtt a jobb szélen */
+.collection-banner .collection-retry + .ghost {
+  margin-left: 0;
+}
+
 /* háttérképes sáv (terv-3 45, 2026-10-06): a franchise legjobb címének (vagy a gyűjteménynek) a
    jelenetképe a sáv jobb felén (asztalon legfeljebb ~670 px), elmosás nélkül, balra a sötét
    háttérbe olvadva – a teljes szélességben túlságosan felnagyított, felismerhetetlen kivágás lett
@@ -8537,6 +8542,19 @@ a.wo-share-open {
 .share-gone h1,
 .share-gone p {
   margin: 0;
+}
+
+/* váratlan hiba (app/error.js, H3) */
+.error-screen {
+  padding-inline: var(--gutter, 1rem);
+}
+
+.error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
 }
 
 @media (max-width: 640px) {

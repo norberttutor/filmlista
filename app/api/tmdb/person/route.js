@@ -24,8 +24,10 @@ export async function GET(request) {
   }
 
   try {
-    const { credits, ...rest } = await loadPerson(id, role);
-    return cachedResponse({ ...rest, credits: credits.map(({ minor_genre, ...c }) => c) }, DAY_S);
+    const { credits, partial, ...rest } = await loadPerson(id, role);
+    const body = { ...rest, credits: credits.map(({ minor_genre, ...c }) => c) };
+    // a részben hiányos (életrajz nélküli) válasz a böngészőben sem tárolható (átnézés H11)
+    return partial ? Response.json(body) : cachedResponse(body, DAY_S);
   } catch (err) {
     return tmdbErrorResponse(err);
   }

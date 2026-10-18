@@ -2,21 +2,14 @@
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { signInErrorKind } from '@/lib/authErrors';
 
-// A Supabase hibája magyarul: csak a valóban rossz adatra mondjuk, hogy hibás
-// (net nélkül / túl sok próbálkozásnál ne a jelszót gyanúsítsa).
-function loginErrorText(error) {
-  if (error.name === 'AuthRetryableFetchError' || error.status === 0 || !navigator.onLine) {
-    return 'Nem sikerült elérni a szervert. Ellenőrizd az internetkapcsolatot, és próbáld újra.';
-  }
-  if (error.status === 429 || error.code === 'over_request_rate_limit') {
-    return 'Túl sok belépési próbálkozás. Várj néhány percet, és próbáld újra.';
-  }
-  if (error.code === 'invalid_credentials' || error.status === 400) {
-    return 'Hibás e-mail-cím vagy jelszó.';
-  }
-  return 'A belépés most nem sikerült. Próbáld újra néhány perc múlva.';
-}
+const LOGIN_ERRORS = {
+  offline: 'Nem sikerült elérni a szervert. Ellenőrizd az internetkapcsolatot, és próbáld újra.',
+  rate: 'Túl sok belépési próbálkozás. Várj néhány percet, és próbáld újra.',
+  invalid: 'Hibás e-mail-cím vagy jelszó.',
+  other: 'A belépés most nem sikerült. Próbáld újra néhány perc múlva.',
+};
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -29,7 +22,7 @@ export default function LoginForm() {
     setBusy(true);
     setError('');
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setError(loginErrorText(error));
+    if (error) setError(LOGIN_ERRORS[signInErrorKind(error)]);
     setBusy(false);
   }
 

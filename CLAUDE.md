@@ -65,6 +65,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `app/manifest.js` – manifest (telepíthető app, `theme_color` = `--bg-top`). Gyorsindítók: `/?nyit=hozzaadas` |
   `franchise-ok` | `statisztika` – a `Watchlist` a betöltés után egyszer megnyitja (`SHORTCUTS`) és kiveszi a
   paramétert. Ellenőrzés: `munka/e2e/verify-ikon.mjs`.
+- `app/error.js` + `app/sorrend/[token]/error.js` → `components/ErrorScreen.js` – magyar hibalap („Újrapróbálás” –
+  `retry()` –, „Az oldal újratöltése”).
 - `components/LoginForm.js` – e-mail + jelszó (regisztráció nincs, ki van kapcsolva), középre zárva,
   vetítőfénnyel (`main.login::before` / `::after`).
 - `components/SiteFooter.js` – kötelező TMDB forrásmegjelölés, ne töröld; „sponsored by ADERTIS”
@@ -195,8 +197,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `label` (belső címke), `ariaLabel` (felirat nélkül), `changed`, `icon` (alapikon), `layout="grid"`, `rootClass`,
   `o.count`; ha a panel jobbra kilógna, `--shift`-tel balra tolódik. A `.grid` osztálynév foglalt (borítórács) –
   a rácsos panelé `.ff-grid`.
-- `components/StarRating.js` – `StarRating` (rádiógombok, nyilakkal is; a kiválasztottra újra kattintva `null`;
-  `.pop` animáció csak kattintásra / nyílra) és `StarsDisplay`.
+- `components/StarRating.js` – `StarRating` (rádiógombok; kattintás azonnal ment, billentyűzettel a nyíl / Home /
+  End csak előnézet, az Enter / Szóköz ment; a kiválasztottra újra kattintva `null`; `.pop` animáció csak
+  választáskor) és `StarsDisplay`.
 - `components/Reflow.js` – animált átrendeződés szűréskor / rendezéskor (terv-3 49.3): saját FLIP
   (osztálykomponens, `getSnapshotBeforeUpdate`), **nem View Transitions** (az a letapadt szűrősor fölé rajzolna, és
   közben a lap nem kattintható). `data-flip="<kulcs>"`; a `.grid` / `.table-wrap` ezért `position: relative`; a
@@ -301,7 +304,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (`FranchiseTile`, `franchisePosterPath`); a hiányzók a TMDB-gyűjteményekből 3-asával (`paramsKey` szerint
   megjegyezve). Csempére kattintva `CollectionDialog` az ablakon belül (a még be nem töltött soron kívül –
   `openFranchise`, `rushed`, „· megnyitás…”; teszt: `test-h9.mjs`). Csempénként `FranchiseActions` (`compact`).
-  Kereső, „+ Új franchise”, fölül `FranchiseSuggestions`. A külső `onClose` csak a saját eseményére zár.
+  Kereső, „+ Új franchise”, fölül `FranchiseSuggestions`. A külső `onClose` csak a saját eseményére zár. Szerkesztés /
+  új név / megerősítés közben az Esc és a Vissza (`onCancel`) csak azt zárja (a gyűjtemény-ablak fejlécénél is). TMDB-hibánál
+  nem „nincs TMDB-gyűjtemény”: a csempén „a TMDB nem válaszolt” (kattintásra újra), a sávon és a gyűjtemény-ablakban
+  „Újrapróbálás” (`loadFailed` / `onRetry`). A törölt franchise nyitott gyűjtemény-ablaka bezárul.
 - `components/FranchiseSuggestions.js` + `lib/franchiseSuggest.js` – franchise-javaslat (terv-3 35): **csak
   felajánlja**, magától soha nem rendel hozzá, a meglévőt nem írja át. `collectionFranchiseMap()` (több jelöltnél:
   kézi, több film, név), `suggestedFranchiseId`, `franchiseSuggestions`, `article()` („a” / „az”). Felvétel után
@@ -369,14 +375,16 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   „Visszaállítás” helyben megerősítve (`restore_my_backup`), utána `Watchlist.reloadAfterRestore()`.
 - `components/PasswordDialog.js` – jelszócsere (terv-3 27): a jelenlegi jelszót egy **külön, nem tároló
   Supabase-kliens** ellenőrzi (`checkPassword`: `persistSession: false`, saját `storageKey`, utána `signOut({ scope:
-  'local' })`), aztán `updateUser`; a hibakódok magyarul. Elfelejtett jelszó nincs. Teszt: `test-27.mjs` (a
+  'local' })`), aztán `updateUser`; a hibakódok magyarul (a belépésé és az ellenőrzésé közösen: `lib/authErrors.js`
+  `signInErrorKind` – net nélkül / túl sok próbálkozásnál nem a jelszót gyanúsítja). Elfelejtett jelszó nincs. Teszt: `test-27.mjs` (a
   tesztfiók jelszavát a végén mindenképp visszaállítja).
 - `components/ManualDialog.js` + `scripts/leiras.mjs` – felhasználói leírás az appban: a `FELHASZNALOI-LEIRAS.md`-ből
   a `npm run dev` / `npm run build` elején készül a `public/leiras/leiras.html` + képek (a mappa git-ből kizárva;
   `marked` – fejlesztői függőség). Fejlécazonosítók `leiras-` előtaggal; ①–⑳ → `span.jel`. A belső linkek az
   ablakon belül görgetnek. Teszt: `test-48.mjs`.
 - `components/BulkImport.js` + `lib/bulkImport.js` – Tömeges import (csak asztalon): soronként egy cím (≤ 150 –
-  `MAX_LINES`; a sor végi évszám szűr), `matchEntry()` (biztos = egyetlen pontos egyezés), felvétel 2-esével;
+  `MAX_LINES`; a sor végi évszám szűr), `matchEntry()` (biztos = egyetlen pontos egyezés), felvétel 2-esével; a végén a találat nélküli, a sikertelen keresésű
+  és a fel nem vett sorok a szövegmezőben maradnak;
   `mapLimit`.
 - `components/ImdbRatingsImport.js` + `lib/imdbImport.js` – IMDb import: értékelések (`applyMyRatings` – csak a
   listán lévők, az IMDb csillaga felülírja a sajátot, az állapot nem változik, új cím nem kerül fel) vagy
@@ -391,7 +399,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   filmek” +5) / „Érdekel” (egyben minden; `.mama-tabs`). A `mama_list()` filmjei; soronként „Érdekel” (borostyán) /
   „Nem érdekel”: a „Filmek” fülön mindkettő leveszi a sort (az adatlapot is zárja), helyére jön a következő, 8 mp
   „Visszavonás”; az „Érdekel” fülön a „✓ Érdekel” újra kattintva visszavon, a sor a fülváltásig marad (`kept`);
-  optimista `mama_mark()`, hibánál visszaáll. Adatlap (`dialog.editor.mama-detail`):
+  optimista `mama_mark()` (címenként sorba állítva), hibánál visszaáll. Adatlap (`dialog.editor.mama-detail`):
   háttérkép, előzetes, „Hol nézhető?”, a két nagy gomb; a film színében dereng; telefonon alsó lap. Helyben nem tárol
   (net nélkül üres / hiba). E2e: „Mama oldala (terv-3 13)…” a Mama-tesztfiókkal.
 
