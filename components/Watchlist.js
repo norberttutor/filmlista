@@ -104,6 +104,9 @@ const snapshotTime = (iso) =>
 // franchise-szűrő: '' = összes, NO_FRANCHISE = franchise nélküliek, egyébként franchise id
 const NO_FRANCHISE = 'none';
 
+// a Filmek nézet állapotszűrőjében nincs ilyen gomb (a „Filmek és sorozatok” / Sorozatok nézetben van)
+const MOVIE_HIDDEN_STATUSES = new Set([DROPPED_STATUS, 'watching']);
+
 // ennél szélesebb képernyőn választható a soros (táblázatos) nézet és a borítófal, alatta
 // mindig borítófal
 const DESKTOP_QUERY = '(min-width: 1400px)';
@@ -773,9 +776,10 @@ export default function Watchlist({ session }) {
     );
   }, [orderList, baseFiltered, downloaded]);
 
-  // az "Abbahagyva" csak sorozatnál fordulhat elő: a Filmek nézetben nincs gombja
+  // a Filmek nézetben nincs „Abbahagyva” (csak sorozatnál fordul elő) és „Folyamatban” (Norbi kérése,
+  // 2026-10-18) gomb – MOVIE_HIDDEN_STATUSES
   const shownStatuses = useMemo(
-    () => (type === 'movie' ? statuses.filter((s) => s.code !== DROPPED_STATUS) : statuses),
+    () => (type === 'movie' ? statuses.filter((s) => !MOVIE_HIDDEN_STATUSES.has(s.code)) : statuses),
     [statuses, type]
   );
 
@@ -1005,7 +1009,7 @@ export default function Watchlist({ session }) {
   function changeType(code) {
     setType(code);
     setGenre(''); // a filmek és sorozatok műfajai eltérnek
-    if (code === 'movie' && status === DROPPED_STATUS) setStatus('all');
+    if (code === 'movie' && MOVIE_HIDDEN_STATUSES.has(status)) setStatus('all');
     // a franchise-szűrő marad, ha az új típusnál is van ilyen cím (pl. Star Wars film és sorozat)
     if (
       franchiseChosen &&
@@ -1023,7 +1027,7 @@ export default function Watchlist({ session }) {
     if (genre && !titles.some((t) => t.media_type === 'movie' && t.genres?.includes(genre))) {
       setGenre('');
     }
-    if (status === DROPPED_STATUS) setStatus('all');
+    if (MOVIE_HIDDEN_STATUSES.has(status)) setStatus('all');
   }
 
   // franchise kiválasztásakor alapból a filmek és a sorozatok is látszanak;
@@ -1041,7 +1045,7 @@ export default function Watchlist({ session }) {
     const restore = statusBeforeFranchise.current;
     statusBeforeFranchise.current = null;
     const toMovies = type === 'all' && !searching;
-    if (restore !== null) setStatus(toMovies && restore === DROPPED_STATUS ? 'all' : restore);
+    if (restore !== null) setStatus(toMovies && MOVIE_HIDDEN_STATUSES.has(restore) ? 'all' : restore);
     if (toMovies) backToMovies();
   }
 

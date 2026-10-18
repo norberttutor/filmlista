@@ -102,8 +102,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   Felhasználói leírás. Asztalon (≥ 900 px) a sor nem törik. Telefonon (≤ 640 px) lebegő „+” (`.fab`; lefelé
   görgetéskor elhúzódik).
 - **Szűrősor**: Típus (Filmek / Sorozatok; franchise vagy keresés mellett „Filmek és sorozatok” – `type: 'all'`,
-  franchise választásakor magától, megszűnésekor vissza Filmek), állapot (gombok; telefonon lenyíló; „Abbahagyva”
-  csak sorozatos típusnál), Letöltés, Műfaj (az adott típus műfajai, ikonos lenyíló), Mama (csak ha van
+  franchise választásakor magától, megszűnésekor vissza Filmek), állapot (gombok; telefonon lenyíló; „Folyamatban” és
+  „Abbahagyva” csak sorozatos típusnál – `MOVIE_HIDDEN_STATUSES`; Filmekre váltva „Mind” lesz belőle), Letöltés, Műfaj (az adott típus műfajai, ikonos lenyíló), Mama (csak ha van
   Mama-jelölés; Sorozatok típusnál / franchise-ra szűrve nem látszik és nem szűr – `mamaFilter`), Franchise, ↺.
   **Alapállapot** (`DEFAULT_FILTERS`, Norbi kérése): Filmek – Megnézendő – Nem letöltött – Összes műfaj – Franchise
   nélkül. Az állapotgombok darabszámai a többi szűrőt figyelembe veszik.
