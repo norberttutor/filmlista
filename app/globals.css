@@ -7545,19 +7545,52 @@ body:has(.editor[open]) {
   margin-top: 0.25rem;
 }
 
-/* ⋮ „Színészek és rendezők” */
+/* ⋮ „Színészek és rendezők”: az ablak teteje rögzített (nem középre igazított), így fülváltáskor,
+   kereséskor és az idővonalra lépve nem ugrik – csak az alja mozdul */
+.editor.people-dialog {
+  margin-block: min(8vh, 4rem) auto;
+  max-height: calc(100dvh - min(8vh, 4rem) - 1rem);
+}
+
+/* fülek (Színészek | Rendezők) és a kereső egy sorban */
+.people-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem 1rem;
+}
+
+.dialog-tabs.people-tabs {
+  margin: 0;
+}
+
+.people-tabs [role='tab'] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 1.1rem;
+  font-size: 1rem;
+}
+
+.people-tab-count {
+  min-width: 1.5rem;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  background: rgb(var(--tint) / 0.08);
+  border-radius: 999px;
+}
+
+.people-tabs [aria-selected='true'] .people-tab-count {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
 .people-group {
   display: grid;
   gap: 0.7rem;
-}
-
-.people-group h3 {
-  margin: 0;
-  font-size: 0.78rem;
-  font-weight: 650;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
 }
 
 .people-empty {

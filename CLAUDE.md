@@ -350,7 +350,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   összes?)` → `{ shown, onList, watched, more, soon }` (a listán lévők mindig; `more`: nem listás, megjelent
   főszerep; `soon`: a legközelebbi dátummal bejelentett), `PERSON_V`.
 - `components/PeopleDialog.js` – ⋮ „Színészek és rendezők” (Norbi választása: asztalon portrérács – álló fotó,
-  telefonon vízszintes csempék – kerek fotó; csak a CSS más): két csoport ábécérendben, kereső; csempénként mérő,
+  telefonon vízszintes csempék – kerek fotó; csak a CSS más): két fül – „Színészek N | Rendezők M” (`dialog-tabs`,
+  csúszó kijelölő; keresésnél, ha a választott fülön nincs találat, a másik látszik) –, ábécérendben, kereső; csempénként mérő,
   „x/y megnézve · m további főszerep / film”, indigó bejelentett film; a számok a `/api/tmdb/person`-ből 3-asával.
   Csempére kattintva az ablakon belül az idővonal (`PersonTimeline`): „Hamarosan” fölül (indigó szaggatott), utána
   évenként a legújabb elöl, „Főszerepek | Összes szerep”, 20 + „Továbbiak mutatása”; a borító az adatlapot nyitja az

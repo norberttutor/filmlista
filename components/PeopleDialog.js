@@ -6,6 +6,7 @@ import { titleKey, todayDate, formatReleaseDate } from '@/lib/titles';
 import { useFollowed, followKey, personSummary, PERSON_V } from '@/lib/people';
 import { fold } from '@/lib/listSearch';
 import { useBackdropClose } from '@/lib/useBackdropClose';
+import { useSlidingThumb } from '@/lib/useSlidingThumb';
 import { CollectionMeter } from '@/components/FranchiseCollection';
 import { CreditStatus, FollowButton, RoleSwitch, useAddCredit, isUpcoming, kindLabel, asItem } from '@/components/PersonPage';
 
@@ -15,8 +16,14 @@ const TIMELINE_SHOWN = 20; // az idővonalon ennyi cím látszik, a többi a „
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 
+// a két csoport fülként (Norbi kérése, 2026-10-18): egyszerre csak az egyik látszik
+const TABS = [
+  { id: 'actor', label: 'Színészek', empty: 'Még nem követsz színészt.' },
+  { id: 'director', label: 'Rendezők', empty: 'Még nem követsz rendezőt.' },
+];
+
 // ⋮ „Színészek és rendezők” (M4, Norbi választása, 2026-10-17 – munka/terv-3/terv-m4/): a követett
-// személyek csempéi ábécérendben, két csoportban. Asztalon portrérács (álló fotó – „B”), telefonon
+// személyek csempéi ábécérendben, két fülön (Színészek | Rendezők). Asztalon portrérács (álló fotó – „B”), telefonon
 // vízszintes csempék (kerek fotó – „A”); csak a CSS más. Csempénként mérő és „x/y megnézve · m további
 // főszerep” (a megnézettek a listán lévők közül; a további: a listán nem lévő, már megjelent
 // főszerepek), és ha van, a legközelebbi dátummal bejelentett főszerepe (indigó). A számok a
@@ -29,6 +36,12 @@ export default function PeopleDialog({ titles, onClose, onPreview, onAdded }) {
   const headingRef = useRef(null);
   const followed = useFollowed();
   const [query, setQuery] = useState('');
+  // a választott fül; alapból a Színészek, ha csak rendezőt követ, a Rendezők
+  const [tab, setTab] = useState(() =>
+    [...followed.values()].some((p) => p.role === 'actor') || followed.size === 0 ? 'actor' : 'director',
+  );
+  const tabRefs = useRef({});
+  const tabsThumb = useSlidingThumb(); // csúszó kijelölő a füleken (terv-3 100)
   const [open, setOpen] = useState(null); // a megnyitott személy kulcsa (idővonal)
   const [details, setDetails] = useState(new Map()); // kulcs → { status, data, error }
   const [attempt, setAttempt] = useState(0); // „Újrapróbálás”: a hibás személy újra sorra kerül
@@ -84,6 +97,10 @@ export default function PeopleDialog({ titles, onClose, onPreview, onAdded }) {
   const shown = people.filter((p) => !q || fold(p.name).includes(q));
   const actors = shown.filter((p) => p.role === 'actor').sort(byName);
   const directors = shown.filter((p) => p.role === 'director').sort(byName);
+  const groups = { actor: actors, director: directors };
+  // keresésnél, ha a választott fülön nincs találat, de a másikon van, az látszik
+  const other = tab === 'actor' ? 'director' : 'actor';
+  const activeTab = q && groups[tab].length === 0 && groups[other].length > 0 ? other : tab;
   const openPerson = open ? followed.get(open) : null;
 
   function openTimeline(key) {
@@ -164,15 +181,18 @@ export default function PeopleDialog({ titles, onClose, onPreview, onAdded }) {
     );
   }
 
-  const group = (label, list) =>
-    list.length > 0 && (
-      <section className="people-group" aria-label={label}>
-        <h3>
-          {label} · {list.length}
-        </h3>
-        <ul className="people-grid">{list.map(tile)}</ul>
-      </section>
-    );
+  function tabKey(e) {
+    const i = TABS.findIndex((t) => t.id === activeTab);
+    const to = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: TABS.length - 1 }[e.key];
+    if (to === undefined) return;
+    e.preventDefault();
+    const next = TABS[(to + TABS.length) % TABS.length].id;
+    setTab(next);
+    tabRefs.current[next]?.focus();
+  }
+
+  const current = TABS.find((t) => t.id === activeTab);
+  const list = groups[activeTab];
 
   return (
     <dialog
@@ -224,18 +244,47 @@ export default function PeopleDialog({ titles, onClose, onPreview, onAdded }) {
             </p>
           ) : (
             <>
-              <input
-                type="search"
-                className="franchises-search"
-                aria-label="Keresés a követettek között"
-                placeholder="Keresés a követettek között"
-                autoComplete="off"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-              {shown.length === 0 && <p className="muted">Nincs ilyen követett személy: „{query.trim()}”.</p>}
-              {group('Színészek', actors)}
-              {group('Rendezők', directors)}
+              <div className="people-bar">
+                <div className="dialog-tabs people-tabs sliding" ref={tabsThumb} role="tablist" aria-label="Csoport">
+                  {TABS.map((t) => (
+                    <button
+                      key={t.id}
+                      ref={(el) => (tabRefs.current[t.id] = el)}
+                      type="button"
+                      role="tab"
+                      id={`people-tab-${t.id}`}
+                      aria-selected={activeTab === t.id}
+                      aria-controls="people-panel"
+                      tabIndex={activeTab === t.id ? 0 : -1}
+                      onClick={() => setTab(t.id)}
+                      onKeyDown={tabKey}
+                    >
+                      {t.label}
+                      <span className="people-tab-count">{groups[t.id].length}</span>
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="search"
+                  className="franchises-search"
+                  aria-label="Keresés a követettek között"
+                  placeholder="Keresés a követettek között"
+                  autoComplete="off"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </div>
+              <div role="tabpanel" id="people-panel" aria-labelledby={`people-tab-${activeTab}`} className="people-group">
+                {shown.length === 0 ? (
+                  <p className="muted">Nincs ilyen követett személy: „{query.trim()}”.</p>
+                ) : list.length === 0 ? (
+                  <p className="muted people-empty">
+                    {current.empty} Egy film adatlapján a nevére kattintva a lapján a „Követem” gombbal veheted fel.
+                  </p>
+                ) : (
+                  <ul className="people-grid">{list.map(tile)}</ul>
+                )}
+              </div>
             </>
           )}
         </div>
