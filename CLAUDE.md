@@ -108,7 +108,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   asztalon (≥ 641 px) `main[data-head-away]` → `--head-c: 0rem` (a fejléc egészen felgördül; nyitott „Cím
   hozzáadása” panelnél nem). „Kevesebb mozgás” módban nincs közbülső állapot. Teszt: `test-1015.mjs`.
 - **Neonfelirat** (D9, `components/NeonBrand.js`): a nagy cím két csőből („Megnézendő filmek” + „és sorozatok”,
-  `.neon-line`, `inline-block`), egy sorban, egyforma méretben (Norbi kérése; ha nem fér ki, a „filmek” után törik); a szöveg a kikapcsolt cső, az `::after` (`data-text`) az égő réteg, a `.brand.neon::before` a fény a falon;
+  `.neon-line`, `inline-block`), egy sorban, egyforma méretben (Norbi kérése; ha nem fér ki, a „filmek” után törik); a szöveg a kikapcsolt cső, az `::after` (`data-text`) az égő réteg, a `.neon-line::before` a fény a falon (csövenként ovális, a széléig elhalványul);
   munkamenetenként egyszer felvillan (`neon-on`, `sessionStorage` `filmlista-neon`). Színek: `--neon-1` (türkiz) /
   `--neon-2` (lila), `--neon-tube` / `--neon-core` / `--neon-k` (világosban színes üveg, halk fény; tékában rózsaszín /
   sárga); a kis cím (`.top-compact`) is neon. A belépési oldal címe sima. Teszt: `test-d9-d10.mjs`.

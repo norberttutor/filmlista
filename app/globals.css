@@ -893,19 +893,22 @@ main.login::after {
     0 0 4px color-mix(in oklab, color-mix(in oklab, var(--n) 60%, white) calc(100% * var(--neon-k)), transparent),
     0 0 10px color-mix(in oklab, var(--n) calc(100% * var(--neon-k)), transparent),
     0 0 22px color-mix(in oklab, var(--n) calc(80% * var(--neon-k)), transparent),
-    0 0 46px color-mix(in oklab, var(--n) calc(45% * var(--neon-k)), transparent);
+    0 0 40px color-mix(in oklab, var(--n) calc(32% * var(--neon-k)), transparent);
   pointer-events: none;
 }
 
-.brand.neon::before {
+/* a fény a falon csövenként, ovális folt, amely a doboza széléig teljesen elhalványul (closest-side) – így nincs
+   szögletes széle, és nem lóg le a cím alá */
+.neon-line::before {
   content: '';
   position: absolute;
-  inset: -0.5em 0;
+  inset: -0.45em -0.6em -0.3em;
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(60% 55% at 30% 40%, color-mix(in oklab, var(--neon-1) calc(13% * var(--neon-k)), transparent), transparent 70%),
-    radial-gradient(40% 40% at 26% 85%, color-mix(in oklab, var(--neon-2) calc(10% * var(--neon-k)), transparent), transparent 70%);
+  background: radial-gradient(closest-side,
+    color-mix(in oklab, var(--n) calc(9% * var(--neon-k)), transparent),
+    color-mix(in oklab, var(--n) calc(4% * var(--neon-k)), transparent) 55%,
+    transparent);
 }
 
 .top {
@@ -9453,7 +9456,7 @@ a.wo-share-open {
 /* a neonfelirat felkapcsolása (D9): munkamenetenként egyszer, 1,5 s – kétszer-háromszor felvillan, aztán ég
    (a NeonBrand teszi rá a neon-on osztályt); „kevesebb mozgás”-nál nincs, rögtön ég */
 .brand.neon-on .neon-line::after,
-.brand.neon-on::before {
+.brand.neon-on .neon-line::before {
   animation: neon-on 1.5s steps(1, end) both;
 }
 
