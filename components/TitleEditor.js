@@ -445,6 +445,26 @@ function TitlePage({
   const overviewRef = useRef(null);
   const [overviewOpen, setOverviewOpen] = useState(false);
   const [overviewLong, setOverviewLong] = useState(false);
+  // a „Tovább” előtti helyzet: kinyitva a jelenetkép ekkora marad (nem nagyítódik fel, nem vágódik le), a cím és a
+  // kisebb borító sem mozdul – a hosszabb leírás csak lefelé nő, a kép alatt a sima háttérre
+  const [heroFrozen, setHeroFrozen] = useState(null);
+  function toggleOverview() {
+    const box = overviewRef.current?.closest('.editor-backdrop');
+    const head = box?.querySelector('header');
+    const poster = head?.querySelector('.editor-hero-poster');
+    // tört képpontokkal (az offsetTop kerekít – egy picit ugrana)
+    const top = (el) => el.getBoundingClientRect().top;
+    setHeroFrozen(
+      overviewOpen || !head
+        ? null
+        : {
+            '--hero-img-h': box.getBoundingClientRect().height + 'px',
+            '--hero-head-top': top(head) - top(box) + 'px',
+            ...(poster && { '--hero-poster-top': top(poster) - top(head) + 'px' }),
+          }
+    );
+    setOverviewOpen((o) => !o);
+  }
   // megnyitáskor az ablak még nem látszik (a showModal a szülő effektjében fut): a méret változásakor is mér
   useLayoutEffect(() => {
     const el = overviewRef.current;
@@ -679,7 +699,7 @@ function TitlePage({
             {t.overview}
           </p>
           {hero && (overviewLong || overviewOpen) && (
-            <button type="button" className="link small overview-more" aria-expanded={overviewOpen} onClick={() => setOverviewOpen((o) => !o)}>
+            <button type="button" className="link small overview-more" aria-expanded={overviewOpen} onClick={toggleOverview}>
               {overviewOpen ? 'Kevesebb' : 'Tovább'}
             </button>
           )}
@@ -704,7 +724,12 @@ function TitlePage({
     <div ref={pageEl} className={`editor-page${t.backdrop_path ? ' has-backdrop' : ''}${hero ? ' has-hero' : ''}`} hidden={!active}>
       {/* a film széles jelenetképe az ablak tetején (TMDB); asztalon rajta a fejléc (terv-3 104) */}
       {t.backdrop_path && (
-        <div className="editor-backdrop" data-pager={pager ? '' : undefined}>
+        <div
+          className="editor-backdrop"
+          data-pager={pager ? '' : undefined}
+          data-frozen={hero && overviewOpen && heroFrozen ? '' : undefined}
+          style={hero && overviewOpen && heroFrozen ? heroFrozen : undefined}
+        >
           <img
             src={BACKDROP_BASE + 'w1280' + backdropPath}
             srcSet={`${BACKDROP_BASE}w780${backdropPath} 780w, ${BACKDROP_BASE}w1280${backdropPath} 1280w`}

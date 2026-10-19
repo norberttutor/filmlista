@@ -9925,10 +9925,28 @@ input[type='checkbox']:checked {
     padding: 7rem 1.5rem 1.4rem;
   }
 
-  .editor-page.has-hero .editor-backdrop > img {
+  /* a kép és az átmenete a „Tovább” előtti magasságban marad (--hero-img-h, a TitleEditor méri): kinyitott leírásnál
+     nem nagyítódik fel, a többlet szöveg alatta a felületen folytatódik */
+  .editor-page.has-hero .editor-backdrop > img,
+  .editor-page.has-hero .editor-backdrop::after {
     position: absolute;
-    inset: 0;
+    inset: 0 0 auto;
+    height: var(--hero-img-h, 100%);
+  }
+
+  .editor-page.has-hero .editor-backdrop > img {
     object-position: center 28%;
+  }
+
+  /* kinyitott leírásnál a fejléc teteje és a kisebb borító a „Tovább” előtti helyén marad (a TitleEditor méri) */
+  .editor-page.has-hero .editor-backdrop[data-frozen] {
+    align-items: flex-start;
+    padding-top: var(--hero-head-top);
+  }
+
+  .editor-page.has-hero .editor-backdrop[data-frozen] .editor-hero-poster {
+    top: var(--hero-poster-top);
+    bottom: auto;
   }
 
   .editor-page.has-hero .editor-backdrop::after {
@@ -9979,6 +9997,7 @@ input[type='checkbox']:checked {
     bottom: 0;
     display: block;
     width: 9.5rem;
+    height: auto; /* a jelenetkép height: 100%-a ne nyújtsa a fejléc magasságára */
     aspect-ratio: 2 / 3;
     object-fit: cover;
     border-radius: 14px;

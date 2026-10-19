@@ -236,8 +236,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `TitleGallery`, `SimilarTitles`, `SeasonTimeline`.
 - **Elrendezés**: asztalon (≥ 900 px) 66 rem széles, két oszlop (bal: nagy borító w500, „Hol nézhető?”, szereplők –
   `.editor-side`). Jelenetképes lapon asztalon **moziszerű fejléc** (terv-3 104, `WIDE_QUERY`, `.editor-page.has-hero`):
-  a `header` a képre kerül (kisebb borító, nagy cím, adatok, 3 soros leírás „Tovább”-bal – ResizeObserver méri,
-  előzetes); nagy borító ilyenkor nincs. Ha a jelenetkép később jön, a fejléc áthelyeződik, a fókusz visszakerül a
+  a `header` a képre kerül (kisebb borító, nagy cím, adatok, 3 soros leírás „Tovább”-bal – ResizeObserver méri;
+  kinyitva a kép, a cím és a kis borító a helyén marad – `data-frozen`, `--hero-img-h` / `-head-top` /
+  `-poster-top` –, a szöveg alatta folytatódik, előzetes); nagy borító ilyenkor nincs. Ha a jelenetkép később jön, a fejléc áthelyeződik, a fókusz visszakerül a
   címre. 900 px alatt egy oszlop, a borító kicsiben a jelenetkép aljára úszik (`.editor-titlebar` >
   `.editor-hero-poster` + `.editor-titletext`; asztalon `display: contents`). Teszt: `test-104.mjs`.
 - Telefonon (≤ 640 px) alsó lap: fogantyú (`.sheet-handle`, lehúzva zár – `lib/useSheetDrag.js`, Mamáé is), nincs ×
