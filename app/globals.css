@@ -865,13 +865,15 @@ main.login::after {
 .brand.neon {
   position: relative;
   font-weight: 420;
-  line-height: 1;
+  line-height: 1.05;
   letter-spacing: -0.005em;
 }
 
+/* egy sorban (Norbi kérése, 2026-10-19): a két cső egymás mellett, egyforma méretben; ha nem fér ki (telefon), a
+   „filmek” után törik – a csöveken belül nem (inline-block: az égő réteg így pontosan a cső fölött marad) */
 .neon-line {
   --n: var(--neon-1);
-  display: block;
+  display: inline-block;
   position: relative;
   color: color-mix(in oklab, var(--n) var(--neon-tube), transparent);
   text-shadow: 0 1px 0 rgb(var(--tint) / 0.06);
@@ -879,8 +881,6 @@ main.login::after {
 
 .neon-line.l2 {
   --n: var(--neon-2);
-  margin-top: 0.12em;
-  font-size: 0.74em;
 }
 
 .neon-line::after {
