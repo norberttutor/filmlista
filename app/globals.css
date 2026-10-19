@@ -83,6 +83,14 @@
   --marker-ink: oklch(18.89% 0.026 77.5);   /* #1a1206 */
   --danger-ink: #2a0d09; /* felirat a teli piros gombon */
 
+  /* neonfelirat a fejlécben (D9): a két cső színe; a cső (kikapcsolt üveg) átlátszósága, az égő mag
+     fehérbe keverése és a fény erőssége (világosban halványabb – nappali fény) */
+  --neon-1: var(--accent);
+  --neon-2: oklch(72.49% 0.1654 298.22);  /* #b48cff lila */
+  --neon-tube: 16%;
+  --neon-core: 12%;
+  --neon-k: 1;
+
   --gutter: clamp(1rem, 4vw, 3rem);
   --head-c: 3.6rem; /* az összecsukott fejléc sávja (terv-3 99) – = HEAD_COMPACT_REM a Watchlistben */
   color-scheme: dark;
@@ -149,6 +157,11 @@
   --glint: 255 255 255;
   --lg-fill: 88%;
   --edge: rgb(var(--tint) / 0.1);
+  /* neon (D9): színes üveg nappali fényben – a mag a cső színe (türkiz 4,7:1, lila 4,9:1 a papíron) */
+  --neon-2: oklch(54.71% 0.1971 293.48);  /* #7a4fd6 */
+  --neon-tube: 22%;
+  --neon-core: 100%;
+  --neon-k: 0.45;
   --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23574a40' stroke-width='1.6'/%3E%3C/svg%3E");
   --chevron-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%2300788c' stroke-width='1.6'/%3E%3C/svg%3E");
   --check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.75 8.25l2.75 2.75 5.75-6' fill='none' stroke='%23ffffff' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -225,6 +238,48 @@
 
 :root[data-theme='light'] .fr-tile[data-ambient] .fr-logo {
   background: color-mix(in oklab, var(--ambient) min(100%, calc(22% * var(--ambient-k))), var(--bg));
+}
+
+/* ---------- Videotéka-téma (D10) – színek ---------- */
+/* Norbi választása a látványterv után (2026-10-19 – https://claude.ai/artifact/VzCx6F4njpfmNG7FvuUnp5): harmadik,
+   választható téma a 90-es évek tékájának stílusában (a ⋮ menüből; <html data-theme="teka">). A sötétre épül: csak
+   az itt felsorolt tokenek mások. Feltétel (Norbi): a sötét és a világos kinézet semmiben nem változhat – ezért
+   MINDEN téka-szabály a :root[data-theme='teka'] kiválasztóval kezdődik (a felület szabályai lent, „Videotéka-téma
+   (D10) – felület”), és a meglévő szabályokhoz nem nyúl. Kontraszt a háttéren (mérve): szöveg 16,9:1, halvány
+   7,5:1, megnézett 5,4:1 (a felületen 4,9:1), sárga 13,9:1, OSD-zöld 14,9:1; a kártyán a pecsét 4,9:1. */
+:root[data-theme='teka'] {
+  --bg: oklch(17.1% 0.0388 291.43);           /* #100c1f éjszakai lila-fekete */
+  --bg-top: oklch(21.86% 0.0517 291.77);      /* #1b1530 */
+  --surface: oklch(21.86% 0.0517 291.77);     /* #1b1530 */
+  --surface-raised: oklch(24.5% 0.06 292);    /* #211a3a */
+  --line: oklch(32.01% 0.0846 291.19);        /* #34295a */
+  --line-soft: oklch(25.5% 0.06 292);         /* #241c3e */
+  --text: oklch(95.76% 0.0219 300.21);        /* #f3eefe */
+  --muted: oklch(71.74% 0.0642 296.2);        /* #a79cc8 */
+  --watched-text: oklch(63% 0.05 296);        /* #8d82ab */
+  --placeholder-bg: linear-gradient(160deg, oklch(26% 0.06 292) 0%, oklch(19% 0.045 292) 100%);
+  --glass: 16 12 31;
+  --scrim: 8 6 18;
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23a79cc8' stroke-width='1.6'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a79cc8' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
+  /* a téka saját színei – csak ebben a témában léteznek */
+  --teka-yellow: oklch(89.14% 0.1588 93.22);  /* #ffd84a matrica, cégtábla */
+  --teka-pink: oklch(60.17% 0.2219 0.52);     /* #e0287a */
+  --teka-blue: oklch(58.64% 0.225 265.65);    /* #3b6cff */
+  --teka-green: oklch(89.57% 0.1706 150.62);  /* #7dfca0 a videomagnó képernyőfelirata */
+  --teka-ink: oklch(22% 0.07 355);            /* #2a0b19 felirat a sárgán / a kategóriacímkén */
+  --teka-paper: oklch(94.4% 0.0278 88.75);    /* #f4ecd8 tagsági kártya */
+  --teka-paper-ink: oklch(28.44% 0.0491 293.23); /* #2b2540 */
+  --teka-stamp: oklch(53.42% 0.1943 4.43);    /* #c0225f pecsét */
+  --teka-case: oklch(14% 0.006 285);          /* #0b0b0e kazettatok */
+  --teka-case-hi: oklch(29% 0.016 285);       /* #2a2a33 a tok élének csillanása */
+  --teka-key: oklch(46% 0.04 293);            /* #5a5670 magnógomb teteje */
+  --teka-key-low: oklch(30% 0.038 293);       /* #2f2c42 magnógomb alja */
+  --teka-key-edge: oklch(14% 0.02 293);       /* #0d0b14 */
+  /* a neonfelirat (D9) itt rózsaszín és sárga */
+  --neon-1: oklch(69.5% 0.2229 355.31);       /* #ff4fa3 */
+  --neon-2: var(--teka-yellow);
+  color-scheme: dark;
 }
 
 *,
@@ -805,6 +860,54 @@ main.login::after {
   text-wrap: balance;
 }
 
+/* neonfelirat (D9, components/NeonBrand.js): a szöveg a kikapcsolt üvegcső, az ::after az égő réteg
+   ugyanazzal a szöveggel (data-text), az ::before a fény a „falon”. A vékonyabb vonal csőszerű. */
+.brand.neon {
+  position: relative;
+  font-weight: 420;
+  line-height: 1;
+  letter-spacing: -0.005em;
+}
+
+.neon-line {
+  --n: var(--neon-1);
+  display: block;
+  position: relative;
+  color: color-mix(in oklab, var(--n) var(--neon-tube), transparent);
+  text-shadow: 0 1px 0 rgb(var(--tint) / 0.06);
+}
+
+.neon-line.l2 {
+  --n: var(--neon-2);
+  margin-top: 0.12em;
+  font-size: 0.74em;
+}
+
+.neon-line::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: color-mix(in oklab, var(--n) var(--neon-core), white);
+  text-shadow:
+    0 0 1px color-mix(in oklab, white calc(100% * var(--neon-k)), transparent),
+    0 0 4px color-mix(in oklab, color-mix(in oklab, var(--n) 60%, white) calc(100% * var(--neon-k)), transparent),
+    0 0 10px color-mix(in oklab, var(--n) calc(100% * var(--neon-k)), transparent),
+    0 0 22px color-mix(in oklab, var(--n) calc(80% * var(--neon-k)), transparent),
+    0 0 46px color-mix(in oklab, var(--n) calc(45% * var(--neon-k)), transparent);
+  pointer-events: none;
+}
+
+.brand.neon::before {
+  content: '';
+  position: absolute;
+  inset: -0.5em 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 55% at 30% 40%, color-mix(in oklab, var(--neon-1) calc(13% * var(--neon-k)), transparent), transparent 70%),
+    radial-gradient(40% 40% at 26% 85%, color-mix(in oklab, var(--neon-2) calc(10% * var(--neon-k)), transparent), transparent 70%);
+}
+
 .top {
   display: flex;
   flex-wrap: wrap;
@@ -873,9 +976,14 @@ body:not(:has(.filters[data-stuck])) .top.collapsing[data-compact] {
   margin: 0;
   overflow: hidden;
   font-size: 1.15rem;
-  font-weight: 800;
+  font-weight: 560;
   line-height: 2.5rem;
   letter-spacing: -0.015em;
+  /* a kis cím is neon (D9), halkabb fénnyel */
+  color: color-mix(in oklab, var(--neon-1) var(--neon-core), white);
+  text-shadow:
+    0 0 6px color-mix(in oklab, var(--neon-1) calc(70% * var(--neon-k)), transparent),
+    0 0 14px color-mix(in oklab, var(--neon-1) calc(35% * var(--neon-k)), transparent);
   white-space: nowrap;
   text-overflow: ellipsis;
   opacity: clamp(0, calc(3 * var(--head-p) - 2), 1);
@@ -987,6 +1095,9 @@ body:not(:has(.filters[data-stuck])) .top.collapsing[data-compact] {
   gap: 2px;
   width: min(21rem, calc(100vw - 2rem));
   padding: 0.4rem;
+  /* ha nem fér ki, a MoreMenu a képernyő aljáig engedi (max-height), onnan görgethető */
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--surface-raised);
   border: 1px solid var(--edge);
   border-radius: 12px;
@@ -9012,9 +9123,351 @@ a.wo-share-open {
   }
 }
 
+/* ---------- Videotéka-téma (D10) – felület ---------- */
+/* Minden szabály :root[data-theme='teka']-val kezdődik (a sötét / világos témára nem hat). A betűk: --font-sign
+   (Bungee, cégtábla) és --font-osd (VT323, videomagnó-képernyő) – az app/layout.js tölti, csak ha kell. A borító
+   jelölései (.teka-*) csak ebben a témában kerülnek a lapra (PosterCard, TitleEditor, StatsDialog). */
+
+/* a lap: halvány képcsíkok, rózsaszín és kék derengés a tetején */
+:root[data-theme='teka'] body {
+  background:
+    repeating-linear-gradient(180deg, rgb(var(--tint) / 0.022) 0 1px, transparent 1px 3px),
+    radial-gradient(70rem 32rem at 8% -8rem, color-mix(in oklab, var(--teka-pink) 15%, transparent), transparent 62%),
+    radial-gradient(60rem 30rem at 100% -6rem, color-mix(in oklab, var(--teka-blue) 17%, transparent), transparent 62%),
+    linear-gradient(180deg, var(--bg-top) 0, var(--bg) 12rem) no-repeat,
+    var(--bg);
+}
+
+:root[data-theme='teka'] body::before {
+  opacity: 0.45;
+}
+
+/* kártya: a borító kazettatokban */
+:root[data-theme='teka'] .card .poster {
+  border: 5px solid transparent;
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, var(--teka-case), var(--teka-case-hi) 8%, var(--teka-case) 16%, var(--teka-case) 84%, var(--teka-case-hi) 92%, var(--teka-case)) border-box;
+}
+
+:root[data-theme='teka'] .card .poster img {
+  border-radius: 2px;
+}
+
+:root[data-theme='teka'] .card .poster::after {
+  border-radius: 2px;
+  box-shadow: none;
+  background: linear-gradient(120deg, rgb(var(--glint) / 0.2), transparent 30%, transparent 75%, rgb(var(--glint) / 0.07));
+}
+
+/* a cím cégtáblabetűvel csak asztalon – a keskeny telefonos kártyán a csupa nagybetű szó közben törne */
+@media (min-width: 641px) {
+  :root[data-theme='teka'] .card h3 {
+    font-family: var(--font-sign), var(--font-main), sans-serif;
+    font-weight: 400;
+    font-size: 0.78rem;
+    line-height: 1.3;
+    letter-spacing: 0.01em;
+  }
+}
+
+:root[data-theme='teka'] .card .meta {
+  font-family: var(--font-osd), ui-monospace, monospace;
+  font-size: 1.02rem;
+  letter-spacing: 0.02em;
+}
+
+/* a dátumos jelvény a kategóriacímke fölé */
+:root[data-theme='teka'] .card .release-badge {
+  bottom: 1.75rem;
+}
+
+.teka-marks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+:root[data-theme='teka'] .teka-osd {
+  position: absolute;
+  top: 0.45rem;
+  left: 0.5rem;
+  font-family: var(--font-osd), ui-monospace, monospace;
+  font-size: 1.05rem;
+  line-height: 1;
+  color: var(--teka-green);
+  text-shadow: 0 0 6px color-mix(in oklab, var(--teka-green) 60%, transparent), 1px 1px 0 rgb(var(--shade) / 0.8);
+}
+
+:root[data-theme='teka'] .card[data-status='watched'] .teka-osd,
+:root[data-theme='teka'] .card[data-status='dropped'] .teka-osd {
+  color: var(--text);
+  text-shadow: 1px 1px 0 rgb(var(--shade) / 0.8);
+}
+
+/* saját értékelés árcéduláként (saját jelölés: borostyán) */
+:root[data-theme='teka'] .teka-price {
+  position: absolute;
+  top: 2.3rem;
+  right: 0.35rem;
+  display: grid;
+  place-items: center;
+  width: 2.3rem;
+  height: 2.3rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent-2-ink);
+  background: var(--accent-2);
+  border-radius: 50%;
+  rotate: 8deg;
+  box-shadow: 0 2px 5px rgb(var(--shade) / 0.5);
+}
+
+:root[data-theme='teka'] .teka-cat {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 5px; /* a sáv az állapotcsík fölött */
+  padding: 0.12rem 0.3rem;
+  overflow: hidden;
+  font-family: var(--font-sign), var(--font-main), sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+  text-align: center;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--teka-ink);
+  background: var(--cat);
+}
+
+:root[data-theme='teka'] .teka-new {
+  position: absolute;
+  top: -0.4rem;
+  left: -0.4rem;
+  z-index: 2;
+  padding: 0.12rem 0.45rem;
+  font-family: var(--font-sign), var(--font-main), sans-serif;
+  font-size: 0.66rem;
+  color: var(--teka-ink);
+  background: var(--teka-yellow);
+  border-radius: 6px;
+  rotate: -9deg;
+  box-shadow: 0 2px 4px rgb(var(--shade) / 0.5);
+  pointer-events: none;
+}
+
+/* adatlap: képcsíkok a jelenetképen, videomagnó-felirat, „szellemképes” cím */
+:root[data-theme='teka'] .editor-backdrop img {
+  filter: saturate(1.25) contrast(1.05);
+}
+
+:root[data-theme='teka'] .editor-backdrop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(180deg, rgb(var(--shade) / 0.22) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, transparent 62%, rgb(var(--tint) / 0.08) 63%, transparent 66%);
+}
+
+:root[data-theme='teka'] .teka-play {
+  position: absolute;
+  top: 0.7rem;
+  left: 1rem;
+  z-index: 2;
+  font-family: var(--font-osd), ui-monospace, monospace;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--text);
+  text-shadow: 2px 2px 0 rgb(var(--shade) / 0.6);
+  pointer-events: none;
+}
+
+:root[data-theme='teka'] .teka-play span {
+  margin-left: 0.8rem;
+}
+
+:root[data-theme='teka'] .editor-titletext h2 {
+  font-family: var(--font-sign), var(--font-main), sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-shadow:
+    -2px 0 0 color-mix(in oklab, var(--teka-pink) 65%, transparent),
+    2px 0 0 color-mix(in oklab, var(--teka-blue) 65%, transparent);
+}
+
+:root[data-theme='teka'] .editor-titletext .meta {
+  font-family: var(--font-osd), ui-monospace, monospace;
+  font-size: 1.15rem;
+  color: var(--teka-green);
+}
+
+/* az állapot- és letöltésgombok magnógombok (a Mama-gombok – saját jelölés – nem) */
+:root[data-theme='teka'] .editor-controls .segmented:not(.mama-chips) {
+  gap: 0;
+}
+
+:root[data-theme='teka'] .editor-controls .segmented:not(.mama-chips) span {
+  margin-left: -1px;
+  padding: 0.2rem 0.9rem;
+  font-family: var(--font-osd), ui-monospace, monospace;
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  background: linear-gradient(180deg, var(--teka-key), var(--teka-key-low));
+  border: 1px solid var(--teka-key-edge);
+  border-radius: 0;
+  box-shadow: inset 0 1px 0 rgb(var(--tint) / 0.25), 0 3px 0 var(--teka-key-edge);
+}
+
+:root[data-theme='teka'] .editor-controls .segmented:not(.mama-chips) label:first-child span {
+  border-radius: 6px 0 0 6px;
+}
+
+:root[data-theme='teka'] .editor-controls .segmented:not(.mama-chips) label:last-child span {
+  border-radius: 0 6px 6px 0;
+}
+
+:root[data-theme='teka'] .editor-controls .segmented:not(.mama-chips) label:only-child span {
+  border-radius: 6px;
+}
+
+:root[data-theme='teka'] .editor-controls .segmented:not(.mama-chips) input:checked + span {
+  translate: 0 2px;
+  color: var(--teka-green);
+  background: linear-gradient(180deg, var(--teka-key-low), var(--teka-key));
+  box-shadow: inset 0 1px 0 rgb(var(--shade) / 0.4), 0 1px 0 var(--teka-key-edge);
+}
+
+:root[data-theme='teka'] .segmented input[value='watching'] + span::before {
+  content: '▶ ';
+}
+
+:root[data-theme='teka'] .segmented input[value='watched'] + span::before {
+  content: '■ ';
+}
+
+:root[data-theme='teka'] .segmented input[value='dropped'] + span::before {
+  content: '⏏ ';
+}
+
+:root[data-theme='teka'] .trailer-btn {
+  font-family: var(--font-sign), var(--font-main), sans-serif;
+  font-weight: 400;
+  color: var(--teka-ink);
+  background: var(--teka-yellow);
+  border-color: transparent;
+  border-radius: 6px;
+  box-shadow: 3px 3px 0 var(--teka-pink);
+}
+
+/* Statisztika: tagsági kártyás csempék, a nagy számok a videomagnó kijelzőjén */
+:root[data-theme='teka'] .stats-head h2 {
+  font-family: var(--font-sign), var(--font-main), sans-serif;
+  font-weight: 400;
+  color: var(--teka-yellow);
+  text-shadow: 2px 2px 0 var(--teka-pink);
+}
+
+:root[data-theme='teka'] .tile[data-tile] {
+  border-radius: 6px;
+  border-color: color-mix(in oklab, var(--teka-yellow) 70%, transparent);
+  background: var(--surface);
+}
+
+:root[data-theme='teka'] .tile[data-tile] h3 {
+  font-family: var(--font-sign), var(--font-main), sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--teka-yellow);
+}
+
+:root[data-theme='teka'] .tile .big:not(.mine) {
+  font-family: var(--font-osd), ui-monospace, monospace;
+  font-weight: 400;
+  font-size: 3.6rem;
+  letter-spacing: 0;
+  color: var(--teka-green);
+  text-shadow: 0 0 8px color-mix(in oklab, var(--teka-green) 45%, transparent);
+}
+
+:root[data-theme='teka'] .tile.teka-card {
+  grid-column: 1 / -1;
+  color: var(--teka-paper-ink);
+  background: repeating-linear-gradient(180deg, transparent 0 1.9rem, color-mix(in oklab, var(--teka-blue) 22%, transparent) 1.9rem calc(1.9rem + 1px)), var(--teka-paper);
+  border-color: transparent;
+  rotate: -0.4deg;
+  box-shadow: 0 10px 22px -10px rgb(var(--shade) / 0.9);
+}
+
+:root[data-theme='teka'] .tile.teka-card h3 {
+  color: var(--teka-stamp);
+}
+
+.teka-card ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+:root[data-theme='teka'] .teka-card li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 1.9rem;
+  font-weight: 600;
+}
+
+:root[data-theme='teka'] .teka-card li > span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+:root[data-theme='teka'] .teka-stamp {
+  flex: none;
+  padding: 0 0.35rem;
+  font-family: var(--font-osd), ui-monospace, monospace;
+  font-size: 1.1rem;
+  color: var(--teka-stamp);
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  opacity: 0.85;
+  rotate: -4deg;
+}
+
+:root[data-theme='teka'] .teka-card li:nth-child(even) .teka-stamp {
+  rotate: 3deg;
+}
+
 /* ---------- Mozgás ---------- */
 /* A "kevesebb mozgás" rendszerbeállításnál mind kikapcsol (a lap végén; a nézetváltást a
    Watchlist / TitleEditor el sem indítja). */
+
+/* a neonfelirat felkapcsolása (D9): munkamenetenként egyszer, 1,5 s – kétszer-háromszor felvillan, aztán ég
+   (a NeonBrand teszi rá a neon-on osztályt); „kevesebb mozgás”-nál nincs, rögtön ég */
+.brand.neon-on .neon-line::after,
+.brand.neon-on::before {
+  animation: neon-on 1.5s steps(1, end) both;
+}
+
+@keyframes neon-on {
+  0% { opacity: 0; }
+  9% { opacity: 1; }
+  12% { opacity: 0.1; }
+  20% { opacity: 1; }
+  23% { opacity: 0; }
+  27% { opacity: 0.9; }
+  30% { opacity: 0.2; }
+  36%,
+  100% { opacity: 1; }
+}
 
 /* mikro-átmenetek (terv-3 74, Norbi választása, 2026-10-13 – látványterv: munka/terv-3/tervek-1013/):
    állapotváltáskor a pálca / állapotcsík színe, a megnézett sor / kártya szürkülése és a szövegek

@@ -35,6 +35,7 @@ import { useSheetDrag } from '@/lib/useSheetDrag';
 import { TrailerButton, TrailerPlayer } from '@/components/Trailer';
 import { pushDialogPage, popDialogPage } from '@/lib/backClose';
 import { useMediaQuery } from '@/lib/useMediaQuery';
+import { useTheme } from '@/lib/theme';
 import { galleryList, GalleryStrip, BackdropPager, GalleryLightbox } from '@/components/TitleGallery';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500'; // a nagy borító (asztalon)
@@ -432,6 +433,7 @@ function TitlePage({
   // kicsiben, a cím nagyban, az adatok, a leírás és az előzetes gombja a képre kerül; a bal oszlopban csak a „Hol
   // nézhető?” és a Szereplők marad. A leírás a képen 3 sorban, „Tovább” csak ha nem fér el.
   const hero = useMediaQuery(WIDE_QUERY) && Boolean(t.backdrop_path);
+  const teka = useTheme() === 'teka';
   // a fejléc ilyenkor máshová kerül a JSX-ben (a képre / a jobb oszlop tetejére), a cím újraépül: ha az előnézet
   // jelenetképe a megnyitás után érkezik, a címen lévő fókusz a body-ra esne – visszakerül a címre
   const heroSeen = useRef(hero);
@@ -738,6 +740,12 @@ function TitlePage({
             aria-hidden="true"
             decoding="async"
           />
+          {/* videotéka-téma (D10): a videomagnó képernyőfelirata a kép sarkában */}
+          {teka && (
+            <span className="teka-play" aria-hidden="true">
+              ▶ PLAY <span>SP</span>
+            </span>
+          )}
           {/* telefonon a fejléc képe lapozható (terv-3 95, „B”) */}
           {pager && <BackdropPager count={gallery.length} index={Math.min(shown, gallery.length - 1)} onIndex={setShown} onOpen={setZoom} />}
           {hero && header}

@@ -1,4 +1,4 @@
-import { Bricolage_Grotesque } from 'next/font/google';
+import { Bricolage_Grotesque, Bungee, VT323 } from 'next/font/google';
 import { THEME_BOOT_SCRIPT } from '@/lib/themeBoot';
 import './globals.css';
 
@@ -10,6 +10,11 @@ const mainFont = Bricolage_Grotesque({
   variable: '--font-main',
   axes: ['opsz'],
 });
+
+// a videotéka-téma (D10) betűi: cégtábla (Bungee) és videomagnó-képernyő (VT323). Előre nem töltődnek le
+// (preload: false) – a böngésző csak akkor kéri őket, ha a téma szabályai használják
+const signFont = Bungee({ weight: '400', subsets: ['latin', 'latin-ext'], display: 'swap', variable: '--font-sign', preload: false });
+const osdFont = VT323({ weight: '400', subsets: ['latin', 'latin-ext'], display: 'swap', variable: '--font-osd', preload: false });
 
 export const metadata = {
   title: 'Megnézendő filmek',
@@ -26,7 +31,7 @@ export const viewport = {
 // React ne jelezzen rá eltérést)
 export default function RootLayout({ children }) {
   return (
-    <html lang="hu" className={mainFont.variable} suppressHydrationWarning>
+    <html lang="hu" className={`${mainFont.variable} ${signFont.variable} ${osdFont.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>

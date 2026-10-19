@@ -59,6 +59,8 @@ import PasswordDialog from '@/components/PasswordDialog';
 import BackupsDialog from '@/components/BackupsDialog';
 import MoreMenu from '@/components/MoreMenu';
 import ThemeToggle from '@/components/ThemeToggle';
+import NeonBrand from '@/components/NeonBrand';
+import { setTheme, useTheme } from '@/lib/theme';
 import FranchisesDialog from '@/components/FranchisesDialog';
 import PeopleDialog from '@/components/PeopleDialog';
 import Toaster from '@/components/Toaster';
@@ -249,6 +251,7 @@ function Chip({ active, onClick, label, count, icon, className }) {
 }
 
 export default function Watchlist({ session }) {
+  const theme = useTheme();
   const [titles, setTitles] = useState([]);
   const [statuses, setStatuses] = useState([]);
   const [franchises, setFranchises] = useState([]);
@@ -397,21 +400,33 @@ export default function Watchlist({ session }) {
       if (error) {
         console.error(error);
         setFailed(true);
-        // ha már a tárolt lista látszik, az marad (a sáv jelzi); különben hibaüzenet – a tárolt
-        // lista közben még megérkezhet, az leveszi
-        if (!snapshotShown.current) {
+        // ha már a tárolt vagy egy korábban betöltött friss lista látszik, az marad (S3): a tárolt mellett
+        // a sáv jelzi, a friss mellett (és a lehúzásnál mindig) egy értesítés; különben hibaüzenet – a
+        // tárolt lista közben még megérkezhet, az leveszi
+        if (!snapshotShown.current && !live.current) {
           setLoadError(
             navigator.onLine
               ? 'Nem sikerült betölteni a listát. Ellenőrizd az internetkapcsolatot, és frissítsd az oldalt (F5).'
               : 'Nincs internetkapcsolat, és ezen az eszközön még nincs elmentett lista. Ha visszajön a net, magától betöltődik.'
           );
+        } else if ((live.current && !failed) || reloadDone.current) {
+          toast({
+            text: 'Nem sikerült frissíteni a listát – a legutóbb betöltött látszik. Hamarosan magától újrapróbálom.',
+          });
         }
       } else {
         live.current = true;
         setStale(null);
         setFailed(false);
         setLoadError('');
-        setTitles(titlesRes.data);
+        // a függő (még visszavonható) törlés nem jön vissza, a függő mentésű sor a helyi marad (S6 – mint
+        // az élő szinkronnál)
+        setTitles((prev) => {
+          const local = new Map(prev.map((t) => [t.id, t]));
+          return titlesRes.data
+            .filter((t) => !isPendingDelete(t.id))
+            .map((t) => (hasPendingSave(t.id) && local.has(t.id) ? local.get(t.id) : t));
+        });
         setStatuses(statusesRes.data);
         setFranchises(franchisesRes.data.sort(byName));
         loadOrders()
@@ -1492,6 +1507,14 @@ export default function Watchlist({ session }) {
           },
         ]
       : []),
+    // videotéka-téma (D10): harmadik, választható téma – kikapcsolva a sötétre vált vissza
+    {
+      id: 'teka',
+      label: theme === 'teka' ? 'Videotéka-téma kikapcsolása' : 'Videotéka-téma',
+      description: theme === 'teka' ? 'Vissza a sötét témához' : 'A 90-es évek tékája: kazettatok, matricák, videomagnó-feliratok',
+      icon: 'tape',
+      onSelect: () => setTheme(theme === 'teka' ? 'dark' : 'teka'),
+    },
     {
       id: 'backups',
       label: 'Mentések',
@@ -1531,7 +1554,7 @@ export default function Watchlist({ session }) {
           <span className="short">Megnézendő filmek</span>
         </p>
         <div className="top-title">
-          <h1 className="brand">Megnézendő filmek és sorozatok</h1>
+          <NeonBrand />
           {!loading && !loadError && (
             <p className="count">
               {titles.length} cím a listán

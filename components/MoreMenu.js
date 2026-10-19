@@ -21,6 +21,8 @@ const ICONS = {
   book: <path d="M12 6.5C10 4.8 7 4.3 3 4.5v14c4-.2 7 .3 9 2 2-1.7 5-2.2 9-2v-14c-4-.2-7 .3-9 2zM12 6.5v14" />,
   // kulcs (jelszó módosítása)
   key: <path d="M14.5 9.5a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0zM13.2 12.7L21 20.5M17.5 17l2-2M15.5 15l1.5-1.5" />,
+  // videokazetta (videotéka-téma – D10)
+  tape: <path d="M3 6h18v12H3zM8.5 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM15.5 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM10 12h4M7 18l1.5-2.5h7L17 18" />,
 };
 
 // "További műveletek" (⋮) gomb a fejlécben, mint a Chrome menüje: kattintásra vagy
@@ -39,8 +41,16 @@ export default function MoreMenu({ items }) {
 
   // a lista kirajzolása után rögtön az első (vagy az utolsó) pont kapja a fókuszt – nem egy
   // képkockával később, különben egy gyors Esc még a gombra érkezne
+  // ha a lista nem fér ki a gomb alatt (alacsony ablak, magas fejléc), a képernyő aljáig ér és görgethető
   useLayoutEffect(() => {
-    if (open) focusItem(firstRef.current);
+    if (!open) return;
+    const menu = menuRef.current;
+    if (menu) {
+      menu.style.maxHeight = '';
+      const room = window.innerHeight - menu.getBoundingClientRect().top - 12;
+      if (menu.scrollHeight > room) menu.style.maxHeight = `${Math.max(160, room)}px`;
+    }
+    focusItem(firstRef.current);
   }, [open]);
 
   // kívülre kattintva bezárul

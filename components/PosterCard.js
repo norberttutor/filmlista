@@ -9,6 +9,8 @@ import ReleaseBadge from '@/components/ReleaseBadge';
 import { useStrike } from '@/lib/useStrike';
 import { Hl } from '@/components/Highlight';
 import { usePrefetchOnHover } from '@/lib/prefetch';
+import { useTheme } from '@/lib/theme';
+import { tekaCategory, tekaIsNew, tekaOsd } from '@/lib/teka';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
 
@@ -32,6 +34,10 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
   const posterRef = useRef(null);
   // rámutatáskor az adatlap adatai előre (terv-3 69)
   const prefetch = usePrefetchOnHover(t);
+  // videotéka-téma (D10): matrica, kategóriacímke, árcédula, videomagnó-felirat – csak ebben a témában
+  const teka = useTheme() === 'teka';
+  const category = teka && tekaCategory(t.genres);
+  const osd = teka && tekaOsd(status);
 
   return (
     <article
@@ -67,8 +73,24 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
           </span>
         )}
         {release && <ReleaseBadge state={release} />}
+        {teka && (
+          <span className="teka-marks" aria-hidden="true">
+            {osd && <span className="teka-osd">{osd}</span>}
+            {t.my_rating && <span className="teka-price">{t.my_rating}/10</span>}
+            {category && (
+              <span className="teka-cat" style={{ '--cat': category.color }}>
+                {category.label}
+              </span>
+            )}
+          </span>
+        )}
         {seasons ? <SeasonStrip title={t} /> : <span className="status-strip" aria-hidden="true" />}
       </div>
+      {teka && tekaIsNew(t) && (
+        <span className="teka-new" aria-hidden="true">
+          ÚJ!
+        </span>
+      )}
 
       <button
         type="button"

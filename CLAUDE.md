@@ -51,7 +51,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 ## Fájlszerkezet
 
 ### Alap
-- `app/layout.js` – Bricolage Grotesque (`--font-main`, `axes: ['opsz']`), `lang="hu"`, fül: „Megnézendő
+- `app/layout.js` – Bricolage Grotesque (`--font-main`, `axes: ['opsz']`); a téka-témához Bungee (`--font-sign`) és
+  VT323 (`--font-osd`), `preload: false` – csak a téma használja, más témában nem töltődnek le; `lang="hu"`, fül: „Megnézendő
   filmek”, `viewport.themeColor` `#1a222d` (világosban a `lib/theme.js` cseréli `#fcf9f4`-re). A `<head>`-ben a
   `THEME_BOOT_SCRIPT` (`lib/themeBoot.js`), ezért a `<html>`-en `suppressHydrationWarning`.
 - `app/page.js` – kliensoldali session: belépés vagy lista. A `list_viewers` saját sora alapján néző (Mama) →
@@ -79,6 +80,16 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   belépési oldalé. A megosztott oldal (`/sorrend/…`) a `prefers-color-scheme`-et követi. `setTheme()`,
   `useTheme()`. A `themeBoot.js` React nélküli (a szerverkomponens `layout.js` is használja). Norbinál kerek
   ikongomb (`.theme-toggle`), Mamánál feliratos (`labeled`, `.theme-toggle-labeled`). Teszt: `test-50.mjs`.
+- **Videotéka-téma** (D10, `'teka'`, `<html data-theme="teka">`): harmadik, választható téma a sötétre építve; a ⋮
+  „Videotéka-téma” / „… kikapcsolása” (→ sötét) kapcsolja, a téma gombja innen világosra visz; Mamánál nincs. **Norbi
+  feltétele: a sötét és a világos kinézet nem változhat** – minden téka-szabály `:root[data-theme='teka']`-val kezdődik
+  (`globals.css`: „Videotéka-téma (D10) – színek” és „– felület”), a téka elemei csak `useTheme() === 'teka'` mellett
+  kerülnek a lapra (`lib/teka.js`: `tekaIsNew` – 7 napon belül „ÚJ!”, `tekaCategory` – az első műfaj, `tekaOsd` – „▶
+  LEJÁTSZÁS” / „■ VÉGE” / „⏏ KIADVA”, `tekaStamp`): kártya (`.teka-marks`: kazettatok, kategóriacímke, árcédula,
+  videomagnó-felirat; `.teka-new`), adatlap (`.teka-play`, képcsíkok, magnógombok), Statisztika (`.teka-card` – tagsági
+  kártya, az 5 legutóbb megnézett). A kártya címe cégtáblabetűvel csak asztalon. Új téka-szabálynál is a prefix kell;
+  ellenőrzés: `munka/terv-3/terv-d/osszevet.mjs` (a HEAD és az új fordítás képpontos összevetése sötétben / világosban).
+  Teszt: `test-d9-d10.mjs`.
 
 ### Fő lista – `components/Watchlist.js`
 - **Betöltés**: `titles_with_genres` nézet (`loadTitles()`, `fetchAll`). A háttérfrissítések (`refresh…()`) csak
@@ -96,9 +107,14 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   cím (`.top-compact`) előtűnik, összecsukva `data-compact`. Telefonon a `--head-c` (3,6 rem) sáv fent marad;
   asztalon (≥ 641 px) `main[data-head-away]` → `--head-c: 0rem` (a fejléc egészen felgördül; nyitott „Cím
   hozzáadása” panelnél nem). „Kevesebb mozgás” módban nincs közbülső állapot. Teszt: `test-1015.mjs`.
+- **Neonfelirat** (D9, `components/NeonBrand.js`): a nagy cím két sorban („Megnézendő filmek” / „és sorozatok”,
+  `.neon-line`); a szöveg a kikapcsolt cső, az `::after` (`data-text`) az égő réteg, a `.brand.neon::before` a fény a falon;
+  munkamenetenként egyszer felvillan (`neon-on`, `sessionStorage` `filmlista-neon`). Színek: `--neon-1` (türkiz) /
+  `--neon-2` (lila), `--neon-tube` / `--neon-core` / `--neon-k` (világosban színes üveg, halk fény; tékában rózsaszín /
+  sárga); a kis cím (`.top-compact`) is neon. A belépési oldal címe sima. Teszt: `test-d9-d10.mjs`.
 - **Fejléc gombjai**: „Cím hozzáadása”, harang, e-mail (`.account-email` gomb → „Jelszó módosítása”; telefonon
   rejtve, net nélkül sima szöveg), Kilépés, téma, ⋮ (`MoreMenu`): Statisztika, Franchise-ok, Színészek és rendezők (net nélkül nem), IMDb import (telefonon
-  nincs), Tömeges import és Mentés letöltése (csak asztalon), Mentések, Jelszó módosítása (net nélkül nem),
+  nincs), Tömeges import és Mentés letöltése (csak asztalon), Videotéka-téma, Mentések, Jelszó módosítása (net nélkül nem),
   Felhasználói leírás. Asztalon (≥ 900 px) a sor nem törik. Telefonon (≤ 640 px) lebegő „+” (`.fab`; lefelé
   görgetéskor elhúzódik).
 - **Szűrősor**: Típus (Filmek / Sorozatok; franchise vagy keresés mellett „Filmek és sorozatok” – `type: 'all'`,
@@ -361,7 +377,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 
 ### Egyéb ablakok és menük
 - `components/MoreMenu.js` – ⋮ menü (`role="menu"`): pontok `{ id, label, description, icon, onSelect }`; nyilak,
-  Home / End, Esc; választás után a fókusz a gombra.
+  Home / End, Esc; választás után a fókusz a gombra. Ha nem fér ki a gomb alatt, a képernyő aljáig ér és görgethető.
 - `components/NotificationBell.js` + `lib/notifications.js` – harang: olvasatlanok száma (borostyán), a legutóbbi
   30, fajtánként színnel (`data-kind`), csoportcímek „Ma” / „Ezen a héten” / „Korábban” (`dayGroup`, budapesti idő).
   Kinyitáskor a betöltöttek olvasottak (`markNotificationsRead(ids)` – csak azonosító szerint; `readIds`). Törlés: ×
@@ -677,7 +693,10 @@ Norbi döntései; a részletek a TERV.md-ben.
   franchise-mérők, címlogó az adatlapon (49.1), borító-visszfény a borítófalon (51.6), élő aurora a borítók színéből
   (51.7), a türkiz tehermentesítése (51.2), állapotszín a kiválasztásban (51.3), csak a borító siklik megnyitáskor
   (C2), kisebb üvegelmosás (C3), görgetésre mozduló háttérkép, „Automatikus” téma (70), két magasságú alsó lap (71),
-  érintési célok (77), összecsukódó adatlap-fejléc (105), egymásra rétegzett értesítősáv (106); akadálymentességi kör
+  érintési célok (77), összecsukódó adatlap-fejléc (105), egymásra rétegzett értesítősáv (106); mozis ötletkör (D1–D7, D11): lámpaoltás előzetesnél, filmszalagos
+  hibalap, műsorfüzet-stílusú megosztott oldal, lyukasztott jegy a megnézetteken, filmszalagos nézési sorrend,
+  függöny belépéskor, Ken Burns a jelenetképen, felületi hangok; polcnézet (D8), borítómozaik a Statisztikában (D12),
+  franchise-univerzum (D13); a neonfelirat „rakoncátlan” betűje; akadálymentességi kör
   (A1–A4).
 - **Funkciók**: gyorsműveletek a borítón, parancspaletta / billentyűparancsok, „Mit nézzek ma?”, játékidő és szűrő
   rá, saját címkék, szinkron / felirat jelölése, csoportosítás hónapok szerint, évértékelő, web push; „Elérhető az

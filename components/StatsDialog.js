@@ -5,11 +5,14 @@ import { listStats, formatDecimal, formatSigned, TASTE_MIN } from '@/lib/stats';
 import { genreColor } from '@/lib/genreColors';
 import { useBackdropClose } from '@/lib/useBackdropClose';
 import { usePosterColor, franchisePosterPath } from '@/lib/posterColor';
+import { useTheme } from '@/lib/theme';
+import { tekaStamp } from '@/lib/teka';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w154';
 const TOP_GENRES = 7;
 const TOP_FRANCHISES = 5;
 const TOP_SERIES = 8;
+const TEKA_CARD_ROWS = 5;
 
 // Havonta megnézett címek oszlopdiagramja (saját SVG; egy lépték a magassághoz); az utolsó oszlop
 // (a mostani hónap) teljes erővel, a korábbiak halványabban (terv-3 51.9)
@@ -79,6 +82,17 @@ export default function StatsDialog({ titles, franchiseName, onClose }) {
   const diff = s.ratings.diff;
   // ízlésprofil: az eltérés-sávok léptéke (legalább 1 pont, hogy a kis eltérés kicsinek látsszon)
   const devMax = Math.max(1, ...[...s.taste.above, ...s.taste.below].map((d) => Math.abs(d.diff)));
+  const teka = useTheme() === 'teka';
+  const lastWatched = useMemo(
+    () =>
+      teka
+        ? titles
+            .filter((t) => t.watched_at)
+            .sort((a, b) => b.watched_at.localeCompare(a.watched_at))
+            .slice(0, TEKA_CARD_ROWS)
+        : [],
+    [teka, titles]
+  );
 
   return (
     <dialog ref={dialogRef} className="editor stats-dialog" aria-labelledby="stats-title" onClose={onClose} {...backdrop}>
@@ -267,6 +281,23 @@ export default function StatsDialog({ titles, franchiseName, onClose }) {
               <p className="sub">Most nincs folyamatban lévő sorozat.</p>
             )}
           </section>
+
+          {/* videotéka-téma (D10): tagsági kártya a legutóbb „visszahozott” (megnézett) címekkel – csak ebben a témában */}
+          {teka && lastWatched.length > 0 && (
+            <section className="tile teka-card" data-tile="teka-card" aria-labelledby="st-teka">
+              <h3 id="st-teka">Tagsági kártya · legutóbb visszahozva</h3>
+              <ul>
+                {lastWatched.map((t) => (
+                  <li key={t.id}>
+                    <span>{t.title}</span>
+                    <time className="teka-stamp" dateTime={t.watched_at}>
+                      {tekaStamp(t.watched_at)}
+                    </time>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
       </div>
     </dialog>
