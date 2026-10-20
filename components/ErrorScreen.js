@@ -1,12 +1,15 @@
 'use client';
 
 import { useEffect } from 'react';
+import { logError } from '@/lib/errorLog';
 
 // Váratlan hiba magyarul (H3) – az app/error.js és a megosztott oldal error.js-e használja.
 // A retry() újra lekéri és kirajzolja a hibás részt; ha az sem segít, a teljes újratöltés.
+// A hiba a hibanaplóba is kerül (terv-3 113; a megosztott oldalon belépés nélkül nem – a függvény elnyeli).
 export default function ErrorScreen({ error, retry, className }) {
   useEffect(() => {
     console.error(error);
+    logError('render', error);
   }, [error]);
 
   return (

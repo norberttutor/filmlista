@@ -10,6 +10,7 @@ import MamaDetail from '@/components/MamaDetail';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useSlidingThumb } from '@/lib/useSlidingThumb';
 import { useAppFreshness } from '@/lib/appVersion';
+import { reportError } from '@/lib/errorLog';
 
 const POSTER = 'https://image.tmdb.org/t/p/w185';
 const PAGE = 5; // a „Filmek” fülön ennyi film látszik egyszerre, utána „További filmek” (+5; Norbi kérése, M1)
@@ -33,7 +34,7 @@ async function sendMark(id, choice) {
     error = err;
   }
   if (error) {
-    console.error(error);
+    reportError(error);
     throw new Error('Nem sikerült menteni. Ellenőrizd az internetkapcsolatot, és próbáld újra.');
   }
 }
@@ -74,7 +75,7 @@ export default function MamaView() {
     if (!silent) setLoadError('');
     const { data, error } = await supabase.rpc('mama_list');
     if (error) {
-      console.error(error);
+      reportError(error);
       if (!silent) setLoadError('Nem sikerült betölteni a filmeket. Ellenőrizd az internetkapcsolatot, és próbáld újra.');
       return;
     }

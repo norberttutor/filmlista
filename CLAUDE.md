@@ -119,7 +119,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - **Fejléc gombjai**: „Cím hozzáadása”, harang, e-mail (`.account-email` gomb → „Jelszó módosítása”; telefonon
   rejtve, net nélkül sima szöveg), Kilépés, téma, ⋮ (`MoreMenu`): Statisztika, Franchise-ok, Színészek és rendezők (net nélkül nem), IMDb import (telefonon
   nincs), Tömeges import és Mentés letöltése (csak asztalon), Videotéka-téma, Mentések, Jelszó módosítása (net nélkül nem),
-  Felhasználói leírás. Asztalon (≥ 900 px) a sor nem törik. Telefonon (≤ 640 px) lebegő „+” (`.fab`; lefelé
+  Felhasználói leírás, Hibák (N) (csak ha van naplózott hiba; net nélkül nem). Asztalon (≥ 900 px) a sor nem törik. Telefonon (≤ 640 px) lebegő „+” (`.fab`; lefelé
   görgetéskor elhúzódik; nyitott „Cím hozzáadása” panelnél nincs).
 - **Szűrősor**: Típus (Filmek / Sorozatok; franchise vagy keresés mellett „Filmek és sorozatok” – `type: 'all'`,
   franchise választásakor magától, megszűnésekor vissza Filmek), állapot (gombok; telefonon lenyíló; „Folyamatban” és
@@ -408,6 +408,15 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   műfaj legalább 3 értékelt címtől, `TASTE_MIN`); színes csempék (`.tile[data-tile]`), `FranchiseBar`; telefonon a havi diagramon minden második hónapnév (`.month.alt` rejtve).
 - `components/BackupsDialog.js` + `lib/backups.js` – Mentések: lista, „Mentés most” (`create_my_backup`),
   „Visszaállítás” helyben megerősítve (`restore_my_backup`), utána `Watchlist.reloadAfterRestore()`.
+- `lib/errorLog.js` + `components/ErrorsDialog.js` – hibanapló (terv-3 113): `startErrorLog()` (az `app/page.js`
+  indítja: `error` → 'error', `unhandledrejection` → 'rejection'), a hibalap (`ErrorScreen`) → 'render', a
+  sikertelen adatbázis-művelet → 'save' (`reportError(error)` – **a kliensoldali `console.error(error)` helyett ezt
+  használd**; konzolra is ír). `logError(kind, error)` → `log_client_error` RPC; kihagyja a hálózati hibát, a
+  megszakítást, a böngésző zaját (`NOISE`), net nélkül nem küld; munkamenetenként ugyanaz percenként egyszer, összesen
+  ≤ 30. A ⋮ „Hibák (N)” csak ha van sor (`errorCounts()` → `{ total, unseen }`, net nélkül nincs); az ablak: a
+  legutóbbi elöl, „Új” / „Mamánál” jelzés, „Részletek” (hely, verzió, böngésző, verem), „Másolás” / „Összes
+  másolása” (Claude-nak beilleszthető szöveg), törlés, „Összes törlése” helyben megerősítve; megnyitáskor a látottak
+  olvasottak (`markErrorsSeen`). Teszt: `test-113.mjs`.
 - `components/PasswordDialog.js` – jelszócsere (terv-3 27): a jelenlegi jelszót egy **külön, nem tároló
   Supabase-kliens** ellenőrzi (`checkPassword`: `persistSession: false`, saját `storageKey`, utána `signOut({ scope:
   'local' })`), aztán `updateUser`; a hibakódok magyarul (a belépésé és az ellenőrzésé közösen: `lib/authErrors.js`
@@ -476,7 +485,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   rendezők (felvétel az idővonalon), Franchise-ok
   (szerkesztés, megerősítés, nyitott gyűjtemény-ablak), gyűjtemény-ablak (rész felvétele, sorrend-szerkesztés,
   megosztás visszavonásának megerősítése, fejléc szerkesztése; a nyitott TMDB-keresőnél zár, a Franchise-ok ablakból
-  nyitva mindkettő – `onOutsideClose`), Mentések (művelet / megerősítés), Jelszó (beírt jelszó / mentés);
+  nyitva mindkettő – `onOutsideClose`), Mentések (művelet / megerősítés), Hibák („Összes törlése” megerősítése / törlés), Jelszó (beírt jelszó / mentés);
   Statisztika és Leírás mindig zár; az importablakok soha (Norbi döntése).
 - `lib/backClose.js` – a Vissza gomb a legfelső réteget zárja (terv-3 62): rétegenként egy `history.pushState`
   bejegyzés (az URL nem változik); ha máshogy zárul, `history.back()`. A modális `<dialog>`-okat MutationObserver
@@ -621,6 +630,14 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   oszlopok. `mama_mark(title_id, choice)`: csak a `mama_status`-t írja, „Megkapta”-ra nem; „Érdekli”-re
   `mama_interested` értesítés. **`title_released(t)` a `releaseState()` szabálya SQL-ben – ha az egyik változik, a
   másikat is.** Mama a `titles` táblát közvetlenül nem látja. Teszt: `test-17.mjs` (`--live`).
+- `client_errors (id, user_id – akinél történt, owner_id – akinek a naplójában van: Mamánál a gazda, kind 'error' |
+  'rejection' | 'render' | 'save', message ≤ 500, stack ≤ 4000, url, app_version, user_agent, fingerprint, count,
+  first_at, last_at, seen_at)`, egyedi `(user_id, fingerprint)`: hibanapló (terv-3 113). Írni csak a
+  `log_client_error(kind, message, stack, url, app_version, user_agent)` (security definer, `authenticated`) tud: a
+  fingerprint a fajta + az üzenet + a verem első sora, számjegyek nélkül; ismétlődésnél `count + 1`, `last_at`, újra
+  olvasatlan; óránként ≤ 60 új sor felhasználónként, a 30 napja nem ismétlődött és a 200 legfrissebb fölötti törlődik.
+  RLS: a gazda olvassa / olvasottra állítja / törli (Mama a sajátját nem látja). Nincs a mentésben, nincs a Realtime-ban.
+  A `clearTestAccount()` üríti.
 - `title_genres (title_id, genre_id)`. `titles_with_genres` nézet (`security_invoker`): `titles.*` + `status_name` +
   `genres text[]` + `seasons jsonb`.
 - Realtime: a `titles`, `title_seasons`, `notifications`, `franchises` a `supabase_realtime` publikációban (a

@@ -23,6 +23,8 @@ const ICONS = {
   key: <path d="M14.5 9.5a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0zM13.2 12.7L21 20.5M17.5 17l2-2M15.5 15l1.5-1.5" />,
   // videokazetta (videotéka-téma – D10)
   tape: <path d="M3 6h18v12H3zM8.5 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM15.5 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM10 12h4M7 18l1.5-2.5h7L17 18" />,
+  // figyelmeztető háromszög (hibanapló – terv-3 113)
+  alert: <path d="M10.3 4.2 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0zM12 9.5v4.5M12 17.3v.01" />,
 };
 
 // "További műveletek" (⋮) gomb a fejlécben, mint a Chrome menüje: kattintásra vagy

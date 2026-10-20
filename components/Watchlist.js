@@ -57,6 +57,7 @@ import StatsDialog from '@/components/StatsDialog';
 import ManualDialog from '@/components/ManualDialog';
 import PasswordDialog from '@/components/PasswordDialog';
 import BackupsDialog from '@/components/BackupsDialog';
+import ErrorsDialog from '@/components/ErrorsDialog';
 import MoreMenu from '@/components/MoreMenu';
 import ThemeToggle from '@/components/ThemeToggle';
 import NeonBrand from '@/components/NeonBrand';
@@ -88,6 +89,7 @@ import { useScrollFade } from '@/lib/useScrollFade';
 import PullRefresh from '@/components/PullRefresh';
 import { useLiveSync } from '@/lib/liveSync';
 import { hasPendingSave, isOptimistic, saveRow } from '@/lib/rowSaves';
+import { errorCounts, reportError } from '@/lib/errorLog';
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 
@@ -95,7 +97,7 @@ const TOAST_THUMB = 'https://image.tmdb.org/t/p/w92';
 
 // a ⋮ menü pontjai, amelyek net nélkül nem működnének (csak olvasható módban nem látszanak); a
 // Színészek ablak a TMDB-ről számol (M4)
-const ONLINE_ONLY = ['imdb', 'bulk', 'backups', 'password', 'people'];
+const ONLINE_ONLY = ['imdb', 'bulk', 'backups', 'password', 'people', 'errors'];
 
 // a tárolt listán állva (a szerver nem érhető el) ennyi időnként újrapróbálja
 const RETRY_MS = 30_000;
@@ -287,6 +289,16 @@ export default function Watchlist({ session }) {
   const [showFranchises, setShowFranchises] = useState(false); // a Franchise-ok ablak nyitva
   const [showPeople, setShowPeople] = useState(false); // a Színészek és rendezők ablak nyitva (M4)
   const [showBackups, setShowBackups] = useState(false); // a mentések ablak nyitva
+  // hibanapló (terv-3 113): a ⋮ „Hibák (N)” csak akkor látszik, ha van naplózott hiba; N: az olvasatlanok
+  const [showErrors, setShowErrors] = useState(false);
+  const [errorInfo, setErrorInfo] = useState({ total: 0, unseen: 0 });
+  const refreshErrorInfo = () =>
+    errorCounts()
+      .then(setErrorInfo)
+      .catch((err) => console.warn('A hibanapló számlálója nem tölthető be:', err.message));
+  useEffect(() => {
+    if (online) refreshErrorInfo();
+  }, [userId, online]);
   const [showManual, setShowManual] = useState(false); // a felhasználói leírás ablak nyitva
   const [showPassword, setShowPassword] = useState(false); // a jelszó módosítása ablak nyitva (terv-3 27)
   // a ⋮ menüből nyíló importok (a saját ablakukat / fájlválasztójukat nyitják)
@@ -408,7 +420,7 @@ export default function Watchlist({ session }) {
 
       const error = titlesRes.error || statusesRes.error || franchisesRes.error;
       if (error) {
-        console.error(error);
+        reportError(error);
         setFailed(true);
         // ha már a tárolt vagy egy korábban betöltött friss lista látszik, az marad (S3): a tárolt mellett
         // a sáv jelzi, a friss mellett (és a lehúzásnál mindig) egy értesítés; különben hibaüzenet – a
@@ -734,7 +746,7 @@ export default function Watchlist({ session }) {
     ]);
     const error = titlesRes.error || franchisesRes.error;
     if (error) {
-      console.error(error);
+      reportError(error);
       throw new Error('A visszaállítás sikerült, de a lista nem töltődött be. Frissítsd az oldalt.');
     }
     setTitles(titlesRes.data);
@@ -1592,6 +1604,18 @@ export default function Watchlist({ session }) {
       icon: 'book',
       onSelect: () => setShowManual(true),
     },
+    // hibanapló (terv-3 113): csak ha van mit mutatni
+    ...(errorInfo.total > 0
+      ? [
+          {
+            id: 'errors',
+            label: errorInfo.unseen > 0 ? `Hibák (${errorInfo.unseen})` : 'Hibák',
+            description: 'Ami a böngészőben elromlott (nálad vagy Mamánál) – másolható leírással',
+            icon: 'alert',
+            onSelect: () => setShowErrors(true),
+          },
+        ]
+      : []),
   ].filter((item) => !readOnly || !ONLINE_ONLY.includes(item.id));
 
   return (
@@ -2306,6 +2330,10 @@ export default function Watchlist({ session }) {
 
       {showManual && <ManualDialog onClose={() => setShowManual(false)} />}
       {showPassword && <PasswordDialog email={session.user.email} onClose={() => setShowPassword(false)} />}
+
+      {showErrors && (
+        <ErrorsDialog userId={userId} onChanged={refreshErrorInfo} onClose={() => setShowErrors(false)} />
+      )}
 
       {showBackups && (
         <BackupsDialog
