@@ -64,6 +64,7 @@ import NeonBrand from '@/components/NeonBrand';
 import { setTheme, useTheme } from '@/lib/theme';
 import FranchisesDialog from '@/components/FranchisesDialog';
 import PeopleDialog from '@/components/PeopleDialog';
+import ToplistsDialog from '@/components/ToplistsDialog';
 import Toaster from '@/components/Toaster';
 import EmptyState from '@/components/EmptyState';
 import StarRating from '@/components/StarRating';
@@ -97,7 +98,7 @@ const TOAST_THUMB = 'https://image.tmdb.org/t/p/w92';
 
 // a ⋮ menü pontjai, amelyek net nélkül nem működnének (csak olvasható módban nem látszanak); a
 // Színészek ablak a TMDB-ről számol (M4)
-const ONLINE_ONLY = ['imdb', 'bulk', 'backups', 'password', 'people', 'errors'];
+const ONLINE_ONLY = ['imdb', 'bulk', 'backups', 'password', 'people', 'toplists', 'errors'];
 
 // a tárolt listán állva (a szerver nem érhető el) ennyi időnként újrapróbálja
 const RETRY_MS = 30_000;
@@ -288,6 +289,7 @@ export default function Watchlist({ session }) {
   const [showStats, setShowStats] = useState(false); // a statisztika ablak nyitva
   const [showFranchises, setShowFranchises] = useState(false); // a Franchise-ok ablak nyitva
   const [showPeople, setShowPeople] = useState(false); // a Színészek és rendezők ablak nyitva (M4)
+  const [showToplists, setShowToplists] = useState(false); // a Toplisták ablak nyitva (terv-3 120)
   const [showBackups, setShowBackups] = useState(false); // a mentések ablak nyitva
   // hibanapló (terv-3 113): a ⋮ „Hibák (N)” csak akkor látszik, ha van naplózott hiba; N: az olvasatlanok
   const [showErrors, setShowErrors] = useState(false);
@@ -1545,6 +1547,13 @@ export default function Watchlist({ session }) {
       icon: 'people',
       onSelect: () => setShowPeople(true),
     },
+    {
+      id: 'toplists',
+      label: 'Toplisták',
+      description: 'A legjobb filmek és sorozatok IMDb szerint – műfaj és évtized szerint is',
+      icon: 'trophy',
+      onSelect: () => setShowToplists(true),
+    },
     // a CSV-fájl betöltése asztali / tableten végzett teendő: telefonon nincs (Norbi kérése)
     ...(isPhone
       ? []
@@ -2322,6 +2331,15 @@ export default function Watchlist({ session }) {
           onPreview={(item) => openEditor(item)}
           onPerson={(person) => openEditor({ person })}
           onAdded={handleAdded}
+        />
+      )}
+      {showToplists && (
+        <ToplistsDialog
+          titles={titles}
+          onClose={() => setShowToplists(false)}
+          onPreview={(item) => openEditor(item)}
+          onAdded={handleAdded}
+          readOnly={readOnly}
         />
       )}
       {showStats && (

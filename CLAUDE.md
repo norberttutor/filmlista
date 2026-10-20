@@ -117,7 +117,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `--neon-2` (lila), `--neon-tube` / `--neon-core` / `--neon-k` (világosban színes üveg, halk fény; tékában rózsaszín /
   sárga); a kis cím (`.top-compact`) is neon. A belépési oldal címe sima. Teszt: `test-d9-d10.mjs`.
 - **Fejléc gombjai**: „Cím hozzáadása”, harang, e-mail (`.account-email` gomb → „Jelszó módosítása”; telefonon
-  rejtve, net nélkül sima szöveg), Kilépés, téma, ⋮ (`MoreMenu`): Statisztika, Franchise-ok, Színészek és rendezők (net nélkül nem), IMDb import (telefonon
+  rejtve, net nélkül sima szöveg), Kilépés, téma, ⋮ (`MoreMenu`): Statisztika, Franchise-ok, Színészek és rendezők, Toplisták (net nélkül egyik sem), IMDb import (telefonon
   nincs), Tömeges import és Mentés letöltése (csak asztalon), Videotéka-téma, Mentések, Jelszó módosítása (net nélkül nem),
   Felhasználói leírás, Hibák (N) (csak ha van naplózott hiba; net nélkül nem). Asztalon (≥ 900 px) a sor nem törik. Telefonon (≤ 640 px) lebegő „+” (`.fab`; lefelé
   görgetéskor elhúzódik; nyitott „Cím hozzáadása” panelnél nincs).
@@ -391,6 +391,27 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (`filmlista-kovetes-rejtett:<userId>`); a név a személy lapját nyitja az ablak fölött (`onPerson`). Hibánál a sáv
   elmarad. A kliens `SUGGEST_V` – **a válasz változásakor emeld**.
 
+### Toplisták (terv-3 120)
+- `components/ToplistsDialog.js` + `/api/tmdb/toplist` + `lib/server/toplists.js` (`loadToplist`) – ⋮ „Toplisták”:
+  rangsor soronként (helyezés, borító, cím, IMDb + szavazatszám, műfajok; `.toplist-row`, `li[value]`; minden osztálya
+  `toplist-` előtagú – a `.top-*` a fejlécé, a `.tl-*` az évad-idővonalé, mindkettő ütközött már). Fülek: Filmek |
+  Sorozatok, Minden idők legjobbjai | Az elmúlt 5 év legjobbjai | Rejtett gyöngyszemek (telefonon rövid nevek); az
+  utolsó választás `localStorage` `filmlista-toplista`. Szűrők: Műfaj, Évtized (az 5 évesnél nincs) – a helyezés a
+  szűrés után 1-től –, „A listámon lévők elrejtése” (a bekapcsoláskor listán lévők; nem számoz át). Legfeljebb 100
+  (`TOP`), 25-ösével. `CreditStatus` / `useAddCredit` (a `PersonPage`-ből): „+ Hozzáadás” / „Már láttam” vagy „✓ A
+  listán” / „✓ Megnézve” + saját csillag; a borító és a cím előnézetet nyit. Téka: „★ A hét slágerei ★”
+  (`.teka-chart`), zöld kijelzős helyezés, dobogó (1–3.), árcédulás IMDb, kazettatok. Kliens `TOPLIST_V` – **a válasz
+  változásakor emeld**. Teszt: `test-120.mjs`.
+- A szerver: jelöltek a TMDB-ről (`plan()`: top_rated / discover), a **magyar megjelenés közelítése** (Norbi döntése,
+  „laza” szabály – `huOk()`): film – angol / magyar eredetinél HU megjelenés vagy bármilyen HU szolgáltató, más
+  nyelvűnél csak HU megjelenés; sorozat – HU streaming; magyar leírás kell; dokumentum / hírek / valóságshow /
+  szappanopera / talkshow és koncertfilm (csak „Zene”) nincs, **az animáció benne van**. A TMDB-előrangsor legjobb
+  160-ának (gyöngyszemnél 100) IMDb-értékelése: az `imdb_ratings`-ból (30 nap), a saját lista soraiból, végül az
+  OMDb-ről – a toplisták napi kerete 400 (`DAILY_OMDB`, `imdb_ratings_today()`). Sorrend: súlyozott IMDb-érték
+  (mint az IMDb Top 250; `m` listánként), legfeljebb 250 tárolva (`toplists`, 7 napig; hiányos lista – elfogyott a
+  keret – másnap újraépül, a régi addig marad). Gyöngyszem: IMDb ≥ 7,5, 5–150 ezer szavazat. Az első összeállítás
+  10–30 mp (`maxDuration = 60`; az ablak 2,5 mp után szól).
+
 ### Egyéb ablakok és menük
 - `components/MoreMenu.js` – ⋮ menü (`role="menu"`): pontok `{ id, label, description, icon, onSelect }`; nyilak,
   Home / End, Esc; választás után a fókusz a gombra. Ha nem fér ki a gomb alatt, a képernyő aljáig ér és görgethető.
@@ -482,7 +503,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `lib/useBackdropClose.js` – `useBackdropClose(dialogRef, { onClose, canClose, onBlocked })` (ha nem zárhat: `nudgeDialog()` – az ablak megbillen, `dialog[data-nudge]`; az adatlap lapváltásnál is) → `{ onPointerDown,
   onClick }`: kikattintásra zár (a lenyomás is kívül legyen), telefonon (≤ 640 px) nem; a beágyazott ablak
   kattintása nem számít kívülnek. Mikor nem zár: adatlap (megerősítés / név gépelése / felvétel), Színészek és
-  rendezők (felvétel az idővonalon), Franchise-ok
+  rendezők (felvétel az idővonalon), Toplisták (felvétel), Franchise-ok
   (szerkesztés, megerősítés, nyitott gyűjtemény-ablak), gyűjtemény-ablak (rész felvétele, sorrend-szerkesztés,
   megosztás visszavonásának megerősítése, fejléc szerkesztése; a nyitott TMDB-keresőnél zár, a Franchise-ok ablakból
   nyitva mindkettő – `onOutsideClose`), Mentések (művelet / megerősítés), Hibák („Összes törlése” megerősítése / törlés), Jelszó (beírt jelszó / mentés);
@@ -537,7 +558,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   filmnél gyűjtemény, `release_date`), `find` (IMDb ID → TMDB), `similar` (≥ 2000, TMDB ≥ 6,0, ≥ 50 szavazat,
   animáció nélkül, ≤ 12; a kliens `SIMILAR_V` – **a szűrés változásakor emeld**), `videos` (YouTube, Trailer és hivatalos
   előbb, magyar, ha nincs angol), `providers`, `credits`, `images`, `person`, `logos`, `discover`, `featured`,
-  `collection`, `collection-search` (`?suggest=`). Ha a cím már nincs a TMDB-n: üres / null.
+  `collection`, `collection-search` (`?suggest=`), `toplist` (`?type=&list=`; lásd Toplisták). Ha a cím már nincs a TMDB-n: üres / null.
 - Háttérfrissítő `POST` route-ok (a felhasználó jogaival, kötegekben; a `Watchlist` betöltéskor hívja,
   körszám-korláttal): `imdb/refresh` (25), `tmdb/seasons` (10; új évadot, nevet, epizódszámot, dátumot ír, az
   állapothoz nem nyúl; ismert sorozat új jövőbeli évada → `season_announced`, új megjelent évad `aired_notified =
@@ -638,6 +659,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   olvasatlan; óránként ≤ 60 új sor felhasználónként, a 30 napja nem ismétlődött és a 200 legfrissebb fölötti törlődik.
   RLS: a gazda olvassa / olvasottra állítja / törli (Mama a sajátját nem látja). Nincs a mentésben, nincs a Realtime-ban.
   A `clearTestAccount()` üríti.
+- `imdb_ratings (imdb_id PK, rating, votes, checked_at)` és `toplists (key PK – 'movie:all' …, items jsonb, complete,
+  built_at)` (terv-3 120): **közös** (nem felhasználói) gyorsítótár a toplistákhoz; minden belépett olvassa, írni csak
+  a `store_imdb_ratings(items)` / `store_toplist(key, items, complete)` tud; `imdb_ratings_today()` – a mai
+  OMDb-kérések. Nincs a mentésben, nincs a Realtime-ban.
 - `title_genres (title_id, genre_id)`. `titles_with_genres` nézet (`security_invoker`): `titles.*` + `status_name` +
   `genres text[]` + `seasons jsonb`.
 - Realtime: a `titles`, `title_seasons`, `notifications`, `franchises` a `supabase_realtime` publikációban (a

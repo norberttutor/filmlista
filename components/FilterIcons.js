@@ -135,6 +135,14 @@ export const ALL_GENRES_ICON = (
   </Svg>
 );
 
+// naptár (a Toplisták évtizedszűrője – terv-3 120)
+export const DECADE_ICON = (
+  <Svg width={1.7}>
+    <rect x="3.5" y="5" width="17" height="15" rx="2.5" />
+    <path d="M3.5 10h17M8 3v4M16 3v4" />
+  </Svg>
+);
+
 export const MAMA_ICON = (
   <Svg width={1.7}>
     <circle cx="12" cy="8" r="3.6" />
