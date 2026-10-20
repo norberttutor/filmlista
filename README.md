@@ -12,7 +12,7 @@ adatbázis, konvenciók): `CLAUDE.md`.
 ### 1. Adatbázis (Supabase)
 
 1. Supabase → **SQL Editor**: futtasd le a `supabase/` mappa fájljait sorrendben
-   (`01_schema.sql` … `22_titles_franchise_check.sql`). A `12_backups.sql` a heti mentéshez a
+   (`01_schema.sql` … `27_followed_people.sql`). A `12_backups.sql` a heti mentéshez a
    **pg_cron** bővítményt is bekapcsolja (ha hibát ad: **Database → Extensions → pg_cron** →
    bekapcsolás, majd futtasd újra), és létrehozza a csak olvasó `backup_reader` szerepet – a
    jelszavát utána külön kell beállítani (`alter role backup_reader password '…'`), lásd az 5. pontot.

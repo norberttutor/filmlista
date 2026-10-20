@@ -13,7 +13,7 @@ const THRESHOLD = 72; // ennyit kell lehúzni (a csillapított távolság), hogy
 const MAX = 110;
 const MIN_SPIN_MS = 600; // a gyors frissítés is látsszon
 
-export function isStandalone() {
+function isStandalone() {
   return ['standalone', 'fullscreen', 'minimal-ui'].some((m) => window.matchMedia(`(display-mode: ${m})`).matches);
 }
 

@@ -41,9 +41,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 
 ## Hol mi van
 - **`munka/ROADMAP.md`** – a hátralévő feladatok táblázatban, becsült idővel. Kész feladat után frissítsd.
-- **`munka/terv-3/TERV.md`** – a „terv-3 NN” pontok részletes terve, Norbi döntései, látványterv-linkek.
-- Az átnézés (`munka/audit-2026-10-15/ATNEZES.md`, K/H/S/I/J kódok) és a kódaudit (`munka/audit-2026-10-09/AUDIT.md`)
-  lezárult; csak utánanézéshez.
+- **`munka/terv-3/TERV.md`** – a „terv-3 NN” pontok: Norbi döntései, az elvetett ötletek oka, látványterv-linkek; az új
+  pont terve ide kerül (kész után csak a jövőt érintő döntés marad belőle).
+- Az átnézés (K/H/S/I/J kódok) és a kódaudit („#N”) lezárult, az iratuk törölve; egy kód okát a git log commitjai
+  mutatják (`git log --grep`).
 - A `munka/` mappa helyi (git-ből kizárva), leírása: `munka/README.md`.
 - A kész munkák története: git log + TERV.md. **Ebbe a fájlba csak a mostani működés és a szabályok
   kerüljenek**, tömören – történet, dátumok, commit-hashek nem.

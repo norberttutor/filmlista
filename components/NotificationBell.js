@@ -14,7 +14,7 @@ const PHOTO_BASE = 'https://image.tmdb.org/t/p/w45'; // a követett személy fot
 
 // a harang csoportjai (terv-3 76, Norbi választása: „A”, 2026-10-13): az értesítés napja (budapesti
 // idővel) szerint „Ma” / „Ezen a héten” (a hét hétfőtől számít) / „Korábban”
-export function dayGroup(createdAt, today) {
+function dayGroup(createdAt, today) {
   const day = new Date(createdAt).toLocaleDateString('sv-SE', { timeZone: 'Europe/Budapest' });
   if (day >= today) return 'Ma';
   const t = new Date(`${today}T00:00:00Z`);
