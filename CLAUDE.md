@@ -96,6 +96,14 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   Teszt: `test-d9-d10.mjs`.
 
 ### Fő lista – `components/Watchlist.js`
+- **Részei** (`components/list/`; a `Watchlist` csak összeköti őket és a fejlécet, a listát, az ablakokat rajzolja):
+  `useListData` (betöltés, tárolt lista, újrapróbálás, helyi mentés, `reloadAfterRestore`; `loadTitles`,
+  `loadFranchises`, `byName`), `backgroundRefresh` (`startBackgroundRefresh`, `useMissingLogos`), `useNotificationList`
+  (+ `useAppBadge`), `listFilters` (`DEFAULT_FILTERS`, `SEARCH_FILTERS`, `SORTS`, `NO_FRANCHISE`…), `useListFilters`
+  (szűrők, keresés, rendezés, `visible`, `kept` – `keepShown`, `releaseFranchise`), `FilterBar` (a szűrősor),
+  `SearchNote`, `usePaging` (`PAGE_SIZE`…), `useCollapsingHeader`, `useListView`, `useListChanges` (mentett / felvett /
+  törölt sor, „Hogy tetszett?”, franchise-javaslat és -műveletek), `useLiveTitles` (élő szinkron), `moreItems` (⋮
+  pontjai, `ONLINE_ONLY`). Az ablakok egy állapotban (`dialog`: 'stats' | 'franchises' | …; `openDialog`).
 - **Betöltés**: `titles_with_genres` nézet (`loadTitles()`, `fetchAll`). A háttérfrissítések (`refresh…()`) csak
   akkor hívják a szervert, ha van esedékes cím (`lib/refreshDue.js`). Csendes újratöltés (`reloadKey`, csontváz
   nélkül, a szűrők / lapozás / nyitott adatlap marad): visszatéréskor, lehúzásra, élő szinkron újrakapcsolódásakor.
@@ -356,8 +364,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   azonnal ment (`setFranchiseLogo`). Mentés közben a gombok nem tiltódnak (a fókusz a body-ra esne, és az Esc az
   egész ablakot zárná). Net nélkül nincs „Logó”. Teszt: `test-j8.mjs`.
 - `/api/franchises/logos` – a `logo_path is null` franchise-ok automatikus logója (`pickLogo()`, ≤ 6:1, angol); a
-  kézzel választottat (`''`-t is) nem írja felül; logó híján 7 napig nem próbálja. A `Watchlist` `logoDue` effektje
-  hívja, franchise-onként munkamenetenként egyszer (`logoTried`).
+  kézzel választottat (`''`-t is) nem írja felül; logó híján 7 napig nem próbálja. A `useMissingLogos`
+  (`components/list/backgroundRefresh.js`) hívja, franchise-onként munkamenetenként egyszer (`logoTried`).
 - `components/WatchOrder.js` + `lib/watchOrder.js` – nézési sorrend (terv-3 28): a franchise listán lévő filmjei és
   a sorozatok évadjai külön tételként (`franchiseItems()`; kulcs `címId:évad`, 0 = film). `orderedItems()`: a tárolt
   sorrend, az újak a végére megjelenés szerint. A megnézett kihúzva a helyén marad, „Következik” (`nextItem()`);
@@ -430,7 +438,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/StatsDialog.js` + `lib/stats.js` – Statisztika a betöltött listából (`listStats()`; `tasteProfile()` –
   műfaj legalább 3 értékelt címtől, `TASTE_MIN`); színes csempék (`.tile[data-tile]`), `FranchiseBar`; telefonon a havi diagramon minden második hónapnév (`.month.alt` rejtve).
 - `components/BackupsDialog.js` + `lib/backups.js` – Mentések: lista, „Mentés most” (`create_my_backup`),
-  „Visszaállítás” helyben megerősítve (`restore_my_backup`), utána `Watchlist.reloadAfterRestore()`.
+  „Visszaállítás” helyben megerősítve (`restore_my_backup`), utána `reloadAfterRestore()` (`useListData`).
 - `lib/errorLog.js` + `components/ErrorsDialog.js` – hibanapló (terv-3 113): `startErrorLog()` (az `app/page.js`
   indítja: `error` → 'error', `unhandledrejection` → 'rejection'), a hibalap (`ErrorScreen`) → 'render', a
   sikertelen adatbázis-művelet → 'save' (`reportError(error)` – **a kliensoldali `console.error(error)` helyett ezt
@@ -529,9 +537,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `lib/liveSync.js` – élő szinkron (Supabase Realtime, terv-3 86): `useLiveSync(enabled, userId, { onTitles(ids,
   deletedIds), onNotifications, onFranchises, onResync })`; feliratkozásonként új csatornanév; a törlésről csak a
   kulcs jön; 0,4 mp-ig gyűjt. A címeket 500-asával tölti újra (`SYNC_CHUNK`), a régebbi válasz az újabbat nem írja
-  felül (`syncAsked`); a törölt kiválasztott franchise szűrője elenged. A
-  `Watchlist` a saját visszhangot, a függő mentésű (`hasPendingSave`) és a függő törlésű (`isPendingDelete`) címet
-  kihagyja; a meglévőt a `replaceTitle`-lel cseréli; az újbóli beszúrás a törlést érvényteleníti.
+  felül (`syncAsked`); a törölt kiválasztott franchise szűrője elenged. A `useLiveTitles` (`components/list/`) a
+  saját visszhangot, a függő mentésű (`hasPendingSave`) és a függő törlésű (`isPendingDelete`) címet kihagyja; a meglévőt a `replaceTitle`-lel cseréli; az újbóli beszúrás a törlést érvényteleníti.
 - `public/sw.js` + `lib/offline.js` – service worker (csak a kiadott változatban; `next.config.mjs`: `/sw.js`
   `no-cache`): az oldal hálózatról 3 mp-es korláttal, a `/_next/static/` és a TMDB-képek tárolóból; az
   `/api` és a Supabase nem. A TMDB-képek két tárolóban: a lista borítói és a franchise-logók (`POSTERS`, korlát

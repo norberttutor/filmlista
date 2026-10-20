@@ -1,54 +1,20 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+// A fő lista (Norbi oldala): fejléc, szűrősor, lista / rács, lapozás és az ablakok. A részei a components/list/
+// mappában: adatok és betöltés (useListData, backgroundRefresh), értesítések (useNotificationList), szűrők
+// (useListFilters, FilterBar), lapozás (usePaging), fejléc (useCollapsingHeader), nézet (useListView), módosítások
+// (useListChanges), élő szinkron (useLiveTitles), ⋮ menü (moreItems).
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { supabase } from '@/lib/supabase';
 import PosterCard from '@/components/PosterCard';
 import Pagination from '@/components/Pagination';
-import ProgressiveBlur from '@/components/ProgressiveBlur';
-import { useSlidingThumb } from '@/lib/useSlidingThumb';
 import ImdbRatingsImport from '@/components/ImdbRatingsImport';
 import TitleSearch from '@/components/TitleSearch';
 import { recommendSeeds } from '@/components/Discover';
 import TitleEditor from '@/components/TitleEditor';
 import TitleTable from '@/components/TitleTable';
 import Reflow from '@/components/Reflow';
-import {
-  titleKey,
-  updateTitle,
-  deleteTitle,
-  registerPendingDelete,
-  unregisterPendingDelete,
-  isPendingDelete,
-  createFranchise,
-  deleteFranchise,
-  renameFranchise,
-  refreshImdbRatings,
-  refreshFranchiseLogos,
-  refreshSeasons,
-  refreshBackdrops,
-  refreshReleases,
-  refreshTitleCollections,
-  refreshDetails,
-  refreshCollectionParts,
-  DEFAULT_STATUS,
-  DROPPED_STATUS,
-  MAMA_OPTIONS,
-  mamaLabel,
-  releaseKey,
-} from '@/lib/titles';
-import FranchiseFilter from '@/components/FranchiseFilter';
-import GenreIcon from '@/components/GenreIcon';
-import {
-  ALL_GENRES_ICON,
-  DOWNLOAD_ICONS,
-  FRANCHISE_ICON,
-  MAMA_ICON,
-  MamaDot,
-  SORT_ICONS,
-  STATUS_ICONS,
-  TYPE_ICONS,
-} from '@/components/FilterIcons';
+import { titleKey } from '@/lib/titles';
 import FranchiseCollection from '@/components/FranchiseCollection';
 import NotificationBell from '@/components/NotificationBell';
 import BulkImport from '@/components/BulkImport';
@@ -61,238 +27,58 @@ import ErrorsDialog from '@/components/ErrorsDialog';
 import MoreMenu from '@/components/MoreMenu';
 import ThemeToggle from '@/components/ThemeToggle';
 import NeonBrand from '@/components/NeonBrand';
-import { setTheme, useTheme } from '@/lib/theme';
+import { useTheme } from '@/lib/theme';
 import FranchisesDialog from '@/components/FranchisesDialog';
 import PeopleDialog from '@/components/PeopleDialog';
 import ToplistsDialog from '@/components/ToplistsDialog';
 import Toaster from '@/components/Toaster';
 import EmptyState from '@/components/EmptyState';
-import StarRating from '@/components/StarRating';
-import { toast, dismissToast } from '@/lib/toast';
-import { dismissNotifications, loadNotifications, markNotificationsRead, restoreNotifications, shownNotifications } from '@/lib/notifications';
-import { downloadListCsv } from '@/lib/exportList';
+import { shownNotifications } from '@/lib/notifications';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 import { canMorph, MORPH_NAME, trackTransition } from '@/lib/viewTransition';
-import { franchisesWithOrder, loadOrders, orderedItems } from '@/lib/watchOrder';
-import { loadHidden, resetHidden } from '@/lib/hiddenSuggestions';
-import { loadFollowed, refreshPeople, resetFollowed } from '@/lib/people';
-import { fetchAll } from '@/lib/fetchAll';
-import { article, collectionFranchiseMap, suggestedFranchiseId } from '@/lib/franchiseSuggest';
-import { loadSnapshot, saveSnapshot, signOut, useOnline } from '@/lib/offline';
-// keresés: kis- és nagybetű, valamint ékezet nélkül hasonlít ("dune" → "Dűne"); a franchise nevében is,
-// elírásnál egy betűnyi eltéréssel (terv-3 66)
-import { fold, matchTitle, resolveWords, searchIndex } from '@/lib/listSearch';
-import { Hl, SearchHighlight } from '@/components/Highlight';
-import { captureViewPosters, playViewSwitch, viewMotionOk } from '@/lib/viewSwitch';
+import { signOut } from '@/lib/offline';
+import { SearchHighlight } from '@/components/Highlight';
 import { useBackLayer } from '@/lib/backClose';
-import { useAppFreshness } from '@/lib/appVersion';
-import { useScrollFade } from '@/lib/useScrollFade';
 import PullRefresh from '@/components/PullRefresh';
-import { useLiveSync } from '@/lib/liveSync';
-import { hasPendingSave, isOptimistic, saveRow } from '@/lib/rowSaves';
-import { errorCounts, reportError } from '@/lib/errorLog';
-
-const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
-
-const TOAST_THUMB = 'https://image.tmdb.org/t/p/w92';
-
-// a ⋮ menü pontjai, amelyek net nélkül nem működnének (csak olvasható módban nem látszanak); a
-// Színészek ablak a TMDB-ről számol (M4)
-const ONLINE_ONLY = ['imdb', 'bulk', 'backups', 'password', 'people', 'toplists', 'errors'];
-
-// a tárolt listán állva (a szerver nem érhető el) ennyi időnként újrapróbálja
-const RETRY_MS = 30_000;
-// az élő szinkron egy kérésben legfeljebb ennyi címet tölt újra (S8)
-const SYNC_CHUNK = 500;
+import { errorCounts } from '@/lib/errorLog';
+import FilterBar from '@/components/list/FilterBar';
+import SearchNote from '@/components/list/SearchNote';
+import { moreMenuItems } from '@/components/list/moreItems';
+import { useListData } from '@/components/list/useListData';
+import { useMissingLogos } from '@/components/list/backgroundRefresh';
+import { useAppBadge, useNotificationList } from '@/components/list/useNotificationList';
+import { useListFilters } from '@/components/list/useListFilters';
+import { GRID_PAGE_SIZE, PAGE_SIZE, TABLE_PAGE_SIZE, usePaging } from '@/components/list/usePaging';
+import { useCollapsingHeader } from '@/components/list/useCollapsingHeader';
+import { useListView } from '@/components/list/useListView';
+import { useListChanges } from '@/components/list/useListChanges';
+import { useLiveTitles } from '@/components/list/useLiveTitles';
 
 // a helyben tárolt lista ideje: „okt. 8. 21:14”
 const snapshotTime = (iso) =>
   new Date(iso).toLocaleString('hu-HU', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-// franchise-szűrő: '' = összes, NO_FRANCHISE = franchise nélküliek, egyébként franchise id
-const NO_FRANCHISE = 'none';
-
-// a Filmek nézet állapotszűrőjében nincs ilyen gomb (a „Filmek és sorozatok” / Sorozatok nézetben van)
-const MOVIE_HIDDEN_STATUSES = new Set([DROPPED_STATUS, 'watching']);
 
 // ennél szélesebb képernyőn választható a soros (táblázatos) nézet és a borítófal, alatta
 // mindig borítófal
 const DESKTOP_QUERY = '(min-width: 1400px)';
 const PHONE_QUERY = '(max-width: 640px)'; // telefonos nézet
 
-const PAGE_SIZE = 25; // ennyi cím egy oldalon (telefon, keskenyebb rács)
-// asztali rácsban (≥ 1400 px): 1440p-n (2560 px) 11 kártya fér egy sorba → 2 teli sor, és a
-// lapozó görgetés nélkül is látszik (Norbi kérése)
-const GRID_PAGE_SIZE = 22;
-// asztali listanézetben (táblázat, terv-3 59 – Norbi kérése): a nagyobb, kártyaszerű sorokból 10
-const TABLE_PAGE_SIZE = 10;
-
-// asztali szélességen választható nézet: 'list' (táblázat) vagy 'grid' (borítófal); a böngésző
-// megjegyzi (ha a tárhely nem érhető el, marad a lista)
-const VIEW_KEY = 'filmlista-nezet';
-
-function storedView() {
-  try {
-    return localStorage.getItem(VIEW_KEY) === 'grid' ? 'grid' : 'list';
-  } catch {
-    return 'list';
-  }
-}
-
-const TYPES = [
-  { code: 'movie', name: 'Filmek' },
-  { code: 'tv', name: 'Sorozatok' },
-];
-// csak kiválasztott franchise vagy keresés mellett választható (akkor ez az alapértelmezés)
-const BOTH_TYPES = { code: 'all', name: 'Filmek és sorozatok' };
-
-const DOWNLOAD_FILTERS = [
-  { code: 'all', name: 'Összes' },
-  { code: 'yes', name: 'Letöltött' },
-  { code: 'no', name: 'Nem letöltött' },
-];
-
-// a szűrők alapállapota (betöltéskor és a ↺ gombbal)
-const DEFAULT_FILTERS = {
-  type: 'movie',
-  status: DEFAULT_STATUS,
-  downloaded: 'no',
-  genre: '',
-  mama: '',
-  franchise: NO_FRANCHISE,
-};
-
-// keresés közben minden cím látszik; a keresés előtti szűrők a keresés törlésekor visszaállnak
-const SEARCH_FILTERS = {
-  type: 'all',
-  status: 'all',
-  downloaded: 'all',
-  genre: '',
-  mama: '',
-  franchise: '',
-};
-
-const sameFilters = (a, b) => Object.keys(a).every((k) => a[k] === b[k]);
-
-const byAddedDesc = (a, b) => new Date(b.created_at) - new Date(a.created_at);
-
-// a teljes lista (legutóbb hozzáadott elöl): ezres adagokban, mert egy kérés legfeljebb 1000
-// sort ad (lib/fetchAll.js); az id a rendezés egyértelműségéhez kell
-const loadTitles = () =>
-  fetchAll(() =>
-    supabase
-      .from('titles_with_genres')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .order('id', { ascending: false })
-  );
-
-// üres érték (nincs értékelés) mindig a lista végére kerül;
-// dir: -1 = csökkenő, 1 = növekvő
-function nullsLast(x, y, dir) {
-  if (x == null) return y == null ? 0 : 1;
-  if (y == null) return -1;
-  return dir * (x - y);
-}
-
-// megjelenés szerint, pontos dátummal (terv-3 55: korábban csak az év számított, így egy év címei –
-// pl. a Marvelben – összekeveredtek); dátum és év nélkül a végére
-function byRelease(a, b, dir) {
-  const x = releaseKey(a);
-  const y = releaseKey(b);
-  if (x == null) return y == null ? 0 : 1;
-  if (y == null) return -1;
-  return dir * x.localeCompare(y);
-}
-
-// egyezésnél a legutóbb hozzáadott van elöl
-const SORTS = [
-  { code: 'added_desc', name: 'Legutóbb hozzáadott', compare: byAddedDesc },
-  { code: 'added_asc', name: 'Legkorábban hozzáadott', compare: (a, b) => -byAddedDesc(a, b) },
-  {
-    code: 'rating',
-    name: 'Legjobb saját értékelés',
-    compare: (a, b) => nullsLast(a.my_rating, b.my_rating, -1) || byAddedDesc(a, b),
-  },
-  {
-    code: 'imdb',
-    name: 'Legjobb IMDb-értékelés',
-    compare: (a, b) => nullsLast(a.imdb_rating, b.imdb_rating, -1) || byAddedDesc(a, b),
-  },
-  {
-    code: 'year_desc',
-    name: 'Legújabb megjelenés',
-    compare: (a, b) => byRelease(a, b, -1) || byAddedDesc(a, b),
-  },
-  {
-    code: 'year_asc',
-    name: 'Legrégebbi megjelenés',
-    compare: (a, b) => byRelease(a, b, 1) || byAddedDesc(a, b),
-  },
-];
-
-// franchise-ra szűrve, ha annak van saját nézési sorrendje (terv-3 28, Norbi döntése): a lista a
-// sorrend tételeiből áll – a sorozat évadonként külön tétel, több helyen is szerepelhet –, és az
-// állapot- és a letöltve-szűrő tételenként (évadnál az évadé) érvényes. Csak ilyenkor kínálja,
-// és a franchise kiválasztásakor magától erre áll.
-const WATCH_ORDER = { code: 'watch_order', name: 'Nézési sorrend' };
 // a telepített app gyorsindítói (app/manifest.js, terv-3 43): ?nyit=… → mit nyisson meg
 const SHORTCUTS = {
   hozzaadas: ({ openAdd }) => openAdd(),
-  'franchise-ok': ({ setShowFranchises }) => setShowFranchises(true),
-  statisztika: ({ setShowStats }) => setShowStats(true),
+  'franchise-ok': ({ openDialog }) => openDialog('franchises'),
+  statisztika: ({ openDialog }) => openDialog('stats'),
 };
-// franchise-ra szűrve, ha nincs saját nézési sorrendje, alapból megjelenés szerint (Norbi kérése,
-// 2026-10-06) – ugyanúgy magától, mint a nézési sorrend; kézi választás után az marad
-const FRANCHISE_SORT = 'year_asc';
-
-function Chip({ active, onClick, label, count, icon, className }) {
-  return (
-    <button type="button" className={className ? `chip ${className}` : 'chip'} aria-pressed={active} onClick={onClick}>
-      {icon}
-      {label}
-      {count !== undefined && <span className="n">{count}</span>}
-    </button>
-  );
-}
 
 export default function Watchlist({ session }) {
   const theme = useTheme();
-  const [titles, setTitles] = useState([]);
-  const [statuses, setStatuses] = useState([]);
-  const [franchises, setFranchises] = useState([]);
-  const [orders, setOrders] = useState([]); // a franchise-ok nézési sorrendjei (franchise_order sorai)
-  const [loading, setLoading] = useState(true);
-  // a franchise-logó keresése ezeknél már elindult ebben a munkamenetben
-  const logoTried = useRef(new Set());
-  // franchise kiválasztásakor az állapotszűrő magától „Mind” lesz, nézési sorrendtől függetlenül
-  // (Norbi kérése, 2026-10-06); ez az előtte beállított érték – a franchise-szűrő megszűnésekor visszajön.
-  // Kézi állapotválasztás vagy szűrőcsere (applyFilters) után nincs mit visszaállítani.
-  const statusBeforeFranchise = useRef(null);
-  const [loadError, setLoadError] = useState('');
-  // offline indulás (terv-3 44): amíg a friss lista meg nem jön, a helyben tárolt látszik
-  // (stale: a mentés ideje; különben null) – közben a lista csak olvasható. failed: a friss
-  // betöltés nem sikerült (nincs net / a szerver nem érhető el); reloadKey: újrapróbálás
-  const [stale, setStale] = useState(null);
-  const [failed, setFailed] = useState(false);
-  const [reloadKey, setReloadKey] = useState(0);
-  const reloadDone = useRef(null); // a lehúzás (terv-3 85) várja: a következő betöltés végén hívódik
-  const online = useOnline();
-  const readOnly = Boolean(stale) || !online;
   const userId = session.user.id;
-  // a friss lista már megjött (ezután a tárolt nem írhatja felül)
-  const live = useRef(false);
-  const snapshotShown = useRef(false); // a tárolt lista látszik (vagy látszott)
-  const loadRunning = useRef(false); // a lista betöltése folyamatban (az újrapróbálás kivárja – kódaudit #26)
-  const [adding, setAdding] = useState(false);
-  const [addQuery, setAddQuery] = useState(''); // a „Cím hozzáadása” panel kezdő keresése
-  const [showStats, setShowStats] = useState(false); // a statisztika ablak nyitva
-  const [showFranchises, setShowFranchises] = useState(false); // a Franchise-ok ablak nyitva
-  const [showPeople, setShowPeople] = useState(false); // a Színészek és rendezők ablak nyitva (M4)
-  const [showToplists, setShowToplists] = useState(false); // a Toplisták ablak nyitva (terv-3 120)
-  const [showBackups, setShowBackups] = useState(false); // a mentések ablak nyitva
+  const notes = useNotificationList();
+  const data = useListData(userId, notes);
+  const { titles, statuses, franchises, orders, loading, loadError, stale, failed, online, readOnly } = data;
+  const { notifications } = notes;
+
   // hibanapló (terv-3 113): a ⋮ „Hibák (N)” csak akkor látszik, ha van naplózott hiba; N: az olvasatlanok
-  const [showErrors, setShowErrors] = useState(false);
   const [errorInfo, setErrorInfo] = useState({ total: 0, unseen: 0 });
   const refreshErrorInfo = () =>
     errorCounts()
@@ -301,8 +87,14 @@ export default function Watchlist({ session }) {
   useEffect(() => {
     if (online) refreshErrorInfo();
   }, [userId, online]);
-  const [showManual, setShowManual] = useState(false); // a felhasználói leírás ablak nyitva
-  const [showPassword, setShowPassword] = useState(false); // a jelszó módosítása ablak nyitva (terv-3 27)
+
+  const [adding, setAdding] = useState(false);
+  const [addQuery, setAddQuery] = useState(''); // a „Cím hozzáadása” panel kezdő keresése
+  // a nyitott ablak: 'stats' | 'franchises' | 'people' (M4) | 'toplists' (terv-3 120) | 'backups' | 'errors' |
+  // 'manual' | 'password' (terv-3 27), vagy null
+  const [dialog, setDialog] = useState(null);
+  const openDialog = (name) => setDialog(name);
+  const closeDialog = () => setDialog(null);
   // a ⋮ menüből nyíló importok (a saját ablakukat / fájlválasztójukat nyitják)
   const imdbImportRef = useRef(null);
   const bulkImportRef = useRef(null);
@@ -326,1130 +118,59 @@ export default function Watchlist({ session }) {
     });
     trackTransition(transition); // a szerkesztő nem sürgős frissítései megvárják a végét
   }
-  const [notifications, setNotifications] = useState([]); // új évadokról, legutóbbi 30
-  // itt már olvasottnak jelöltek: egy közben beérkező (korábban indult) lekérdezés se írja vissza
-  // őket olvasatlannak
-  const readIds = useRef(new Set());
-  // itt törölt értesítések: a közben beérkező lekérdezés se hozza vissza őket
-  const dismissedIds = useRef(new Set());
+
   const isDesktop = useMediaQuery(DESKTOP_QUERY);
   const isPhone = useMediaQuery(PHONE_QUERY);
-  const [view, setView] = useState(storedView); // a Watchlist csak a böngészőben fut
-
-  // lista ↔ rács váltáskor a borítók a helyükre siklanak (terv-3 73): előtte a régi helyük
-  const viewSwitch = useRef(null);
-  const listRoot = (v) => (v === 'grid' ? gridRef.current : document.querySelector('.titles-table tbody'));
-  function changeView(next) {
-    if (next === view) return;
-    viewSwitch.current = viewMotionOk() ? captureViewPosters(listRoot(view)) : null;
-    setView(next);
-    try {
-      localStorage.setItem(VIEW_KEY, next);
-    } catch {
-      // a választás így csak most érvényes
-    }
-  }
-
-  // szűrők
-  const [status, setStatus] = useState(DEFAULT_FILTERS.status);
-  const [type, setType] = useState(DEFAULT_FILTERS.type);
-  const [genre, setGenre] = useState(DEFAULT_FILTERS.genre);
-  const [mama, setMama] = useState(DEFAULT_FILTERS.mama); // '' | interested | received
-  const [franchise, setFranchise] = useState(DEFAULT_FILTERS.franchise);
-  const [downloaded, setDownloaded] = useState(DEFAULT_FILTERS.downloaded); // all | yes | no
-  const [sort, setSort] = useState('added_desc');
-  // franchise-ra szűrve magától áll be: nézési sorrend, ha van, különben a legrégebbi megjelenés
-  // (amíg a felhasználó mást nem választ)
-  const [orderSort, setOrderSort] = useState(true);
-  const [query, setQuery] = useState(''); // keresés a felvett címek között
-  const [beforeSearch, setBeforeSearch] = useState(null); // a keresés előtti szűrők
-  const [filtersOpen, setFiltersOpen] = useState(false); // telefonon alapból összecsukva
-  const filters = { type, status, downloaded, genre, mama, franchise };
-
-  function applyFilters(f) {
-    statusBeforeFranchise.current = null;
-    setType(f.type);
-    setStatus(f.status);
-    setDownloaded(f.downloaded);
-    setGenre(f.genre);
-    setMama(f.mama);
-    setFranchise(f.franchise);
-  }
-
-  // kilépéskor a követések és az elrejtett ajánlások tárolója kiürül (a következő belépő ne lássa – M4);
-  // a csendes újratöltés nem üríti (S5: addig az elrejtettek ne jöjjenek vissza)
-  useEffect(
-    () => () => {
-      resetFollowed();
-      resetHidden();
-    },
-    []
-  );
-
-  // a helyben tárolt lista: azonnal látszik, amíg a friss meg nem jön
-  useEffect(() => {
-    let cancelled = false;
-    loadSnapshot(userId).then((snap) => {
-      if (cancelled || live.current || !snap) return;
-      setTitles(snap.titles);
-      setStatuses(snap.statuses);
-      setFranchises(snap.franchises);
-      setOrders(snap.orders ?? []);
-      setNotifications(snap.notifications ?? []);
-      snapshotShown.current = true;
-      setStale(snap.savedAt);
-      setLoadError('');
-      setLoading(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [userId]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const stopped = () => cancelled; // a háttérfrissítések körönként nézik (kódaudit #30)
-    loadRunning.current = true;
-
-    async function load() {
-      const [titlesRes, statusesRes, franchisesRes] = await Promise.all([
-        loadTitles(),
-        supabase.from('statuses').select('*').order('sort_order'),
-        supabase.from('franchises').select('id, name, logo_path, tmdb_collection_ids, collections_checked_at'),
-      ]);
-      if (cancelled) return;
-      loadRunning.current = false;
-
-      const error = titlesRes.error || statusesRes.error || franchisesRes.error;
-      if (error) {
-        reportError(error);
-        setFailed(true);
-        // ha már a tárolt vagy egy korábban betöltött friss lista látszik, az marad (S3): a tárolt mellett
-        // a sáv jelzi, a friss mellett (és a lehúzásnál mindig) egy értesítés; különben hibaüzenet – a
-        // tárolt lista közben még megérkezhet, az leveszi
-        if (!snapshotShown.current && !live.current) {
-          setLoadError(
-            navigator.onLine
-              ? 'Nem sikerült betölteni a listát. Ellenőrizd az internetkapcsolatot, és frissítsd az oldalt (F5).'
-              : 'Nincs internetkapcsolat, és ezen az eszközön még nincs elmentett lista. Ha visszajön a net, magától betöltődik.'
-          );
-        } else if ((live.current && !failed) || reloadDone.current) {
-          toast({
-            text: 'Nem sikerült frissíteni a listát – a legutóbb betöltött látszik. Hamarosan magától újrapróbálom.',
-          });
-        }
-      } else {
-        live.current = true;
-        setStale(null);
-        setFailed(false);
-        setLoadError('');
-        // a függő (még visszavonható) törlés nem jön vissza, a függő mentésű sor a helyi marad (S6 – mint
-        // az élő szinkronnál)
-        setTitles((prev) => {
-          const local = new Map(prev.map((t) => [t.id, t]));
-          return titlesRes.data
-            .filter((t) => !isPendingDelete(t.id))
-            .map((t) => (hasPendingSave(t.id) && local.has(t.id) ? local.get(t.id) : t));
-        });
-        setStatuses(statusesRes.data);
-        setFranchises(franchisesRes.data.sort(byName));
-        loadOrders()
-          .then((rows) => !cancelled && setOrders(rows))
-          .catch((err) => console.warn('Nézési sorrendek betöltése sikertelen:', err.message));
-        // „Nem érdekel” – elrejtett ajánlások (a Felfedezés és a Hasonló címek szűri)
-        loadHidden().catch((err) => console.warn('Elrejtett ajánlások betöltése sikertelen:', err.message));
-
-        // hiányzó / régi IMDb-értékelések pótlása a háttérben; hiba esetén csak a konzolba ír
-        refreshImdbRatings(titlesRes.data, (rows) => {
-          if (cancelled) return;
-          const byId = new Map(rows.map((r) => [r.id, r]));
-          setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
-        }, stopped).catch((err) => console.warn('IMDb-értékelések frissítése sikertelen:', err.message));
-
-        // a szerkesztő ablak háttérképei a háttérben (a még meg nem nézett címekhez)
-        refreshBackdrops(titlesRes.data, (rows) => {
-          if (cancelled) return;
-          const byId = new Map(rows.map((r) => [r.id, r]));
-          setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
-        }, stopped).catch((err) => console.warn('Háttérképek lekérése sikertelen:', err.message));
-
-        // a filmek TMDB-gyűjteménye a háttérben (a franchise-javaslathoz, terv-3 35)
-        refreshTitleCollections(titlesRes.data, (rows) => {
-          if (cancelled) return;
-          const byId = new Map(rows.map((r) => [r.id, r]));
-          setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
-        }, stopped).catch((err) => console.warn('TMDB-gyűjtemények lekérése sikertelen:', err.message));
-
-        // a címek TMDB-adatai (magyar cím, leírás, borító, műfajok) a háttérben – a bejelentett / friss
-        // címeké később érkezik a TMDB-re (terv-3 83); a változott címek teljes sora jön
-        refreshDetails(titlesRes.data, (rows) => {
-          if (cancelled) return;
-          const byId = new Map(rows.map((r) => [r.id, r]));
-          setTitles((ts) => ts.map((t) => byId.get(t.id) ?? t));
-        }, stopped).catch((err) => console.warn('A TMDB-adatok frissítése sikertelen:', err.message));
-
-        // sorozatok évadai a háttérben: a még évad nélküliek megkapják, a hetente
-        // ellenőrzöttekhez az új (megjelent / bejelentett) évad felkerül
-        // értesítések: rögtön, és az évad- / megjelenésfrissítés után újra, ha az változtatott
-        // valamit (az új évadokról, digitális megjelenésről is szóljon; ha nem változott semmi,
-        // az újratöltés ugyanazt adná – 3 adatbázis-kérés megspórolva). Hibánál is újratölt
-        // (egy korábbi adag addig már frissülhetett).
-        // (kilépés után már nem: a háttérfrissítések végén bejelentkezés nélkül futna)
-        const reloadNotifications = () =>
-          !cancelled &&
-          loadNotifications()
-            .then(
-              (ns) =>
-                !cancelled &&
-                setNotifications(
-                  ns
-                    .filter((n) => !dismissedIds.current.has(n.id))
-                    .map((n) =>
-                      !n.read_at && readIds.current.has(n.id) ? { ...n, read_at: new Date().toISOString() } : n
-                    )
-                )
-            )
-            .catch((err) => console.warn(err.message));
-        reloadNotifications();
-
-        refreshSeasons(titlesRes.data, (rows) => {
-          if (cancelled) return;
-          const byId = new Map(rows.map((r) => [r.id, r]));
-          setTitles((ts) => ts.map((t) => byId.get(t.id) ?? t));
-        }, stopped).then(
-          (count) => count > 0 && reloadNotifications(),
-          (err) => {
-            console.warn('Évadok frissítése sikertelen:', err.message);
-            reloadNotifications();
-          }
-        );
-
-        // filmek megjelenési dátumai a háttérben (a még meg nem jelent filmek jelvényéhez); ha
-        // közben valamelyik digitálisan megjelent, a harang is szól róla
-        refreshReleases(titlesRes.data, (rows) => {
-          if (cancelled) return;
-          const byId = new Map(rows.map((r) => [r.id, r]));
-          setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
-        }, stopped).then(
-          (count) => count > 0 && reloadNotifications(),
-          (err) => {
-            console.warn('Megjelenési dátumok frissítése sikertelen:', err.message);
-            reloadNotifications();
-          }
-        );
-
-        // új rész a franchise-ok TMDB-gyűjteményeiben (terv-3 36): hetente; ha jött új, a harang szól
-        refreshCollectionParts(franchisesRes.data, stopped).then(
-          (count) => count > 0 && reloadNotifications(),
-          (err) => console.warn('A gyűjtemények új részeinek ellenőrzése sikertelen:', err.message)
-        );
-
-        // a követett színészek / rendezők (M4): betöltés, aztán hetente az új filmjeik; ha jött új, a harang szól
-        loadFollowed()
-          .then(() => !cancelled && refreshPeople(stopped))
-          .then(
-            (count) => count > 0 && reloadNotifications(),
-            (err) => console.warn('A követett személyek ellenőrzése sikertelen:', err.message)
-          );
-      }
-      setLoading(false);
-      reloadDone.current?.();
-      reloadDone.current = null;
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [reloadKey]);
-
-  // visszatéréskor (legalább 5 perc rejtve után) csendben újratölt – csontváz nélkül, a szűrők, a lapozás és
-  // a nyitott adatlap marad –, és szól, ha közben új kiadás jött (terv-3 63)
-  useAppFreshness(!loading && !readOnly && !failed, () => setReloadKey((k) => k + 1));
-
-  // lehúzás frissítéshez (terv-3 85): ugyanez a csendes újratöltés; net nélkül csak szól
-  function pullRefresh() {
-    if (!online) {
-      toast({ text: 'Nincs internetkapcsolat – a lista most nem frissíthető.' });
-      return Promise.resolve();
-    }
-    return new Promise((resolve) => {
-      reloadDone.current?.();
-      reloadDone.current = resolve;
-      setReloadKey((k) => k + 1);
-    });
-  }
-
-  // net nélküli időszak után (S2): ha a friss lista már látszott, egy csendes újratöltés hozza a közben
-  // (másik eszközön, Mama oldalán) történt változásokat – az élő szinkron új feliratkozása ezt nem pótolja.
-  // Sikertelen betöltésnél a lenti újrapróbálás intézi.
-  const wasOnline = useRef(online);
-  useEffect(() => {
-    const back = online && !wasOnline.current;
-    wasOnline.current = online;
-    if (back && live.current && !failed && !loadRunning.current) setReloadKey((k) => k + 1);
-  }, [online, failed]);
-
-  // sikertelen betöltés után: ha visszajön a net, azonnal, egyébként félpercenként újrapróbálja
-  useEffect(() => {
-    if (!failed) return;
-    // a még futó (lassú) betöltést nem dobja el – nagyon lassú netnél különben sosem érne célba (kódaudit #26)
-    const retry = () => !loadRunning.current && setReloadKey((k) => k + 1);
-    const timer = setInterval(retry, RETRY_MS);
-    window.addEventListener('online', retry);
-    return () => {
-      clearInterval(timer);
-      window.removeEventListener('online', retry);
-    };
-  }, [failed, reloadKey]);
-
-  // a friss lista (és minden módosítása) helyben is: a következő indításkor ez látszik elsőként
-  // (1,5 mp csend után; a lap elrejtésekor / bezárásakor azonnal, ha van mentetlen változás)
-  const unsaved = useRef(null);
-  useEffect(() => {
-    if (!live.current) return;
-    const data = { titles, statuses, franchises, orders, notifications };
-    unsaved.current = data;
-    const timer = setTimeout(() => {
-      unsaved.current = null;
-      saveSnapshot(userId, data);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [userId, titles, statuses, franchises, orders, notifications]);
-  useEffect(() => {
-    const flush = () => {
-      if (document.visibilityState !== 'hidden' || !unsaved.current) return;
-      saveSnapshot(userId, unsaved.current);
-      unsaved.current = null;
-    };
-    document.addEventListener('visibilitychange', flush);
-    return () => document.removeEventListener('visibilitychange', flush);
-  }, [userId]);
-
-  // a kiválasztott típus (filmek / sorozatok) címei
-  const ofType = useMemo(
-    () => (type === 'all' ? titles : titles.filter((t) => t.media_type === type)),
-    [titles, type]
-  );
-  const franchiseChosen = franchise !== '' && franchise !== NO_FRANCHISE;
-  // a Mama-szűrő Sorozatok típusnál és franchise-ra szűrve nem látszik és nem szűr (terv-3 58 – Mama
-  // oldala úgyis csak a franchise nélküli filmeket kínálja); az értéke megmarad, visszaváltáskor visszajön
-  const mamaOff = type === 'tv' || franchiseChosen;
-  const mamaFilter = mamaOff ? '' : mama;
-
-  // csak azok a műfajok, amelyek ennél a típusnál ténylegesen előfordulnak
-  const genres = useMemo(
-    () =>
-      [...new Set(ofType.flatMap((t) => t.genres ?? []))].sort((a, b) =>
-        a.localeCompare(b, 'hu')
-      ),
-    [ofType]
-  );
-
-  // a szűrőben a listán ténylegesen használt franchise-ok – típustól függetlenül, mert a
-  // kiválasztásuk úgyis a filmeket és a sorozatokat is mutatja
-  // a szűrő lehetőségei: a listán használt franchise-ok – és a kiválasztott akkor is, ha az utolsó
-  // címe épp kikerült belőle (különben a szűrő „Összes”-t mutatna, miközben még rá szűr; a most
-  // szerkesztett sor a helyén marad, a szűrő kézzel váltható; kódaudit #18)
-  const usedFranchises = useMemo(() => {
-    const used = new Set(titles.map((t) => t.franchise_id));
-    return franchises.filter((f) => used.has(f.id) || String(f.id) === franchise);
-  }, [titles, franchises, franchise]);
-
-  // a franchise-szűrőben (terv-3 54, Norbi választása: „A”): franchise-onként hány listán lévő cím
-  // nincs még megnézve (az abbahagyott sem számít) – „Van még megnézendő” (N hátra) / „Mind megnézve”
-  const franchiseOptions = useMemo(() => {
-    const left = new Map();
-    for (const t of titles) {
-      if (!t.franchise_id) continue;
-      const open = t.status !== 'watched' && t.status !== DROPPED_STATUS;
-      left.set(t.franchise_id, (left.get(t.franchise_id) ?? 0) + (open ? 1 : 0));
-    }
-    const opts = usedFranchises.map((f) => {
-      const n = left.get(f.id) ?? 0;
-      return { value: String(f.id), label: f.name, logo: f.logo_path, group: n > 0 ? 'open' : 'done', badge: n > 0 ? `${n} hátra` : '✓ Mind megnézve' };
-    });
-    return [...opts.filter((o) => o.group === 'open'), ...opts.filter((o) => o.group === 'done')];
-  }, [titles, usedFranchises]);
+  const { view, changeView, gridRef } = useListView();
 
   const franchiseName = useMemo(
     () => new Map(franchises.map((f) => [f.id, f.name])),
     [franchises]
   );
 
-  const mamaUsed = useMemo(() => titles.some((t) => t.mama_status), [titles]);
-
-  // a telepített app ikonján (pl. a tálcán) is látszik az olvasatlan értesítések száma,
-  // ahol a böngésző tudja (Chrome / Edge) – ugyanannyi, amennyit a harang mutat (kódaudit #20)
+  // az app ikonján ugyanannyi olvasatlan, amennyit a harang mutat (kódaudit #20)
   const titleById = useMemo(() => new Map(titles.map((t) => [t.id, t])), [titles]);
   const unreadCount = shownNotifications(notifications, titleById, franchiseName).filter((n) => !n.read_at).length;
-  useEffect(() => {
-    try {
-      const badge = unreadCount ? navigator.setAppBadge?.(unreadCount) : navigator.clearAppBadge?.();
-      badge?.catch(() => {});
-    } catch {
-      // nincs ilyen lehetőség: semmi baj
-    }
-  }, [unreadCount]);
+  useAppBadge(unreadCount);
 
-  // a harang kinyitásakor a betöltött olvasatlanok olvasottak (az adatbázisban is – csak ezek, a
-  // közben keletkezett, még nem látott értesítés olvasatlan marad)
-  function readNotifications() {
-    const now = new Date().toISOString();
-    const ids = notifications.filter((n) => !n.read_at).map((n) => n.id);
-    for (const id of ids) readIds.current.add(id);
-    const read = new Set(ids);
-    setNotifications((ns) => ns.map((n) => (read.has(n.id) && !n.read_at ? { ...n, read_at: now } : n)));
-    markNotificationsRead(ids);
-  }
-
-  // törlés a harangból (egy vagy mind): azonnal eltűnik, az értesítősávban „Visszavonás”
-  async function removeNotifications(list) {
-    const ids = list.map((n) => n.id);
-    const putBack = () => {
-      for (const id of ids) dismissedIds.current.delete(id);
-      setNotifications((ns) =>
-        [...ns.filter((n) => !ids.includes(n.id)), ...list].sort(
-          (a, b) => b.created_at.localeCompare(a.created_at) || b.id - a.id
-        )
-      );
-    };
-    for (const id of ids) dismissedIds.current.add(id);
-    setNotifications((ns) => ns.filter((n) => !ids.includes(n.id)));
-    try {
-      await dismissNotifications(ids);
-    } catch (err) {
-      putBack();
-      toast({ text: err.message });
-      return;
-    }
-    toast({
-      kind: 'delete',
-      text: ids.length === 1 ? 'Értesítés törölve.' : `${ids.length} értesítés törölve.`,
-      action: {
-        label: 'Visszavonás',
-        onClick: async () => {
-          try {
-            await restoreNotifications(ids);
-            putBack();
-          } catch (err) {
-            toast({ text: err.message });
-          }
-        },
-      },
-    });
-  }
-
-  // visszaállítás (Mentések) után: a lista, a franchise-ok és az értesítések újra az adatbázisból
-  async function reloadAfterRestore() {
-    const [titlesRes, franchisesRes] = await Promise.all([
-      loadTitles(),
-      supabase.from('franchises').select('id, name, logo_path, tmdb_collection_ids, collections_checked_at'),
-    ]);
-    const error = titlesRes.error || franchisesRes.error;
-    if (error) {
-      reportError(error);
-      throw new Error('A visszaállítás sikerült, de a lista nem töltődött be. Frissítsd az oldalt.');
-    }
-    setTitles(titlesRes.data);
-    setFranchises(franchisesRes.data.sort(byName));
-    loadOrders()
-      .then(setOrders)
-      .catch((err) => console.warn(err.message));
-    loadHidden().catch((err) => console.warn(err.message));
-    // a visszaállítás előtt olvasottnak jelölt / törölt értesítések már nem érvényesek: a
-    // visszaállított állapot számít, egy késő lekérdezés se rejtse el őket (kódaudit #50)
-    readIds.current.clear();
-    dismissedIds.current.clear();
-    loadNotifications()
-      .then(setNotifications)
-      .catch((err) => console.warn(err.message));
-  }
+  const f = useListFilters({ titles, statuses, franchises, orders, franchiseName });
+  const { visible, ofType, filterKey, searching } = f;
 
   // a keresőben ezek alapján látszik, mi van már a listán
   const existingKeys = useMemo(() => new Set(titles.map(titleKey)), [titles]);
 
-  // keresés a címben, az eredeti címben és a franchise nevében; több szónál mindegyiknek szerepelnie kell.
-  // Ha egy szóra a teljes listán sincs pontos találat, egy betűnyi elírást elnéz (words: a javított szavak)
-  const typedWords = useMemo(() => fold(query).split(/\s+/).filter(Boolean), [query]);
-  const searching = typedWords.length > 0;
-  const searchIdx = useMemo(() => searchIndex(titles, franchiseName), [titles, franchiseName]);
-  const { words, corrected } = useMemo(() => resolveWords(typedWords, searchIdx), [typedWords, searchIdx]);
-  // a címek, amelyek csak a franchise nevük miatt illenek a keresésre (a sorukon a franchise kiemelve)
-  const byFranchise = useMemo(() => {
-    if (!searching) return null;
-    const ids = new Set();
-    for (const t of titles) if (matchTitle(words, searchIdx.get(t.id))?.byFranchise) ids.add(t.id);
-    return ids;
-  }, [searching, titles, words, searchIdx]);
-  const highlight = useMemo(() => ({ words: searching ? words : [], byFranchise }), [searching, words, byFranchise]);
+  useMissingLogos(!loading && !readOnly, titles, franchises, data.setFranchises);
 
-  // minden szűrő az állapot és a letöltve kivételével
-  const baseFiltered = useMemo(
-    () =>
-      ofType.filter(
-        (t) =>
-          (!genre || (t.genres ?? []).includes(genre)) &&
-          (!mamaFilter || t.mama_status === mamaFilter) &&
-          (!franchise ||
-            (franchise === NO_FRANCHISE
-              ? t.franchise_id == null
-              : String(t.franchise_id) === franchise)) &&
-          (!searching || matchTitle(words, searchIdx.get(t.id)))
-      ),
-    [ofType, genre, mamaFilter, franchise, searching, words, searchIdx]
-  );
-
-  // minden szűrő az állapot kivételével – ebből jönnek az állapotgombok darabszámai
-  const beforeStatus = useMemo(
-    () => baseFiltered.filter((t) => downloaded === 'all' || t.is_downloaded === (downloaded === 'yes')),
-    [baseFiltered, downloaded]
-  );
-
-  // nézési sorrend: csak ha a kiválasztott franchise-nak van saját sorrendje
-  const orderFranchises = useMemo(() => franchisesWithOrder(titles, orders), [titles, orders]);
-  const orderAvailable = franchiseChosen && orderFranchises.has(Number(franchise));
-  const activeSort =
-    franchiseChosen && orderSort ? (orderAvailable ? WATCH_ORDER.code : FRANCHISE_SORT) : sort;
-  const orderList = useMemo(
-    () => (activeSort === WATCH_ORDER.code ? orderedItems(Number(franchise), titles, orders).items : null),
-    [activeSort, franchise, titles, orders]
-  );
-  // a sorrend tételei a szűrőkkel (a letöltve tételenként: évadnál az évadé)
-  const itemsBeforeStatus = useMemo(() => {
-    if (!orderList) return null;
-    const ok = new Set(baseFiltered.map((t) => t.id));
-    return orderList.filter(
-      (i) => ok.has(i.title.id) && (downloaded === 'all' || i.downloaded === (downloaded === 'yes'))
-    );
-  }, [orderList, baseFiltered, downloaded]);
-
-  // a Filmek nézetben nincs „Abbahagyva” (csak sorozatnál fordul elő) és „Folyamatban” (Norbi kérése,
-  // 2026-10-18) gomb – MOVIE_HIDDEN_STATUSES
-  const shownStatuses = useMemo(
-    () => (type === 'movie' ? statuses.filter((s) => !MOVIE_HIDDEN_STATUSES.has(s.code)) : statuses),
-    [statuses, type]
-  );
-
-  const countByStatus = useMemo(() => {
-    const counts = {};
-    for (const t of itemsBeforeStatus ?? beforeStatus) counts[t.status] = (counts[t.status] ?? 0) + 1;
-    return counts;
-  }, [itemsBeforeStatus, beforeStatus]);
-
-  // a műfaj- és a Mama-lenyíló darabszámai (M3): címenként, a többi szűrővel (az adott szűrő nélkül)
-  const facetCounts = useMemo(() => {
-    const genre_ = { all: 0 };
-    const mama_ = { all: 0 };
-    for (const t of ofType) {
-      if (
-        (franchise && (franchise === NO_FRANCHISE ? t.franchise_id != null : String(t.franchise_id) !== franchise)) ||
-        (searching && !matchTitle(words, searchIdx.get(t.id))) ||
-        (status !== 'all' && t.status !== status) ||
-        (downloaded !== 'all' && t.is_downloaded !== (downloaded === 'yes'))
-      )
-        continue;
-      const gs = t.genres ?? [];
-      if (!mamaFilter || t.mama_status === mamaFilter) {
-        genre_.all++;
-        for (const g of gs) genre_[g] = (genre_[g] ?? 0) + 1;
-      }
-      if (!genre || gs.includes(genre)) {
-        mama_.all++;
-        if (t.mama_status) mama_[t.mama_status] = (mama_[t.mama_status] ?? 0) + 1;
-      }
-    }
-    return { genre: genre_, mama: mama_ };
-  }, [ofType, franchise, searching, words, searchIdx, status, downloaded, mamaFilter, genre]);
-
-  const typeOptions = franchiseChosen || searching ? [BOTH_TYPES, ...TYPES] : TYPES;
-  const sortOptions = orderAvailable ? [WATCH_ORDER, ...SORTS] : SORTS;
-  function changeSort(code) {
-    if (code === WATCH_ORDER.code) {
-      setOrderSort(true);
-    } else {
-      setSort(code);
-      setOrderSort(false);
-    }
-  }
-
-  // ha a szűrés vagy a rendezés változik (más kulcs): 1. oldal, és a megtartott sorok elengedve
-  const filterKey = [type, status, genre, mamaFilter, franchise, downloaded, activeSort, words.join(' ')].join('|');
-
-  // a most szerkesztett címek a helyükön maradnak, amíg a szűrés nem változik: pl. a "Nem
-  // letöltött" nézetben letöltöttnek jelölt film nem tűnik el azonnal (a pipa visszavehető)
-  // (nézési sorrendben a tételek: items – a tételkulcsok)
-  const [kept, setKept] = useState({ key: filterKey, ids: [], items: [] });
-  // szűrésváltáskor elengedjük őket (akkor is, ha később ugyanez a szűrés jön vissza)
-  if (kept.key !== filterKey) setKept({ key: filterKey, ids: [], items: [] });
-  const keptIds = useMemo(() => new Set(kept.ids), [kept]);
-  const keptItems = useMemo(() => new Set(kept.items), [kept]);
-
-  const statusNames = useMemo(() => new Map(statuses.map((s) => [s.code, s.name])), [statuses]);
-
-  // a lista bejegyzései: { key, title, item } – az item csak nézési sorrendben (a tétel: film,
-  // évad nélküli sorozat vagy egy évad), egyébként null
-  const visible = useMemo(() => {
-    if (itemsBeforeStatus) {
-      const keys = new Set(itemsBeforeStatus.filter((i) => status === 'all' || i.status === status).map((i) => i.key));
-      return orderList
-        .filter((i) => keys.has(i.key) || keptItems.has(i.key))
-        .map((i) => ({ key: i.key, title: i.title, item: { ...i, statusName: statusNames.get(i.status) } }));
-    }
-    const { compare } = SORTS.find((s) => s.code === activeSort);
-    const matching = beforeStatus.filter((t) => status === 'all' || t.status === status);
-    const ids = new Set(matching.map((t) => t.id));
-    const stayed = ofType.filter((t) => keptIds.has(t.id) && !ids.has(t.id));
-    return [...matching, ...stayed].sort(compare).map((t) => ({ key: t.id, title: t, item: null }));
-  }, [itemsBeforeStatus, orderList, keptItems, statusNames, beforeStatus, ofType, keptIds, status, activeSort]);
-
-  // hiányzó franchise-logók (a franchise első filmjének címlogója) a háttérben: betöltéskor, és
-  // rögtön, amikor egy logó nélküli franchise-hoz az első cím bekerül (gyűjtemény, adatlap, sor,
-  // tömeges import) – nem csak a következő betöltéskor. Kis várakozással, hogy az egymás után
-  // felvett címek egy kérésbe essenek; franchise-onként munkamenetenként egyszer (ha a TMDB-n nincs
-  // logó, a szerver 7 napig nem próbálja újra).
-  const logoDue = loading || readOnly
-    ? ''
-    : (() => {
-        const used = new Set(titles.map((t) => t.franchise_id).filter(Boolean));
-        return franchises
-          // '' – kézzel „Csak a név” (átnézés J8): nem keresünk hozzá logót
-          .filter((f) => f.logo_path == null && used.has(f.id) && !logoTried.current.has(f.id))
-          .map((f) => f.id)
-          .join(',');
-      })();
-  useEffect(() => {
-    if (!logoDue) return;
-    const timer = setTimeout(() => {
-      for (const id of logoDue.split(',')) logoTried.current.add(Number(id));
-      refreshFranchiseLogos()
-        .then((rows) => {
-          if (rows.length === 0) return;
-          const byId = new Map(rows.map((r) => [r.id, r.logo_path]));
-          setFranchises((fs) => fs.map((f) => (byId.has(f.id) ? { ...f, logo_path: byId.get(f.id) } : f)));
-        })
-        .catch((err) => console.warn('Franchise-logók lekérése sikertelen:', err.message));
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [logoDue]);
-
-  // lapozás: az oldal első címének helyét jegyezzük meg (first), így nézetváltáskor (más
-  // oldalméret) az az oldal jön, amelyiken az addig látott első cím van
-  const pageSize = !isDesktop ? PAGE_SIZE : view === 'grid' ? GRID_PAGE_SIZE : TABLE_PAGE_SIZE;
-  const [pageState, setPageState] = useState({ key: filterKey, first: 0 });
-  // szűrés- / rendezésváltáskor 1. oldal (akkor is, ha később ugyanez a szűrés jön vissza)
-  if (pageState.key !== filterKey) setPageState({ key: filterKey, first: 0 });
-  const pageCount = Math.max(1, Math.ceil(visible.length / pageSize));
-  const first = pageState.key === filterKey ? pageState.first : 0;
-  const page = Math.min(Math.floor(first / pageSize) + 1, pageCount);
-  const paged = visible.slice((page - 1) * pageSize, page * pageSize);
-
-  // keresésnél a lista fölötti mondat: elírás (a javított szavak) vagy a franchise neve szerinti találatok
-  const frMatches = useMemo(() => {
-    if (!byFranchise || corrected.length) return null;
-    const hits = visible.filter((e) => byFranchise.has(e.title.id));
-    if (!hits.length) return null;
-    const ids = new Set(hits.map((e) => e.title.id));
-    return { count: ids.size, names: [...new Set(hits.map((e) => franchiseName.get(e.title.franchise_id)))].filter(Boolean) };
-  }, [byFranchise, corrected, visible, franchiseName]);
-  const filtersRef = useRef(null);
-  // csúszó kijelölő az állapotgombokon és a lista / rács váltón (terv-3 100)
-  const statusThumb = useSlidingThumb();
-  const viewThumb = useSlidingThumb();
-  const downloadThumb = useSlidingThumb(); // asztalon a Letöltés is gombcsoport (M3)
-  const chipsFade = useScrollFade(); // telefonon a szűrőcímkék sorának halványuló széle (átnézés J14)
-  const gridRef = useRef(null); // a borítófal (animált átrendeződés, terv-3 49.3)
-  // nézetváltás után (csak akkor – a többi függőség szándékosan nincs benne): a borítók a régi helyükről
-  // az újra siklanak (terv-3 73)
-  useLayoutEffect(() => {
-    const before = viewSwitch.current;
-    viewSwitch.current = null;
-    if (!before?.size) return;
-    const root = listRoot(view);
-    playViewSwitch(before, root, view === 'grid' ? root : root?.closest('.table-wrap'));
-  }, [view]);
   // a szűrősor eredeti helye: lapozáskor ide görget (a letapadt szűrősorhoz nem lehetne)
   const filtersAnchorRef = useRef(null);
-  const headRef = useRef(null); // a fejléc (terv-3 99: görgetéskor összecsukódik)
-  const [filtersStuck, setFiltersStuck] = useState(false);
-  // telefonon a lebegő "+" gomb lefelé görgetéskor elhúzódik, felfelé visszajön
-  const [fabHidden, setFabHidden] = useState(false);
-  const lastScrollY = useRef(0);
+  const pageSize = !isDesktop ? PAGE_SIZE : view === 'grid' ? GRID_PAGE_SIZE : TABLE_PAGE_SIZE;
+  const { page, pageCount, paged, changePage, paging } = usePaging(visible, filterKey, pageSize, filtersAnchorRef);
 
-  // a szűrősor görgetéskor a lap tetejére tapad: letapadva üveghatású ([data-stuck]); a
-  // magasságát (--filters-h) a táblázat ragadós fejléce kapja, hogy alatta tapadjon.
-  // Összecsukódó főcím (terv-3 99): a fejléc is ragad, negatív helyzettel (--head-h: a mért magassága) – görgetéskor
-  // csak az alsó, --head-c magas sávja marad fent (asztalon – „A – Egy sáv”, 2026-10-16 – nyitott „Cím hozzáadása” panel
-  // nélkül 0: a fejléc egészen felgördül), a szűrősor alatta tapad. A fejléc magassága nem változik
-  // (a lista nem ugrál): a --head-p (0–1, az összecsukódás útjának aránya) szerint a nagy cím összemegy és
-  // elhalványul, a gombsor a sáv jobb szélére csúszik (--acc-shift; ha a cím alá tört), a kis cím előtűnik.
-  // „Kevesebb mozgás” módban nincs közbülső állapot: csak összecsukott / nyitott.
   const listShown = !loading && !loadError;
-  useEffect(() => {
-    const el = filtersRef.current;
-    const head = headRef.current;
-    if (!el || !head) return;
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let frame = 0;
-    let stickTop = 0; // a szűrősor ragadási helye (px): a fejléc sávja alatt
-    let collapse = 1; // ennyi görgetés alatt csukódik össze a fejléc
-    const measure = () => {
-      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-      // a sáv magassága a CSS-ből (--head-c, rem-ben; a main adja – data-head-away)
-      const compact = (parseFloat(getComputedStyle(head).getPropertyValue('--head-c')) || 0) * rem;
-      const h = head.offsetHeight;
-      collapse = Math.max(1, h - compact);
-      stickTop = parseFloat(getComputedStyle(el).top) || 0;
-      document.documentElement.style.setProperty('--head-h', `${h}px`);
-      const acc = head.querySelector('.account');
-      if (acc) {
-        const right = head.clientWidth - parseFloat(getComputedStyle(head).paddingRight);
-        head.style.setProperty('--acc-shift', `${Math.max(0, right - acc.offsetLeft - acc.offsetWidth)}px`);
-        head.style.setProperty('--acc-w', `${acc.offsetWidth}px`);
-      }
-    };
-    const check = () => {
-      frame = 0;
-      const y = window.scrollY;
-      let p = Math.min(1, Math.max(0, y / collapse));
-      if (reduce.matches) p = p >= 1 ? 1 : 0;
-      head.style.setProperty('--head-p', p.toFixed(3));
-      head.toggleAttribute('data-compact', p >= 1);
-      setFiltersStuck(y > 0 && el.getBoundingClientRect().top <= stickTop + 0.5);
-      if (y <= 240 || y < lastScrollY.current - 6) setFabHidden(false);
-      else if (y > lastScrollY.current + 6) setFabHidden(true);
-      lastScrollY.current = y;
-    };
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(check);
-    };
-    const resize = new ResizeObserver(() => {
-      document.documentElement.style.setProperty('--filters-h', `${el.offsetHeight}px`);
-      measure();
-      onScroll();
-    });
-    resize.observe(el);
-    resize.observe(head);
-    measure();
-    check();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      resize.disconnect();
-      cancelAnimationFrame(frame);
-    };
-  }, [listShown, adding]); // a „Cím hozzáadása” panel a sáv magasságát is váltja (data-head-away)
+  const { headRef, filtersRef, filtersStuck, fabHidden } = useCollapsingHeader(listShown, adding);
 
-  function changePage(p) {
-    setPageState({ key: filterKey, first: (p - 1) * pageSize });
-    filtersAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setPageAnim((n) => n + 1);
-  }
+  const changes = useListChanges({
+    data,
+    keepShown: f.keepShown,
+    releaseFranchise: f.releaseFranchise,
+    openFranchises: () => openDialog('franchises'),
+  });
+  const { handleAdded, handleRowUpdated, requestDelete } = changes;
+  const onUpdatedQuiet = (row) => handleRowUpdated(row, false); // a gyűjtemény-ablakokból: nem kérdez értékelést
 
-  // lapozáskor (terv-3 49.8) a kártyák / sorok egymás után úsznak be: a rács / táblázat egy ideig
-  // data-paging jelzőt kap (a CSS erre indítja, a borítófal görgetéses beúszása addig áll)
-  const [pageAnim, setPageAnim] = useState(0);
-  useEffect(() => {
-    if (!pageAnim) return;
-    const timer = setTimeout(() => setPageAnim(0), 1200);
-    return () => clearTimeout(timer);
-  }, [pageAnim]);
-
-  function changeType(code) {
-    setType(code);
-    setGenre(''); // a filmek és sorozatok műfajai eltérnek
-    if (code === 'movie' && MOVIE_HIDDEN_STATUSES.has(status)) setStatus('all');
-    // a franchise-szűrő marad, ha az új típusnál is van ilyen cím (pl. Star Wars film és sorozat)
-    if (
-      franchiseChosen &&
-      !titles.some(
-        (t) => (code === 'all' || t.media_type === code) && String(t.franchise_id) === franchise
-      )
-    ) {
-      setFranchise('');
-    }
-  }
-
-  // "Filmek és sorozatok" helyett újra Filmek; a műfaj marad, ha a filmek között is van ilyen
-  function backToMovies() {
-    setType('movie');
-    if (genre && !titles.some((t) => t.media_type === 'movie' && t.genres?.includes(genre))) {
-      setGenre('');
-    }
-    if (MOVIE_HIDDEN_STATUSES.has(status)) setStatus('all');
-  }
-
-  // franchise kiválasztásakor alapból a filmek és a sorozatok is látszanak;
-  // ha a franchise-szűrő megszűnik (és nincs keresés), újra Filmek
-  function changeFranchise(value) {
-    setFranchise(value);
-    setOrderSort(true);
-    if (value !== '' && value !== NO_FRANCHISE) {
-      setType('all');
-      setGenre('');
-      if (statusBeforeFranchise.current === null) statusBeforeFranchise.current = status;
-      setStatus('all');
-      return;
-    }
-    const restore = statusBeforeFranchise.current;
-    statusBeforeFranchise.current = null;
-    const toMovies = type === 'all' && !searching;
-    if (restore !== null) setStatus(toMovies && MOVIE_HIDDEN_STATUSES.has(restore) ? 'all' : restore);
-    if (toMovies) backToMovies();
-  }
-
-  // kézi állapotválasztás: a franchise-szűrő megszűnésekor ez marad
-  function pickStatus(value) {
-    statusBeforeFranchise.current = null;
-    setStatus(value);
-  }
-
-  // gépeléskor az egész listán keres (a szűrők félreállnak, keresés közben szűkíthető); a
-  // keresés törlésekor visszaállnak a keresés előtti szűrők
-  function changeQuery(value) {
-    const nowSearching = fold(value).trim() !== '';
-    setQuery(value);
-    if (nowSearching && !searching) {
-      setBeforeSearch(filters);
-      applyFilters(SEARCH_FILTERS);
-    } else if (!nowSearching && searching) {
-      applyFilters(beforeSearch ?? DEFAULT_FILTERS);
-      setBeforeSearch(null);
-    }
-  }
-
-  // a Franchise-ok ablakból („Szűrés erre”): a lista ennek a franchise-nak minden címét mutatja
-  // (a többi szűrő elenged, a keresés törlődik), a lista elejére görget
-  function showFranchise(id) {
-    setQuery('');
-    setBeforeSearch(null);
-    applyFilters({ ...SEARCH_FILTERS, franchise: String(id) });
-    setOrderSort(true);
-    setShowFranchises(false);
-    filtersAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
-  async function handleCreateFranchise(name) {
-    const created = await createFranchise(name);
-    setFranchises((fs) => [...fs, created].sort(byName));
-    return created;
-  }
-
-  async function handleRenameFranchise(id, name) {
-    const renamed = await renameFranchise(id, name);
-    setFranchises((fs) => fs.map((f) => (f.id === id ? { ...f, name: renamed.name } : f)).sort(byName));
-  }
-
-  async function handleDeleteFranchise(id) {
-    await deleteFranchise(id);
-    setFranchises((fs) => fs.filter((f) => f.id !== id));
-    setOrders((os) => os.filter((o) => o.franchise_id !== id));
-    // az adatbázis már üresre állította a címeknél, itt csak helyben követjük
-    setTitles((ts) => ts.map((t) => (t.franchise_id === id ? { ...t, franchise_id: null } : t)));
-    if (franchise === String(id)) changeFranchise('');
-    setBeforeSearch((b) => (b?.franchise === String(id) ? { ...b, franchise: '' } : b));
-  }
-
-  // a legutóbbi renderelés szűrése és bejegyzései: a mentés (await) után hívott replaceTitle ne a
-  // kattintáskori – azóta talán megváltozott – szűrést lássa (kódaudit #50)
-  const listRef = useRef({ filterKey, visible });
-  useEffect(() => {
-    listRef.current = { filterKey, visible };
-  }, [filterKey, visible]);
-
-  // a nyitott szerkesztő ablak is a friss sort kapja (pl. évadok változása után); a sor a
-  // szűrés változásáig a helyén marad – de csak ha eddig is látszott: a szűrőbe nem illő, épp
-  // felvett cím (pl. franchise-ra szűrve, az adatlapján mentve) ne kerüljön a listába
-  function replaceTitle(row) {
-    const { filterKey, visible } = listRef.current;
-    setTitles((ts) => ts.map((x) => (x.id === row.id ? row : x)));
-    const shown = visible.filter((e) => e.title.id === row.id);
-    // nézési sorrendben a cím most látható tételei maradnak a helyükön
-    const items = shown.filter((e) => e.item).map((e) => e.key);
-    const ids = shown.length > 0 ? [row.id] : [];
-    setKept((k) => ({
-      key: filterKey,
-      ids: k.key === filterKey ? [...new Set([...k.ids, ...ids])] : ids,
-      items: k.key === filterKey ? [...new Set([...k.items, ...items])] : items,
-    }));
-    // más franchise-ba került: a régi sorrendből kikerült (az adatbázis-trigger is ezt teszi) – csak a
-    // mentett váltásnál; az optimistánál nem, mert ha a mentés elbukik, a hely elveszne (kódaudit #21)
-    if (isOptimistic(row)) return;
-    setOrders((os) =>
-      os.some((o) => o.title_id === row.id && o.franchise_id !== row.franchise_id)
-        ? os.filter((o) => o.title_id !== row.id || o.franchise_id === row.franchise_id)
-        : os
-    );
-  }
-
-  // a franchise nézési sorrendje mentve (rows: az új sorok; üres: megjelenés szerint)
-  function handleOrderChanged(franchiseId, rows) {
-    setOrders((os) => [...os.filter((o) => o.franchise_id !== franchiseId), ...rows]);
-  }
-
-  // az IMDb-importból beírt csillagok helyben is
-  function applyRatingsLocally(changes) {
-    const byId = new Map(changes.map((c) => [c.id, c.to]));
-    setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, my_rating: byId.get(t.id) } : t)));
-  }
-
-  // törlés visszavonással: a cím azonnal lekerül, az adatbázisból csak a sáv lejártakor (8 mp)
-  // vagy a × gombra törlődik; „Visszavonás”: vissza a listára. Ha a lapot közben bezárják, a cím
-  // megmarad (biztonságos hiba).
-  function requestDelete(t) {
-    setTitles((ts) => ts.filter((x) => x.id !== t.id));
-    const restore = () => setTitles((ts) => (ts.some((x) => x.id === t.id) ? ts : [t, ...ts]));
-    const toastId = toast({
-      kind: 'delete',
-      text: (
-        <>
-          „<b>{t.title}</b>” lekerült a listáról
-        </>
-      ),
-      action: {
-        label: 'Visszavonás',
-        onClick: () => {
-          unregisterPendingDelete(t);
-          restore();
-        },
-      },
-      onExpire: () => {
-        unregisterPendingDelete(t);
-        deleteTitle(t.id).catch((err) => {
-          restore();
-          toast({ text: `Nem sikerült törölni: „${t.title}”. ${err.message}` });
-        });
-      },
-    });
-    // ha közben újra felveszed (kereső, Felfedezés…): a törlés elmarad, a sávot eltüntetjük, a
-    // sort a felvétel (handleAdded) teszi vissza (kódaudit #22)
-    registerPendingDelete(t, () => {
-      unregisterPendingDelete(t);
-      dismissToast(toastId);
-    });
-  }
-
-  // a táblázatban (sor vagy évadok) Megnézve-re váltott, még értékelés nélküli címnél
-  // megkérdezzük, hogy tetszett (a szerkesztő ablakban nem: ott a csillagsor kéznél van).
-  // A sor kétszer jön (azonnal, majd a mentett): a ref már az elsőt látja, így csak egyszer kérdez.
-  const titlesRef = useRef(titles);
-  useEffect(() => {
-    titlesRef.current = titles;
-  }, [titles]);
-
-  // élő szinkron a gépek között (terv-3 86, lib/liveSync.js): a másik eszközön (vagy Mama oldalán) változott
-  // címek sorát a nézetből újratölti; a saját mentés visszhangja (ugyanaz a sor) nem változtat semmit, a még
-  // függő mentésű (lib/rowSaves.js – a válasza úgyis a friss sort hozza) és a visszavonható törlésű cím kimarad
-  // S8: címenként a legutóbbi újratöltés kérésének sorszáma – egy később induló, de előbb visszaérő kérés
-  // friss sorát a korábbi (régebbi) válasz nem írhatja felül
-  const syncAsked = useRef(new Map());
-  const syncSeq = useRef(0);
-  useLiveSync(!loading && !readOnly && !failed, userId, {
-    async onTitles(ids, deletedIds) {
-      const seq = ++syncSeq.current;
-      const known = (id) => titlesRef.current.some((t) => t.id === id);
-      const gone = new Set(deletedIds.filter(known));
-      let rows = [];
-      const wanted = ids.filter((id) => !gone.has(id));
-      for (const id of [...wanted, ...gone]) syncAsked.current.set(id, seq);
-      // 500-asával (S8): a PostgREST kérésenként legfeljebb 1000 sort ad, és a hosszú azonosítólista az URL-t is
-      // túlnövelné (pl. mentés visszaállításakor a másik gépen)
-      for (let i = 0; i < wanted.length; i += SYNC_CHUNK) {
-        const part = wanted.slice(i, i + SYNC_CHUNK);
-        const { data, error } = await supabase.from('titles_with_genres').select('*').in('id', part);
-        if (error) {
-          console.warn('Élő szinkron: a címek újratöltése sikertelen:', error.message);
-          return;
-        }
-        rows.push(...data);
-        // a nálunk lévő, de a nézetből már nem jövő cím közben lekerült (a törlés jelzése elveszhetett)
-        const back = new Set(data.map((r) => r.id));
-        for (const id of part) if (!back.has(id) && known(id) && !hasPendingSave(id)) gone.add(id);
-      }
-      // amit azóta egy újabb jelzés újra kért, azt az újabb válasz intézi
-      const latest = (id) => syncAsked.current.get(id) === seq;
-      rows = rows.filter((r) => latest(r.id));
-      for (const id of gone) if (!latest(id)) gone.delete(id);
-      for (const id of [...wanted, ...deletedIds]) if (latest(id)) syncAsked.current.delete(id);
-      for (const row of rows) {
-        if (hasPendingSave(row.id) || isPendingDelete(row.id)) continue;
-        const old = titlesRef.current.find((t) => t.id === row.id);
-        if (old && JSON.stringify(old) === JSON.stringify(row)) continue;
-        if (old) {
-          titlesRef.current = titlesRef.current.map((t) => (t.id === row.id ? row : t));
-          replaceTitle(row);
-        } else {
-          titlesRef.current = [row, ...titlesRef.current];
-          setTitles((ts) => (ts.some((t) => t.id === row.id) ? ts.map((t) => (t.id === row.id ? row : t)) : [row, ...ts]));
-        }
-      }
-      if (gone.size) {
-        titlesRef.current = titlesRef.current.filter((t) => !gone.has(t.id));
-        setTitles((ts) => ts.filter((t) => !gone.has(t.id)));
-      }
-    },
-    onNotifications() {
-      loadNotifications({ collect: false })
-        .then((ns) =>
-          setNotifications(
-            ns
-              .filter((n) => !dismissedIds.current.has(n.id))
-              .map((n) => (!n.read_at && readIds.current.has(n.id) ? { ...n, read_at: new Date().toISOString() } : n))
-          )
-        )
-        .catch((err) => console.warn('Élő szinkron:', err.message));
-    },
-    async onFranchises() {
-      const { data, error } = await supabase
-        .from('franchises')
-        .select('id, name, logo_path, tmdb_collection_ids, collections_checked_at');
-      if (error) {
-        console.warn('Élő szinkron: a franchise-ok újratöltése sikertelen:', error.message);
-        return;
-      }
-      setFranchises(data.sort(byName));
-      // másik gépen törölt franchise (S9): a rá szűrő lista ne ragadjon be – mint a helyi törlésnél
-      const exists = (value) => data.some((f) => String(f.id) === value);
-      const missing = (value) => value !== '' && value !== NO_FRANCHISE && !exists(value);
-      setOrders((os) => os.filter((o) => data.some((f) => f.id === o.franchise_id)));
-      if (missing(franchise)) changeFranchise('');
-      setBeforeSearch((b) => (b && missing(b.franchise) ? { ...b, franchise: '' } : b));
-    },
-    onResync: () => setReloadKey((k) => k + 1),
+  useLiveTitles(!loading && !readOnly && !failed, userId, {
+    data,
+    notes,
+    replaceTitle: changes.replaceTitle,
+    releaseFranchise: f.releaseFranchise,
   });
 
-  // ask: false – a gyűjtemény-ablak nézési sorrendjéből (az ablak alatt a sáv nem kattintható,
-  // ott a tétel alatt kérdez). A „Hogy tetszett?” csak a mentett sorra jön (S11): az optimistánál
-  // megjegyzi (askAfterSave), és ha a mentés elbukik, nem kérdez
-  const askAfterSave = useRef(new Set());
-  function handleRowUpdated(row, ask = true) {
-    const before = titlesRef.current.find((x) => x.id === row.id);
-    const turned = before && before.status !== 'watched' && row.status === 'watched' && !row.my_rating;
-    if (ask && isOptimistic(row)) {
-      if (turned) askAfterSave.current.add(row.id);
-    } else if (ask && (turned || askAfterSave.current.has(row.id))) {
-      askAfterSave.current.delete(row.id);
-      if (row.status === 'watched' && !row.my_rating) askRating(row);
-    }
-    titlesRef.current = titlesRef.current.map((x) => (x.id === row.id ? row : x));
-    replaceTitle(row);
-  }
-
-  // új cím a listán (kereső, Felfedezés, adatlap, Hasonló címek, gyűjtemény, importok). Ha franchise
-  // nélküli film, és a TMDB-gyűjteménye egy franchise-odé, az app felajánlja (terv-3 35, Norbi
-  // döntése: magától nem rendeli hozzá): a felvételek kis szünete után egy sáv – egy filmnél
-  // „Hozzárendelés”, többnél (pl. tömeges import) „Megnézés” → a Franchise-ok ablak javaslatai.
-  // Nyitott ablak (adatlap, import) fölött a sáv nem kattintható: a bezárásáig vár.
-  const franchisesRef = useRef(franchises);
-  useEffect(() => {
-    franchisesRef.current = franchises;
-  }, [franchises]);
-  const pendingSuggest = useRef([]); // a felajánlásra váró címek azonosítói
-  const suggestTimer = useRef(0);
-  const flushSuggestRef = useRef(null);
-  flushSuggestRef.current = flushSuggestions;
-
-  function handleAdded(row) {
-    // (a visszavont törlésnél a sor esetleg már a listán van – nem kerül fel kétszer)
-    titlesRef.current = [row, ...titlesRef.current.filter((x) => x.id !== row.id)];
-    setTitles((ts) => [row, ...ts.filter((x) => x.id !== row.id)]);
-    // „Már láttam” (terv-3 80): megnézettként felvett, értékelés nélküli cím – rögtön kérdezünk (nyitott ablak
-    // fölött a sáv nem kattintható: ott az adatlap / a színész lapja jelzi)
-    if (row.status === 'watched' && !row.my_rating && !document.querySelector('dialog[open]')) askRating(row);
-    if (row.media_type !== 'movie' || row.franchise_id != null || row.tmdb_collection_id == null) return;
-    pendingSuggest.current.push(row.id);
-    clearTimeout(suggestTimer.current);
-    suggestTimer.current = setTimeout(() => flushSuggestRef.current(), 1200);
-  }
-
-  useEffect(() => {
-    // egy ablak bezárult: ha vár felajánlás, most jöhet (a 'close' nem buborékol, ezért elkapva)
-    const onClose = () => {
-      if (pendingSuggest.current.length === 0) return;
-      clearTimeout(suggestTimer.current);
-      suggestTimer.current = setTimeout(() => flushSuggestRef.current(), 300);
-    };
-    document.addEventListener('close', onClose, true);
-    return () => {
-      document.removeEventListener('close', onClose, true);
-      clearTimeout(suggestTimer.current);
-    };
-  }, []);
-
-  function flushSuggestions() {
-    if (document.querySelector('dialog[open]')) return; // a bezáráskor újra
-    const ids = pendingSuggest.current;
-    pendingSuggest.current = [];
-    const map = collectionFranchiseMap(titlesRef.current, franchisesRef.current);
-    // a friss sorokból: közben kézzel beállított franchise-nál már nem kérdez
-    const items = ids
-      .map((id) => titlesRef.current.find((t) => t.id === id))
-      .filter(Boolean)
-      .map((t) => ({ t, f: franchisesRef.current.find((f) => f.id === suggestedFranchiseId(t, map)) }))
-      .filter((x) => x.f);
-    if (items.length > 1) {
-      toast({
-        text: `${items.length} új film egy franchise-odba tartozik`,
-        action: { label: 'Megnézés', onClick: () => setShowFranchises(true) },
-      });
-    } else if (items.length === 1) {
-      const { t, f } = items[0];
-      toast({
-        image: t.poster_path ? TOAST_THUMB + t.poster_path : null,
-        text: (
-          <>
-            „<b>{t.title}</b>” – {article(f.name)} <b>{f.name}</b> franchise-ba tartozik?
-          </>
-        ),
-        action: { label: 'Hozzárendelés', onClick: () => assignFranchise(t, f) },
-      });
-    }
-  }
-
-  async function assignFranchise(t, f) {
-    try {
-      handleRowUpdated(await updateTitle(t.id, { franchise_id: f.id }), false);
-      toast({
-        text: (
-          <>
-            „<b>{t.title}</b>” bekerült {article(f.name)} <b>{f.name}</b> franchise-ba
-          </>
-        ),
-      });
-    } catch (err) {
-      toast({ text: err.message });
-    }
-  }
-
-  function askRating(t) {
-    let id = 0;
-    const rate = async (n) => {
-      dismissToast(id);
-      try {
-        // optimista, a cím többi mentésével sorban (S11)
-        const current = titlesRef.current.find((x) => x.id === t.id) ?? t;
-        await saveRow(
-          current,
-          (r) => ({ ...r, my_rating: n }),
-          () => updateTitle(t.id, { my_rating: n }),
-          (r) => handleRowUpdated(r, false)
-        );
-      } catch (err) {
-        toast({ text: err.message });
-      }
-    };
-    id = toast({
-      kind: 'rating',
-      image: t.poster_path ? TOAST_THUMB + t.poster_path : null,
-      text: (
-        <>
-          Megnézted: <b>{t.title}</b>. Hogy tetszett?
-        </>
-      ),
-      content: <StarRating name={`ask-${t.id}`} label={`Értékelés – ${t.title}`} value={null} onChange={rate} />,
-      action: { label: 'Később', onClick: () => {} },
-      hideClose: true,
-    });
+  // a Franchise-ok ablakból („Szűrés erre”): a lista ennek a franchise-nak minden címét mutatja, a lista
+  // elejére görget
+  function showFranchise(id) {
+    f.showFranchise(id);
+    closeDialog();
+    filtersAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   // a „Cím hozzáadása” panel (opcionálisan kitöltött kereséssel), a lap tetején
@@ -1474,158 +195,33 @@ export default function Watchlist({ session }) {
     url.searchParams.delete('nyit');
     window.history.replaceState(null, '', url.pathname + url.search + url.hash);
     if (loadError) return;
-    SHORTCUTS[target]?.({ openAdd, setShowFranchises, setShowStats });
+    SHORTCUTS[target]?.({ openAdd, openDialog });
   }, [loading, loadError]);
 
-  // a telefonos "Szűrők" gomb rövid összegzése, pl. "Filmek · Megnézendő · Nem letöltött ·
-  // Franchise nélkül"
-  const filterSummary = [
-    (type === 'all' ? BOTH_TYPES : TYPES.find((t) => t.code === type))?.name,
-    status === 'all' ? 'Minden állapot' : statuses.find((s) => s.code === status)?.name,
-    downloaded !== 'all' && DOWNLOAD_FILTERS.find((d) => d.code === downloaded)?.name,
-    genre,
-    mamaFilter && `Mama: ${mamaLabel(mamaFilter)}`,
-    franchise === NO_FRANCHISE
-      ? usedFranchises.length > 0 && 'Franchise nélkül'
-      : franchise && franchiseName.get(Number(franchise)),
-  ]
-    .filter(Boolean)
-    .join(' · ');
-
-  // telefonon a beállított szűrők címkeként (terv-3 101): a × az adott szűrőt „Összes” / „Mind” értékre állítja
-  // (ugyanazokkal a függvényekkel, mint a lenyílók); a típus mindig be van állítva, azon nincs ×
-  const activeFilters = [
-    { key: 'type', label: (type === 'all' ? BOTH_TYPES : TYPES.find((t) => t.code === type))?.name },
-    status !== 'all' && { key: 'status', label: statuses.find((s) => s.code === status)?.name, clear: () => pickStatus('all') },
-    downloaded !== 'all' && {
-      key: 'downloaded',
-      label: DOWNLOAD_FILTERS.find((d) => d.code === downloaded)?.name,
-      clear: () => setDownloaded('all'),
-    },
-    genre && { key: 'genre', label: genre, clear: () => setGenre('') },
-    mamaFilter && { key: 'mama', label: `Mama: ${mamaLabel(mamaFilter)}`, clear: () => setMama('') },
-    franchise === NO_FRANCHISE
-      ? usedFranchises.length > 0 && { key: 'franchise', label: 'Franchise nélkül', clear: () => changeFranchise('') }
-      : franchise && { key: 'franchise', label: franchiseName.get(Number(franchise)), clear: () => changeFranchise('') },
-  ].filter((x) => x && x.label);
-
-  // ↺: a szűrők alapállapota, keresés nélkül
-  const atDefault = !searching && sameFilters(filters, DEFAULT_FILTERS);
-
-  function resetToDefault() {
-    setQuery('');
-    setBeforeSearch(null);
-    applyFilters(DEFAULT_FILTERS);
-  }
-
-  // "Szűrők törlése" üres találatnál: minden cím látszik. Keresés közben a keresés marad; anélkül
-  // a típus is (a "Filmek és sorozatok" csak franchise-szal választható, abból Filmek lesz).
-  function clearFilters() {
-    applyFilters(searching ? SEARCH_FILTERS : { ...SEARCH_FILTERS, type: type === 'all' ? 'movie' : type });
-  }
-
   // a ⋮ menü pontjai – a fejlécben és (asztalon, lejjebb görgetve) a letapadt szűrősorban is
-  const moreItems = [
-    {
-      id: 'stats',
-      label: 'Statisztika',
-      description: 'Havonta megnézett címek, műfajok, átlagos értékelés',
-      icon: 'chart',
-      onSelect: () => setShowStats(true),
-    },
-    {
-      id: 'franchises',
-      label: 'Franchise-ok',
-      description: 'Az összes franchise logóval, ábécérendben; gyűjtemény, szűrés, átnevezés',
-      icon: 'stack',
-      onSelect: () => setShowFranchises(true),
-    },
-    {
-      id: 'people',
-      label: 'Színészek és rendezők',
-      description: 'Akiket követsz: a filmjeik megjelenés szerint; szólok, ha újat jelentenek be',
-      icon: 'people',
-      onSelect: () => setShowPeople(true),
-    },
-    {
-      id: 'toplists',
-      label: 'Toplisták',
-      description: 'A legjobb filmek és sorozatok IMDb szerint – műfaj és évtized szerint is',
-      icon: 'trophy',
-      onSelect: () => setShowToplists(true),
-    },
-    // a CSV-fájl betöltése asztali / tableten végzett teendő: telefonon nincs (Norbi kérése)
-    ...(isPhone
-      ? []
-      : [
-          {
-            id: 'imdb',
-            label: 'IMDb import',
-            description: 'Az IMDb-értékeléseid vagy a figyelőlistád (Watchlist) CSV-exportjából: csillagok, új címek',
-            icon: 'star',
-            onSelect: () => imdbImportRef.current?.open(),
-          },
-        ]),
-    ...(isDesktop
-      ? [
-          {
-            id: 'bulk',
-            label: 'Tömeges import',
-            description: 'Sok cím felvétele egyszerre, soronként egy címmel',
-            icon: 'list',
-            onSelect: () => bulkImportRef.current?.open(),
-          },
-          {
-            id: 'export',
-            label: 'Mentés letöltése',
-            description: `A teljes lista (${titles.length} cím) CSV-fájlba – Excelben megnyitható`,
-            icon: 'download',
-            onSelect: () => downloadListCsv(titles, franchiseName),
-          },
-        ]
-      : []),
-    // videotéka-téma (D10): harmadik, választható téma – kikapcsolva a sötétre vált vissza
-    {
-      id: 'teka',
-      label: theme === 'teka' ? 'Videotéka-téma kikapcsolása' : 'Videotéka-téma',
-      description: theme === 'teka' ? 'Vissza a sötét témához' : 'A 90-es évek tékája: kazettatok, matricák, videomagnó-feliratok',
-      icon: 'tape',
-      onSelect: () => setTheme(theme === 'teka' ? 'dark' : 'teka'),
-    },
-    {
-      id: 'backups',
-      label: 'Mentések',
-      description: 'Heti automatikus mentés; mentés most, visszaállítás',
-      icon: 'history',
-      onSelect: () => setShowBackups(true),
-    },
-    {
-      id: 'password',
-      label: 'Jelszó módosítása',
-      description: 'Új jelszó a belépéshez (a jelenlegivel)',
-      icon: 'key',
-      onSelect: () => setShowPassword(true),
-    },
-    {
-      id: 'manual',
-      label: 'Felhasználói leírás',
-      description: 'Minden funkció, képekkel',
-      icon: 'book',
-      onSelect: () => setShowManual(true),
-    },
-    // hibanapló (terv-3 113): csak ha van mit mutatni
-    ...(errorInfo.total > 0
-      ? [
-          {
-            id: 'errors',
-            label: errorInfo.unseen > 0 ? `Hibák (${errorInfo.unseen})` : 'Hibák',
-            description: 'Ami a böngészőben elromlott (nálad vagy Mamánál) – másolható leírással',
-            icon: 'alert',
-            onSelect: () => setShowErrors(true),
-          },
-        ]
-      : []),
-  ].filter((item) => !readOnly || !ONLINE_ONLY.includes(item.id));
+  const moreItems = moreMenuItems({
+    theme,
+    isPhone,
+    isDesktop,
+    readOnly,
+    titles,
+    franchiseName,
+    errorInfo,
+    openDialog,
+    imdbImport: imdbImportRef,
+    bulkImport: bulkImportRef,
+  });
+
+  // a harang a fejlécben és a letapadt szűrősorban
+  const bellProps = {
+    notifications,
+    titles,
+    franchiseName,
+    onOpenTitle: (t) => openEditor(t),
+    onRead: notes.readNotifications,
+    onRemove: notes.removeNotifications,
+    readOnly,
+  };
 
   return (
     // data-list: honnan jön a lista (a teszt ezen várja meg a friss adatot); data-docked: asztalon a lábléc (és a
@@ -1666,17 +262,7 @@ export default function Watchlist({ session }) {
               Cím hozzáadása
             </button>
           )}
-          {!loading && !loadError && (
-            <NotificationBell
-              notifications={notifications}
-              titles={titles}
-              franchiseName={franchiseName}
-              onOpenTitle={(t) => openEditor(t)}
-              onRead={readNotifications}
-              onRemove={removeNotifications}
-              readOnly={readOnly}
-            />
-          )}
+          {!loading && !loadError && <NotificationBell {...bellProps} />}
           {/* az e-mail-címre kattintva a jelszó módosítása (terv-3 27; net nélkül csak felirat) */}
           {readOnly ? (
             <span className="muted small">{session.user.email}</span>
@@ -1686,7 +272,7 @@ export default function Watchlist({ session }) {
               className="muted small account-email"
               title="Jelszó módosítása"
               aria-label={`${session.user.email} – jelszó módosítása`}
-              onClick={() => setShowPassword(true)}
+              onClick={() => openDialog('password')}
             >
               {session.user.email}
             </button>
@@ -1704,7 +290,7 @@ export default function Watchlist({ session }) {
               <ImdbRatingsImport
                 ref={imdbImportRef}
                 titles={titles}
-                onApplied={applyRatingsLocally}
+                onApplied={changes.applyRatingsLocally}
                 onAdded={handleAdded}
               />
               {isDesktop && (
@@ -1753,445 +339,53 @@ export default function Watchlist({ session }) {
           )}
 
           <div ref={filtersAnchorRef} className="filters-anchor" aria-hidden="true" />
-          <section
-            className={filtersOpen ? 'filters open' : 'filters'}
-            aria-label="Szűrők"
-            ref={filtersRef}
-            data-stuck={filtersStuck ? '' : undefined}
-          >
-            {/* letapadva a sáv alatt fokozatos elmosás (terv-3 102) */}
-            {filtersStuck && <ProgressiveBlur edge="top" />}
-            {/* telefonon a szűrők alapból összecsukva: a gomb röviden mutatja a beállítást,
-                kinyitva minden szűrő és a rendezés látszik (a kereső mindig) */}
-            <button
-              type="button"
-              className="filters-toggle"
-              aria-expanded={filtersOpen}
-              onClick={() => setFiltersOpen((o) => !o)}
-            >
-              <b>Szűrők</b>
-              <span className="filters-summary">{filterSummary}</span>
-              <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true">
-                <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6" />
-              </svg>
-            </button>
-            {/* telefonon, összecsukva: a beállított szűrők címkeként, ×-szel (terv-3 101); asztalon rejtve */}
-            <div className="active-filters" role="group" aria-label="Beállított szűrők" ref={chipsFade}>
-              {activeFilters.map((x) =>
-                x.clear ? (
-                  <span key={x.key} className="active-filter">
-                    {x.label}
-                    <button type="button" aria-label={`„${x.label}” szűrő levétele`} title="Szűrő levétele" onClick={x.clear}>
-                      <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true">
-                        <path d="M3 3l6 6M9 3l-6 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <FilterBar
+            f={f}
+            isPhone={isPhone}
+            isDesktop={isDesktop}
+            view={view}
+            changeView={changeView}
+            sectionRef={filtersRef}
+            stuck={filtersStuck}
+            // nyitott „Cím hozzáadása” panelnél a fejléc sávja marad (benne ezek), a letapadt sávban csak a „↑”
+            stuckTools={
+              !adding && (
+                <>
+                  {!readOnly && (
+                    <button type="button" className="primary" aria-label="Cím hozzáadása" title="Cím hozzáadása" onClick={() => openAdd()}>
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                        <path d="M12 5v14M5 12h14" />
                       </svg>
                     </button>
-                  </span>
-                ) : (
-                  <span key={x.key} className="active-filter fixed">
-                    {x.label}
-                  </span>
-                )
-              )}
-              {!atDefault && (
-                <button type="button" className="active-reset" onClick={resetToDefault}>
-                  ↺ Alaphelyzet
-                </button>
-              )}
-            </div>
-
-            {/* asztalon a lenyílók saját panellel nyílnak (M3); telefonon a beépített lenyíló marad */}
-            {isPhone ? (
-              <select
-                className="type-select"
-                aria-label="Típus"
-                value={type}
-                onChange={(e) => changeType(e.target.value)}
-              >
-                {typeOptions.map((t) => (
-                  <option key={t.code} value={t.code}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <FranchiseFilter
-                rootClass="filter-select"
-                className="type-filter"
-                ariaLabel="Típus"
-                lead="icon"
-                value={type}
-                onChange={changeType}
-                options={typeOptions.map((t) => ({ value: t.code, label: t.name, icon: TYPE_ICONS[t.code] }))}
-              />
-            )}
-
-            {/* mobilon az állapotgombok helyett lenyíló (CSS kapcsolja), a típus mellett */}
-            <select
-              className="status-select"
-              aria-label="Állapot"
-              value={status}
-              onChange={(e) => pickStatus(e.target.value)}
-            >
-              <option value="all">Minden állapot ({(itemsBeforeStatus ?? beforeStatus).length})</option>
-              {shownStatuses.map((s) => (
-                <option key={s.code} value={s.code}>
-                  {s.name} ({countByStatus[s.code] ?? 0})
-                </option>
-              ))}
-            </select>
-
-            <div className="filter-group">
-              {/* állapot (M3): a „Mind” külön, utána az állapotok egy közös sávban, ikonnal és darabszámmal; a
-                  csúszó kijelölő a sávon (a „Mind”-nek saját kiemelése van) */}
-              <div className="chips status-chips" role="group" aria-label="Állapot">
-                <Chip
-                  className="status-all"
-                  active={status === 'all'}
-                  onClick={() => pickStatus('all')}
-                  label="Mind"
-                  count={(itemsBeforeStatus ?? beforeStatus).length}
-                />
-                <span className="status-sep" aria-hidden="true" />
-                <span className="status-track sliding" ref={statusThumb}>
-                  {shownStatuses.map((s) => (
-                    <Chip
-                      key={s.code}
-                      active={status === s.code}
-                      onClick={() => pickStatus(s.code)}
-                      icon={STATUS_ICONS[s.code]}
-                      label={s.name}
-                      count={countByStatus[s.code] ?? 0}
-                    />
-                  ))}
-                </span>
-              </div>
-
-              {isPhone ? (
-                <label className="inline-field">
-                  Letöltés
-                  <select className="download-select" value={downloaded} onChange={(e) => setDownloaded(e.target.value)}>
-                    {DOWNLOAD_FILTERS.map((d) => (
-                      <option key={d.code} value={d.code}>
-                        {d.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : (
-                // asztalon gombcsoport (M3, Norbi kérése: egy kattintással váltható)
-                <div className="download-seg sliding" ref={downloadThumb} role="group" aria-label="Letöltés">
-                  {DOWNLOAD_FILTERS.map((d) => (
-                    <button
-                      key={d.code}
-                      type="button"
-                      aria-pressed={downloaded === d.code}
-                      onClick={() => setDownloaded(d.code)}
-                    >
-                      {DOWNLOAD_ICONS[d.code]}
-                      {d.code === 'all' ? 'Mind' : d.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {genres.length > 0 && (
-              // saját lenyíló műfajikonokkal (terv-3 56, Norbi választása: „A”), a franchise-szűrő mintájára
-              // asztalon (M3) a felirat a gombon belül, a panel rácsos, darabszámokkal (a 0 darabos halvány)
-              <div className="inline-field">
-                {isPhone && <span id="genre-filter-label">Műfaj</span>}
-                <FranchiseFilter
-                  labelId={isPhone ? 'genre-filter-label' : undefined}
-                  label={isPhone ? undefined : 'Műfaj'}
-                  className="genre-filter"
-                  lead="icon"
-                  layout={isPhone ? undefined : 'grid'}
-                  changed={!!genre}
-                  icon={isPhone ? undefined : ALL_GENRES_ICON}
-                  value={genre}
-                  onChange={setGenre}
-                  options={[
-                    {
-                      value: '',
-                      label: 'Összes',
-                      icon: isPhone ? undefined : ALL_GENRES_ICON,
-                      count: isPhone ? undefined : facetCounts.genre.all,
-                    },
-                    ...genres.map((g) => ({
-                      value: g,
-                      label: g,
-                      icon: <GenreIcon name={g} />,
-                      count: isPhone ? undefined : (facetCounts.genre[g] ?? 0),
-                    })),
-                  ]}
-                />
-              </div>
-            )}
-
-            {/* csak ha van a listán Mama-jelölés, és nem Sorozatok / franchise-ra szűrve (terv-3 58) */}
-            {(mamaUsed || mama) && !mamaOff &&
-              (isPhone ? (
-                <label className="inline-field">
-                  Mama
-                  <select className="mama-select" value={mama} onChange={(e) => setMama(e.target.value)}>
-                    <option value="">Összes</option>
-                    {MAMA_OPTIONS.map((o) => (
-                      <option key={o.code} value={o.code}>
-                        {o.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : (
-                <FranchiseFilter
-                  rootClass="filter-select"
-                  className="mama-filter"
-                  label="Mama"
-                  lead="icon"
-                  changed={!!mama}
-                  value={mama}
-                  onChange={setMama}
-                  options={[
-                    { value: '', label: 'Összes', icon: MAMA_ICON, count: facetCounts.mama.all },
-                    ...MAMA_OPTIONS.map((o) => ({
-                      value: o.code,
-                      label: o.name,
-                      icon: <MamaDot code={o.code} />,
-                      count: facetCounts.mama[o.code] ?? 0,
-                    })),
-                  ]}
-                />
-              ))}
-
-            {/* a Franchise és mellette az alaphelyzet gomb együtt törik új sorba */}
-            <div className="filter-end">
-              {usedFranchises.length > 0 && (
-                <div className="inline-field">
-                  {isPhone && <span id="franchise-filter-label">Franchise</span>}
-                  <FranchiseFilter
-                    labelId={isPhone ? 'franchise-filter-label' : undefined}
-                    label={isPhone ? undefined : 'Franchise'}
-                    changed={franchise !== DEFAULT_FILTERS.franchise}
-                    icon={isPhone ? undefined : FRANCHISE_ICON}
-                    value={franchise}
-                    onChange={changeFranchise}
-                    options={[
-                      { value: '', label: 'Összes' },
-                      { value: NO_FRANCHISE, label: 'Franchise nélkül' },
-                      ...franchiseOptions,
-                    ]}
-                  />
-                </div>
-              )}
-
-              {/* alaphelyzet gomb: felirat nélkül, rámutatva súgó; alapállapotban halvány */}
-              <span className="has-hint filter-reset-wrap">
-                <button
-                  type="button"
-                  className="filter-reset"
-                  aria-label="Szűrők alaphelyzetbe"
-                  aria-describedby="filter-reset-hint"
-                  disabled={atDefault}
-                  onClick={resetToDefault}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="18"
-                    height="18"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                    <path d="M3 3v5h5" />
-                  </svg>
-                </button>
-                <span id="filter-reset-hint" role="tooltip" className="hint">
-                  {atDefault ? 'A szűrők alaphelyzetben: ' : 'Szűrők alaphelyzetbe: '}
-                  Filmek · Megnézendő · Nem letöltött · Összes műfaj · Franchise nélkül
-                </span>
-              </span>
-
-              {/* letapadt szűrősorban (lejjebb görgetve) gyorsgombok – csak asztalon (≥ 641 px): vissza a lap tetejére,
-                  és mert a fejléc sávja ilyenkor felgördül („A – Egy sáv”, Norbi választása, 2026-10-16), a fejléc
-                  gyakori gombjai: „+” (Cím hozzáadása), harang, ⋮. Nyitott „Cím hozzáadása” panelnél a fejléc sávja
-                  marad (benne ezek), itt csak a „↑”. A helyük nyugalomban is foglalt, csak láthatatlan (data-off): letapadáskor
-                  a sor nem törhet másként, különben a sáv magassága – és vele a lista – megugrana */}
-              <span className="stuck-tools" data-off={filtersStuck ? undefined : ''}>
-                <button
-                  type="button"
-                  className="ghost"
-                  aria-label="Vissza a lap tetejére"
-                  title="Vissza a lap tetejére"
-                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                >
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M12 19V5M5 12l7-7 7 7" />
-                  </svg>
-                </button>
-                {!adding && (
-                  <>
-                    {!readOnly && (
-                      <button type="button" className="primary" aria-label="Cím hozzáadása" title="Cím hozzáadása" onClick={() => openAdd()}>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
-                          <path d="M12 5v14M5 12h14" />
-                        </svg>
-                      </button>
-                    )}
-                    <NotificationBell
-                      quiet
-                      notifications={notifications}
-                      titles={titles}
-                      franchiseName={franchiseName}
-                      onOpenTitle={(t) => openEditor(t)}
-                      onRead={readNotifications}
-                      onRemove={removeNotifications}
-                      readOnly={readOnly}
-                    />
-                    <MoreMenu items={moreItems} />
-                  </>
-                )}
-              </span>
-            </div>
-
-            {/* jobb szélen: keresés a felvett címek között, mellette a rendezés */}
-            <div className="list-tools">
-              <input
-                type="search"
-                className="list-search"
-                aria-label="Keresés a listán"
-                placeholder="Keresés a listán"
-                value={query}
-                onChange={(e) => changeQuery(e.target.value)}
-              />
-              {isPhone ? (
-                <select
-                  className="sort-select"
-                  aria-label="Rendezés"
-                  value={activeSort}
-                  onChange={(e) => changeSort(e.target.value)}
-                >
-                  {sortOptions.map((s) => (
-                    <option key={s.code} value={s.code}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <FranchiseFilter
-                  rootClass="filter-select"
-                  className="sort-filter"
-                  ariaLabel="Rendezés"
-                  lead="icon"
-                  value={activeSort}
-                  onChange={changeSort}
-                  options={sortOptions.map((s) => ({ value: s.code, label: s.name, icon: SORT_ICONS[s.code] }))}
-                />
-              )}
-              {/* lista / rács váltó felirat nélkül (keskenyebben mindig rács) */}
-              {isDesktop && (
-                <div className="view-toggle sliding" ref={viewThumb} role="group" aria-label="Nézet">
-                  <button
-                    type="button"
-                    aria-label="Listás nézet"
-                    title="Listás nézet"
-                    aria-pressed={view === 'list'}
-                    onClick={() => changeView('list')}
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      width="18"
-                      height="18"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01" />
-                    </svg>
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Rácsos nézet"
-                    title="Rácsos nézet"
-                    aria-pressed={view === 'grid'}
-                    onClick={() => changeView('grid')}
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      width="18"
-                      height="18"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
-                      <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
-                      <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
-                      <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
-                    </svg>
-                  </button>
-                </div>
-              )}
-            </div>
-          </section>
+                  )}
+                  <NotificationBell quiet {...bellProps} />
+                  <MoreMenu items={moreItems} />
+                </>
+              )
+            }
+          />
 
           {/* franchise-ra szűrve: a gyűjtemény sávja (hány címét láttad; az ablakban a TMDB-gyűjtemények, a további címek, kézi hozzárendelés) */}
-          {franchiseChosen && !searching && franchiseName.has(Number(franchise)) && (
+          {f.franchiseChosen && !searching && franchiseName.has(Number(f.franchise)) && (
             <FranchiseCollection
-              key={franchise}
-              franchise={franchises.find((f) => String(f.id) === franchise)}
+              key={f.franchise}
+              franchise={franchises.find((x) => String(x.id) === f.franchise)}
               franchiseNames={franchiseName}
               titles={titles}
               orders={orders}
               onAdded={handleAdded}
-              onUpdated={(row) => handleRowUpdated(row, false)}
-              onOrderChanged={handleOrderChanged}
-              onFranchiseUpdated={(f) => setFranchises((fs) => fs.map((x) => (x.id === f.id ? { ...x, ...f } : x)))}
-              onRename={handleRenameFranchise}
-              onDelete={handleDeleteFranchise}
+              onUpdated={onUpdatedQuiet}
+              onOrderChanged={changes.handleOrderChanged}
+              onFranchiseUpdated={changes.handleFranchiseUpdated}
+              onRename={changes.handleRenameFranchise}
+              onDelete={changes.handleDeleteFranchise}
               readOnly={readOnly}
             />
           )}
 
-          <SearchHighlight.Provider value={highlight}>
+          <SearchHighlight.Provider value={f.highlight}>
           {/* keresésnél: elírás javítva, ill. a franchise neve szerinti találatok (terv-3 66) */}
-          {searching && visible.length > 0 && (corrected.length > 0 || frMatches) && (
-            <p className="search-note" role="status">
-              {corrected.length > 0 ? (
-                <>
-                  Nincs pontos találat {typedWords.length > 1 ? `erre: „${query.trim()}”` : `a „${query.trim()}” szóra`} – a
-                  hasonlókat mutatjuk:{' '}
-                  <b>
-                    „
-                    {query
-                      .trim()
-                      .split(/\s+/)
-                      .map((w) => corrected.find((c) => c.from === fold(w))?.label ?? w)
-                      .join(' ')}
-                    ”
-                  </b>
-                </>
-              ) : (
-                <>
-                  <b>{frMatches.count} cím</b> a franchise neve alapján:{' '}
-                  {frMatches.names.map((n, i) => (
-                    <span key={n}>
-                      {i > 0 && ', '}
-                      <Hl text={n} />
-                    </span>
-                  ))}
-                </>
-              )}
-            </p>
-          )}
+          {searching && visible.length > 0 && (f.corrected.length > 0 || f.frMatches) && <SearchNote f={f} />}
 
           {/* üres állapot: net nélkül (readOnly) a hozzáadó gombok nem látszanak (kódaudit #8) */}
           {titles.length === 0 ? (
@@ -2212,46 +406,46 @@ export default function Watchlist({ session }) {
             </EmptyState>
           ) : ofType.length === 0 ? (
             <EmptyState
-              title={`Még nincs ${type === 'tv' ? 'sorozat' : 'film'} a listádon`}
+              title={`Még nincs ${f.type === 'tv' ? 'sorozat' : 'film'} a listádon`}
               text="Váltsd át a típust, vagy adj hozzá egyet."
             >
               {!readOnly && (
                 <button type="button" className="primary" onClick={() => openAdd()}>
-                  {type === 'tv' ? 'Sorozat' : 'Film'} hozzáadása
+                  {f.type === 'tv' ? 'Sorozat' : 'Film'} hozzáadása
                 </button>
               )}
-              <button type="button" className="ghost" onClick={() => changeType(type === 'tv' ? 'movie' : 'tv')}>
-                {type === 'tv' ? 'Filmek' : 'Sorozatok'} mutatása
+              <button type="button" className="ghost" onClick={() => f.changeType(f.type === 'tv' ? 'movie' : 'tv')}>
+                {f.type === 'tv' ? 'Filmek' : 'Sorozatok'} mutatása
               </button>
             </EmptyState>
           ) : visible.length === 0 && searching ? (
             // a keresés a listán nem talált: egy kattintással a TMDB-n keres tovább
             <EmptyState
-              title={`Nincs „${query.trim()}” a listádon`}
+              title={`Nincs „${f.query.trim()}” a listádon`}
               text={
-                sameFilters(filters, SEARCH_FILTERS)
+                f.atSearchFilters
                   ? 'A címekben, az eredeti címekben és a franchise-ok nevében kerestem, a szűrőktől függetlenül.'
-                  : `A címekben, az eredeti címekben és a franchise-ok nevében kerestem, ezzel a szűréssel: ${filterSummary}.`
+                  : `A címekben, az eredeti címekben és a franchise-ok nevében kerestem, ezzel a szűréssel: ${f.filterSummary}.`
               }
             >
               {!readOnly && (
-                <button type="button" className="primary" onClick={() => openAdd(query.trim())}>
-                  Keresés a TMDB-n: „{query.trim()}”
+                <button type="button" className="primary" onClick={() => openAdd(f.query.trim())}>
+                  Keresés a TMDB-n: „{f.query.trim()}”
                 </button>
               )}
-              {sameFilters(filters, SEARCH_FILTERS) ? (
-                <button type="button" className="ghost" onClick={() => changeQuery('')}>
+              {f.atSearchFilters ? (
+                <button type="button" className="ghost" onClick={() => f.changeQuery('')}>
                   Keresés törlése
                 </button>
               ) : (
-                <button type="button" className="ghost" onClick={clearFilters}>
+                <button type="button" className="ghost" onClick={f.clearFilters}>
                   Szűrők törlése
                 </button>
               )}
             </EmptyState>
           ) : visible.length === 0 ? (
-            <EmptyState title="Nincs a szűrésnek megfelelő cím" text={`Szűrés: ${filterSummary}.`}>
-              <button type="button" className="primary" onClick={clearFilters}>
+            <EmptyState title="Nincs a szűrésnek megfelelő cím" text={`Szűrés: ${f.filterSummary}.`}>
+              <button type="button" className="primary" onClick={f.clearFilters}>
                 Szűrők törlése
               </button>
               {!readOnly && (
@@ -2265,19 +459,19 @@ export default function Watchlist({ session }) {
               entries={paged}
               statuses={statuses}
               franchises={franchises}
-              onCreateFranchise={handleCreateFranchise}
-              onDeleteFranchise={handleDeleteFranchise}
-              onRenameFranchise={handleRenameFranchise}
+              onCreateFranchise={changes.handleCreateFranchise}
+              onDeleteFranchise={changes.handleDeleteFranchise}
+              onRenameFranchise={changes.handleRenameFranchise}
               onEdit={openEditor}
               onUpdated={handleRowUpdated}
               onDelete={requestDelete}
               readOnly={readOnly}
-              paging={pageAnim > 0}
+              paging={paging}
               reflowKey={filterKey}
             />
           ) : (
             <Reflow trigger={filterKey} boxRef={gridRef}>
-              <ul ref={gridRef} className="grid" data-paging={pageAnim > 0 ? '' : undefined}>
+              <ul ref={gridRef} className="grid" data-paging={paging ? '' : undefined}>
                 {paged.map((e) => (
                   <li key={e.key} data-flip={e.key}>
                     <PosterCard
@@ -2306,59 +500,51 @@ export default function Watchlist({ session }) {
         </>
       )}
 
-      {showFranchises && (
+      {dialog === 'franchises' && (
         <FranchisesDialog
           franchises={franchises}
           titles={titles}
           orders={orders}
-          onCreate={handleCreateFranchise}
-          onRename={handleRenameFranchise}
-          onDelete={handleDeleteFranchise}
+          onCreate={changes.handleCreateFranchise}
+          onRename={changes.handleRenameFranchise}
+          onDelete={changes.handleDeleteFranchise}
           onShow={showFranchise}
           onAdded={handleAdded}
-          onUpdated={(row) => handleRowUpdated(row, false)}
-          onOrderChanged={handleOrderChanged}
-          onFranchiseUpdated={(f) => setFranchises((fs) => fs.map((x) => (x.id === f.id ? { ...x, ...f } : x)))}
-          onClose={() => setShowFranchises(false)}
+          onUpdated={onUpdatedQuiet}
+          onOrderChanged={changes.handleOrderChanged}
+          onFranchiseUpdated={changes.handleFranchiseUpdated}
+          onClose={closeDialog}
           readOnly={readOnly}
         />
       )}
-      {showPeople && (
+      {dialog === 'people' && (
         <PeopleDialog
           titles={titles}
           userId={userId}
-          onClose={() => setShowPeople(false)}
+          onClose={closeDialog}
           onPreview={(item) => openEditor(item)}
           onPerson={(person) => openEditor({ person })}
           onAdded={handleAdded}
         />
       )}
-      {showToplists && (
+      {dialog === 'toplists' && (
         <ToplistsDialog
           titles={titles}
-          onClose={() => setShowToplists(false)}
+          onClose={closeDialog}
           onPreview={(item) => openEditor(item)}
           onAdded={handleAdded}
           readOnly={readOnly}
         />
       )}
-      {showStats && (
-        <StatsDialog titles={titles} franchiseName={franchiseName} onClose={() => setShowStats(false)} />
-      )}
+      {dialog === 'stats' && <StatsDialog titles={titles} franchiseName={franchiseName} onClose={closeDialog} />}
 
-      {showManual && <ManualDialog onClose={() => setShowManual(false)} />}
-      {showPassword && <PasswordDialog email={session.user.email} onClose={() => setShowPassword(false)} />}
+      {dialog === 'manual' && <ManualDialog onClose={closeDialog} />}
+      {dialog === 'password' && <PasswordDialog email={session.user.email} onClose={closeDialog} />}
 
-      {showErrors && (
-        <ErrorsDialog userId={userId} onChanged={refreshErrorInfo} onClose={() => setShowErrors(false)} />
-      )}
+      {dialog === 'errors' && <ErrorsDialog userId={userId} onChanged={refreshErrorInfo} onClose={closeDialog} />}
 
-      {showBackups && (
-        <BackupsDialog
-          titleCount={titles.length}
-          onRestored={reloadAfterRestore}
-          onClose={() => setShowBackups(false)}
-        />
+      {dialog === 'backups' && (
+        <BackupsDialog titleCount={titles.length} onRestored={data.reloadAfterRestore} onClose={closeDialog} />
       )}
 
       {/* telefonon lebegő "+" gomb a fejléc "Cím hozzáadása" gombja helyett (a CSS csak
@@ -2393,12 +579,12 @@ export default function Watchlist({ session }) {
           titles={titles}
           statuses={statuses}
           franchises={franchises}
-          onCreateFranchise={handleCreateFranchise}
-          onDeleteFranchise={handleDeleteFranchise}
-          onRenameFranchise={handleRenameFranchise}
+          onCreateFranchise={changes.handleCreateFranchise}
+          onDeleteFranchise={changes.handleDeleteFranchise}
+          onRenameFranchise={changes.handleRenameFranchise}
           existingKeys={existingKeys}
           onAdded={handleAdded}
-          onChanged={replaceTitle}
+          onChanged={changes.replaceTitle}
           onDelete={requestDelete}
           readOnly={readOnly}
           morphTo={editorFrom.current}
@@ -2406,7 +592,7 @@ export default function Watchlist({ session }) {
         />
       )}
 
-      <PullRefresh enabled={!loading} onRefresh={pullRefresh} />
+      <PullRefresh enabled={!loading} onRefresh={data.pullRefresh} />
       <Toaster />
     </main>
   );
