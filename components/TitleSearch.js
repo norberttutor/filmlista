@@ -6,17 +6,20 @@ import { addTitle, titleKey } from '@/lib/titles';
 import Discover from '@/components/Discover';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w154';
+const FACE_BASE = 'https://image.tmdb.org/t/p/w185';
 const MIN_LENGTH = 2;
 const DEBOUNCE_MS = 400;
+const NOTHING = { q: '', results: [], people: [], peopleFirst: false, error: '' };
 
 // recommendSeeds: a Felfedezés „Neked ajánlott” sorának kiinduló címei (terv-3 37);
 // initialQuery: kitöltve nyílik (pl. az üres listakeresés „Keresés a TMDB-n” gombjáról);
 // onPreview(találat, borítóElem): a borítóra / címre kattintva a cím adatlapja (előnézet, a
-// listán lévőé szerkeszthető) – a találatoknál és a Felfedezésben is
-export default function TitleSearch({ existingKeys, recommendSeeds, onAdded, onPreview, onClose, initialQuery = '' }) {
+// listán lévőé szerkeszthető) – a találatoknál és a Felfedezésben is;
+// onPerson(személy): a talált színész / rendező lapja (terv-3 110; { id, name, profile_path, role })
+export default function TitleSearch({ existingKeys, recommendSeeds, onAdded, onPreview, onPerson, onClose, initialQuery = '' }) {
   const [query, setQuery] = useState(initialQuery);
   // az utolsó befejezett keresés: melyik szövegre, mit kaptunk
-  const [found, setFound] = useState({ q: '', results: [], error: '' });
+  const [found, setFound] = useState(NOTHING);
   // találatonként: { busy } mentés közben, { error } ha nem sikerült
   const [rowState, setRowState] = useState({});
 
@@ -30,9 +33,10 @@ export default function TitleSearch({ existingKeys, recommendSeeds, onAdded, onP
     const controller = new AbortController();
     const timer = setTimeout(() => {
       apiGet('/api/tmdb/search', { q }, { signal: controller.signal })
-        .then((data) => setFound({ q, results: data.results, error: '' }))
+        // (a people a terv-3 110 óta van: a böngészőben tárolt régebbi válaszban hiányozhat)
+        .then((data) => setFound({ ...NOTHING, q, results: data.results, people: data.people ?? [], peopleFirst: !!data.peopleFirst }))
         .catch((err) => {
-          if (err.name !== 'AbortError') setFound({ q, results: [], error: err.message });
+          if (err.name !== 'AbortError') setFound({ ...NOTHING, q, error: err.message });
         });
     }, DEBOUNCE_MS);
 
@@ -58,22 +62,55 @@ export default function TitleSearch({ existingKeys, recommendSeeds, onAdded, onP
   if (q.length > 0 && q.length < MIN_LENGTH) status = `Írj be legalább ${MIN_LENGTH} karaktert.`;
   else if (searching) status = 'Keresés…';
   else if (q.length >= MIN_LENGTH && !found.error) {
+    const n = found.results.length;
+    const m = found.people.length;
     status =
-      found.results.length > 0
-        ? `${found.results.length} találat`
+      n + m > 0
+        ? [n > 0 && `${n} találat`, m > 0 && `${m} személy`].filter(Boolean).join(' · ')
         : `Nincs találat erre: „${q}”. Próbáld az eredeti címmel is.`;
   }
+
+  // a talált színészek és rendezők (terv-3 110): kattintásra a lapjuk – ha a TMDB őket tette az első
+  // helyre (névre kerestél), a címek előtt, különben utánuk
+  const peopleList = q.length >= MIN_LENGTH && found.people.length > 0 && (
+    <section className="people-results" aria-label="Színészek és rendezők">
+      <h3 className="people-results-title">Színészek és rendezők</h3>
+      <ul>
+        {found.people.map((p) => (
+          <li key={p.person_id}>
+            <button
+              type="button"
+              className="people-result"
+              onClick={() => onPerson({ id: p.person_id, name: p.name, profile_path: p.profile_path, role: p.role })}
+            >
+              <span className="people-result-photo" aria-hidden="true">
+                {p.profile_path && <img src={FACE_BASE + p.profile_path} alt="" loading="lazy" />}
+              </span>
+              <span className="people-result-text">
+                <span className="people-result-name">{p.name}</span>
+                <span className="people-result-meta">
+                  {p.role === 'director' ? 'Rendező' : 'Színész'}
+                  {p.known_for.length > 0 && ` · ${p.known_for.join(', ')}`}
+                </span>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 
   return (
     <section id="add-panel" className="add-panel" aria-label="Cím hozzáadása">
       <form className="search-row" role="search" onSubmit={(e) => e.preventDefault()}>
         <label className="search-field">
-          Film vagy sorozat címe
+          {/* (a „Film vagy sorozat címe” eleje a tesztek kapaszkodója) */}
+          Film vagy sorozat címe – vagy színész, rendező
           <input
             type="search"
             autoFocus
             autoComplete="off"
-            placeholder="pl. Dűne"
+            placeholder="pl. Dűne vagy Tom Hanks"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -96,6 +133,8 @@ export default function TitleSearch({ existingKeys, recommendSeeds, onAdded, onP
       {q.length === 0 && (
         <Discover existingKeys={existingKeys} seeds={recommendSeeds} rowState={rowState} onAdd={handleAdd} onPreview={onPreview} />
       )}
+
+      {found.peopleFirst && peopleList}
 
       {q.length >= MIN_LENGTH && found.results.length > 0 && (
         <ul className="results">
@@ -169,6 +208,8 @@ export default function TitleSearch({ existingKeys, recommendSeeds, onAdded, onP
           })}
         </ul>
       )}
+
+      {!found.peopleFirst && peopleList}
     </section>
   );
 }

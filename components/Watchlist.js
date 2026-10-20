@@ -1714,6 +1714,7 @@ export default function Watchlist({ session }) {
               recommendSeeds={recommendSeeds(titles)}
               onAdded={handleAdded}
               onPreview={openEditor}
+              onPerson={(person) => openEditor({ person })}
               onClose={() => setAdding(false)}
             />
           )}
@@ -2292,8 +2293,10 @@ export default function Watchlist({ session }) {
       {showPeople && (
         <PeopleDialog
           titles={titles}
+          userId={userId}
           onClose={() => setShowPeople(false)}
           onPreview={(item) => openEditor(item)}
+          onPerson={(person) => openEditor({ person })}
           onAdded={handleAdded}
         />
       )}

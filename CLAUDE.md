@@ -299,7 +299,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 ### Felfedezés, kereső
 - `components/TitleSearch.js` – „Cím hozzáadása” panel: 400 ms késleltetett TMDB-keresés, „Hozzáadás a listához” +
   halk „Már láttam” (megnézettként, utána „Hogy tetszett?”), „✓ A listán”; `initialQuery`; a borító / cím
-  előnézetet nyit (`onPreview`); üres keresőnél `Discover`.
+  előnézetet nyit (`onPreview`); üres keresőnél `Discover`. Színészek és rendezők is (terv-3 110, `.people-results`,
+  ≤ 6, csak Acting / Directing): kattintásra `openEditor({ person })` – a `TitleEditor` első lapja a `PersonPage`; ha
+  a TMDB a személyt tette elsőnek (`peopleFirst`), a címek előtt, különben utánuk. A mező felirata „Film vagy sorozat
+  címe – vagy színész, rendező” (az eleje a tesztek kapaszkodója). Teszt: `test-110-111.mjs`.
 - `components/Discover.js` + `/api/tmdb/discover` + `lib/server/discover.js` (`discoverList`, `DISCOVER_LISTS`) –
   sorok: „Most a mozikban”, „Hamarosan a mozikban”, „Új digitálisan”, „Népszerű sorozatok”, „Neked ajánlott”;
   soronként saját szín (`section[data-list]`). **Norbit csak a magyar szinkronos címek érdeklik** – közelítés: film =
@@ -381,6 +384,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   évenként a legújabb elöl, „Főszerepek | Összes szerep”, 20 + „Továbbiak mutatása”; a borító az adatlapot nyitja az
   ablak fölött (`onPreview` → `openEditor`). Az Esc / Vissza az idővonalról a csempékhez lép. Net nélkül a menüpont
   nincs (`ONLINE_ONLY`). A harang `person_new` eleme: a borító sarkán a személy fotója. Teszt: `test-m4.mjs`.
+- `components/FollowSuggestions.js` + `/api/people/suggest` – „Kit érdemes követned?” (terv-3 111) a Színészek és
+  rendezők ablak tetején (keresés közben nincs): a 8+ értékelésűek legjobb 40-e (`suggestSeeds`, `?ids=movie:1,…`) stábja
+  – a stáblista első 5 helye, filmnél a rendező (`lib/server/credits.js` `loadCredits`, közös a `credits` route-tal) –,
+  legalább 2 címben; a nem követett, nem elrejtett első 6. „Követem” → `followPerson`; × → `localStorage`
+  (`filmlista-kovetes-rejtett:<userId>`); a név a személy lapját nyitja az ablak fölött (`onPerson`). Hibánál a sáv
+  elmarad. A kliens `SUGGEST_V` – **a válasz változásakor emeld**.
 
 ### Egyéb ablakok és menük
 - `components/MoreMenu.js` – ⋮ menü (`role="menu"`): pontok `{ id, label, description, icon, onSelect }`; nyilak,
@@ -514,7 +523,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `pickReleaseDates()` (mozi 3, ha nincs 2; digitális 4; HU, ha nincs US), `pickSeasons()` (0. évad nélkül),
   `pickOverview()` (magyar, ha nincs angol), `yearOf()`, `ANIMATION_GENRE`.
 - `lib/server/omdb.js` – `fetchImdbRating()`, `omdbEnabled()`. `lib/server/collections.js` – `loadCollection()`.
-- Lekérő route-ok (`app/api/tmdb/…`, GET): `search` (multi, csak film / sorozat), `details` (a `titles` oszlopai +
+- Lekérő route-ok (`app/api/tmdb/…`, GET): `search` (multi: film / sorozat + `people` – színész / rendező, `peopleFirst`), `details` (a `titles` oszlopai +
   `genres`, sorozatnál `seasons`; magyar leírás híján angol; OMDb – ha nem sikerül, a cím attól még felvehető;
   filmnél gyűjtemény, `release_date`), `find` (IMDb ID → TMDB), `similar` (≥ 2000, TMDB ≥ 6,0, ≥ 50 szavazat,
   animáció nélkül, ≤ 12; a kliens `SIMILAR_V` – **a szűrés változásakor emeld**), `videos` (YouTube, Trailer és hivatalos
@@ -707,7 +716,7 @@ Norbi döntései; a részletek a TERV.md-ben.
   hibalap, műsorfüzet-stílusú megosztott oldal, lyukasztott jegy a megnézetteken, filmszalagos nézési sorrend,
   függöny belépéskor, Ken Burns a jelenetképen, felületi hangok; polcnézet (D8), borítómozaik a Statisztikában (D12),
   franchise-univerzum (D13); a neonfelirat „rakoncátlan” betűje; akadálymentességi kör
-  (A1–A4).
+  (A1–A4); kör alakú átmenet témaváltáskor (114).
 - **Funkciók**: gyorsműveletek a borítón, parancspaletta / billentyűparancsok, „Mit nézzek ma?”, játékidő és szűrő
   rá, saját címkék, szinkron / felirat jelölése, csoportosítás hónapok szerint, évértékelő, web push; „Elérhető az
   előfizetéseimen” szűrő, share target, adatminőség-ellenőrző, „Letölthető most” gyorsnézet, megjelenési naptár,
@@ -722,7 +731,8 @@ Norbi döntései; a részletek a TERV.md-ben.
   (81), lapozó nyilak a vízszintes sorokon (82), „Cím másolása” (87), „Nemrég megnyitott” (88); „Következőnek”
   kitűzés (89), „Következik” a franchise-sávon (90), megosztás az adatlapról (92), IMDb-küszöb szűrő (93), hangalapú
   keresés (94), „Új” jelvény (96), franchise-idővonal (97), rezgés jelöléskor (98); epizódszintű követés;
-  szűrőgomb a még meg nem jelent filmekre; megjegyzés mező a felületen; C2 / C3 optimalizálás.
+  szűrőgomb a még meg nem jelent filmekre; megjegyzés mező a felületen; C2 / C3 optimalizálás; kedvenc alkotók a
+  Statisztikában (112), nyomtatható lista (115), visszaállítási próba (119).
 
 ## Fejlesztői megjegyzés
 - Ha a terminál nem ismeri a `node`/`npm` parancsot, a VS Code-ot újra kell indítani (a Node a

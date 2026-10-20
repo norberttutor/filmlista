@@ -8,6 +8,7 @@ import { fold } from '@/lib/listSearch';
 import { useBackdropClose } from '@/lib/useBackdropClose';
 import { useSlidingThumb } from '@/lib/useSlidingThumb';
 import { CollectionMeter } from '@/components/FranchiseCollection';
+import FollowSuggestions from '@/components/FollowSuggestions';
 import { CreditStatus, FollowButton, RoleSwitch, useAddCredit, isUpcoming, kindLabel, asItem } from '@/components/PersonPage';
 
 const IMG = 'https://image.tmdb.org/t/p/';
@@ -30,8 +31,9 @@ const TABS = [
 // személyek filmjeiből (/api/tmdb/person) jönnek, egyszerre 3-asával. Csempére kattintva az ablakon
 // belül az idővonal (PersonTimeline); az Esc / Vissza onnan a csempékhez lép vissza.
 // Kikattintásra zár, kivéve ha épp cím kerül fel a listára (az idővonalon). Net nélkül a menüpont nincs.
-// onPreview(item): a borítóra kattintva a cím adatlapja (az ablak fölött nyílik).
-export default function PeopleDialog({ titles, onClose, onPreview, onAdded }) {
+// onPreview(item): a borítóra kattintva a cím adatlapja (az ablak fölött nyílik); onPerson(személy): a
+// követési javaslat (terv-3 111) nevére kattintva a személy lapja (szintén az ablak fölött).
+export default function PeopleDialog({ titles, userId, onClose, onPreview, onPerson, onAdded }) {
   const dialogRef = useRef(null);
   const headingRef = useRef(null);
   const followed = useFollowed();
@@ -236,6 +238,9 @@ export default function PeopleDialog({ titles, onClose, onPreview, onAdded }) {
               Bezárás
             </button>
           </header>
+
+          {/* keresés közben nem kell (a követettek között keresel) */}
+          {!q && <FollowSuggestions titles={titles} userId={userId} onPerson={onPerson} />}
 
           {people.length === 0 ? (
             <p className="muted people-empty">

@@ -103,7 +103,10 @@ export default function TitleEditor({
   const closeRef = useRef(null); // a mostani close (az Esc-figyelőnek)
   const scrolls = useRef(new Map()); // lap → görgetési hely (a „Vissza” ide tér vissza)
   // a megnyitott adatlapok, az utolsó látszik; added: előnézetből most került a listára
-  const [stack, setStack] = useState(() => [{ id: 0, rowId: opened.id ?? null, item: opened, added: false }]);
+  // (opened.person: a személy lapjával nyílik – a „Cím hozzáadása” keresőből, terv-3 110)
+  const [stack, setStack] = useState(() => [
+    opened.person ? { id: 0, person: opened.person, added: false } : { id: 0, rowId: opened.id ?? null, item: opened, added: false },
+  ]);
 
   // a lap sora a listából: a listáról nyitottnál azonosító szerint (ha közben lekerült – törlés –,
   // a megnyitáskori), a többinél a TMDB-azonosító szerint (null: nincs a listán → előnézet); a
@@ -118,9 +121,9 @@ export default function TitleEditor({
   const top = pages[pages.length - 1];
   const topPreview = !top.row;
   // a borító hangulatszíne: az ablak a film színében dereng (globals.css, "Hangulatszín"); a
-  // színész lapja a legutóbbi film színét tartja
+  // színész lapja a legutóbbi film színét tartja (a keresőből nyílt személy lapja előtt nincs film)
   const film = pages.findLast((page) => !page.person);
-  const ambient = usePosterColor((film.row ?? film.item).poster_path);
+  const ambient = usePosterColor(film ? (film.row ?? film.item).poster_path : null);
 
   // rajzolás előtt nyílik meg (a nézetváltás új képén már ott legyen az ablak). Lapváltáskor
   // (Vissza, hasonló cím, felvétel) a lap a régi görgetési helyére ugrik (az újak a tetejükre).
