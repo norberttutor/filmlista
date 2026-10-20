@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { externalLink, formatDate, releaseState, DEFAULT_STATUS } from '@/lib/titles';
+import { externalLink, formatDate, nextSeason, releaseState, DEFAULT_STATUS } from '@/lib/titles';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
 import { StarsDisplay } from '@/components/StarRating';
 import ImdbBadge from '@/components/ImdbBadge';
@@ -25,6 +25,9 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
   const seasons = hasSeasons(t) ? seasonCounts(t) : null;
   // még meg nem jelent film: szaggatott keret a borító körül és dátumos jelvény
   const release = releaseState(t);
+  // sorozat bejelentett évada: jelvény a borító alján, de szaggatott keret nélkül – a sorozat már fut
+  // (terv-3 84; a nézési sorrend évad-tételén nincs)
+  const upcoming = item ? null : nextSeason(t);
   const downloaded = item ? item.downloaded : t.is_downloaded;
   const mamaWants = t.mama_status === 'interested';
   // a borító hangulatszíne: az első rámutatáskor számolódik, rámutatva a borító ebben fénylik
@@ -73,6 +76,7 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
           </span>
         )}
         {release && <ReleaseBadge state={release} />}
+        {upcoming && <ReleaseBadge state={upcoming} />}
         {teka && (
           <span className="teka-marks" aria-hidden="true">
             {osd && <span className="teka-osd">{osd}</span>}

@@ -42,8 +42,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 ## Hol mi van
 - **`munka/ROADMAP.md`** – a hátralévő feladatok táblázatban, becsült idővel. Kész feladat után frissítsd.
 - **`munka/terv-3/TERV.md`** – a „terv-3 NN” pontok részletes terve, Norbi döntései, látványterv-linkek.
-- **`munka/audit-2026-10-15/ATNEZES.md`** – az átnézés pontjai (K/H/S/I/J kódok); a kész pontot ott is
-  jelöld: „kész (dátum, commit)”. A 2026-10-09-i kódaudit (`munka/audit-2026-10-09/AUDIT.md`) lezárult.
+- Az átnézés (`munka/audit-2026-10-15/ATNEZES.md`, K/H/S/I/J kódok) és a kódaudit (`munka/audit-2026-10-09/AUDIT.md`)
+  lezárult; csak utánanézéshez.
 - A `munka/` mappa helyi (git-ből kizárva), leírása: `munka/README.md`.
 - A kész munkák története: git log + TERV.md. **Ebbe a fájlba csak a mostani működés és a szabályok
   kerüljenek**, tömören – történet, dátumok, commit-hashek nem.
@@ -185,7 +185,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   szerkesztőt nyitja, a cím (legfeljebb 3 sor, `title`-ben a teljes) az IMDb- (vagy TMDB-) adatlapra visz; „Hozzáadva: <dátum>”, `StarsDisplay`,
   `GenreList`; Mama „Érdekli”-nél borostyán „M” (`.poster-corner > .mama-mark`; a többi Mama-érték a kártyán nem
   látszik). Rámutatva hangulatszín (`usePosterColor`). Meg nem jelent filmnél (`releaseState`, `data-release`)
-  szaggatott keret + `ReleaseBadge`. Évados sorozatnál évadcsík + „x/y évad”.
+  szaggatott keret + `ReleaseBadge`. Évados sorozatnál évadcsík + „x/y évad”; a legkorábbi bejelentett évad
+  (`nextSeason(t)`, abbahagyottnál nincs, megnézettnél van) a borító alján `ReleaseBadge` (`kind: 'season'`, tévé-ikon,
+  „3. évad · dec. 8.”; telefonon rövid – `.release-short`: idén a nap, más évben az év), keret nélkül. Teszt: `test-84.mjs`.
 - `components/TitleTable.js` – asztali lista (≥ 1400 px, `DESKTOP_QUERY`; `table-layout: fixed`): kártyaszerű
   sorok, legfeljebb 1720 px, 100 px-es borító (w185; gomb → szerkesztő); a cím legfeljebb 2 sorban, az eredeti cím 1
   sorban „…”-val (`title` a teljessel), a leírás 2 sorban; a sor halványan a film színében, a jelenetkép
@@ -193,7 +195,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `--franchise-col` 11 rem; üresen láthatatlan, de helyet foglal – rámutatáskor nem ugrik). Oszlopok: Letöltve –
   Állapot – Mama (9,75 rem; sorozatnál / franchise-os címnél üres – `mamaApplies`) – Értékelés (10 csillag + „8/10”)
   – kuka (megerősítés nélkül, visszavonható). Az üres lenyílók és a kuka csak rámutatva (`@media (hover: hover)`).
-  Mentés: `saveRow`. Évados sorozatnál `SeasonDownloads` / `SeasonCell`. Megjegyzés mező nincs (a `notes` oszlop
+  Mentés: `saveRow`. Évados sorozatnál `SeasonDownloads` / `SeasonCell` (alatta a bejelentett évad indigó sorban –
+  `.season-next`; a soron nincs évad-jelvény). Megjegyzés mező nincs (a `notes` oszlop
   megmaradt). Animált átrendeződés: `Reflow` (`reflowKey`).
 - `components/Seasons.js` – évadok: `hasSeasons`, `seasonCounts`, `seasonRange` („1–3., 5.”), `useSeasonActions`
   (`saveRow`; megnézettre állításkor az előtte lévő üres évadok is, 10 mp „Visszavonás”), `SeasonStrip` (táblázatban
@@ -202,8 +205,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   TMDB-n is szereplőt a heti frissítés visszahozza), `SeasonTimeline` (≥ 2 évad; a tengely a mát mindig
   tartalmazza), `SeasonCell`, `SeasonDownloads`. „Abbahagyva”: kézi, az évadjelölés és az új évad sem írja felül; a
   „Mind megnézve” feloldja. Epizódszintű követés nem kell.
-- `components/ReleaseBadge.js` – „Hamarosan · okt. 15.” (indigó) / „Moziban · digitálisan: …” (korall),
-  `data-kind`; telefonon rövid. Szűrőgomb nem kell (Norbi döntése).
+- `components/ReleaseBadge.js` – „Hamarosan · okt. 15.” (indigó) / „Moziban · digitálisan: …” (korall) / „3. évad ·
+  dec. 8.” (`season`, indigó, `SeasonIcon`), `data-kind`; telefonon rövid. Szűrőgomb nem kell (Norbi döntése).
 - `components/GenreList.js` + `lib/genreColors.js` – műfajok színes pöttyel (`genreColor(név)`, OKLCH, a kulcs a
   TMDB magyar műfajneve, ismeretlen szürke), felolvasónak vesszővel; megnézettnél szürke.
   `components/GenreIcon.js` – műfajikonok (terv-3 56; `--g` = a műfaj színe).

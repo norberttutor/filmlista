@@ -3209,6 +3209,11 @@ mark.hl {
   display: none;
 }
 
+/* a bejelentett évad rövid dátuma ("2027") csak telefonon */
+.release-short {
+  display: none;
+}
+
 /* borító nélkül a helykitöltő cím a jelvény fölé kerül */
 .card[data-release] .poster-fallback {
   padding-bottom: 2.6rem;
@@ -3216,6 +3221,10 @@ mark.hl {
 
 .card[data-release]:has(.release-sub) .poster-fallback {
   padding-bottom: 3.4rem;
+}
+
+.card:has(.release-badge[data-kind='season']) .poster-fallback {
+  padding-bottom: 2.6rem;
 }
 
 /* telefonon (3 kártya egy sorban) csak a dátum – vagy a „Moziban” / „Hamarosan” – fér el */
@@ -3241,12 +3250,18 @@ mark.hl {
 
   .card .release-sub,
   .card .has-when .release-word,
-  .card .has-when .release-when .release-sep {
+  .card .has-when .release-when .release-sep,
+  .card .release-full {
     display: none;
   }
 
+  .card .release-short {
+    display: inline;
+  }
+
   .card[data-release] .poster-fallback,
-  .card[data-release]:has(.release-sub) .poster-fallback {
+  .card[data-release]:has(.release-sub) .poster-fallback,
+  .card:has(.release-badge[data-kind='season']) .poster-fallback {
     padding-bottom: 2rem;
   }
 }
@@ -4208,6 +4223,32 @@ button.season:hover {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--st-dropped);
+}
+
+/* a legkorábbi bejelentett évad a "3/5 évad" alatt (terv-3 84): indigó, szaggatott aláhúzással – mint a csík
+   bejelentett szakasza; a kártyán ugyanez jelvényként (.release-badge[data-kind='season']) */
+.season-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 100%;
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1.35;
+  color: var(--c-indigo);
+}
+
+.season-next svg {
+  flex: none;
+}
+
+.season-next > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: underline dashed color-mix(in oklab, var(--c-indigo) 55%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
 
 /* az évadlista tetején, ha a sorozatot nem nézi tovább */

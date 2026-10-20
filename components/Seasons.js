@@ -12,12 +12,15 @@ import {
   addSeason,
   removeLastSeason,
   updateTitle,
+  nextSeason,
+  releaseLabel,
   formatDate,
   todayDate,
   DEFAULT_STATUS,
   DROPPED_STATUS,
 } from '@/lib/titles';
 import { saveRow } from '@/lib/rowSaves';
+import { SeasonIcon } from '@/components/ReleaseBadge';
 
 // Évadok a sorozatoknál: évadcsík (táblázat, kártya), évadlista (a sorból lenyíló panelben és a
 // szerkesztő ablakban) és a közös műveletek. A sorozat állapotát az adatbázis számolja, kivéve
@@ -458,6 +461,9 @@ export function SeasonCell({ title, onUpdated, onError }) {
   const buttonRef = useRef(null);
   const panelRef = useRef(null);
   const { aired, watched } = seasonCounts(title);
+  // a legkorábbi bejelentett évad a "3/5 évad" alatt (terv-3 84; a kártyán jelvény – ReleaseBadge)
+  const upcoming = nextSeason(title);
+  const next = upcoming && releaseLabel(upcoming);
 
   useEffect(() => {
     if (!open) return;
@@ -494,6 +500,14 @@ export function SeasonCell({ title, onUpdated, onError }) {
         </svg>
       </button>
       {title.status === DROPPED_STATUS && <span className="season-dropped-tag">Abbahagyva</span>}
+      {next && (
+        <span className="season-next" title={`${next.word} · ${next.when}`}>
+          <SeasonIcon />
+          <span>
+            {next.word} · {next.when}
+          </span>
+        </span>
+      )}
       {!open && actions.note && (
         <span className="season-note" role="status">
           {actions.note.text}{' '}
