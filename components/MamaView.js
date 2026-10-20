@@ -9,6 +9,7 @@ import ImdbBadge from '@/components/ImdbBadge';
 import MamaDetail from '@/components/MamaDetail';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useSlidingThumb } from '@/lib/useSlidingThumb';
+import { useAppFreshness } from '@/lib/appVersion';
 
 const POSTER = 'https://image.tmdb.org/t/p/w185';
 const PAGE = 5; // a „Filmek” fülön ennyi film látszik egyszerre, utána „További filmek” (+5; Norbi kérése, M1)
@@ -68,20 +69,27 @@ export default function MamaView() {
     setShown(PAGE);
   }
 
-  async function load() {
-    setLoadError('');
+  // silent: csendes újratöltés (visszatéréskor) – hibánál a meglévő lista marad, hibasáv nélkül
+  async function load(silent = false) {
+    if (!silent) setLoadError('');
     const { data, error } = await supabase.rpc('mama_list');
     if (error) {
       console.error(error);
-      setLoadError('Nem sikerült betölteni a filmeket. Ellenőrizd az internetkapcsolatot, és próbáld újra.');
+      if (!silent) setLoadError('Nem sikerült betölteni a filmeket. Ellenőrizd az internetkapcsolatot, és próbáld újra.');
       return;
     }
+    // menet közbeni jelölésnél a szerver még a régit adhatná: a felület marad, ahogy van
+    if (silent && markQueues.size > 0) return;
     setList(data);
   }
 
   useEffect(() => {
     load();
   }, []);
+
+  // napokig nyitva hagyott lapon is friss (átnézés J13): legalább 5 perc távollét után visszatérve
+  // csendben újratölt (a fül, a „További filmek” és a kept marad), új kiadásnál „Frissült az app” sáv
+  useAppFreshness(list != null && !loadError, () => load(true));
 
   const setStatus = (id, status) => setList((l) => l.map((t) => (t.id === id ? { ...t, mama_status: status } : t)));
 
@@ -186,7 +194,7 @@ export default function MamaView() {
       {loadError ? (
         <div className="mama-empty">
           <p role="alert">{loadError}</p>
-          <button type="button" className="ghost" onClick={load}>
+          <button type="button" className="ghost" onClick={() => load()}>
             Újrapróbálás
           </button>
         </div>

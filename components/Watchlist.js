@@ -84,6 +84,7 @@ import { Hl, SearchHighlight } from '@/components/Highlight';
 import { captureViewPosters, playViewSwitch, viewMotionOk } from '@/lib/viewSwitch';
 import { useBackLayer } from '@/lib/backClose';
 import { useAppFreshness } from '@/lib/appVersion';
+import { useScrollFade } from '@/lib/useScrollFade';
 import PullRefresh from '@/components/PullRefresh';
 import { useLiveSync } from '@/lib/liveSync';
 import { hasPendingSave, isOptimistic, saveRow } from '@/lib/rowSaves';
@@ -942,6 +943,7 @@ export default function Watchlist({ session }) {
   const statusThumb = useSlidingThumb();
   const viewThumb = useSlidingThumb();
   const downloadThumb = useSlidingThumb(); // asztalon a Letöltés is gombcsoport (M3)
+  const chipsFade = useScrollFade(); // telefonon a szűrőcímkék sorának halványuló széle (átnézés J14)
   const gridRef = useRef(null); // a borítófal (animált átrendeződés, terv-3 49.3)
   // nézetváltás után (csak akkor – a többi függőség szándékosan nincs benne): a borítók a régi helyükről
   // az újra siklanak (terv-3 73)
@@ -1600,6 +1602,8 @@ export default function Watchlist({ session }) {
       data-docked={isDesktop ? '' : undefined}
       // asztalon összecsukva a fejléc sávja is felgördül (CSS: --head-c 0) – a nyitott „Cím hozzáadása” panelnél nem
       data-head-away={adding && !readOnly ? undefined : ''}
+      // net nélkül a tiltott vezérlők halványabbak (CSS, átnézés J3)
+      data-readonly={readOnly ? '' : undefined}
     >
       <header className="top collapsing" ref={headRef}>
         {/* összecsukva a sáv bal szélén a kis cím (terv-3 99); felolvasónak a nagy cím elég */}
@@ -1738,7 +1742,7 @@ export default function Watchlist({ session }) {
               </svg>
             </button>
             {/* telefonon, összecsukva: a beállított szűrők címkeként, ×-szel (terv-3 101); asztalon rejtve */}
-            <div className="active-filters" role="group" aria-label="Beállított szűrők">
+            <div className="active-filters" role="group" aria-label="Beállított szűrők" ref={chipsFade}>
               {activeFilters.map((x) =>
                 x.clear ? (
                   <span key={x.key} className="active-filter">
@@ -2309,8 +2313,8 @@ export default function Watchlist({ session }) {
       )}
 
       {/* telefonon lebegő "+" gomb a fejléc "Cím hozzáadása" gombja helyett (a CSS csak
-          640 px alatt mutatja); lefelé görgetéskor elhúzódik */}
-      {!loading && !loadError && !readOnly && (
+          640 px alatt mutatja); lefelé görgetéskor elhúzódik; nyitott panelnél nincs (takarná a találatokat – J7) */}
+      {!loading && !loadError && !readOnly && !adding && (
         <button
           type="button"
           className={fabHidden ? 'fab hidden' : 'fab'}

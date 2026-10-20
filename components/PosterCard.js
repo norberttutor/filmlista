@@ -114,7 +114,7 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
       </button>
 
       {/* az IMDb- (vagy TMDB-) adatlap a címre kattintva nyílik */}
-      <h3>
+      <h3 title={t.title}>
         <span key={strike} className="strike" data-strike={strike ? '' : undefined}>
           {link ? (
             <a

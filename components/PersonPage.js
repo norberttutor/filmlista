@@ -202,7 +202,7 @@ export default function PersonPage({ person: cast, titles, active, apiRef, back,
   }, [load.person, bioOpen, active]);
 
   // felvétel közben a lap nem hagyható el (a Vissza és a kikattintás vár)
-  useImperativeHandle(apiRef, () => ({ canLeave: () => !adding, nudge: () => {} }));
+  useImperativeHandle(apiRef, () => ({ canLeave: () => !adding }));
 
   const p = load.person ?? { name: cast.name, profile_path: cast.profile_path };
   const credits = load.credits;

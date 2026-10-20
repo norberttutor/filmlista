@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { titleKey } from '@/lib/titles';
 import { HideButton } from '@/components/HideSuggestion';
+import { Chevron } from '@/components/TitleGallery';
 
 const IMG = 'https://image.tmdb.org/t/p/';
 const MONTHS = ['jan.', 'febr.', 'márc.', 'ápr.', 'máj.', 'jún.', 'júl.', 'aug.', 'szept.', 'okt.', 'nov.', 'dec.'];
@@ -115,10 +116,10 @@ export default function FeaturedBand({ items, existingKeys, rowState, onAdd, onP
               ))}
             </div>
             <button type="button" className="featured-arrow" aria-label="Előző kiemelés" onClick={() => go(current - 1)}>
-              ‹
+              <Chevron left />
             </button>
             <button type="button" className="featured-arrow" aria-label="Következő kiemelés" onClick={() => go(current + 1)}>
-              ›
+              <Chevron />
             </button>
           </div>
         )}

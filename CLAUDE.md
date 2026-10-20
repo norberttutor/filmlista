@@ -99,7 +99,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - **Offline / csak olvasható** (terv-3 44): induláskor azonnal a helyben tárolt lista (`stale`), a friss a
   háttérben („· frissítés…”); minden változás 1,5 mp után helyben is mentődik. `readOnly` (tárolt lista vagy nincs
   net): nincs hozzáadás, az írási menüpontok kimaradnak (`ONLINE_ONLY`), az adatlap mezői tiltva (`Lock` –
-  `fieldset.lock`, `display: contents`), a háttérfrissítések nem indulnak, és minden írási hely (Hasonló címek,
+  `fieldset.lock`, `display: contents`; fölötte `.readonly-note`), a tiltott vezérlők halványak (`main[data-readonly]`), a háttérfrissítések nem indulnak, és minden írási hely (Hasonló címek,
   gyűjtemény-ablak, nézési sorrend, Franchise-ok, harang, üres állapot) elrejti / tiltja az írást.
   **Új írási gombnál a `readOnly`-t is kezeld** (a „Visszavonás” is). Sikertelen betöltésnél `.offline-note` sáv („Nincs
   internetkapcsolat.” / van netnél „A szerver most nem érhető el.”), újrapróbálás a net
@@ -119,7 +119,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   rejtve, net nélkül sima szöveg), Kilépés, téma, ⋮ (`MoreMenu`): Statisztika, Franchise-ok, Színészek és rendezők (net nélkül nem), IMDb import (telefonon
   nincs), Tömeges import és Mentés letöltése (csak asztalon), Videotéka-téma, Mentések, Jelszó módosítása (net nélkül nem),
   Felhasználói leírás. Asztalon (≥ 900 px) a sor nem törik. Telefonon (≤ 640 px) lebegő „+” (`.fab`; lefelé
-  görgetéskor elhúzódik).
+  görgetéskor elhúzódik; nyitott „Cím hozzáadása” panelnél nincs).
 - **Szűrősor**: Típus (Filmek / Sorozatok; franchise vagy keresés mellett „Filmek és sorozatok” – `type: 'all'`,
   franchise választásakor magától, megszűnésekor vissza Filmek), állapot (gombok; telefonon lenyíló; „Folyamatban” és
   „Abbahagyva” csak sorozatos típusnál – `MOVIE_HIDDEN_STATUSES`; Filmekre váltva „Mind” lesz belőle), Letöltés, Műfaj (az adott típus műfajai, ikonos lenyíló), Mama (csak ha van
@@ -135,7 +135,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   2560 px-en egy sor (mérve, Mamával). **Telefonon a régi**: beépített `<select>`-ek (`isPhone`), külső felirat.
   Teszt: `test-m3.mjs`.
 - **Telefonon** a szűrők összecsukva: „Szűrők” gomb + a beállított szűrők címkeként ×-szel (`activeFilters`,
-  `.active-filters`; a típuson nincs ×; „↺ Alaphelyzet”), kinyitva összefoglaló (`filterSummary`), legfeljebb a
+  `.active-filters`; a típuson nincs ×; „↺ Alaphelyzet”; a széle arra halványul, amerre görgethető – `lib/useScrollFade.js`), kinyitva összefoglaló (`filterSummary`), legfeljebb a
   képernyő 70%-a. A kereső összecsukva is látszik.
 - **Keresés a listán**: cím, eredeti cím, franchise neve; ékezet- és kisbetű-független (`fold()` – közös, a `lib/listSearch.js`-ből), több szónál mind.
   Elírás-tűrés és kiemelés (terv-3 66): `lib/listSearch.js` (`resolveWords`, Damerau–Levenshtein ≤ 1, 5+ betűs
@@ -182,7 +182,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 
 ### A lista elemei
 - `components/PosterCard.js` – kártya: borító (w342), állapotcsík, „Letöltve” jelvény; a borító és a ceruza a
-  szerkesztőt nyitja, a cím az IMDb- (vagy TMDB-) adatlapra visz; „Hozzáadva: <dátum>”, `StarsDisplay`,
+  szerkesztőt nyitja, a cím (legfeljebb 3 sor, `title`-ben a teljes) az IMDb- (vagy TMDB-) adatlapra visz; „Hozzáadva: <dátum>”, `StarsDisplay`,
   `GenreList`; Mama „Érdekli”-nél borostyán „M” (`.poster-corner > .mama-mark`; a többi Mama-érték a kártyán nem
   látszik). Rámutatva hangulatszín (`usePosterColor`). Meg nem jelent filmnél (`releaseState`, `data-release`)
   szaggatott keret + `ReleaseBadge`. Évados sorozatnál évadcsík + „x/y évad”.
@@ -392,7 +392,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (a fejléc gombsorának transzformja a `position: fixed` listát különben a gombsorhoz igazítaná); a kívülre kattintás
   vizsgálata a lista elemét is nézi.
 - `components/StatsDialog.js` + `lib/stats.js` – Statisztika a betöltött listából (`listStats()`; `tasteProfile()` –
-  műfaj legalább 3 értékelt címtől, `TASTE_MIN`); színes csempék (`.tile[data-tile]`), `FranchiseBar`.
+  műfaj legalább 3 értékelt címtől, `TASTE_MIN`); színes csempék (`.tile[data-tile]`), `FranchiseBar`; telefonon a havi diagramon minden második hónapnév (`.month.alt` rejtve).
 - `components/BackupsDialog.js` + `lib/backups.js` – Mentések: lista, „Mentés most” (`create_my_backup`),
   „Visszaállítás” helyben megerősítve (`restore_my_backup`), utána `Watchlist.reloadAfterRestore()`.
 - `components/PasswordDialog.js` – jelszócsere (terv-3 27): a jelenlegi jelszót egy **külön, nem tároló
@@ -423,7 +423,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   „Visszavonás”; az „Érdekel” fülön a „✓ Érdekel” újra kattintva visszavon, a sor a fülváltásig marad (`kept`);
   optimista `mama_mark()` (címenként sorba állítva), hibánál visszaáll. Adatlap (`dialog.editor.mama-detail`):
   háttérkép, előzetes, „Hol nézhető?”, a két nagy gomb; a film színében dereng; telefonon alsó lap. Helyben nem tárol
-  (net nélkül üres / hiba). E2e: „Mama oldala (terv-3 13)…” a Mama-tesztfiókkal.
+  (net nélkül üres / hiba). Visszatéréskor `useAppFreshness` (csendes `load(true)`; menet közbeni jelölésnél kihagyja). E2e: „Mama oldala (terv-3 13)…” a Mama-tesztfiókkal.
 
 ### Közös könyvtárak
 - `lib/supabase.js` – kliens. `lib/api.js` – `apiGet()`: saját `/api` route `Authorization: Bearer` tokennel,
@@ -457,7 +457,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `lib/viewTransition.js` – `canMorph`, `MORPH_NAME`, `trackTransition`, `afterTransition()`: **a szerkesztő
   megnyitásakor érkező új, nem sürgős állapotfrissítést ezzel késleltesd** (terhelt gépen akadást okozott).
 - `lib/useMediaQuery.js`, `lib/useStrike.js` (kihúzás-animáció, terv-3 40: a `.strike` span kulcsa / `data-strike`).
-- `lib/useBackdropClose.js` – `useBackdropClose(dialogRef, { onClose, canClose, onBlocked })` → `{ onPointerDown,
+- `lib/useBackdropClose.js` – `useBackdropClose(dialogRef, { onClose, canClose, onBlocked })` (ha nem zárhat: `nudgeDialog()` – az ablak megbillen, `dialog[data-nudge]`; az adatlap lapváltásnál is) → `{ onPointerDown,
   onClick }`: kikattintásra zár (a lenyomás is kívül legyen), telefonon (≤ 640 px) nem; a beágyazott ablak
   kattintása nem számít kívülnek. Mikor nem zár: adatlap (megerősítés / név gépelése / felvétel), Színészek és
   rendezők (felvétel az idővonalon), Franchise-ok

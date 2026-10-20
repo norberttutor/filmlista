@@ -1615,6 +1615,13 @@ body:not(:has(.filters[data-stuck])) .top.collapsing[data-compact] {
   color: var(--muted);
 }
 
+/* üres keresőnél (Felfedezés) az üres állapotsor ne hagyjon rést a kereső és a magyarázat
+   között (átnézés J14); a lapon marad, hogy a felolvasó gépeléskor bemondja */
+.search-status:empty:has(~ .discover) {
+  min-height: 0;
+  margin-top: 1rem;
+}
+
 .results {
   list-style: none;
   margin: 0.75rem 0 0;
@@ -2028,8 +2035,19 @@ body:has(.filters[data-stuck]):not(:has(.filters [aria-expanded='true'])) .title
     padding-inline-end: 1rem; /* a jobb szélen halványuló maszk ne takarja az utolsót */
     overflow-x: auto;
     scrollbar-width: none;
-    -webkit-mask-image: linear-gradient(90deg, black calc(100% - 1rem), transparent);
-    mask-image: linear-gradient(90deg, black calc(100% - 1rem), transparent);
+    /* a széle csak arra halványul, amerre van még címke (lib/useScrollFade, átnézés J14) */
+    --fade-s: 0rem;
+    --fade-e: 0rem;
+    -webkit-mask-image: linear-gradient(90deg, transparent, black var(--fade-s), black calc(100% - var(--fade-e)), transparent);
+    mask-image: linear-gradient(90deg, transparent, black var(--fade-s), black calc(100% - var(--fade-e)), transparent);
+  }
+
+  .active-filters[data-fade-start] {
+    --fade-s: 1.5rem;
+  }
+
+  .active-filters[data-fade-end] {
+    --fade-e: 2.5rem;
   }
 
   .active-filter {
@@ -2825,6 +2843,14 @@ fieldset.lock:disabled .stars {
   pointer-events: none;
 }
 
+/* net nélkül (csak olvasható mód) a tiltott vezérlők halványabbak – már ránézésre látszik, hogy
+   nem kattinthatók (átnézés J3); a gombcsoport és a csillagsor egészében */
+main[data-readonly] :is(button, select, input[type='checkbox']):disabled,
+main[data-readonly] :is(.segmented, .stars):has(input:disabled) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 @supports (corner-shape: squircle) {
   .offline-note {
     corner-shape: squircle;
@@ -3298,6 +3324,17 @@ mark.hl {
   text-wrap: balance;
   /* a szóköz nélküli, nagyon hosszú szó is tördelődik (különben a szomszéd kártyára lóg – K3) */
   overflow-wrap: anywhere;
+  /* legfeljebb 3 sor, utána „…” (átnézés J5 – egyenletesebb kártyasorok); a teljes cím rámutatva
+     (title) és az adatlapon. A fókuszkeret befelé kerül, különben a levágás elnyelné. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+.card h3 a:focus-visible {
+  outline-offset: -2px;
 }
 
 .original {
@@ -5125,6 +5162,12 @@ button.season:hover {
   border: 1px solid rgb(var(--tint) / 0.18);
   border-radius: 50%;
   backdrop-filter: blur(8px);
+}
+
+/* SVG nyíl (a galériáé – Chevron), nem szöveges ‹ › (átnézés J14) */
+.featured-arrow svg {
+  width: 1.15rem;
+  height: 1.15rem;
 }
 
 .featured-arrow:hover {
@@ -8063,6 +8106,21 @@ body:has(.editor[open]) {
   margin: 0;
 }
 
+/* net nélkül az adatlap mezői fölött (átnézés J3) */
+.readonly-note {
+  margin: 0 0 0.75rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 12px;
+  background: rgb(var(--tint) / 0.05);
+  color: var(--muted);
+}
+
+@supports (corner-shape: squircle) {
+  .readonly-note {
+    corner-shape: squircle;
+  }
+}
+
 /* „Hozzáadás a listához” + „Már láttam” (terv-3 80) */
 .preview-add-buttons {
   display: flex;
@@ -9762,6 +9820,23 @@ input[type='checkbox']:checked {
   }
 }
 
+/* tiltott bezárás (pl. törlés-megerősítés közben kikattintás): az ablak egy pillanatra
+   megbillen – látszik, hogy a kattintás odaért, csak most nem zárhat (lib/useBackdropClose,
+   nudgeDialog; átnézés J14). A scale önálló tulajdonság: a beúszás translate-jével nem ütközik. */
+dialog[data-nudge] {
+  animation: dialog-nudge 0.22s ease-out;
+}
+
+@keyframes dialog-nudge {
+  0%,
+  100% {
+    scale: 1;
+  }
+  40% {
+    scale: 1.015;
+  }
+}
+
 /* csontváz-betöltés: a lista (és a hasonló címek) helyén halvány körvonalak csillogó
    áthúzással, amíg az adatok jönnek */
 .sk {
@@ -10827,6 +10902,26 @@ input[type='checkbox']:checked {
   font-size: 12px;
   font-weight: 650;
   fill: var(--text);
+}
+
+/* telefonon a diagram kb. 60%-ra kicsinyedik: nagyobb feliratok, a hónapnevek közül csak minden
+   második (a mostanitól visszafelé), hogy elférjenek (átnézés J9) */
+@media (max-width: 640px) {
+  .tile svg {
+    overflow: visible; /* a legmagasabb oszlop nagyobb száma ne vágódjon le fent */
+  }
+
+  .tile svg .month {
+    font-size: 18px;
+  }
+
+  .tile svg .month.alt {
+    display: none;
+  }
+
+  .tile svg .value {
+    font-size: 18px;
+  }
 }
 
 /* a korábbi hónapok halványabbak, a mostani (az utolsó) teljes erővel (terv-3 51.9) */

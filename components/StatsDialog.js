@@ -35,7 +35,8 @@ function MonthChart({ months }) {
                 {m.count}
               </text>
             )}
-            <text className="month" x={x + w / 2} y={H - 4} textAnchor="middle">
+            {/* telefonon csak minden második (a mostanitól visszafelé) látszik, nagyobb betűvel (J9) */}
+            <text className={(months.length - 1 - i) % 2 ? 'month alt' : 'month'} x={x + w / 2} y={H - 4} textAnchor="middle">
               {m.label}
             </text>
           </g>

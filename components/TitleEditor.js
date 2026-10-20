@@ -30,7 +30,7 @@ import { hasSeasons, SeasonList, SeasonTimeline, useSeasonActions } from '@/comp
 import SimilarTitles from '@/components/SimilarTitles';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
 import { canMorph, MORPH_NAME, afterTransition } from '@/lib/viewTransition';
-import { useBackdropClose } from '@/lib/useBackdropClose';
+import { nudgeDialog, useBackdropClose } from '@/lib/useBackdropClose';
 import { useSheetDrag } from '@/lib/useSheetDrag';
 import { TrailerButton, TrailerPlayer } from '@/components/Trailer';
 import { pushDialogPage, popDialogPage } from '@/lib/backClose';
@@ -98,7 +98,7 @@ export default function TitleEditor({
   ...pageProps
 }) {
   const dialogRef = useRef(null);
-  const pageRef = useRef(null); // az elöl lévő lap: { canLeave(), nudge() }
+  const pageRef = useRef(null); // az elöl lévő lap: { canLeave() }
   const nextId = useRef(1);
   const closeRef = useRef(null); // a mostani close (az Esc-figyelőnek)
   const scrolls = useRef(new Map()); // lap → görgetési hely (a „Vissza” ide tér vissza)
@@ -161,7 +161,6 @@ export default function TitleEditor({
   const backdrop = useBackdropClose(dialogRef, {
     onClose: close,
     canClose: () => pageRef.current?.canLeave() ?? true,
-    onBlocked: () => pageRef.current?.nudge(),
   });
   // telefonon az ablak alsó lap: a fogantyút lefelé húzva bezárul
   const sheetDrag = useSheetDrag(dialogRef, close);
@@ -171,7 +170,7 @@ export default function TitleEditor({
   function canLeavePage() {
     const page = pageRef.current;
     if (!page || page.canLeave()) return true;
-    page.nudge();
+    nudgeDialog(dialogRef.current); // az ablak megbillen (átnézés J14)
     return false;
   }
 
@@ -503,7 +502,6 @@ function TitlePage({
   // nincs – minden azonnal mentődik)
   useImperativeHandle(apiRef, () => ({
     canLeave: () => !busy && !confirmingDelete && !pageEl.current?.querySelector('.franchise-new'),
-    nudge: () => {},
   }));
 
   // az idővonal pöttyére kattintva a lista az évadhoz görget, és annak első gombja kapja a fókuszt
@@ -790,6 +788,15 @@ function TitlePage({
               {errorMessage}
             </div>
           ) : (
+            <>
+            {/* net nélkül (terv-3 44) csak nézni lehet: a mezők fölött szól (átnézés J3), nem csak a lap alján */}
+            {readOnly && (
+              <p className="readonly-note small" role="status">
+                {online
+                  ? 'A lista még nem frissült – addig csak nézelődni lehet.'
+                  : 'Kapcsolat nélkül csak nézelődni lehet.'}
+              </p>
+            )}
             <Lock on={readOnly}>
               {/* tömör elrendezés (terv-3 30, B – „vezérlősáv”, Norbi választása, 2026-10-05): fölül
                   a Franchise és a Saját értékelés egymás mellett, alatta keretes sáv: Állapot |
@@ -901,6 +908,7 @@ function TitlePage({
                 </div>
               )}
             </Lock>
+            </>
           )}
 
           {/* képgaléria (terv-3 95): asztalon (és jelenetkép nélkül telefonon is) „Képek” sor – „A” */}
@@ -941,13 +949,8 @@ function TitlePage({
                 </button>
               </>
             ) : readOnly ? (
-              // net nélkül (terv-3 44) csak nézni lehet
+              // net nélkül (terv-3 44) csak nézni lehet – a magyarázat a mezők fölött (J3)
               <>
-                <span className="muted small">
-                  {online
-                    ? 'A lista még nem frissült – addig csak nézelődni lehet.'
-                    : 'Kapcsolat nélkül csak nézelődni lehet.'}
-                </span>
                 <span className="spacer" />
                 <button type="button" className="ghost editor-close-btn" onClick={close}>
                   Bezárás
