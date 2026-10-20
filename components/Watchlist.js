@@ -76,7 +76,7 @@ import { loadHidden, resetHidden } from '@/lib/hiddenSuggestions';
 import { loadFollowed, refreshPeople, resetFollowed } from '@/lib/people';
 import { fetchAll } from '@/lib/fetchAll';
 import { article, collectionFranchiseMap, suggestedFranchiseId } from '@/lib/franchiseSuggest';
-import { loadSnapshot, saveSnapshot, useOnline } from '@/lib/offline';
+import { loadSnapshot, saveSnapshot, signOut, useOnline } from '@/lib/offline';
 // keresés: kis- és nagybetű, valamint ékezet nélkül hasonlít ("dune" → "Dűne"); a franchise nevében is,
 // elírásnál egy betűnyi eltéréssel (terv-3 66)
 import { fold, matchTitle, resolveWords, searchIndex } from '@/lib/listSearch';
@@ -86,7 +86,7 @@ import { useBackLayer } from '@/lib/backClose';
 import { useAppFreshness } from '@/lib/appVersion';
 import PullRefresh from '@/components/PullRefresh';
 import { useLiveSync } from '@/lib/liveSync';
-import { hasPendingSave, isOptimistic } from '@/lib/rowSaves';
+import { hasPendingSave, isOptimistic, saveRow } from '@/lib/rowSaves';
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 
@@ -98,6 +98,8 @@ const ONLINE_ONLY = ['imdb', 'bulk', 'backups', 'password', 'people'];
 
 // a tárolt listán állva (a szerver nem érhető el) ennyi időnként újrapróbálja
 const RETRY_MS = 30_000;
+// az élő szinkron egy kérésben legfeljebb ennyi címet tölt újra (S8)
+const SYNC_CHUNK = 500;
 
 // a helyben tárolt lista ideje: „okt. 8. 21:14”
 const snapshotTime = (iso) =>
@@ -359,8 +361,15 @@ export default function Watchlist({ session }) {
     setFranchise(f.franchise);
   }
 
-  // kilépéskor a követések tárolója kiürül (a következő belépő ne lássa – M4)
-  useEffect(() => () => resetFollowed(), []);
+  // kilépéskor a követések és az elrejtett ajánlások tárolója kiürül (a következő belépő ne lássa – M4);
+  // a csendes újratöltés nem üríti (S5: addig az elrejtettek ne jöjjenek vissza)
+  useEffect(
+    () => () => {
+      resetFollowed();
+      resetHidden();
+    },
+    []
+  );
 
   // a helyben tárolt lista: azonnal látszik, amíg a friss meg nem jön
   useEffect(() => {
@@ -536,7 +545,6 @@ export default function Watchlist({ session }) {
     load();
     return () => {
       cancelled = true;
-      resetHidden();
     };
   }, [reloadKey]);
 
@@ -556,6 +564,16 @@ export default function Watchlist({ session }) {
       setReloadKey((k) => k + 1);
     });
   }
+
+  // net nélküli időszak után (S2): ha a friss lista már látszott, egy csendes újratöltés hozza a közben
+  // (másik eszközön, Mama oldalán) történt változásokat – az élő szinkron új feliratkozása ezt nem pótolja.
+  // Sikertelen betöltésnél a lenti újrapróbálás intézi.
+  const wasOnline = useRef(online);
+  useEffect(() => {
+    const back = online && !wasOnline.current;
+    wasOnline.current = online;
+    if (back && live.current && !failed && !loadRunning.current) setReloadKey((k) => k + 1);
+  }, [online, failed]);
 
   // sikertelen betöltés után: ha visszajön a net, azonnal, egyébként félpercenként újrapróbálja
   useEffect(() => {
@@ -648,8 +666,8 @@ export default function Watchlist({ session }) {
 
   // a telepített app ikonján (pl. a tálcán) is látszik az olvasatlan értesítések száma,
   // ahol a böngésző tudja (Chrome / Edge) – ugyanannyi, amennyit a harang mutat (kódaudit #20)
-  const titleIds = useMemo(() => new Set(titles.map((t) => t.id)), [titles]);
-  const unreadCount = shownNotifications(notifications, titleIds, franchiseName).filter((n) => !n.read_at).length;
+  const titleById = useMemo(() => new Map(titles.map((t) => [t.id, t])), [titles]);
+  const unreadCount = shownNotifications(notifications, titleById, franchiseName).filter((n) => !n.read_at).length;
   useEffect(() => {
     try {
       const badge = unreadCount ? navigator.setAppBadge?.(unreadCount) : navigator.clearAppBadge?.();
@@ -1206,23 +1224,37 @@ export default function Watchlist({ session }) {
   // élő szinkron a gépek között (terv-3 86, lib/liveSync.js): a másik eszközön (vagy Mama oldalán) változott
   // címek sorát a nézetből újratölti; a saját mentés visszhangja (ugyanaz a sor) nem változtat semmit, a még
   // függő mentésű (lib/rowSaves.js – a válasza úgyis a friss sort hozza) és a visszavonható törlésű cím kimarad
+  // S8: címenként a legutóbbi újratöltés kérésének sorszáma – egy később induló, de előbb visszaérő kérés
+  // friss sorát a korábbi (régebbi) válasz nem írhatja felül
+  const syncAsked = useRef(new Map());
+  const syncSeq = useRef(0);
   useLiveSync(!loading && !readOnly && !failed, userId, {
     async onTitles(ids, deletedIds) {
+      const seq = ++syncSeq.current;
       const known = (id) => titlesRef.current.some((t) => t.id === id);
       const gone = new Set(deletedIds.filter(known));
       let rows = [];
       const wanted = ids.filter((id) => !gone.has(id));
-      if (wanted.length) {
-        const { data, error } = await supabase.from('titles_with_genres').select('*').in('id', wanted);
+      for (const id of [...wanted, ...gone]) syncAsked.current.set(id, seq);
+      // 500-asával (S8): a PostgREST kérésenként legfeljebb 1000 sort ad, és a hosszú azonosítólista az URL-t is
+      // túlnövelné (pl. mentés visszaállításakor a másik gépen)
+      for (let i = 0; i < wanted.length; i += SYNC_CHUNK) {
+        const part = wanted.slice(i, i + SYNC_CHUNK);
+        const { data, error } = await supabase.from('titles_with_genres').select('*').in('id', part);
         if (error) {
           console.warn('Élő szinkron: a címek újratöltése sikertelen:', error.message);
           return;
         }
-        rows = data;
+        rows.push(...data);
         // a nálunk lévő, de a nézetből már nem jövő cím közben lekerült (a törlés jelzése elveszhetett)
-        const back = new Set(rows.map((r) => r.id));
-        for (const id of wanted) if (!back.has(id) && known(id) && !hasPendingSave(id)) gone.add(id);
+        const back = new Set(data.map((r) => r.id));
+        for (const id of part) if (!back.has(id) && known(id) && !hasPendingSave(id)) gone.add(id);
       }
+      // amit azóta egy újabb jelzés újra kért, azt az újabb válasz intézi
+      const latest = (id) => syncAsked.current.get(id) === seq;
+      rows = rows.filter((r) => latest(r.id));
+      for (const id of gone) if (!latest(id)) gone.delete(id);
+      for (const id of [...wanted, ...deletedIds]) if (latest(id)) syncAsked.current.delete(id);
       for (const row of rows) {
         if (hasPendingSave(row.id) || isPendingDelete(row.id)) continue;
         const old = titlesRef.current.find((t) => t.id === row.id);
@@ -1255,18 +1287,33 @@ export default function Watchlist({ session }) {
       const { data, error } = await supabase
         .from('franchises')
         .select('id, name, logo_path, tmdb_collection_ids, collections_checked_at');
-      if (error) console.warn('Élő szinkron: a franchise-ok újratöltése sikertelen:', error.message);
-      else setFranchises(data.sort(byName));
+      if (error) {
+        console.warn('Élő szinkron: a franchise-ok újratöltése sikertelen:', error.message);
+        return;
+      }
+      setFranchises(data.sort(byName));
+      // másik gépen törölt franchise (S9): a rá szűrő lista ne ragadjon be – mint a helyi törlésnél
+      const exists = (value) => data.some((f) => String(f.id) === value);
+      const missing = (value) => value !== '' && value !== NO_FRANCHISE && !exists(value);
+      setOrders((os) => os.filter((o) => data.some((f) => f.id === o.franchise_id)));
+      if (missing(franchise)) changeFranchise('');
+      setBeforeSearch((b) => (b && missing(b.franchise) ? { ...b, franchise: '' } : b));
     },
     onResync: () => setReloadKey((k) => k + 1),
   });
 
   // ask: false – a gyűjtemény-ablak nézési sorrendjéből (az ablak alatt a sáv nem kattintható,
-  // ott a tétel alatt kérdez)
+  // ott a tétel alatt kérdez). A „Hogy tetszett?” csak a mentett sorra jön (S11): az optimistánál
+  // megjegyzi (askAfterSave), és ha a mentés elbukik, nem kérdez
+  const askAfterSave = useRef(new Set());
   function handleRowUpdated(row, ask = true) {
     const before = titlesRef.current.find((x) => x.id === row.id);
-    if (ask && before && before.status !== 'watched' && row.status === 'watched' && !row.my_rating) {
-      askRating(row);
+    const turned = before && before.status !== 'watched' && row.status === 'watched' && !row.my_rating;
+    if (ask && isOptimistic(row)) {
+      if (turned) askAfterSave.current.add(row.id);
+    } else if (ask && (turned || askAfterSave.current.has(row.id))) {
+      askAfterSave.current.delete(row.id);
+      if (row.status === 'watched' && !row.my_rating) askRating(row);
     }
     titlesRef.current = titlesRef.current.map((x) => (x.id === row.id ? row : x));
     replaceTitle(row);
@@ -1363,7 +1410,14 @@ export default function Watchlist({ session }) {
     const rate = async (n) => {
       dismissToast(id);
       try {
-        replaceTitle(await updateTitle(t.id, { my_rating: n }));
+        // optimista, a cím többi mentésével sorban (S11)
+        const current = titlesRef.current.find((x) => x.id === t.id) ?? t;
+        await saveRow(
+          current,
+          (r) => ({ ...r, my_rating: n }),
+          () => updateTitle(t.id, { my_rating: n }),
+          (r) => handleRowUpdated(r, false)
+        );
       } catch (err) {
         toast({ text: err.message });
       }
@@ -1600,7 +1654,7 @@ export default function Watchlist({ session }) {
               {session.user.email}
             </button>
           )}
-          <button type="button" className="ghost" onClick={() => supabase.auth.signOut()}>
+          <button type="button" className="ghost" onClick={signOut}>
             Kilépés
           </button>
           {/* világos / sötét téma (terv-3 50, Norbi kérése: a ⋮ menü mellett) */}
@@ -1638,9 +1692,11 @@ export default function Watchlist({ session }) {
       {/* net nélkül (vagy ha a szerver nem érhető el): a tárolt / már betöltött lista, csak olvasható */}
       {!loading && !loadError && (!online || (stale && failed)) && (
         <p className="offline-note" role="status">
-          <strong>Nincs internetkapcsolat.</strong>{' '}
+          {/* a szöveg a valódi ok szerint (S10): van net, csak a szerver nem válaszol */}
+          <strong>{online ? 'A szerver most nem érhető el.' : 'Nincs internetkapcsolat.'}</strong>{' '}
           {stale ? `A lista a ${snapshotTime(stale)}-kor elmentett állapotot mutatja; ` : ''}
-          most csak nézelődni lehet. Ha visszajön a net, magától frissül.
+          most csak nézelődni lehet.{' '}
+          {online ? 'Hamarosan magától újrapróbálom.' : 'Ha visszajön a net, magától frissül.'}
         </p>
       )}
 

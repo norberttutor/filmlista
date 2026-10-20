@@ -1,7 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { DEFAULT_STATUS, DROPPED_STATUS, restoreSeasons, setSeasonStatus, todayDate, updateTitle } from '@/lib/titles';
+import {
+  DEFAULT_STATUS,
+  DROPPED_STATUS,
+  restoreSeasons,
+  seasonAired,
+  setSeasonStatus,
+  todayDate,
+  updateTitle,
+} from '@/lib/titles';
 import { clearOrder, itemDone, itemLabel, itemMeta, nextItem, orderedItems, saveOrder } from '@/lib/watchOrder';
 import { seasonRange } from '@/components/Seasons';
 import { saveRow } from '@/lib/rowSaves';
@@ -165,11 +173,22 @@ export default function WatchOrder({
     noteTimer.current = setTimeout(() => setNote(null), 10000);
   }
 
+  // a visszavonás és az értékelés is optimista, a cím többi mentésével sorban (S11 – mint az adatlapon)
+  const rowOf = (id) => titles.find((t) => t.id === id);
+
   async function undoNote() {
     const n = note;
     setNote(null);
+    const t = rowOf(n.titleId);
+    if (!t) return;
+    const restore = new Map(n.previous.map((p) => [p.season_number, p]));
     try {
-      onUpdated(await restoreSeasons(n.titleId, n.previous));
+      await saveRow(
+        t,
+        (r) => ({ ...r, seasons: r.seasons.map((s) => ({ ...s, ...restore.get(s.season_number) })) }),
+        () => restoreSeasons(n.titleId, n.previous),
+        onUpdated
+      );
     } catch (err) {
       setError(err.message);
     }
@@ -188,12 +207,16 @@ export default function WatchOrder({
     try {
       let row;
       if (i.season) {
+        // megnézettre állításkor az előtte lévő, még üres megjelent évadok is (mint az adatbázis – S11)
+        const marked = (s) =>
+          s.season_number === i.season ||
+          (status === 'watched' && s.season_number < i.season && s.status === DEFAULT_STATUS && seasonAired(s));
         const result = await saveRow(
           t,
           (r) => ({
             ...r,
             seasons: r.seasons.map((s) =>
-              s.season_number === i.season ? { ...s, status, ...(status === 'watched' && { is_downloaded: false }) } : s
+              marked(s) ? { ...s, status, ...(status === 'watched' && { is_downloaded: false }) } : s
             ),
           }),
           () => setSeasonStatus(t, i.season, status),
@@ -220,7 +243,12 @@ export default function WatchOrder({
   async function rate(t, n) {
     setAsking(null);
     try {
-      onUpdated(await updateTitle(t.id, { my_rating: n }));
+      await saveRow(
+        rowOf(t.id) ?? t,
+        (r) => ({ ...r, my_rating: n }),
+        () => updateTitle(t.id, { my_rating: n }),
+        onUpdated
+      );
     } catch (err) {
       setError(err.message);
     }
@@ -279,9 +307,12 @@ export default function WatchOrder({
         {note && (
           <>
             {note.text}{' '}
-            <button type="button" className="link" onClick={undoNote}>
-              Visszavonás
-            </button>
+            {/* net nélkül a visszavonás nem menthető (S13) */}
+            {!readOnly && (
+              <button type="button" className="link" onClick={undoNote}>
+                Visszavonás
+              </button>
+            )}
           </>
         )}
       </p>

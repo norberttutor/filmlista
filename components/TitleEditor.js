@@ -36,6 +36,7 @@ import { TrailerButton, TrailerPlayer } from '@/components/Trailer';
 import { pushDialogPage, popDialogPage } from '@/lib/backClose';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 import { useTheme } from '@/lib/theme';
+import { useOnline } from '@/lib/offline';
 import { galleryList, GalleryStrip, BackdropPager, GalleryLightbox } from '@/components/TitleGallery';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500'; // a nagy borító (asztalon)
@@ -340,6 +341,7 @@ function TitlePage({
 }) {
   const row = entry.row;
   const preview = !row;
+  const online = useOnline(); // a csak olvasható mód oka (S10): nincs net, vagy a lista még nem frissült
   const pageEl = useRef(null);
   const deleteButtonRef = useRef(null);
 
@@ -919,9 +921,12 @@ function TitlePage({
                   <span>
                     <b>{undos[undos.length - 1].label}</b> – mentve
                   </span>
-                  <button type="button" className="link small" onClick={undoLast}>
-                    Visszavonás
-                  </button>
+                  {/* net nélkül a visszavonás nem menthető – különben a lépés csendben elveszne (S13) */}
+                  {!readOnly && (
+                    <button type="button" className="link small" onClick={undoLast}>
+                      Visszavonás
+                    </button>
+                  )}
                 </>
               )}
             </p>
@@ -938,7 +943,11 @@ function TitlePage({
             ) : readOnly ? (
               // net nélkül (terv-3 44) csak nézni lehet
               <>
-                <span className="muted small">Kapcsolat nélkül csak nézelődni lehet.</span>
+                <span className="muted small">
+                  {online
+                    ? 'A lista még nem frissült – addig csak nézelődni lehet.'
+                    : 'Kapcsolat nélkül csak nézelődni lehet.'}
+                </span>
                 <span className="spacer" />
                 <button type="button" className="ghost editor-close-btn" onClick={close}>
                   Bezárás

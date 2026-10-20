@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { signOut } from '@/lib/offline';
 import { toast } from '@/lib/toast';
 import Toaster from '@/components/Toaster';
 import ImdbBadge from '@/components/ImdbBadge';
@@ -165,7 +166,7 @@ export default function MamaView() {
         {/* világos / sötét téma (terv-3 50): Mamánál felirattal, az alapja a világos */}
         <div className="mama-head-actions">
           <ThemeToggle labeled />
-          <button type="button" className="ghost" onClick={() => supabase.auth.signOut()}>
+          <button type="button" className="ghost" onClick={signOut}>
             Kilépés
           </button>
         </div>

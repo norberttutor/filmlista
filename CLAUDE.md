@@ -60,7 +60,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   jegyzi (`filmlista-nezo:<userId>`). Net nélkül / lejárt tokennel / ha a `getSession()` nem válaszol (4 mp, net
   nélkül 0,3 mp) a tárolt munkamenettel (`storedSession()`, `offline: true`) nyílik a `Watchlist`. Indításkor
   `registerServiceWorker()`, `startBackClose()`, `initUserTheme(userId, néző)` (`useLayoutEffect`);
-  `SIGNED_OUT`-nál `clearSnapshots()` és `forgetThemeUser()`.
+  `SIGNED_OUT`-nál `clearSnapshots()` és `forgetThemeUser()`. „Kilépés” (Norbi és Mama): `signOut()` (`lib/offline.js`) – net
+  nélkül, lejárt tokennel vagy 5 mp után helyben (a tárolt munkamenet és lista törlése, újratöltés).
 - `app/icon.svg` + PNG-változatok (`app/apple-icon.png`, `public/icon-192.png`, `public/icon-512.png`,
   `public/icon-maskable-512.png`) – mind a `munka/e2e/ikon.mjs`-ből; ikonváltozáskor ezzel generáld újra.
 - `app/manifest.js` – manifest (telepíthető app, `theme_color` = `--bg-top`). Gyorsindítók: `/?nyit=hozzaadas` |
@@ -100,8 +101,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   net): nincs hozzáadás, az írási menüpontok kimaradnak (`ONLINE_ONLY`), az adatlap mezői tiltva (`Lock` –
   `fieldset.lock`, `display: contents`), a háttérfrissítések nem indulnak, és minden írási hely (Hasonló címek,
   gyűjtemény-ablak, nézési sorrend, Franchise-ok, harang, üres állapot) elrejti / tiltja az írást.
-  **Új írási gombnál a `readOnly`-t is kezeld.** Sikertelen betöltésnél `.offline-note` sáv, újrapróbálás a net
-  visszatérésekor és félpercenként. `main[data-list]`: `loading` | `stale` | `live` (a teszt erre vár).
+  **Új írási gombnál a `readOnly`-t is kezeld** (a „Visszavonás” is). Sikertelen betöltésnél `.offline-note` sáv („Nincs
+  internetkapcsolat.” / van netnél „A szerver most nem érhető el.”), újrapróbálás a net
+  visszatérésekor és félpercenként; ha a friss lista már látszott, a net visszatértekor csendes újratöltés.
+  `main[data-list]`: `loading` | `stale` | `live` (a teszt erre vár).
 - **Fejléc** („Megnézendő filmek és sorozatok”, összecsukódó – terv-3 99, J6): `header.top.collapsing` negatív
   `top`-pal ragad (`--head-h` mért magasság); a `--head-p` (0–1) szerint a nagy cím (`.top-title`) összemegy, a kis
   cím (`.top-compact`) előtűnik, összecsukva `data-compact`. Telefonon a `--head-c` (3,6 rem) sáv fent marad;
@@ -156,7 +159,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - **Törlés visszavonással** (`requestDelete(t)`): azonnal lekerül, 8 mp-ig „Visszavonás”; az adatbázisból csak
   lejáratkor / ×-re törlődik (ha a lapot közben bezárják, megmarad).
 - **„Hogy tetszett?”**: a táblázatból Megnézve-re váltott, értékelés nélküli címnél (`handleRowUpdated` →
-  `askRating`; a `titlesRef` miatt egyszer kérdez; a szerkesztő ablakból nem).
+  `askRating`; csak a mentett sorra – `askAfterSave` –, egyszer; a szerkesztő ablakból nem).
 - **Lapozás** (`components/Pagination.js`): 25 (`PAGE_SIZE` – telefon, keskeny rács), 10 (`TABLE_PAGE_SIZE` –
   asztali lista), 22 (`GRID_PAGE_SIZE` – asztali rács). Asztalon (≥ 1400 px) a lapozó és a lábléc egy sávban alul
   (`docked` → `.pagination.docked`, `main[data-docked]` – lapozó nélkül is; `--docked-footer-h`, `--pager-w`,
@@ -223,7 +226,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/ListSkeleton.js` (csontváz), `components/EmptyState.js`, `components/ImdbBadge.js`.
 - `components/Toaster.js` + `lib/toast.js` – értesítősáv: `toast({ text, image, content, action: { label, onClick
   }, hideClose, duration = 8000, onExpire, kind })` → id; `dismissToast(id, how)`; az `onExpire` lejáratkor és ×-re
-  fut (az action-re nem); legfeljebb 3; rámutatva megáll; `duration: null` – nem jár le; `kind`: 'delete' (piros) |
+  fut (az action-re nem); legfeljebb 3 (a legrégebbi lejáró szorul ki, a `duration: null` soha); rámutatva megáll; `duration: null` – nem jár le; `kind`: 'delete' (piros) |
   'rating' (borostyán); kilépéskor `clearToasts()`. **Nyitott `<dialog>` fölött a sáv nem kattintható** – ablakon
   belül helyi visszajelzés kell.
 
@@ -383,7 +386,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   Kinyitáskor a betöltöttek olvasottak (`markNotificationsRead(ids)` – csak azonosító szerint; `readIds`). Törlés: ×
   és „Összes törlése” (`removeNotifications`, visszavonható; `dismissed_at`, `dismissedIds`). `loadNotifications()`:
   előbb `collect_season_notifications()` és `collect_release_notifications()`. `navigator.setAppBadge()`. Új
-  olvasatlannál egyszer megrezzen (`.ringing`). A `collection_new` elemre kattintva előnézet.
+  olvasatlannál egyszer megrezzen (`.ringing`). A `collection_new` elemre kattintva előnézet. A `mama_interested` csak
+  akkor látszik, ha a cím `mama_status`-a most is „Érdekli” / „Megkapta” (`shownNotifications`).
 - `lib/popupSide.js` + `lib/usePhonePopup.js` – a harang és a ⋮ listájának iránya; telefonon portálon a `body`-ba
   (a fejléc gombsorának transzformja a `position: fixed` listát különben a gombsorhoz igazítaná); a kívülre kattintás
   vizsgálata a lista elemét is nézi.
@@ -478,7 +482,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/PullRefresh.js` – lehúzás frissítéshez, csak érintéssel és a telepített appban (`isStandalone()`);
   nyitott `dialog`-nál / belül görgetett elemben nem; `<html data-pull-refresh>`. Teszt: `test-1014.mjs`.
 - `lib/liveSync.js` – élő szinkron (Supabase Realtime, terv-3 86): `useLiveSync(enabled, userId, { onTitles(ids,
-  deletedIds), onNotifications, onFranchises, onResync })`; a törlésről csak a kulcs jön; 0,4 mp-ig gyűjt. A
+  deletedIds), onNotifications, onFranchises, onResync })`; feliratkozásonként új csatornanév; a törlésről csak a
+  kulcs jön; 0,4 mp-ig gyűjt. A címeket 500-asával tölti újra (`SYNC_CHUNK`), a régebbi válasz az újabbat nem írja
+  felül (`syncAsked`); a törölt kiválasztott franchise szűrője elenged. A
   `Watchlist` a saját visszhangot, a függő mentésű (`hasPendingSave`) és a függő törlésű (`isPendingDelete`) címet
   kihagyja; a meglévőt a `replaceTitle`-lel cseréli; az újbóli beszúrás a törlést érvényteleníti.
 - `public/sw.js` + `lib/offline.js` – service worker (csak a kiadott változatban; `next.config.mjs`: `/sw.js`
