@@ -1,0 +1,328 @@
+/* ---------- Fejléc ---------- */
+/* a betűtípus nagy méretre rajzolt (optikai méretű) változatával: ehhez az app/layout.js
+   a betűtípus "opsz" tengelyét is betölti */
+.brand {
+  margin: 0;
+  font-size: clamp(2rem, 5.6vw, 3.25rem);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+/* neonfelirat (D9, components/NeonBrand.js): a szöveg a kikapcsolt üvegcső, az ::after az égő réteg
+   ugyanazzal a szöveggel (data-text), az ::before a fény a „falon”. A vékonyabb vonal csőszerű. */
+.brand.neon {
+  position: relative;
+  font-weight: 420;
+  line-height: 1.05;
+  letter-spacing: -0.005em;
+}
+
+/* egy sorban (Norbi kérése, 2026-10-19): a két cső egymás mellett, egyforma méretben; ha nem fér ki (telefon), a
+   „filmek” után törik – a csöveken belül nem (inline-block: az égő réteg így pontosan a cső fölött marad) */
+.neon-line {
+  --n: var(--neon-1);
+  display: inline-block;
+  position: relative;
+  color: color-mix(in oklab, var(--n) var(--neon-tube), transparent);
+  text-shadow: 0 1px 0 rgb(var(--tint) / 0.06);
+}
+
+.neon-line.l2 {
+  --n: var(--neon-2);
+}
+
+.neon-line::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: color-mix(in oklab, var(--n) var(--neon-core), white);
+  text-shadow:
+    0 0 1px color-mix(in oklab, white calc(100% * var(--neon-k)), transparent),
+    0 0 4px color-mix(in oklab, color-mix(in oklab, var(--n) 60%, white) calc(100% * var(--neon-k)), transparent),
+    0 0 10px color-mix(in oklab, var(--n) calc(100% * var(--neon-k)), transparent),
+    0 0 22px color-mix(in oklab, var(--n) calc(80% * var(--neon-k)), transparent),
+    0 0 40px color-mix(in oklab, var(--n) calc(32% * var(--neon-k)), transparent);
+  pointer-events: none;
+}
+
+/* a fény a falon csövenként, ovális folt, amely a doboza széléig teljesen elhalványul (closest-side) – így nincs
+   szögletes széle, és nem lóg le a cím alá */
+.neon-line::before {
+  content: '';
+  position: absolute;
+  inset: -0.45em -0.6em -0.3em;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(closest-side,
+    color-mix(in oklab, var(--n) calc(9% * var(--neon-k)), transparent),
+    color-mix(in oklab, var(--n) calc(4% * var(--neon-k)), transparent) 55%,
+    transparent);
+}
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 2.5rem var(--gutter) 1.25rem;
+}
+
+.count {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+}
+
+.account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Összecsukódó főcím (terv-3 99, Norbi választása a látványterv után, 2026-10-15 –
+   https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs): a fejléc ragad, negatív helyzettel (--head-h: a mért
+   magassága), így görgetéskor csak az alsó --head-c magas sávja marad fent; a szűrősor alatta tapad. A magassága nem
+   változik (a lista nem ugrál), csak a --head-p (0–1, a Watchlist írja görgetéskor) szerint: a nagy cím a bal alsó
+   sarka felé összemegy és elhalványul, a gombsor a sáv jobb szélére csúszik (--acc-shift; ha a cím alá tört) és a sáv
+   közepére száll, az e-mail-cím elhalványul, a kis cím (.top-compact) előtűnik. Letapadt szűrősornál a sáv mögött a
+   szűrősor fokozatos elmosása (102) – fölfelé kinyúlik –, különben (pl. nyitott „Cím hozzáadása” panel alatt) saját
+   üveg. A fejléc felugrói (harang, ⋮) a szűrősor fölött. */
+.top.collapsing {
+  --head-p: 0;
+  position: sticky;
+  top: calc(var(--head-c) - var(--head-h, 100vh));
+  z-index: 32;
+}
+
+body:not(:has(.filters[data-stuck])) .top.collapsing[data-compact] {
+  background: linear-gradient(transparent calc(100% - var(--head-c)), color-mix(in oklab, var(--bg) 72%, transparent) 0);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
+}
+
+.top.collapsing .top-title {
+  transform-origin: left bottom;
+  scale: calc(1 - 0.45 * var(--head-p));
+  opacity: calc(1 - 1.5 * var(--head-p));
+}
+
+.top.collapsing .account {
+  translate: calc(var(--acc-shift, 0px) * var(--head-p)) calc(0.7rem * var(--head-p));
+}
+
+.top.collapsing .account > .small {
+  opacity: calc(1 - 2 * var(--head-p));
+}
+
+.top.collapsing[data-compact] .account > .small {
+  visibility: hidden;
+}
+
+.top-compact {
+  position: absolute;
+  left: var(--gutter);
+  bottom: 0.55rem;
+  max-width: calc(100% - 2 * var(--gutter) - var(--acc-w, 0px) - 1rem);
+  margin: 0;
+  overflow: hidden;
+  font-size: 1.15rem;
+  font-weight: 560;
+  line-height: 2.5rem;
+  letter-spacing: -0.015em;
+  /* a kis cím is neon (D9), halkabb fénnyel */
+  color: color-mix(in oklab, var(--neon-1) var(--neon-core), white);
+  text-shadow:
+    0 0 6px color-mix(in oklab, var(--neon-1) calc(70% * var(--neon-k)), transparent),
+    0 0 14px color-mix(in oklab, var(--neon-1) calc(35% * var(--neon-k)), transparent);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: clamp(0, calc(3 * var(--head-p) - 2), 1);
+  translate: 0 calc((1 - var(--head-p)) * 0.6rem);
+  pointer-events: none;
+}
+
+.top-compact .short {
+  display: none;
+}
+
+/* „A – Egy sáv” (Norbi választása, 2026-10-16 – https://claude.ai/artifact/L29pE1Z1sR3MNVXAnsguaN): asztalon (≥ 641 px)
+   összecsukva a fejléc sávja sem marad fent – a szűrősor kerül a lap tetejére, a „+”, a harang és a ⋮ a letapadt
+   szűrősorba költözik (.stuck-tools); a Kilépés és a téma csak a nyitott fejlécben. Nyitott „Cím hozzáadása” panelnél
+   (nincs data-head-away) a sáv marad, mint eddig – ott a szűrősor nem tapad le. A Watchlist a --head-c-t olvassa. */
+@media (min-width: 641px) {
+  main[data-head-away] {
+    --head-c: 0rem;
+  }
+}
+
+/* lapozáskor ide görget: a fejléc sávja ne takarja a lista elejét */
+.filters-anchor {
+  scroll-margin-top: var(--head-c);
+}
+
+@media (max-width: 640px) {
+  .top.collapsing .account {
+    transform-origin: right center;
+    scale: calc(1 - 0.2 * var(--head-p));
+  }
+
+  .top-compact {
+    max-width: calc(100% - 2 * var(--gutter) - 0.8 * var(--acc-w, 0px) - 0.6rem);
+    font-size: 0.92rem;
+  }
+
+  .top-compact .long {
+    display: none;
+  }
+
+  .top-compact .short {
+    display: inline;
+  }
+}
+
+/* ---------- További műveletek (⋮ menü a fejlécben) ---------- */
+/* mint a Chrome menüje: kerek ⋮ gomb (a harang mintájára), alatta jobbra igazított lista;
+   minden pont ikonnal, címmel és egy rövid leírással (a korábbi súgók helyett) */
+.more {
+  position: relative;
+}
+
+/* a téma váltógombja (terv-3 50, ThemeToggle) ugyanilyen kerek gomb, a ⋮ előtt */
+.more-btn,
+.theme-toggle {
+  display: grid;
+  place-items: center;
+  width: 2.45rem;
+  height: 2.45rem;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.more-btn:hover,
+.more-btn[aria-expanded='true'],
+.theme-toggle:hover {
+  color: var(--text);
+  border-color: var(--muted);
+  background-color: var(--hover-tint);
+}
+
+/* Mama oldalán felirattal (a „Kilépés” előtt) */
+.theme-toggle-labeled {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+/* a fejléc jobb oldala asztalon egy sorban (a váltógombbal sem törik el) */
+@media (min-width: 900px) {
+  .top > .account {
+    flex-wrap: nowrap;
+  }
+}
+
+/* telefonon az e-mail-cím nem látszik (Norbi döntése, terv-3 50): így a harang, a Kilépés, a
+   váltógomb és a ⋮ egy sorban elfér */
+@media (max-width: 640px) {
+  .top > .account {
+    flex-wrap: nowrap;
+    gap: 0.6rem;
+  }
+
+  .top > .account > .muted.small {
+    display: none;
+  }
+}
+
+.more-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 35; /* a letapadó szűrősor (30) fölött */
+  display: grid;
+  gap: 2px;
+  width: min(21rem, calc(100vw - 2rem));
+  padding: 0.4rem;
+  /* ha nem fér ki, a MoreMenu a képernyő aljáig engedi (max-height), onnan görgethető */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--surface-raised);
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  box-shadow: var(--shadow-pop);
+}
+
+/* ha a gomb jobb széléhez igazítva kilógna, a bal széléhez (MoreMenu: popupSide) */
+.more-menu.to-left {
+  right: auto;
+  left: 0;
+}
+
+/* telefonon: a képernyő teljes szélességén, közvetlenül a gomb alatt (mint a harangé) – a lista ilyenkor a body-ban
+   van, a top-ot a gombhoz mérve a usePhonePopup adja (átnézés K1: a fejléc gombsorának transformja alatt a fixed
+   lista a gombsorhoz igazodott) */
+@media (max-width: 640px) {
+  .more-menu,
+  .more-menu.to-left {
+    position: fixed;
+    top: auto;
+    right: var(--gutter);
+    left: var(--gutter);
+    width: auto;
+  }
+}
+
+.more-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  color: var(--text);
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+}
+
+.more-item svg {
+  margin-top: 0.1rem;
+  color: var(--muted);
+}
+
+.more-item:hover,
+.more-item:focus-visible {
+  background-color: var(--hover-tint);
+  outline: none;
+}
+
+.more-item:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+
+.more-item:hover svg,
+.more-item:focus-visible svg {
+  color: var(--accent);
+}
+
+.more-text {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.more-label {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.more-desc {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--muted);
+}

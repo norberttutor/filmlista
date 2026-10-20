@@ -1,0 +1,428 @@
+/* ---------- Évadok (sorozatok) ---------- */
+/* évadcsík: szakaszonként egy évad az állapotszínével (a még nem nézett üres keret, mint az
+   üres alapállapot); a bejelentett, még meg nem jelent évad szaggatott, indigó (terv-3 52.1: a
+   „bejelentett” mindenhol indigó – évadcsík, idővonal, évadlista, nézési sorrend, gyűjtemény,
+   megosztott oldal; mint a harang „bejelentett évad” értesítése és a „Hamarosan” jelvény) */
+.season-strip {
+  display: flex;
+  gap: 3px;
+  width: 100%;
+}
+
+.season {
+  flex: 1 1 0;
+  min-width: 3px;
+  max-width: 1.1rem;
+  height: 0.85rem;
+  padding: 0;
+  border: 1.5px solid var(--control-border);
+  border-radius: 3px;
+  background: transparent;
+}
+
+.season[data-status='watching'] {
+  background: var(--st-watching);
+  border-color: var(--st-watching);
+}
+
+.season[data-status='watched'] {
+  background: var(--st-watched);
+  border-color: var(--st-watched);
+}
+
+.season[data-upcoming] {
+  border-style: dashed;
+  border-color: color-mix(in oklab, var(--c-indigo) 80%, transparent);
+}
+
+button.season {
+  cursor: pointer;
+}
+
+button.season:hover {
+  border-color: var(--text);
+}
+
+/* a táblázat Állapot cellája sorozatnál: csík, alatta a "3/5 évad", ami lenyitja a listát */
+.season-cell {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+}
+
+.season-cell .season-strip {
+  justify-content: center;
+}
+
+.season-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.season-count:hover,
+.season-count[aria-expanded='true'] {
+  color: var(--text);
+  background-color: var(--hover-tint);
+}
+
+.season-note {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* "Abbahagyva" a táblázat évadcellájában, a "3/5 évad" alatt */
+.season-dropped-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--st-dropped);
+}
+
+/* a legkorábbi bejelentett évad a "3/5 évad" alatt (terv-3 84): indigó, szaggatott aláhúzással – mint a csík
+   bejelentett szakasza; a kártyán ugyanez jelvényként (.release-badge[data-kind='season']) */
+.season-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 100%;
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1.35;
+  color: var(--c-indigo);
+}
+
+.season-next svg {
+  flex: none;
+}
+
+.season-next > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: underline dashed color-mix(in oklab, var(--c-indigo) 55%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+/* az évadlista tetején, ha a sorozatot nem nézi tovább */
+.season-dropped {
+  margin: 0 0 0.35rem;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--text);
+  background: color-mix(in srgb, var(--st-dropped) 14%, transparent);
+  border-left: 3px solid var(--st-dropped);
+  border-radius: 6px;
+}
+
+/* lenyíló évadlista: egy réteggel a lap fölött (mint a franchise-szűrő listája); a sor
+   magassága nem változik */
+.season-panel {
+  position: absolute;
+  z-index: 26; /* a dokkolt lapozó és lábléc (25) fölött – az utolsó sor panelját ne takarják; a letapadt szűrősor (30) alatt */
+  top: calc(100% + 0.4rem);
+  left: 50%;
+  translate: -50% 0;
+  width: min(27rem, 90vw);
+  padding: 0.6rem 0.75rem 0.75rem;
+  text-align: left;
+  background: var(--surface-raised);
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgb(var(--tint) / 0.05), var(--shadow-pop);
+}
+
+.season-list {
+  display: grid;
+  max-height: 22rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.season-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  padding: 0.5rem 0.25rem;
+}
+
+.season-list li + li {
+  border-top: 1px solid var(--line-soft);
+}
+
+.season-head {
+  display: grid;
+  flex: 1 1 6.5rem;
+  min-width: 0;
+}
+
+.season-title {
+  font-size: 0.9rem;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.season-info {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.season-list li[data-upcoming] .season-title {
+  color: var(--muted);
+}
+
+.season-list li[data-upcoming] .season-info {
+  color: var(--c-indigo);
+}
+
+.season-list .segmented {
+  gap: 0.3rem;
+}
+
+.season-list .segmented span {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.season-list .check {
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.season-list-wrap .season-note {
+  text-align: left;
+}
+
+.season-list-wrap .season-note:not(:empty) {
+  margin-top: 0.4rem;
+}
+
+.season-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--line);
+}
+
+.season-actions-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* az utolsó évad törlésének megerősítése: balra a kérdés, jobbra a gombok */
+.season-confirm-text {
+  display: grid;
+  flex: 1 1 13rem;
+  gap: 0.1rem;
+  font-size: 0.85rem;
+}
+
+/* évadok idővonala (szerkesztő ablak): évszámok, „ma” jelölő, évadonként egy pötty-gomb */
+.season-timeline {
+  padding: 0.75rem 1rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgb(var(--tint) / 0.02);
+}
+
+.tl-track {
+  position: relative;
+  height: 6.2rem;
+  margin: 0 0.9rem;
+}
+
+/* a vízszintes tengely */
+.tl-track::before {
+  content: '';
+  position: absolute;
+  left: -0.9rem;
+  right: -0.9rem;
+  top: 2.6rem;
+  height: 2px;
+  background: var(--line);
+}
+
+.tl-year {
+  position: absolute;
+  top: 3.5rem;
+  translate: -50% 0;
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.tl-year::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -0.95rem;
+  width: 1px;
+  height: 0.6rem;
+  background: var(--line);
+}
+
+/* „ma”: a tengelyen át lefelé futó szaggatott vonal, a felirat alul (az évszámok sora alatt), hogy
+   ne takarja a friss évad számát */
+.tl-today {
+  position: absolute;
+  top: 2.1rem;
+  bottom: 1.25rem;
+  width: 0;
+  border-left: 1.5px dashed rgb(var(--tint) / 0.45);
+}
+
+.tl-today span {
+  position: absolute;
+  bottom: -1.05rem;
+  translate: -50% 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.tl-dot {
+  position: absolute;
+  top: 2.6rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  padding: 0;
+  translate: -50% -50%;
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.tl-dot[data-status='watched'] {
+  background: var(--st-watched);
+  border-color: var(--st-watched);
+}
+
+.tl-dot[data-status='watching'] {
+  background: var(--st-watching);
+  border-color: var(--st-watching);
+}
+
+.tl-dot[data-upcoming] {
+  background: var(--surface);
+  border-style: dashed;
+  border-color: var(--c-indigo);
+}
+
+.tl-dot:hover {
+  scale: 1.18;
+}
+
+.tl-n {
+  position: absolute;
+  bottom: calc(100% + 0.3rem);
+  left: 50%;
+  translate: -50% 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.tl-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1rem;
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.tl-legend span::before {
+  content: '';
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-right: 0.35rem;
+  border: 1.5px solid var(--muted);
+  border-radius: 50%;
+  vertical-align: -1px;
+}
+
+.tl-legend [data-status='watched']::before {
+  background: var(--st-watched);
+  border-color: var(--st-watched);
+}
+
+.tl-legend [data-status='watching']::before {
+  background: var(--st-watching);
+  border-color: var(--st-watching);
+}
+
+.tl-legend [data-upcoming]::before {
+  border-style: dashed;
+  border-color: var(--c-indigo);
+}
+
+/* a Letöltve cellában sorozatnál a letöltött évadok, kis letöltés-ikonnal */
+.season-dl {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.season-dl::before {
+  content: '';
+  width: 0.8rem;
+  height: 0.8rem;
+  background: currentColor;
+  -webkit-mask: var(--icon-download) center / contain no-repeat;
+  mask: var(--icon-download) center / contain no-repeat;
+}
+
+/* kártyán a borító alján, a sima állapotcsík helyén; a még nem nézett évad halvány fehér */
+.poster .season-strip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  gap: 2px;
+}
+
+.poster .season {
+  max-width: none;
+  height: 5px;
+  border: 0;
+  border-radius: 0;
+  background: rgb(var(--tint) / 0.22);
+}
+
+.poster .season[data-status='watching'] {
+  background: var(--st-watching);
+}
+
+.poster .season[data-status='watched'] {
+  background: var(--st-watched);
+}
+
+.poster .season[data-upcoming] {
+  opacity: 1;
+  background: repeating-linear-gradient(90deg, var(--c-indigo) 0 3px, transparent 3px 6px);
+}

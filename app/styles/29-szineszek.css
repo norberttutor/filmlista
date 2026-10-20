@@ -1,0 +1,550 @@
+/* ---------- Kedvenc színészeim / alkotóim (M4) ----------
+   Norbi választása (2026-10-17, munka/terv-3/terv-m4/): a személy lapján „Követem” (bekapcsolva türkiz, mint a
+   kiválasztott szűrő), a „További” fejlécében „Főszerepek | Összes szerep” (csúszó kijelölő); az adatlapon
+   „Rendező”; a ⋮ „Színészek és rendezők” ablaka asztalon portrérács (álló fotó, „B”), telefonon vízszintes
+   csempék (kerek fotó, „A”); a csempéről az idővonal (bejelentettek indigó szaggatott kerettel fölül). */
+.follow-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+  margin-top: 0.6rem;
+}
+
+.follow-row .error {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.follow-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.38rem 0.95rem 0.38rem 0.75rem;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 650;
+  color: var(--text);
+  background: rgb(var(--tint) / 0.05);
+  border: 1px solid var(--control-border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.follow-btn svg {
+  flex: none;
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.follow-btn:hover {
+  background: var(--hover-tint);
+}
+
+.follow-btn:active {
+  background: var(--press-tint);
+}
+
+.follow-btn[aria-pressed='true'] {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+.follow-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.follow-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.follow-note {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.person-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.role-switch {
+  display: inline-flex;
+  gap: 0.2rem;
+  padding: 0.2rem;
+  background: rgb(var(--tint) / 0.05);
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+}
+
+.role-switch > button {
+  padding: 0.28rem 0.8rem;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.role-switch > button:hover {
+  color: var(--text);
+}
+
+.role-switch > button[aria-pressed='true'] {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+.role-switch > button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* az adatlapon: a Szereplők alatt a Rendező (asztalon kerek fotóval, keskenyebben egy sorban) */
+.cast-directors {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.cast-line.cast-director {
+  margin-top: 0.25rem;
+}
+
+/* ⋮ „Színészek és rendezők”: az ablak teteje rögzített (nem középre igazított), így fülváltáskor,
+   kereséskor és az idővonalra lépve nem ugrik – csak az alja mozdul */
+.editor.people-dialog {
+  margin-block: min(8vh, 4rem) auto;
+  max-height: calc(100dvh - min(8vh, 4rem) - 1rem);
+}
+
+/* „Kit érdemes követned?” (terv-3 111): ajánlás – halvány rózsa (--c-rose) sáv, soronként fotó, név,
+   „Követem” és × */
+.follow-suggest {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem 0.8rem;
+  background: color-mix(in oklab, var(--c-rose) 6%, transparent);
+  border: 1px solid color-mix(in oklab, var(--c-rose) 24%, transparent);
+  border-radius: 20px;
+}
+
+@supports (corner-shape: squircle) {
+  .follow-suggest {
+    corner-shape: squircle;
+  }
+}
+
+.follow-suggest-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.follow-suggest-title::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--c-rose);
+  border-radius: 50%;
+}
+
+.follow-suggest-note {
+  margin: 0 0 0.3rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.follow-suggest-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr));
+  gap: 0.4rem 1.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.follow-suggest-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+  padding: 0.3rem 0;
+}
+
+.follow-suggest-photo {
+  flex: none;
+  width: 2.8rem;
+  height: 2.8rem;
+  padding: 0;
+  overflow: hidden;
+  background: var(--placeholder-bg) var(--icon-film) center / 1.1rem no-repeat;
+  border: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgb(var(--tint) / 0.12);
+  cursor: pointer;
+}
+
+.follow-suggest-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (hover: hover) {
+  .follow-suggest-photo:hover {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+}
+
+.follow-suggest-text {
+  display: grid;
+  flex: 1;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.follow-suggest-name {
+  justify-self: start;
+  max-width: 100%;
+  padding: 0;
+  overflow: hidden;
+  font: inherit;
+  font-weight: 650;
+  text-align: left;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: inherit;
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+
+.follow-suggest-name:hover {
+  text-decoration-color: currentColor;
+}
+
+.follow-suggest-meta {
+  overflow: hidden;
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.follow-suggest-item > .ghost.mini {
+  flex: none;
+}
+
+.follow-suggest-hide {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.follow-suggest-hide:hover {
+  color: var(--text);
+  background: rgb(var(--tint) / 0.08);
+}
+
+/* fülek (Színészek | Rendezők) és a kereső egy sorban */
+.people-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem 1rem;
+}
+
+.dialog-tabs.people-tabs {
+  margin: 0;
+}
+
+.people-tabs [role='tab'] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 1.1rem;
+  font-size: 1rem;
+}
+
+.people-tab-count {
+  min-width: 1.5rem;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  background: rgb(var(--tint) / 0.08);
+  border-radius: 999px;
+}
+
+.people-tabs [aria-selected='true'] .people-tab-count {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.people-group {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.people-empty {
+  max-width: 34rem;
+}
+
+.people-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.people-tile {
+  min-width: 0;
+  overflow: hidden;
+  background: color-mix(in oklab, var(--bg) 60%, var(--surface));
+  border: 1px solid var(--line-soft);
+  border-radius: 16px;
+  transition: border-color 0.15s;
+}
+
+.people-tile:hover {
+  border-color: var(--control-border);
+}
+
+.people-main {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.people-main:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: 16px;
+}
+
+.people-photo {
+  display: block;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  background: var(--placeholder-bg) var(--icon-film) center / 2rem no-repeat;
+}
+
+.people-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.people-text {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 0.6rem 0.65rem 0.7rem;
+}
+
+.people-text .collection-meter {
+  width: 100%;
+}
+
+.people-name {
+  overflow: hidden;
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.people-count {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.people-count b {
+  color: var(--text);
+}
+
+/* asztalon a „további” új sorba (keskeny csempe) */
+.people-more {
+  display: block;
+}
+
+.people-dot {
+  display: none;
+}
+
+/* a legközelebbi bejelentett főszerep (indigó – bejelentett / hamarosan) */
+.people-soon {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--c-indigo);
+}
+
+.people-soon::before {
+  content: '';
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border: 1.5px dashed currentColor;
+  border-radius: 50%;
+}
+
+/* telefonon vízszintes csempék: kerek fotó balra, mellette a név, a mérő és a számok egy sorban */
+@media (max-width: 640px) {
+  .people-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  .people-main {
+    grid-template-columns: 3.6rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.6rem 0.7rem;
+  }
+
+  .people-photo {
+    width: 3.6rem;
+    height: 3.6rem;
+    aspect-ratio: auto;
+    border-radius: 50%;
+    background-size: 1.4rem;
+    box-shadow: 0 0 0 1px rgb(var(--tint) / 0.12);
+  }
+
+  .people-text {
+    padding: 0;
+  }
+
+  .people-more {
+    display: inline;
+  }
+
+  .people-dot {
+    display: inline;
+  }
+
+  /* az idővonalon a két gomb egymás mellett (a sor alatt) – tömörebb */
+  .timeline-row .person-row-side {
+    flex-direction: row;
+  }
+}
+
+/* az idővonal (a csempére kattintva, az ablakon belül) */
+.people-timeline {
+  display: grid;
+  gap: 1rem;
+  padding: 1.6rem;
+}
+
+.people-timeline .back-link {
+  justify-self: start;
+}
+
+.people-timeline .person-photo {
+  display: block;
+  width: 5rem;
+  height: 5rem;
+}
+
+.people-timeline h2 {
+  margin: 0;
+}
+
+.people-timeline .person-note {
+  margin: 0;
+}
+
+.timeline {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline-year {
+  margin: 0.7rem 0 0.1rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.timeline-year:first-child {
+  margin-top: 0;
+}
+
+.timeline-year[data-upcoming] {
+  color: var(--c-indigo);
+}
+
+.timeline-row[data-mine] {
+  background: rgb(var(--tint) / 0.06);
+}
+
+/* a még meg nem jelent: indigó szaggatott keret (terv-3 52.1) */
+.timeline-row[data-upcoming] {
+  background: none;
+  box-shadow: none;
+  outline: 1.5px dashed color-mix(in oklab, var(--c-indigo) 70%, transparent);
+  outline-offset: -1.5px;
+}
+
+.timeline-when {
+  font-weight: 650;
+  color: var(--c-indigo);
+}
+
+@supports (corner-shape: squircle) {
+  .people-tile {
+    corner-shape: squircle;
+    border-radius: 22px;
+  }
+}

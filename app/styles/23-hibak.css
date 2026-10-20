@@ -1,0 +1,152 @@
+/* ---------- Hibák (ablak – terv-3 113) ---------- */
+.editor.errors-dialog {
+  width: min(44rem, calc(100vw - 2rem));
+}
+
+.error-list {
+  max-height: min(28rem, 55dvh);
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.2rem 0.75rem;
+  list-style: none;
+  font-size: 0.9rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+@supports (corner-shape: squircle) {
+  .error-list {
+    corner-shape: squircle;
+  }
+}
+
+.error-list li {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.error-list li:last-child {
+  border-bottom: 0;
+}
+
+.error-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.6rem;
+}
+
+/* a fajta: piros pötty + felirat (a hiba jele) */
+.error-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 650;
+}
+
+.error-kind::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--danger);
+  border-radius: 50%;
+}
+
+.error-new,
+.error-who {
+  padding: 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 650;
+  border-radius: 999px;
+}
+
+.error-new {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Mama jelölése borostyán (a saját jelöléseké – mint a Mama-oszlop) */
+.error-who {
+  color: var(--accent-2);
+  background: var(--accent-2-soft);
+}
+
+.error-when {
+  margin-left: auto;
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.error-when b {
+  color: var(--text);
+}
+
+.error-message {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.error-details summary {
+  width: fit-content;
+  font-size: 0.82rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.error-details summary:hover {
+  color: var(--text);
+}
+
+.error-details dl {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.15rem 0.8rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.82rem;
+}
+
+.error-details dt {
+  color: var(--muted);
+}
+
+.error-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.error-stack {
+  max-height: 12rem;
+  overflow: auto;
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  white-space: pre;
+  background: rgb(var(--tint) / 0.05);
+  border-radius: 8px;
+}
+
+.error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* az „Összes törlése” megerősítése a gombsor helyén (mint a mentés visszaállításáé) */
+.backup-list.error-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  padding: 0.7rem 0.75rem;
+  background: color-mix(in oklab, var(--danger) 8%, transparent);
+}
+
+.error-confirm p {
+  flex: 1 1 18rem;
+  margin: 0;
+}

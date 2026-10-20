@@ -1,0 +1,270 @@
+/* ---------- Toplisták (terv-3 120) ---------- */
+/* ⋮ „Toplisták”: rangsor soronként (Norbi választása: „A”) – helyezés, kis borító, cím és év, IMDb a
+   szavazatszámmal, műfajok, jobbra a „+ Hozzáadás” / „Már láttam” vagy a „✓ A listán”. Az ablak teteje
+   rögzített (mint a Színészek és rendezőké), így fül- és szűrőváltáskor nem ugrik. A videotéka-téma
+   szabályai a téka-szakaszban („A hét slágerei”). */
+.editor.toplist-dialog {
+  width: min(64rem, calc(100vw - 2rem));
+  margin-block: min(8vh, 4rem) auto;
+  max-height: calc(100dvh - min(8vh, 4rem) - 1rem);
+}
+
+.toplist-dialog > div {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.toplist-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+}
+
+.toplist-bar .dialog-tabs {
+  margin: 0;
+}
+
+.toplist-lists [role='tab'] {
+  font-weight: 500;
+}
+
+.toplist-tab-short {
+  display: none;
+}
+
+.toplist-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+}
+
+.toplist-filters .toplist-hide {
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.toplist-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.toplist-list {
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.toplist-row {
+  display: grid;
+  grid-template-columns: 2.6rem 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.4rem 1rem;
+  padding: 0.55rem 0.6rem;
+  border-top: 1px solid var(--line-soft);
+  border-radius: 12px;
+}
+
+.toplist-row:first-child {
+  border-top-color: transparent;
+}
+
+@media (hover: hover) {
+  .toplist-row:hover {
+    background: var(--hover-tint);
+  }
+}
+
+.toplist-rank {
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  text-align: right;
+  color: var(--muted);
+}
+
+/* az első három sötétebb / világosabb (a „dobogó”) */
+.toplist-row:is([value='1'], [value='2'], [value='3']) .toplist-rank {
+  color: var(--text);
+}
+
+.toplist-poster {
+  display: block;
+  width: 56px;
+  aspect-ratio: 2 / 3;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 13px;
+  background: var(--placeholder-bg);
+  cursor: pointer;
+}
+
+.toplist-poster:empty {
+  background: var(--icon-film) center / 45% no-repeat, var(--placeholder-bg);
+}
+
+.toplist-poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@supports (corner-shape: squircle) {
+  .toplist-poster {
+    corner-shape: squircle;
+  }
+}
+
+.toplist-text {
+  display: grid;
+  justify-items: start;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.toplist-title {
+  max-width: 100%;
+  padding: 0;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 650;
+  text-align: left;
+  color: var(--text);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.toplist-title:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.toplist-year {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.toplist-meta {
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.toplist-side {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  white-space: nowrap;
+}
+
+.toplist-side .on-list {
+  margin: 0;
+}
+
+.toplist-side .person-rating {
+  font-size: 0.95rem;
+}
+
+/* a megnézett (és az abbahagyott) háttérbe húzódik, mint a fő listán: fekete-fehér borító, tompa szöveg */
+.toplist-row:is([data-status='watched'], [data-status='dropped']) .toplist-poster img {
+  filter: grayscale(1);
+  opacity: 0.7;
+}
+
+.toplist-row:is([data-status='watched'], [data-status='dropped']) .toplist-title {
+  color: var(--watched-text);
+}
+
+.toplist-row:is([data-status='watched'], [data-status='dropped']):is(:hover, :focus-within) .toplist-poster img {
+  filter: none;
+  opacity: 1;
+}
+
+.toplist-sk .toplist-sk-rank {
+  width: 1.4rem;
+  justify-self: end;
+}
+
+.toplist-sk .toplist-text {
+  gap: 0.5rem;
+}
+
+.toplist-sk .toplist-sk-meta {
+  width: 40%;
+}
+
+.toplist-more {
+  justify-self: center;
+}
+
+.toplist-error,
+.toplist-empty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.8rem;
+  margin-top: 0.6rem;
+}
+
+.toplist-error .error {
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .toplist-dialog > div {
+    padding: 1.2rem 1rem 1.6rem;
+  }
+
+  .toplist-tab-full {
+    display: none;
+  }
+
+  .toplist-tab-short {
+    display: inline;
+  }
+
+  .toplist-dialog [role='tab'] {
+    white-space: nowrap;
+  }
+
+  .toplist-lists [role='tab'] {
+    padding-inline: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .toplist-row {
+    grid-template-columns: 1.9rem 48px minmax(0, 1fr);
+    gap: 0.3rem 0.7rem;
+    padding-inline: 0.2rem;
+  }
+
+  .toplist-rank {
+    font-size: 1.15rem;
+  }
+
+  .toplist-poster {
+    width: 48px;
+  }
+
+  .toplist-title {
+    font-size: 0.98rem;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .toplist-row .toplist-side {
+    grid-column: 3;
+    justify-content: flex-start;
+  }
+}

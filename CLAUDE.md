@@ -19,7 +19,9 @@ felhasználónként elkülönít.
   - Repó: `norberttutor/filmlista` (privát)
   - Élő oldal: https://filmlista-six.vercel.app/
 - **TMDB API** a film/sorozat adatokhoz (magyar nyelv: `language=hu-HU`)
-- Stílus: sima CSS az `app/globals.css`-ben (nincs Tailwind), CSS változókkal
+- Stílus: sima CSS (nincs Tailwind), CSS változókkal; témakörönként az `app/styles/NN-<téma>.css` fájlokban, az
+  `app/globals.css` csak `@import`-okkal sorolja fel őket (a fordító egy fájlba fűzi). **A sorrend számít** (azonos
+  erősségű szabályok közül a későbbi győz): új fájl a helyére kerüljön a listában, ne a végére.
 
 ## Környezeti változók
 `.env.local` (helyben) és Vercel → Settings → Environment Variables:
@@ -85,7 +87,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - **Videotéka-téma** (D10, `'teka'`, `<html data-theme="teka">`): harmadik, választható téma a sötétre építve; a ⋮
   „Videotéka-téma” / „… kikapcsolása” (→ sötét) kapcsolja, a téma gombja innen világosra visz; Mamánál nincs. **Norbi
   feltétele: a sötét és a világos kinézet nem változhat** – minden téka-szabály `:root[data-theme='teka']`-val kezdődik
-  (`globals.css`: „Videotéka-téma (D10) – színek” és „– felület”), a téka elemei csak `useTheme() === 'teka'` mellett
+  (`app/styles/03-teka-szinek.css` és `35-teka-felulet.css`), a téka elemei csak `useTheme() === 'teka'` mellett
   kerülnek a lapra (`lib/teka.js`: `tekaIsNew` – 7 napon belül „ÚJ!”, `tekaCategory` – az első műfaj, `tekaOsd` – „▶
   LEJÁTSZÁS” / „■ VÉGE” / „⏏ KIADVA”, `tekaStamp`): kártya (`.teka-marks`: kazettatok, kategóriacímke, árcédula,
   videomagnó-felirat; `.teka-new`), adatlap (`.teka-play`, képcsíkok, magnógombok), Statisztika (`.teka-card` – tagsági
@@ -687,8 +689,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - A megnézett és az abbahagyott címek háttérbe húzódnak (sor és kártya): fekete-fehér, fakó borító, tompított, de
   olvasható szöveg (`--watched-text`, ≥ 4,5:1), halványabb vezérlők, szürke műfajpötty és „M” – nem az egész sor
   átlátszó. Rámutatáskor és fókusznál minden teljes színű.
-- **Két téma**: a sötét az alap (`:root`), a világos a `globals.css` „Világos téma” szakaszában
-  (`:root[data-theme='light']`). **Új színtokennél a világos szakaszba is kell érték**, és a kontrasztot mérd
+- **Két téma**: a sötét az alap (`:root`), a világos az `app/styles/02-vilagos.css`-ben
+  (`:root[data-theme='light']`). **Új színtokennél a világosba is kell érték**, és a kontrasztot mérd
   (`munka/terv-3/terv-50/kontraszt.mjs`, `VEGLEGES=1`). **Beégetett színt ne használj**: fátyol `rgb(var(--tint) /
   0.05)`, árnyék `rgb(var(--shade) / calc(0.6 * var(--shade-k)))`, üveg `rgb(var(--glass) / 0.8)`, `::backdrop`
   `rgb(var(--scrim) / calc(0.62 * var(--scrim-k)))`; teli piros gomb felirata `--danger-ink`.
@@ -718,11 +720,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   beépített vezérlők maradnak. A natív `<select>` listája `appearance: base-select`-tel (`@supports` mögött) az app
   stílusában nyílik; a szűrősor (telefonos) lenyílóinak opciói előtt érték szerinti ikon (`--opt-icon`) / szín
   (`--opt-dot`) – **új opciókódnál ide is kell ikon, és asztalra a `components/FilterIcons.js`-be is**.
-- **Mozgás**: legfeljebb ~0,2 s-os átmenetek. Kivételek a `globals.css` „Mozgás” szakaszában (aurora, nézetváltás,
+- **Mozgás**: legfeljebb ~0,2 s-os átmenetek. Kivételek az `app/styles/36-mozgas.css`-ben (aurora, nézetváltás,
   lista ↔ rács, lenyílók, beúszások, átrendeződés, csillag, pipa, harang, csontváz, toast-csík, kihúzás). A
-  `globals.css` végén egy közös `prefers-reduced-motion: reduce` szabály mindent kikapcsol; a JS-ből indított
+  legutolsó fájlban (`46-kevesebb-mozgas.css`) egy közös `prefers-reduced-motion: reduce` szabály mindent kikapcsol; a JS-ből indított
   mozgások (`Reflow`, `viewSwitch`, nézetváltás) a „kevesebb mozgás”-t maguk nézik.
-- Görgetősáv: saját (`::-webkit-scrollbar`, a `globals.css` elején). Elemre ne adj `scrollbar-width` /
+- Görgetősáv: saját (`::-webkit-scrollbar`, `app/styles/05-urlap.css`). Elemre ne adj `scrollbar-width` /
   `scrollbar-color`-t (Chrome-ban akkor a `::-webkit-scrollbar` nem érvényes).
 - Hiányzó borító: a `.thumb:empty` / `.poster-fallback` filmikont kap (`--icon-film`).
 - Anyag: álló filmszemcse (`body::after`); „squircle” sarkok (`corner-shape: squircle`, `@supports` mögött): borító

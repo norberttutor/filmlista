@@ -1,0 +1,322 @@
+/* ---------- Cím hozzáadása (TMDB kereső) ---------- */
+/* a panel egy réteggel a lap fölött: hajszálvékony világos keret, felső fényél, lágy árnyék */
+.add-panel {
+  margin: 0 var(--gutter) 1.5rem;
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid rgb(var(--tint) / 0.07);
+  border-radius: 12px;
+  box-shadow:
+    inset 0 1px 0 rgb(var(--tint) / 0.04),
+    0 18px 40px -24px rgb(var(--shade) / calc(0.7 * var(--shade-k)));
+}
+
+.search-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.search-field {
+  flex: 1 1 18rem;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* keresőmező nagyítóval (a mező mérete nem változik, csak a szöveg indul beljebb) */
+.search-field input {
+  padding-left: 2.6rem;
+  font-size: 1.1rem;
+  background: var(--bg) var(--icon-search) no-repeat 0.85rem 50% / 1.15rem;
+}
+
+.search-status {
+  min-height: 1.5em;
+  margin: 0.75rem 0 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* üres keresőnél (Felfedezés) az üres állapotsor ne hagyjon rést a kereső és a magyarázat
+   között (átnézés J14); a lapon marad, hogy a felolvasó gépeléskor bemondja */
+.search-status:empty:has(~ .discover) {
+  min-height: 0;
+  margin-top: 1rem;
+}
+
+.results {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(22rem, 100%), 1fr));
+  gap: 0.5rem 1.25rem;
+}
+
+.result {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 0.6rem;
+  border-radius: 8px;
+  transition: background-color 0.12s;
+}
+
+.result:hover {
+  background: rgb(var(--tint) / 0.045);
+}
+
+/* kis borító (táblázat, kereső): szürke keret helyett hajszálvékony világos gyűrű a kép
+   fölött és lágy árnyék alatta; a doboz mérete nem változik */
+.thumb {
+  position: relative;
+  flex: none;
+  width: 4rem;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow:
+    0 1px 2px rgb(var(--shade) / calc(0.45 * var(--shade-k))),
+    0 6px 16px -6px rgb(var(--shade) / calc(0.6 * var(--shade-k)));
+}
+
+.thumb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgb(var(--tint) / 0.1);
+  pointer-events: none;
+  transition: box-shadow 0.15s;
+}
+
+.thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s ease-out, filter 0.15s, opacity 0.15s;
+}
+
+/* rámutatáskor (sor / találat) a kép a keretén belül kicsit közelebb jön */
+.titles-table tbody tr:hover .thumb img,
+.result:hover .thumb img {
+  transform: scale(1.05);
+}
+
+.titles-table tbody tr:hover .thumb::after,
+.result:hover .thumb::after {
+  box-shadow: inset 0 0 0 1px rgb(var(--tint) / 0.22);
+}
+
+/* a táblázat sorában a borító gomb: a szerkesztő ablakot nyitja (részletek, hasonló címek);
+   rámutatva / fókusznál türkiz keret */
+.thumb-btn {
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+
+/* (a sorra mutatás halvány keretét is felülírja) */
+.titles-table tbody tr .thumb-btn:is(:hover, :focus-visible)::after {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+/* hiányzó borító: üres doboz helyett filmikon (a .thumb üres, ha nincs borító) */
+.thumb:empty {
+  background: var(--placeholder-bg);
+}
+
+.thumb:empty::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 42%;
+  aspect-ratio: 1;
+  background: var(--muted);
+  -webkit-mask: var(--icon-film) center / contain no-repeat;
+  mask: var(--icon-film) center / contain no-repeat;
+  opacity: 0.55;
+}
+
+.result-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.result-title {
+  margin: 0;
+  font-weight: 650;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+/* a borító és a cím az adatlapot nyitja (előnézet): a cím halvány aláhúzással, mint a kártyán */
+.title-btn {
+  padding: 0;
+  font-weight: inherit;
+  color: inherit;
+  text-align: left;
+  text-wrap: inherit;
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  text-underline-offset: 0.15em;
+}
+
+.title-btn:hover {
+  text-decoration-color: currentColor;
+}
+
+/* rámutatva csak egérrel (telefonon az érintés után ne ragadjon be a keret) */
+@media (hover: hover) {
+  .result .thumb-btn:hover::after {
+    box-shadow: inset 0 0 0 2px var(--accent);
+  }
+}
+
+/* "Hozzáadás a listához": halvány türkiz, rámutatva telik ki – így 18–20 találatnál sem
+   20 egyforma, teli türkiz gomb vonja el a figyelmet a borítókról (a keret belső árnyék,
+   a méret nem változik) */
+.result .primary {
+  margin-top: 0.6rem;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.result .primary:hover:not(:disabled),
+.result .primary:focus-visible {
+  color: var(--accent-ink);
+  background: var(--accent);
+  box-shadow: none;
+}
+
+/* „Hozzáadás a listához” + „Már láttam” (terv-3 80) egymás mellett; a második halk, körvonalas */
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.result-actions .primary {
+  margin-top: 0;
+}
+
+.result-actions .ghost {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+/* "✓ A listán": halványzöld címke ugyanott, ahol a gomb lenne */
+.on-list {
+  width: fit-content;
+  margin: 0.6rem 0 0;
+  padding: 0 0.6rem;
+  font-size: 0.85rem;
+  color: var(--st-watched);
+  background: color-mix(in srgb, var(--st-watched) 14%, transparent);
+  border-radius: 999px;
+}
+
+.result .error {
+  margin-top: 0.4rem;
+}
+
+/* a keresés talált színészei és rendezői (terv-3 110): kerek fotós csempék, kattintásra a lapjuk */
+.people-results {
+  margin-top: 0.9rem;
+}
+
+.people-results-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.people-results ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(16rem, 100%), 1fr));
+  gap: 0.5rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.people-result {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  min-width: 0;
+  padding: 0.5rem 0.6rem;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.12s;
+}
+
+.people-result:hover {
+  background: rgb(var(--tint) / 0.045);
+}
+
+.people-result-photo {
+  flex: none;
+  width: 3.2rem;
+  height: 3.2rem;
+  overflow: hidden;
+  background: var(--placeholder-bg) var(--icon-film) center / 1.3rem no-repeat;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgb(var(--tint) / 0.12);
+}
+
+.people-result-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (hover: hover) {
+  .people-result:hover .people-result-photo {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+}
+
+.people-result-text {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.people-result-name {
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  text-underline-offset: 0.15em;
+}
+
+.people-result-meta {
+  overflow: hidden;
+  font-size: 0.82rem;
+  color: var(--muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

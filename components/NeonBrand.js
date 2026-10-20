@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 // https://claude.ai/artifact/VzCx6F4njpfmNG7FvuUnp5): a cím neoncső. A szöveg maga a kikapcsolt üvegcső,
 // fölötte az égő réteg (::after, data-text – így a cím szövege és a felolvasó neve nem duplázódik); a fény a
 // „falra” is vetül (::before). Munkamenetenként egyszer felvillan (neon-on; „kevesebb mozgás”-nál rögtön ég).
-// A színek: --neon-1 / --neon-2 (globals.css).
+// A színek: --neon-1 / --neon-2 (app/styles/01-szinek.css, világos / téka: 02-, 03-).
 const FLICKER_KEY = 'filmlista-neon';
 
 export default function NeonBrand() {

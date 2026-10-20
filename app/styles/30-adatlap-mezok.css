@@ -1,0 +1,495 @@
+/* asztalon kétoszlopos ablak: balra a borító (görgetéskor a helyén marad), jobbra az adatok */
+@media (min-width: 900px) {
+  /* 66rem: a vezérlősáv (Állapot | Letöltés | Mama) egy sorba fér (~700 px a jobb oszlopban;
+     Norbi kérése, 2026-10-08 – korábban 60rem, és a Mama új sorba tört) */
+  .editor.title-editor {
+    width: min(66rem, calc(100vw - 2rem));
+  }
+
+  .title-editor form {
+    display: grid;
+    grid-template-columns: 16rem minmax(0, 1fr);
+    align-items: start;
+    gap: 2rem;
+  }
+
+  .editor-side {
+    position: sticky;
+    top: 1.5rem; /* a form belső margója: görgetéskor is ott marad */
+    display: grid;
+    gap: 1.1rem;
+  }
+
+  .watch-providers.inline,
+  .cast-line {
+    display: none;
+  }
+
+  .editor-poster {
+    display: block;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    border-radius: 10px;
+    background: var(--placeholder-bg);
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--tint) / 0.08),
+      0 12px 28px -10px rgb(var(--shade) / calc(0.7 * var(--shade-k)));
+  }
+
+  .editor-poster img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* borító nélkül: filmikon, mint a listában */
+  .editor-poster:empty::before {
+    content: '';
+    display: block;
+    width: 30%;
+    height: 100%;
+    margin: auto;
+    background: var(--muted);
+    -webkit-mask: var(--icon-film) center / contain no-repeat;
+    mask: var(--icon-film) center / contain no-repeat;
+    opacity: 0.55;
+  }
+}
+
+.editor h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+/* megnyitáskor a cím kapja a fókuszt (nem a Franchise mező): rajta ne legyen keret */
+.editor h2:focus {
+  outline: none;
+}
+
+.editor-overview {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+/* előnézeti adatlap (még nem listán lévő cím, TitleEditor): a szerkesztő mezők helyett egy gomb;
+   „Vissza” a Hasonló címek borítójáról nyílt lapon; felvétel után megerősítés a cím alatt */
+.editor-page[hidden] {
+  display: none;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 100%;
+  margin: 0 0 0.5rem;
+  padding: 0.2rem 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.back-link:hover {
+  color: var(--accent);
+}
+
+.back-link svg {
+  flex: none;
+}
+
+.preview-add {
+  display: grid;
+  justify-items: start;
+  gap: 0.5rem;
+}
+
+.preview-add p {
+  margin: 0;
+}
+
+/* net nélkül az adatlap mezői fölött (átnézés J3) */
+.readonly-note {
+  margin: 0 0 0.75rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 12px;
+  background: rgb(var(--tint) / 0.05);
+  color: var(--muted);
+}
+
+@supports (corner-shape: squircle) {
+  .readonly-note {
+    corner-shape: squircle;
+  }
+}
+
+/* „Hozzáadás a listához” + „Már láttam” (terv-3 80) */
+.preview-add-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.added-note {
+  width: fit-content;
+  margin: 0.6rem 0 0;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.85rem;
+  color: var(--st-watched);
+  background: color-mix(in srgb, var(--st-watched) 14%, transparent);
+  border-radius: 999px;
+}
+
+.editor-overview-sk {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+
+/* előzetes (TMDB → YouTube, adatkímélő mód): gomb a cím adatai alatt, kattintásra 16:9 lejátszó */
+.trailer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.6rem;
+}
+
+.trailer-lang {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.trailer {
+  margin-top: 0.75rem;
+  aspect-ratio: 16 / 9;
+  max-width: 100%;
+  overflow: hidden;
+  background: #000;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px -12px rgb(var(--shade) / calc(0.7 * var(--shade-k)));
+}
+
+.trailer iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.field {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.field legend {
+  padding: 0;
+  margin-bottom: 0.4rem;
+}
+
+/* tömör adatlap (terv-3 30, B – „vezérlősáv”, Norbi választása, 2026-10-05): fölül a Franchise
+   és a Saját értékelés egymás mellett (.editor-pair), alatta keretes sáv: Állapot | Letöltve | Mama
+   (.editor-controls; sorozatnál csak a Mama); a mezők címkéi kis, ritkított nagybetűk. Telefonon
+   a pár egymás alá kerül, a sávban fent az Állapot, alatta a Letöltve és a Mama. */
+.title-editor .field > legend,
+.title-editor .field > span:first-child {
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.editor-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.editor-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  background: color-mix(in oklab, var(--bg) 55%, var(--surface));
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+/* a csoportok kitöltik a sávot, a tartalmuk (felirat, gombok) középre zárva – telefonon is
+   (Norbi kérése, 2026-10-08) */
+.editor-controls > * {
+  flex: 1 1 auto;
+  padding: 0.7rem 1rem 0.8rem;
+  text-align: center;
+}
+
+.editor-controls .segmented {
+  justify-content: center;
+}
+
+.editor-controls > * + * {
+  border-left: 1px solid var(--line);
+}
+
+/* úsztatva a felirat a sáv belső margóján belül marad (a fieldset „igazi” legendje a keretre ülne) */
+.editor-controls .field > legend {
+  float: left;
+  width: 100%;
+  margin-bottom: 0.35rem;
+}
+
+/* 900 px alatt (az adatlap ilyenkor keskeny, egyoszlopos) a Franchise és a Saját értékelés egymás alatt: mellette a
+   tíz csillag a Franchise lenyílót összenyomta, a neve két sorba tört (átnézés K5, 2026-10-16) */
+@media (max-width: 899px) {
+  .editor-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .editor-controls > * {
+    padding: 0.55rem 0.7rem 0.65rem;
+  }
+
+  .editor-controls > :first-child:not(:only-child) {
+    flex-basis: 100%;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .editor-controls > .downloaded-field {
+    border-left: 0;
+  }
+}
+
+@supports (corner-shape: squircle) {
+  .editor-controls {
+    corner-shape: squircle;
+    border-radius: 20px;
+  }
+}
+
+/* rádiógombok "chip" formában (állapot, értékelés) */
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.segmented label {
+  position: relative;
+  cursor: pointer;
+}
+
+.segmented input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.segmented span {
+  display: block;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  transition: background-color 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.segmented label:hover span {
+  border-color: var(--muted);
+  background-color: var(--hover-tint);
+}
+
+/* kiválasztva halvány türkiz – az ablakban a teli türkiz "Mentés" marad a fő gomb */
+.segmented input:checked + span {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+
+.segmented input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Mama: saját jelölés, a második kiemelőszínnel */
+.mama-chips input:checked + span {
+  background: var(--accent-2-soft);
+  border-color: var(--accent-2-line);
+  color: var(--accent-2);
+}
+
+/* „Nem érdekli”: kiválasztva is semleges (nem kért jelölés – nem borostyán) */
+.mama-chips input[value='declined']:checked + span {
+  background: var(--hover-tint);
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+.editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid var(--line);
+}
+
+/* „Törlés a listáról” / „Frissítés a TMDB-ről” (Norbi kérése, 2026-10-15): ikonos ghost gombok – a törlés pirosas
+   (halvány piros keret, rámutatva piros fátyol), a frissítés semleges; a kettő között nagyobb köz (átnézés J2: a
+   romboló mellett félre lehetett kattintani) */
+.editor-actions .editor-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.95rem;
+  font-size: 0.9rem;
+}
+
+.editor-actions .editor-action + .editor-action {
+  margin-left: 0.6rem;
+}
+
+.editor-actions .editor-action:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.ghost.danger-ghost {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+}
+
+.ghost.danger-ghost:hover:not(:disabled) {
+  color: var(--danger);
+  border-color: var(--danger);
+  background-color: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.ghost.danger-ghost:active:not(:disabled) {
+  background-color: color-mix(in srgb, var(--danger) 20%, transparent);
+}
+
+.editor-actions .spacer {
+  flex: 1;
+}
+
+/* azonnali mentés az adatlapon (terv-3 79, „B”): a módosított vezérlőn egy pillanatra kis türkiz pipa
+   (a gomb sarkán – a helyét nem tolja el –, a Franchise / Saját értékelés címkéje után), a gombsor fölött
+   „Állapot: Megnézve – mentve · Visszavonás”. A pipa 2 mp után eltűnik (a kód veszi le; mozgással
+   elhalványul – „Mozgás” szakasz) */
+.saved-check {
+  display: inline-grid;
+  place-items: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-left: 0.45rem;
+  vertical-align: -0.2em;
+  border-radius: 50%;
+  color: var(--accent-ink);
+  background: var(--accent);
+}
+
+.saved-check svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.segmented label > .saved-check.on-chip {
+  position: absolute;
+  top: -0.45rem;
+  right: -0.45rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  box-shadow: 0 0 0 2px var(--surface);
+  pointer-events: none;
+}
+
+.segmented label > .saved-check.on-chip svg {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+.saved-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.6rem;
+  margin: 0 0 0.6rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.saved-note:empty {
+  margin: 0;
+}
+
+.saved-note b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.confirm-text {
+  font-weight: 600;
+}
+
+.danger {
+  background: var(--danger);
+  color: var(--danger-ink);
+  border: 0;
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+  font-weight: 650;
+}
+
+.danger:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--danger) 82%, white);
+}
+
+.danger:active:not(:disabled) {
+  background-color: color-mix(in srgb, var(--danger) 86%, black);
+}
+
+.danger-link {
+  background: none;
+  border: 0;
+  padding: 0.6rem 0;
+  color: var(--danger);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+.danger-link:hover:not(:disabled) {
+  text-decoration-thickness: 2px;
+}
+
+/* a szerkesztő ablakban halvány piros aláhúzás, rámutatáskor erősödik */
+.editor .danger-link {
+  text-decoration-color: color-mix(in srgb, var(--danger) 40%, transparent);
+  text-underline-offset: 4px;
+}
+
+.editor .danger-link:hover {
+  text-decoration-color: currentColor;
+}

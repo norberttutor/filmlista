@@ -1,0 +1,345 @@
+/* ---------- Űrlapelemek ---------- */
+input[type='email'],
+input[type='password'],
+input[type='search'],
+input[type='date'],
+textarea,
+select {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* lenyíló: a böngésző vastag nyila helyett ugyanaz a vékony, szürke nyíl, mint a
+   Franchise-szűrő gombján. A böngésző rejtett belső margóit (balra 4 px, jobbra a nyílnak
+   16 px) a belső margó pótolja, a sormagasság a beépített lenyílóé – így a méret és a
+   szöveg helye nem változik. */
+select {
+  appearance: none;
+  line-height: 1.32;
+  padding-right: calc(0.75rem + 16px);
+  padding-left: calc(0.75rem + 4px);
+  background-image: var(--chevron);
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 10px 10px;
+}
+
+select:hover {
+  border-color: var(--muted);
+}
+
+/* Egységes lenyílók (terv-3 108, Norbi választása a látványterv után, 2026-10-15 –
+   https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs): a natív <select> listája a böngésző testreszabható lenyílójával
+   (appearance: base-select – Chrome / Edge 135+; máshol a mai lista) az app stílusában nyílik, mint a franchise- és
+   a műfajszűrő: lekerekített, árnyékos panel, halvány nyílás (0,16 s, popup-in), a kiválasztott türkiz, mellette pipa.
+   A zárt mező nem változik (a saját vékony nyíl marad, a beépített ikon rejtve). A szűrősor lenyílóinak opciói elé ikon
+   kerül (érték szerint, ::before maszkkal), az állapotokéi elé az állapot színe. A billentyűzet, a felolvasó és a
+   választás (change esemény) a natívé. */
+@supports (appearance: base-select) {
+  select,
+  ::picker(select) {
+    appearance: base-select;
+  }
+
+  select::picker-icon {
+    display: none;
+  }
+
+  ::picker(select) {
+    min-width: anchor-size(width);
+    max-height: min(26rem, 70dvh);
+    margin-block: 6px;
+    padding: 0.35rem;
+    overflow-y: auto;
+    color: var(--text);
+    background: var(--surface-raised);
+    border: 1px solid var(--edge);
+    border-radius: 16px;
+    box-shadow: var(--shadow-pop);
+  }
+
+  select:open::picker(select) {
+    animation: popup-in 0.16s ease-out;
+  }
+
+  select:open {
+    border-color: var(--accent-line);
+  }
+
+  select option {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 2.25rem;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.92rem;
+    border-radius: 10px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  select option:hover,
+  select option:focus-visible {
+    background: var(--hover-tint);
+    outline: none;
+  }
+
+  select option:checked {
+    color: var(--accent);
+    background: var(--accent-soft);
+    font-weight: 600;
+  }
+
+  select option::checkmark {
+    order: 1;
+    margin-left: auto;
+    padding-left: 0.8rem;
+    content: '✓';
+    font-weight: 700;
+  }
+
+  select option:disabled {
+    color: var(--muted);
+    cursor: default;
+  }
+
+  /* ikonok a szűrősor lenyílóiban (a műfajikonok mintájára, a felirat színében) */
+  :is(.type-select, .download-select, .sort-select) option::before {
+    content: '';
+    flex: none;
+    width: 17px;
+    height: 17px;
+    background: currentColor;
+    opacity: 0.8;
+    -webkit-mask: var(--opt-icon) center / contain no-repeat;
+    mask: var(--opt-icon) center / contain no-repeat;
+  }
+
+  .type-select option[value='movie'] {
+    --opt-icon: var(--icon-film);
+  }
+
+  .type-select option[value='tv'] {
+    --opt-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='6' width='18' height='13' rx='2'/%3E%3Cpath d='M8 3l4 3 4-3'/%3E%3C/svg%3E");
+  }
+
+  .type-select option[value='all'] {
+    --opt-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='8' height='7' rx='1.5'/%3E%3Crect x='13' y='4' width='8' height='7' rx='1.5'/%3E%3Crect x='3' y='13' width='8' height='7' rx='1.5'/%3E%3Crect x='13' y='13' width='8' height='7' rx='1.5'/%3E%3C/svg%3E");
+  }
+
+  .download-select option[value='all'] {
+    --opt-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Cpath d='M5 7h14M5 12h14M5 17h14'/%3E%3C/svg%3E");
+  }
+
+  .download-select option[value='yes'] {
+    --opt-icon: var(--icon-download);
+  }
+
+  .download-select option[value='no'] {
+    --opt-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/svg%3E");
+  }
+
+  .sort-select option:is([value='added_desc'], [value='added_asc']) {
+    --opt-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M12 8v4l3 2'/%3E%3C/svg%3E");
+  }
+
+  .sort-select option:is([value='rating'], [value='imdb']) {
+    --opt-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linejoin='round'%3E%3Cpath d='M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.9z'/%3E%3C/svg%3E");
+  }
+
+  .sort-select option:is([value='year_desc'], [value='year_asc']) {
+    --opt-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='5' width='16' height='15' rx='2'/%3E%3Cpath d='M4 10h16M9 3v4M15 3v4'/%3E%3C/svg%3E");
+  }
+
+  .sort-select option[value='watch_order'] {
+    --opt-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Cpath d='M10 6h10M10 12h10M10 18h10M4 5.5h1.5v3M4 8.5h3M4 15.5c0-1 2.5-1.5 2.5 0 0 1-2.5 1.8-2.5 3h2.8'/%3E%3C/svg%3E");
+  }
+
+  /* telefonon az állapot-lenyíló: az opció előtt az állapot színe (Megnézendő: üres kör) */
+  :is(.status-select, .mama-select) option::before {
+    content: '';
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--opt-dot, transparent);
+    box-shadow: inset 0 0 0 1.5px var(--opt-ring, var(--opt-dot, var(--muted)));
+  }
+
+  .status-select option[value='all'] {
+    --opt-ring: var(--muted);
+    --opt-dot: linear-gradient(90deg, var(--st-watching) 50%, var(--st-watched) 50%);
+  }
+
+  .status-select option[value='watching'] {
+    --opt-dot: var(--st-watching);
+  }
+
+  .status-select option[value='watched'] {
+    --opt-dot: var(--st-watched);
+  }
+
+  .status-select option[value='dropped'] {
+    --opt-dot: var(--st-dropped);
+  }
+
+  .mama-select option[value='interested'] {
+    --opt-dot: var(--accent-2);
+  }
+
+  .mama-select option[value='received'] {
+    --opt-dot: var(--st-watched);
+  }
+}
+
+/* jelölőnégyzet a sötét témához: vékony keretes, lekerekített négyzet, bejelölve türkiz
+   kitöltés sötét pipával (a méretét a helye adja meg) */
+input[type='checkbox'] {
+  appearance: none;
+  border: 1.5px solid var(--control-border);
+  border-radius: 4px;
+  background: transparent center / 100% 100% no-repeat;
+  cursor: pointer;
+}
+
+input[type='checkbox']:hover {
+  border-color: var(--muted);
+}
+
+input[type='checkbox']:checked {
+  border-color: var(--accent);
+  background-color: var(--accent);
+  background-image: var(--check-mark);
+}
+
+input[type='checkbox']:checked:hover {
+  border-color: var(--accent-hover);
+  background-color: var(--accent-hover);
+}
+
+input[type='checkbox']:focus-visible {
+  outline-offset: 2px;
+}
+
+/* Windows nagy kontrasztú módjában maradnak a beépített vezérlők */
+@media (forced-colors: active) {
+  input[type='checkbox'],
+  select {
+    appearance: auto;
+    background-image: none;
+  }
+}
+
+/* saját görgetősáv (terv-3 49.10, Norbi kérése, 2026-10-08): vékony, sötét, lekerekített fogantyú
+   átlátszó sínen; a fogantyúra mutatva türkiz, húzás közben teli türkiz (a lap, az ablakok, a
+   vízszintes borítósorok, a lenyílók) – a Windows szürke sávja helyett. Chrome / Edge: a
+   ::-webkit-scrollbar szabályok (csak akkor érvényesek, ha az elemen nincs scrollbar-width /
+   scrollbar-color – ezért azokat sehol ne adj meg); Firefox: a szabványos, vékony sáv. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--tint) / 0.16) padding-box;
+  border: 2px solid transparent; /* a látható fogantyú 6 px, a megfogható rész 10 px */
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklab, var(--accent) 70%, transparent);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--accent);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--tint) / 0.16) transparent;
+  }
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+button,
+select,
+input[type='checkbox'],
+.franchise-filter-button {
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+/* a gombok kerek végűek; rámutatva finoman világosodnak, lenyomva sötétednek */
+.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 0;
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+  font-weight: 650;
+}
+
+.primary:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+}
+
+.primary:active:not(:disabled) {
+  background-color: var(--accent-press);
+}
+
+.ghost {
+  background: none;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+}
+
+.ghost:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--muted);
+  background-color: var(--hover-tint);
+}
+
+.ghost:active:not(:disabled) {
+  background-color: var(--press-tint);
+}
+
+.link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.link:hover {
+  text-decoration-thickness: 2px;
+}
+
+.error {
+  color: var(--danger);
+  margin: 0;
+}

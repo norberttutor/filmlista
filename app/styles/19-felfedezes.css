@@ -1,0 +1,528 @@
+/* ---------- Felfedezés (a „Cím hozzáadása” panelen, üres keresőnél) ---------- */
+/* az oszlop a panel szélességű (minmax(0, …)): a borítósorok a saját helyükön görögnek, nem
+   tolják szélesebbre a lapot (különben telefonon az egész oldal kicsinyedik, és a róla nyitott
+   adatlap is kilóg) */
+.discover {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.4rem;
+  margin-top: 0.2rem;
+}
+
+/* soronként saját szín (terv-3 51.4, Norbi választása, 2026-10-08 – látványterv:
+   munka/terv-3/terv-51/): a cím előtt kerek ikonjelvény a sor színében – Most a mozikban korall
+   (filmcsapó), Hamarosan indigó (naptár), Új digitálisan égkék (letöltés), Népszerű sorozatok zsálya
+   (tévé), Neked ajánlott rózsa (szív). A szín a tartalomfajta jele, nem gomb */
+.discover-row {
+  --row: var(--accent);
+  --row-icon: none;
+}
+
+.discover-row[data-list='cinema'] {
+  --row: var(--c-coral);
+  --row-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 11h16v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z'/%3E%3Cpath d='m4 11-.6-3.2a1 1 0 0 1 .8-1.2l13.8-2.5a1 1 0 0 1 1.2.8L19.6 7 4 11'/%3E%3Cpath d='m8.5 6 2 3.4M13.5 5.1l2 3.4'/%3E%3C/svg%3E");
+}
+
+.discover-row[data-list='upcoming'] {
+  --row: var(--c-indigo);
+  --row-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='5' width='17' height='15' rx='2.5'/%3E%3Cpath d='M3.5 10h17M8 3v4M16 3v4'/%3E%3C/svg%3E");
+}
+
+.discover-row[data-list='digital'] {
+  --row: var(--c-sky);
+  --row-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v12M7 10l5 5 5-5M5 21h14'/%3E%3C/svg%3E");
+}
+
+.discover-row[data-list='tv'] {
+  --row: var(--c-sage);
+  --row-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='7' width='18' height='13' rx='2.5'/%3E%3Cpath d='m8 3 4 4 4-4'/%3E%3C/svg%3E");
+}
+
+.discover-row[data-list='foryou'] {
+  --row: var(--c-rose);
+  --row-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M12 20.5s-7.5-4.6-9.2-9.3C1.6 7.8 3.8 4.5 7.2 4.5c2 0 3.6 1.1 4.8 2.8 1.2-1.7 2.8-2.8 4.8-2.8 3.4 0 5.6 3.3 4.4 6.7-1.7 4.7-9.2 9.3-9.2 9.3z'/%3E%3C/svg%3E");
+}
+
+.discover-row h3 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+/* a kör: halvány háttér a sor színében, vékony gyűrű; benne az ikon (maszk) a sor színében */
+.discover-row h3::before {
+  content: '';
+  flex: none;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--row) 18%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--row) 45%, transparent);
+}
+
+.discover-row h3::after {
+  content: '';
+  position: absolute;
+  left: 0.425rem;
+  top: 50%;
+  width: 1.05rem;
+  height: 1.05rem;
+  translate: 0 -50%;
+  background: var(--row);
+  -webkit-mask: var(--row-icon) center / contain no-repeat;
+  mask: var(--row-icon) center / contain no-repeat;
+}
+
+.discover-sub {
+  margin: 0.1rem 0 0.7rem;
+  padding-left: 2.5rem; /* a cím szövegéhez igazodik (az ikon mellett) */
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* vízszintesen görgethető borítósor */
+.discover-list {
+  display: flex;
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0 0 0.7rem;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+}
+
+.discover-item {
+  flex: none;
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+  width: 8rem;
+  font-size: 0.85rem;
+  scroll-snap-align: start;
+}
+
+.discover-item img,
+.discover-sk {
+  flex: none;
+  width: 8rem;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 13px;
+  box-shadow: 0 6px 16px -6px rgb(var(--shade) / calc(0.6 * var(--shade-k)));
+}
+
+/* a borító az adatlapot nyitja (előnézet): rámutatva / fókusznál türkiz gyűrű */
+.discover-poster {
+  display: block;
+  width: fit-content;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 13px;
+}
+
+.discover-poster img {
+  display: block;
+  transition: box-shadow 0.15s;
+}
+
+.discover-poster:focus-visible img {
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 6px 16px -6px rgb(var(--shade) / calc(0.6 * var(--shade-k)));
+}
+
+@media (hover: hover) {
+  .discover-poster:hover img {
+    box-shadow:
+      0 0 0 2px var(--accent),
+      0 6px 16px -6px rgb(var(--shade) / calc(0.6 * var(--shade-k)));
+  }
+}
+
+.discover-poster:focus-visible {
+  outline: none;
+}
+
+.discover-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  min-height: 2.5em; /* két sornyi hely: a gombok egy vonalban */
+  line-height: 1.25;
+}
+
+.discover-item .ghost {
+  justify-self: start;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.8rem;
+}
+
+.discover-item .on-list {
+  margin: 0;
+}
+
+/* ---------- „Nem érdekel” – elrejtett ajánlások (terv-3 39) ---------- */
+/* × a borító jobb felső sarkában (Felfedezés, Hasonló címek); egérrel csak rámutatáskor /
+   fókusznál látszik, érintőképernyőn mindig. Alatta / fölötte helyben „Visszavonás”. */
+.discover-item,
+.similar-item {
+  position: relative;
+}
+
+.hide-btn {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  padding: 0;
+  color: var(--text);
+  background: rgb(var(--glass) / 0.75);
+  border: 1px solid rgb(var(--tint) / 0.18);
+  border-radius: 999px;
+}
+
+.hide-btn:hover {
+  color: var(--accent);
+  background: rgb(var(--glass) / 0.92);
+  border-color: var(--accent-line);
+}
+
+@media (hover: hover) {
+  .hide-btn {
+    opacity: 0;
+  }
+
+  .discover-item:hover .hide-btn,
+  .similar-item:hover .hide-btn,
+  .featured-slide:hover .hide-btn,
+  .hide-btn:focus-visible {
+    opacity: 1;
+  }
+}
+
+/* Kiemelt sáv a Felfedezés tetején (terv-3 46, Norbi választása: „A” látványterv – munka/terv-3/
+   terv-46/): egy nagy, széles jelenetkép jobbra, balra a sötétbe olvadva; rajta logó / cím, adatok,
+   leírás, gombok; jobbra lent pöttyök és nyilak, alatta a kis képek. Telefonon fent a kép, alatta a
+   szöveg, a kis képek és a nyilak nélkül (ujjal lapozható). */
+.featured {
+  margin: 0 0 1.6rem;
+}
+
+.featured-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0 0 0.6rem;
+}
+
+.featured-head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.featured-count {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.featured-slide {
+  position: relative;
+  height: 22rem;
+  overflow: hidden;
+  background: #0b0f15;
+  border-radius: 22px;
+  box-shadow: 0 0 0 1px var(--line);
+  touch-action: pan-y;
+}
+
+.featured-bg {
+  position: absolute;
+  inset: 0 0 0 30%;
+  background-position: center 25%;
+  background-size: cover;
+  -webkit-mask: linear-gradient(90deg, transparent, #000 35%);
+  mask: linear-gradient(90deg, transparent, #000 35%);
+}
+
+.featured-slide::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(0deg, rgb(var(--glass) / 0.85), transparent 45%);
+}
+
+.featured-slide .hide-btn {
+  top: 0.9rem;
+  right: 0.9rem;
+  z-index: 2;
+}
+
+.featured-body {
+  position: absolute;
+  right: 45%;
+  bottom: 1.6rem;
+  left: 2rem;
+  z-index: 1;
+}
+
+.featured-logo,
+.featured-name {
+  margin: 0;
+}
+
+.featured-logo img {
+  display: block;
+  max-width: min(20rem, 100%);
+  max-height: 5.5rem;
+  object-fit: contain;
+  object-position: left bottom;
+  filter: drop-shadow(0 2px 10px rgb(var(--shade) / calc(0.6 * var(--shade-k))));
+}
+
+.featured-name {
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.featured-meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* mozi: korall (terv-3 51.4, a tartalomfajták színei) */
+.featured-when {
+  color: var(--c-coral);
+}
+
+.featured-overview {
+  display: -webkit-box;
+  max-width: 34rem;
+  margin: 0.6rem 0 0;
+  overflow: hidden;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.featured-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.featured-add:not(:disabled) {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+.featured-nav {
+  position: absolute;
+  right: 1.2rem;
+  bottom: 1.2rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.featured-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+/* a pötty kicsi, de a gomb (kattintható terület) nagyobb */
+.featured-dots button {
+  display: grid;
+  place-items: center;
+  width: 1.1rem;
+  height: 1.6rem;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+
+.featured-dots button::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  background: rgb(var(--tint) / 0.28);
+  border-radius: 999px;
+}
+
+.featured-dots button.on {
+  width: 1.9rem;
+}
+
+.featured-dots button.on::before {
+  width: 1.4rem;
+  background: var(--accent);
+}
+
+.featured-arrow {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: #fff;
+  background: rgb(var(--glass) / 0.55);
+  border: 1px solid rgb(var(--tint) / 0.18);
+  border-radius: 50%;
+  backdrop-filter: blur(8px);
+}
+
+/* SVG nyíl (a galériáé – Chevron), nem szöveges ‹ › (átnézés J14) */
+.featured-arrow svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.featured-arrow:hover {
+  color: var(--accent);
+  border-color: var(--accent-line);
+}
+
+.featured-thumbs {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.7rem;
+}
+
+.featured-thumbs button {
+  flex: 1;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  background-position: center;
+  background-size: cover;
+  border: 0;
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px var(--line);
+  opacity: 0.55;
+}
+
+.featured-thumbs button:hover {
+  opacity: 0.85;
+}
+
+.featured-thumbs button.on {
+  box-shadow: 0 0 0 2px var(--accent);
+  opacity: 1;
+}
+
+.featured-sk {
+  display: block;
+  height: 22rem;
+  margin: 0 0 1.6rem;
+  border-radius: 22px;
+}
+
+@supports (corner-shape: squircle) {
+  .featured-slide,
+  .featured-sk {
+    corner-shape: squircle;
+  }
+}
+
+@media (max-width: 640px) {
+  .featured-slide {
+    height: auto;
+  }
+
+  .featured-bg {
+    position: relative;
+    inset: auto;
+    display: block;
+    aspect-ratio: 16 / 9;
+    -webkit-mask: linear-gradient(0deg, transparent, #000 40%);
+    mask: linear-gradient(0deg, transparent, #000 40%);
+  }
+
+  .featured-slide::after,
+  .featured-thumbs,
+  .featured-arrow {
+    display: none;
+  }
+
+  .featured-body {
+    position: relative;
+    inset: auto;
+    margin-top: -2.4rem;
+    padding: 0 1rem 1rem;
+  }
+
+  .featured-nav {
+    position: static;
+    justify-content: center;
+    padding: 0 0 0.8rem;
+  }
+
+  .featured-name {
+    font-size: 1.4rem;
+  }
+
+  .featured-overview {
+    -webkit-line-clamp: 4;
+  }
+
+  .featured-sk {
+    height: 26rem;
+  }
+}
+
+.hide-note {
+  margin: 0 0 0.4rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.hide-note:empty {
+  margin: 0;
+}
+
+/* a Felfedezés alján: „Elrejtett ajánlások (N)” → lista, „Mégis érdekel” */
+.discover-hidden {
+  margin-top: 0.4rem;
+}
+
+.hidden-list {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hidden-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.hidden-list .thumb {
+  width: 2.3rem;
+}
+
+.hidden-text {
+  flex: 1;
+  display: grid;
+  min-width: 0;
+}

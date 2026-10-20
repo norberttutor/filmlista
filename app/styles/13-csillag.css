@@ -1,0 +1,93 @@
+/* ---------- Csillagos értékelés ---------- */
+.stars,
+.stars-static {
+  display: inline-flex;
+  align-items: center;
+}
+
+.stars label {
+  position: relative; /* a láthatatlan rádiógomb ehhez igazodik */
+  display: grid;
+  padding: 1px;
+  cursor: pointer;
+}
+
+.stars svg,
+.stars-static svg {
+  display: block;
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+
+.stars svg {
+  transition: stroke 0.15s, fill 0.15s, transform 0.12s ease-out;
+}
+
+/* a saját értékelés a második kiemelőszínnel (borostyán) */
+.stars .on svg,
+.stars-static .on svg {
+  fill: var(--accent-2);
+  stroke: var(--accent-2);
+}
+
+/* egérrel rámutatva halvány borostyán kitöltéssel mutatja, mennyi lenne; a rámutatott
+   csillag picit megnő (a helye nem változik) */
+.stars.previewing .on svg {
+  fill: color-mix(in srgb, var(--accent-2) 38%, transparent);
+  stroke: var(--accent-2);
+}
+
+.stars label:hover svg {
+  transform: scale(1.12);
+}
+
+.stars input:focus-visible + svg {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+  border-radius: 50%;
+}
+
+/* a táblázatban az üres csillagok halkabbak (25 sorban 250 körvonal), a sorra mutatva
+   élesednek – így az értékeltek ugranak ki */
+.titles-table .stars label:not(.on) svg {
+  stroke: var(--star-empty);
+}
+
+.titles-table tr:hover .stars label:not(.on) svg,
+.titles-table tr:focus-within .stars label:not(.on) svg {
+  stroke: var(--muted);
+}
+
+.stars-static svg {
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
+/* a szerkesztő ablakban az üres csillagok halványabb körvonallal, a kitöltöttek kiugranak */
+.editor .stars svg {
+  width: 1.55rem;
+  height: 1.55rem;
+  stroke: color-mix(in srgb, var(--muted) 70%, var(--surface));
+}
+
+.editor .stars .on svg {
+  stroke: var(--accent-2);
+}
+
+.rating-field {
+  display: flex;
+  flex-wrap: wrap; /* keskeny képernyőn a "8/10 Törlés" új sorba kerülhet */
+  align-items: center;
+  gap: 0.3rem 0.6rem;
+}
+
+.rating-number {
+  min-width: 2.4rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}

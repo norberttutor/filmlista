@@ -1,0 +1,85 @@
+/* ---------- Squircle sarkok ---------- */
+/* iOS-szerű, folytonos ívű sarkok (Chrome / Edge 139+; máshol a kerek sarok marad). Ugyanakkora
+   sugárral a squircle kevésbé kerek, ezért a sugár nagyobb. A kerek végű (pirula) gombok és a
+   körök maradnak. */
+@supports (corner-shape: squircle) {
+  /* borítók */
+  .poster,
+  .poster::after {
+    corner-shape: squircle;
+    border-radius: 22px;
+  }
+
+  .thumb,
+  .thumb::after,
+  .similar-poster,
+  .similar-poster::after,
+  .discover-poster,
+  .discover-item img,
+  .discover-sk,
+  .trailer,
+  .notif-thumb {
+    corner-shape: squircle;
+    border-radius: 13px;
+  }
+
+  .watch-providers img {
+    corner-shape: squircle;
+    border-radius: 16px;
+  }
+
+  .editor-poster {
+    corner-shape: squircle;
+    border-radius: 28px;
+  }
+
+  /* ablakok és felugró panelek */
+  .editor {
+    corner-shape: squircle;
+    border-radius: 32px;
+  }
+
+  .notif-panel,
+  .more-menu,
+  .season-panel,
+  .franchise-listbox,
+  .add-panel,
+  .hint,
+  .toast {
+    corner-shape: squircle;
+    border-radius: 20px;
+  }
+
+  .tile,
+  .fr-tile {
+    corner-shape: squircle;
+    border-radius: 18px;
+  }
+
+  .fr-logo {
+    corner-shape: squircle;
+    border-radius: 13px;
+  }
+
+  /* mezők, lenyílók, címkék */
+  select,
+  input:not([type='checkbox']):not([type='radio']),
+  .franchise-filter-button,
+  .result,
+  .notif-item,
+  .season-count,
+  .season-dropped,
+  .bulk-cand,
+  .season-timeline,
+  .backup-list,
+  .collection-banner {
+    corner-shape: squircle;
+    border-radius: 12px;
+  }
+
+  .imdb,
+  input[type='checkbox'] {
+    corner-shape: squircle;
+    border-radius: 7px;
+  }
+}

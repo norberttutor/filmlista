@@ -1,0 +1,41 @@
+/* ---------- Videotéka-téma (D10) – színek ---------- */
+/* Norbi választása a látványterv után (2026-10-19 – https://claude.ai/artifact/VzCx6F4njpfmNG7FvuUnp5): harmadik,
+   választható téma a 90-es évek tékájának stílusában (a ⋮ menüből; <html data-theme="teka">). A sötétre épül: csak
+   az itt felsorolt tokenek mások. Feltétel (Norbi): a sötét és a világos kinézet semmiben nem változhat – ezért
+   MINDEN téka-szabály a :root[data-theme='teka'] kiválasztóval kezdődik (a felület szabályai lent, „Videotéka-téma
+   (D10) – felület”), és a meglévő szabályokhoz nem nyúl. Kontraszt a háttéren (mérve): szöveg 16,9:1, halvány
+   7,5:1, megnézett 5,4:1 (a felületen 4,9:1), sárga 13,9:1, OSD-zöld 14,9:1; a kártyán a pecsét 4,9:1. */
+:root[data-theme='teka'] {
+  --bg: oklch(17.1% 0.0388 291.43);           /* #100c1f éjszakai lila-fekete */
+  --bg-top: oklch(21.86% 0.0517 291.77);      /* #1b1530 */
+  --surface: oklch(21.86% 0.0517 291.77);     /* #1b1530 */
+  --surface-raised: oklch(24.5% 0.06 292);    /* #211a3a */
+  --line: oklch(32.01% 0.0846 291.19);        /* #34295a */
+  --line-soft: oklch(25.5% 0.06 292);         /* #241c3e */
+  --text: oklch(95.76% 0.0219 300.21);        /* #f3eefe */
+  --muted: oklch(71.74% 0.0642 296.2);        /* #a79cc8 */
+  --watched-text: oklch(63% 0.05 296);        /* #8d82ab */
+  --placeholder-bg: linear-gradient(160deg, oklch(26% 0.06 292) 0%, oklch(19% 0.045 292) 100%);
+  --glass: 16 12 31;
+  --scrim: 8 6 18;
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23a79cc8' stroke-width='1.6'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a79cc8' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
+  /* a téka saját színei – csak ebben a témában léteznek */
+  --teka-yellow: oklch(89.14% 0.1588 93.22);  /* #ffd84a matrica, cégtábla */
+  --teka-pink: oklch(60.17% 0.2219 0.52);     /* #e0287a */
+  --teka-blue: oklch(58.64% 0.225 265.65);    /* #3b6cff */
+  --teka-green: oklch(89.57% 0.1706 150.62);  /* #7dfca0 a videomagnó képernyőfelirata */
+  --teka-ink: oklch(22% 0.07 355);            /* #2a0b19 felirat a sárgán / a kategóriacímkén */
+  --teka-paper: oklch(94.4% 0.0278 88.75);    /* #f4ecd8 tagsági kártya */
+  --teka-paper-ink: oklch(28.44% 0.0491 293.23); /* #2b2540 */
+  --teka-stamp: oklch(53.42% 0.1943 4.43);    /* #c0225f pecsét */
+  --teka-case: oklch(14% 0.006 285);          /* #0b0b0e kazettatok */
+  --teka-case-hi: oklch(29% 0.016 285);       /* #2a2a33 a tok élének csillanása */
+  --teka-key: oklch(46% 0.04 293);            /* #5a5670 magnógomb teteje */
+  --teka-key-low: oklch(30% 0.038 293);       /* #2f2c42 magnógomb alja */
+  --teka-key-edge: oklch(14% 0.02 293);       /* #0d0b14 */
+  /* a neonfelirat (D9) itt rózsaszín és sárga */
+  --neon-1: oklch(69.5% 0.2229 355.31);       /* #ff4fa3 */
+  --neon-2: var(--teka-yellow);
+  color-scheme: dark;
+}

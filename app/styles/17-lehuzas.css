@@ -1,0 +1,45 @@
+/* ---------- Lehúzás frissítéshez (terv-3 85, components/PullRefresh.js) ----------
+   A telepített appban (a <html data-pull-refresh>): a lap teteje nem „rugózik” / nem tölt újra magától; a
+   jelző fölül, középen a húzással együtt lejjebb csúszik és fordul, a küszöbön türkiz keretet kap,
+   frissítés közben forog („Mozgás” szakasz) */
+:root[data-pull-refresh] body {
+  overscroll-behavior-y: contain;
+}
+
+.pull-refresh {
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  left: 50%;
+  z-index: 40;
+  translate: -50% calc(var(--pull, 0px) - 3rem);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pull-refresh[data-state] {
+  opacity: 1;
+}
+
+.pull-refresh-dot {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 6px 18px rgb(var(--shade) / calc(0.45 * var(--shade-k)));
+}
+
+.pull-refresh[data-state='ready'] .pull-refresh-dot,
+.pull-refresh[data-state='refreshing'] .pull-refresh-dot {
+  border-color: var(--accent-line);
+  background: color-mix(in oklab, var(--accent) 12%, var(--surface));
+}
+
+.pull-refresh-dot svg {
+  width: 1.3rem;
+  height: 1.3rem;
+  rotate: var(--turn, 0deg);
+}

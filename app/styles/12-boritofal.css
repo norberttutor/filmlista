@@ -1,0 +1,496 @@
+/* ---------- Borítófal ---------- */
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 2rem var(--gutter) 3.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 2.25rem 1.25rem;
+}
+
+.card {
+  position: relative;
+}
+
+/* állapotszín a kártyán és a táblázatsorban – új állapotnál ide is kell egy sor */
+[data-status]                 { --strip: var(--muted); }
+[data-status='to_watch']      { --strip: var(--st-to_watch); }
+[data-status='watching']      { --strip: var(--st-watching); }
+[data-status='watched']       { --strip: var(--st-watched); }
+[data-status='dropped']       { --strip: var(--st-dropped); }
+
+/* a megnézett (és az abbahagyott) címek háttérbe húzódnak: fekete-fehér, fakó borító,
+   tompított, de olvasható (≥ 4,5:1) szövegek, halványabb vezérlők. Rámutatáskor, fókusznál
+   (szerkesztés) és a törlés megerősítésekor minden teljes színű. */
+.titles-table tbody tr[data-status='watched']:not(:hover):not(:focus-within),
+.card[data-status='watched']:not(:hover):not(:focus-within) {
+  --strip: color-mix(in srgb, var(--st-watched) 55%, transparent);
+}
+
+.titles-table tbody tr[data-status='dropped']:not(:hover):not(:focus-within),
+.card[data-status='dropped']:not(:hover):not(:focus-within) {
+  --strip: color-mix(in srgb, var(--st-dropped) 55%, transparent);
+}
+
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .thumb img,
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .poster img {
+  filter: grayscale(1) brightness(0.8);
+  opacity: 0.55;
+}
+
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within)
+  :is(.row-name, .original, .meta, .row-genres, .added, .row-overview, .rating-number),
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) :is(h3, .original, .meta, .status-name, .genres, .added) {
+  color: var(--watched-text);
+}
+
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .imdb b,
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .imdb b {
+  color: inherit;
+}
+
+/* a műfajok színes pöttye is szürke */
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .genre::before,
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .genre::before {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+
+/* az adatlapon a cím adatai alatt, pötty nélkül (mint Mama adatlapján) */
+.editor-genres {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* nézési sorrendben (terv-3 28) a sorozat évadonként külön tétel: „2. évad” a cím alatt / a soron
+   (a csíkon nincs kiemelés – Norbi kérése, 2026-10-06). Önálló szabály: 2026-10-06-ig véletlenül a
+   megnézett kártyák halványító szabályának közepére került, így rámutatáskor nőtt (Norbi jelezte). */
+.card-season {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.card[data-status='watched'] .card-season,
+.card[data-status='dropped'] .card-season {
+  color: var(--watched-accent);
+}
+
+.season-tag {
+  padding: 0 0.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 999px;
+}
+
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .franchise-select,
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .card-franchise {
+  color: var(--watched-accent);
+}
+
+/* a vezérlők (pipa, lenyílók, csillagok, kuka) halványabbak – a cella tartalma, nem a cella: a
+   kártyaszerű sor (terv-3 59) háttere és kerete egyforma marad */
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within)
+  > td:is(.col-check, .col-status, .col-mama, .col-actions) > :not(.lock),
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within)
+  > td:is(.col-check, .col-status, .col-mama, .col-actions) > .lock > *,
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .stars,
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .card-stars {
+  opacity: 0.55;
+}
+
+/* a borítóra kattintva a szerkesztő ablak nyílik */
+.card .poster {
+  cursor: pointer;
+}
+
+/* a cím az IMDb-adatlapra visz: halvány aláhúzás jelzi (telefonon nincs rámutatás) */
+.card h3 a {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+}
+
+.card h3 a:hover {
+  text-decoration-color: currentColor;
+}
+
+/* borító keret helyett mélységgel: puha árnyék alatta, hajszálvékony világos gyűrű a kép
+   fölött (a doboz mérete nem változik) */
+.poster {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 8px;
+  background: linear-gradient(165deg, color-mix(in srgb, var(--surface), white 4%), var(--bg));
+  box-shadow:
+    0 1px 2px rgb(var(--shade) / calc(0.35 * var(--shade-k))),
+    0 12px 24px -12px rgb(var(--shade) / calc(0.8 * var(--shade-k)));
+}
+
+.poster::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgb(var(--tint) / 0.08);
+  pointer-events: none;
+}
+
+.poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: filter 0.15s, opacity 0.15s;
+}
+
+/* borító nélküli cím: "üres plakát" filmikonnal, alul a cím */
+.poster:has(> .poster-fallback) {
+  background: var(--placeholder-bg);
+}
+
+.poster-fallback {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  padding: 0.8rem 0.8rem 1.1rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: color-mix(in srgb, var(--text) 85%, transparent);
+  text-wrap: balance;
+}
+
+.poster-fallback::before {
+  content: '';
+  position: absolute;
+  top: 34%;
+  left: 50%;
+  width: 2.75rem;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  background: var(--muted);
+  -webkit-mask: var(--icon-film) center / contain no-repeat;
+  mask: var(--icon-film) center / contain no-repeat;
+  opacity: 0.6;
+}
+
+.status-strip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 5px;
+  background: var(--strip);
+}
+
+/* ---------- Még meg nem jelent film (releaseState): szaggatott keret + dátumos jelvény ---------- */
+/* a színe a fajtájától függ (terv-3 51.4): „Hamarosan” indigó, „Moziban” (digitálisan még nem) korall */
+.card[data-release] .poster {
+  outline: 2px dashed color-mix(in oklab, var(--c-indigo) 70%, transparent);
+  outline-offset: 4px;
+}
+
+.titles-table tr[data-release] .thumb {
+  outline: 1.5px dashed color-mix(in oklab, var(--c-indigo) 70%, transparent);
+  outline-offset: 3px;
+}
+
+.card[data-release='cinema'] .poster,
+.titles-table tr[data-release='cinema'] .thumb {
+  outline-color: color-mix(in oklab, var(--c-coral) 70%, transparent);
+}
+
+.release-badge {
+  --release: var(--c-indigo);
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.74rem;
+  font-weight: 650;
+  line-height: 1.5;
+  color: var(--release);
+  background: color-mix(in oklab, var(--release) 12%, transparent);
+  border: 1px dashed color-mix(in oklab, var(--release) 60%, transparent);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.release-badge[data-kind='cinema'] {
+  --release: var(--c-coral);
+}
+
+.release-badge svg {
+  flex: none;
+  margin-right: 0.3rem;
+}
+
+/* a kártyán a borító alján, a sötét képen is olvashatóan; a „digitálisan: …” külön sorban */
+.card .release-badge {
+  position: absolute;
+  left: 0.5rem;
+  bottom: 0.75rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  max-width: calc(100% - 1rem);
+  padding: 0.15rem 0.6rem;
+  background: color-mix(in oklab, var(--release) 14%, rgb(var(--glass) / 0.82));
+  border-radius: 0.75rem;
+}
+
+.card .release-main,
+.card .release-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card .release-sub {
+  grid-column: 2;
+  font-size: 0.68rem;
+  font-weight: 550;
+  color: var(--muted);
+}
+
+.card .release-sub .release-sep {
+  display: none;
+}
+
+/* a bejelentett évad rövid dátuma ("2027") csak telefonon */
+.release-short {
+  display: none;
+}
+
+/* borító nélkül a helykitöltő cím a jelvény fölé kerül */
+.card[data-release] .poster-fallback {
+  padding-bottom: 2.6rem;
+}
+
+.card[data-release]:has(.release-sub) .poster-fallback {
+  padding-bottom: 3.4rem;
+}
+
+.card:has(.release-badge[data-kind='season']) .poster-fallback {
+  padding-bottom: 2.6rem;
+}
+
+/* telefonon (3 kártya egy sorban) csak a dátum – vagy a „Moziban” / „Hamarosan” – fér el */
+@media (max-width: 640px) {
+  .card[data-release] .poster {
+    outline-width: 1.5px;
+    outline-offset: 2px;
+  }
+
+  .card .release-badge {
+    left: 0.35rem;
+    bottom: 0.6rem;
+    max-width: calc(100% - 0.7rem);
+    padding: 0.1rem 0.4rem;
+    font-size: 0.62rem;
+  }
+
+  .card .release-badge svg {
+    width: 10px;
+    height: 10px;
+    margin-right: 0.2rem;
+  }
+
+  .card .release-sub,
+  .card .has-when .release-word,
+  .card .has-when .release-when .release-sep,
+  .card .release-full {
+    display: none;
+  }
+
+  .card .release-short {
+    display: inline;
+  }
+
+  .card[data-release] .poster-fallback,
+  .card[data-release]:has(.release-sub) .poster-fallback,
+  .card:has(.release-badge[data-kind='season']) .poster-fallback {
+    padding-bottom: 2rem;
+  }
+}
+
+/* "Letöltve" jelvény kis türkiz letöltés-ikonnal; hajszálvékony világos szegély, hogy
+   mozgalmas borítón is kiváljon */
+.badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem 0.15rem 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+  background: rgb(var(--glass) / 0.8);
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgb(var(--tint) / 0.1);
+}
+
+.badge::before {
+  content: '';
+  flex: none;
+  width: 0.75rem;
+  height: 0.75rem;
+  background: var(--accent);
+  -webkit-mask: var(--icon-download) center / contain no-repeat;
+  mask: var(--icon-download) center / contain no-repeat;
+}
+
+/* szerkesztés gomb a borító bal felső sarkában;
+   egérrel csak rámutatáskor látszik, érintőképernyőn mindig */
+.edit-btn {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  color: var(--text);
+  background: rgb(var(--glass) / 0.8);
+  border: 1px solid rgb(var(--tint) / 0.14);
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgb(var(--shade) / calc(0.35 * var(--shade-k))); /* világos borítón is kiváljon */
+}
+
+.edit-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+@media (hover: hover) {
+  .edit-btn {
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .card:hover .edit-btn,
+  .edit-btn:focus-visible {
+    opacity: 1;
+  }
+}
+
+/* a többsoros címek kiegyensúlyozott sorokra törnek (nem marad egy szó egyedül) */
+.card h3 {
+  margin: 0.7rem 0 0;
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.25;
+  text-wrap: balance;
+  /* a szóköz nélküli, nagyon hosszú szó is tördelődik (különben a szomszéd kártyára lóg – K3) */
+  overflow-wrap: anywhere;
+  /* legfeljebb 3 sor, utána „…” (átnézés J5 – egyenletesebb kártyasorok); a teljes cím rámutatva
+     (title) és az adatlapon. A fókuszkeret befelé kerül, különben a levágás elnyelné. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+.card h3 a:focus-visible {
+  outline-offset: -2px;
+}
+
+.original {
+  margin: 0.1rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-style: italic;
+  text-wrap: balance;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.7rem;
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.status-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text);
+}
+
+.status-name::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--strip);
+}
+
+.genres {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* műfajok (GenreList): mindegyik előtt kis színes pötty – a szín műfajonként más
+   (lib/genreColors.js), a szöveg színe nem változik; tördeléskor nincs behúzás */
+.genres,
+.row-genres {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 0.75em;
+}
+
+.genre::before {
+  content: '';
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  margin-right: 0.35em;
+  border-radius: 50%;
+  background: var(--genre);
+  vertical-align: 0.06em;
+}
+
+.added {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.added time {
+  white-space: nowrap; /* a dátum ne törjön két sorba */
+}
+
+/* "IMDb 8,0" jelvény a cím adatai között: halvány, kitöltött címke (a keret helye
+   megmarad, átlátszó), a számjegyek egyforma szélesek */
+.imdb {
+  padding: 0 0.35rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--muted);
+  background: rgb(var(--tint) / 0.065);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.imdb b {
+  color: var(--text);
+  font-weight: 650;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.card-stars {
+  margin: 0.3rem 0 0;
+  line-height: 0;
+}

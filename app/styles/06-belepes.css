@@ -1,0 +1,105 @@
+/* ---------- Belépés ---------- */
+.center,
+.login {
+  display: grid;
+  place-content: center;
+  padding: var(--gutter);
+}
+
+/* minden középen: a cím és alatta az űrlap; felülről halvány türkiz fény, mint egy vetítő
+   sugara a sötét teremben (a lap általános fénye itt nem kell) */
+.login {
+  gap: 2rem;
+  justify-items: center;
+  text-align: center;
+  background: radial-gradient(ellipse 60rem 30rem at 50% -6rem, color-mix(in oklab, var(--accent) 9%, transparent), transparent 70%);
+}
+
+body:has(> main.login) {
+  background: var(--bg);
+}
+
+/* vetítőfény (terv-3 51.11, Norbi választása, 2026-10-08 – látványterv: munka/terv-3/terv-51/):
+   felülről álló, puha fénykúp a cím és az űrlap mögé, türkizből lilába (borostyán széllel), fölül a
+   „lencse” fénye; nem mozog. A kártya felső élén türkiz fényél (lent) */
+main.login {
+  position: relative;
+  isolation: isolate;
+}
+
+main.login::before {
+  content: '';
+  position: fixed;
+  z-index: -1;
+  left: 50%;
+  top: -6vh;
+  width: min(130vw, 1500px);
+  height: 92vh;
+  translate: -50% 0;
+  pointer-events: none;
+  background: conic-gradient(
+    at 50% 0%,
+    transparent 150deg,
+    color-mix(in oklab, var(--accent) 30%, transparent) 166deg,
+    color-mix(in oklab, var(--st-dropped) 28%, transparent) 180deg,
+    color-mix(in oklab, var(--accent-2) 20%, transparent) 194deg,
+    transparent 210deg
+  );
+  -webkit-mask: radial-gradient(80% 100% at 50% 0%, #000 30%, transparent 85%);
+  mask: radial-gradient(80% 100% at 50% 0%, #000 30%, transparent 85%);
+  filter: blur(22px);
+}
+
+main.login::after {
+  content: '';
+  position: fixed;
+  z-index: -1;
+  left: 50%;
+  top: -3rem;
+  width: 22rem;
+  height: 7rem;
+  translate: -50% 0;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--accent) 45%, transparent), transparent);
+  filter: blur(10px);
+}
+
+.login-form {
+  display: grid;
+  gap: 1rem;
+  width: min(22rem, 85vw);
+  text-align: left;
+}
+
+/* nagyobb kijelzőn az űrlap egy kártyán ül; telefonon nincs kártya (kevés a hely) */
+@media (min-width: 30rem) {
+  .login-form {
+    width: min(25.5rem, 85vw);
+    padding: 1.75rem;
+    background: var(--surface);
+    border-radius: 14px;
+    /* a felső élen a vetítő türkiz fénye, alatta halvány lila derengés (terv-3 51.11) */
+    box-shadow:
+      inset 0 1px 0 color-mix(in oklab, var(--accent) 35%, transparent),
+      0 0 0 1px var(--edge),
+      0 30px 80px -20px color-mix(in oklab, var(--st-dropped) 30%, transparent),
+      0 40px 80px -20px rgb(var(--shade) / calc(0.6 * var(--shade-k)));
+  }
+
+  .login-form input {
+    background: var(--bg);
+  }
+}
+
+.login-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.login-form input:hover {
+  border-color: color-mix(in srgb, var(--muted) 60%, var(--line));
+}

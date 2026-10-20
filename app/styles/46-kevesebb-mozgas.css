@@ -1,0 +1,20 @@
+/* ---------- Kevesebb mozgás ---------- */
+/* ha a rendszerben be van kapcsolva: nincsenek átmenetek, animációk (aurora), beúszás és nagyítás */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after,
+  ::backdrop,
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    transition: none !important;
+    animation: none !important; /* az aurora, a beúszás, a csillogás is áll */
+  }
+
+  .titles-table tbody tr:hover .thumb img,
+  .result:hover .thumb img,
+  .stars label:hover svg {
+    transform: none;
+  }
+}

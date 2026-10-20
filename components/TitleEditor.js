@@ -42,7 +42,7 @@ import { galleryList, GalleryStrip, BackdropPager, GalleryLightbox } from '@/com
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500'; // a nagy borító (asztalon)
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/'; // a háttérkép (telefonon w780, asztalon w1280)
 const PHONE_QUERY = '(max-width: 640px)';
-const WIDE_QUERY = '(min-width: 900px)'; // a kétoszlopos asztali adatlap (globals.css)
+const WIDE_QUERY = '(min-width: 900px)'; // a kétoszlopos asztali adatlap (app/styles/*adatlap*.css)
 
 // Rádiógombok "chip" formában; a kiválasztottra újra kattintva visszaáll üresre.
 const DOWNLOADED_OPTIONS = [{ code: 'yes', name: 'Letöltve' }];
@@ -120,7 +120,7 @@ export default function TitleEditor({
   const pages = stack.map((entry) => ({ ...entry, row: rowOf(entry) }));
   const top = pages[pages.length - 1];
   const topPreview = !top.row;
-  // a borító hangulatszíne: az ablak a film színében dereng (globals.css, "Hangulatszín"); a
+  // a borító hangulatszíne: az ablak a film színében dereng (app/styles/33-hangulatszin.css); a
   // színész lapja a legutóbbi film színét tartja (a keresőből nyílt személy lapja előtt nincs film)
   const film = pages.findLast((page) => !page.person);
   const ambient = usePosterColor(film ? (film.row ?? film.item).poster_path : null);

@@ -1,0 +1,133 @@
+/* ---------- Világos téma (terv-3 50) ---------- */
+/* Norbi választása (2026-10-08): „B – meleg papír” – krémes háttér, törtfehér felületek, meleg
+   sötétbarna szöveg (látványterv: munka/terv-3/terv-50/). A <html data-theme="light"> kapcsolja be
+   (lib/theme.js; a kirajzolás előtt az app/layout.js szkriptje). A neon türkiz fehéren olvashatatlan
+   (~1,6:1): itt mélyebb türkiz, a teli gombokon fehér felirattal; a borostyán is sötétebb (felirat is:
+   Mama „Érdekel”). Kontraszt (mérve, munka/terv-3/terv-50/kontraszt.mjs): szöveg 14,5:1, halvány 7,7:1,
+   türkiz 4,7:1, borostyán 6,1:1, megnézett 5,2:1 (a halvány és a borostyán Norbi kérésére sötétebb:
+   az 5,8:1 / 4,7:1 olvashatatlannak tűnt, 2026-10-08). Új színtokennél ide is kell világos érték. */
+:root[data-theme='light'] {
+  --bg: oklch(96.6% 0.012 85);                /* #f7f3eb krémes papír */
+  --bg-top: oklch(98.4% 0.008 85);            /* #fcf9f4 */
+  --surface: oklch(99.4% 0.005 85);           /* #fffdf9 */
+  --surface-raised: oklch(99.6% 0.004 85);    /* #fffefb */
+  --line: oklch(87.5% 0.018 80);              /* #dcd5c9 */
+  --line-soft: oklch(92.5% 0.013 82);         /* #ebe6dd */
+  --text: oklch(25% 0.022 60);                /* #2a1f17 meleg sötétbarna */
+  --muted: oklch(42% 0.024 62);               /* #574a40 */
+  --accent: oklch(52% 0.105 212);             /* #00788c mély türkiz */
+  --accent-ink: oklch(99% 0 0);               /* fehér felirat a teli türkizen */
+  --accent-hover: color-mix(in srgb, var(--accent) 88%, black);
+  --accent-press: color-mix(in srgb, var(--accent) 78%, black);
+  --accent-soft: color-mix(in oklab, var(--accent) 11%, transparent);
+  --accent-line: color-mix(in oklab, var(--accent) 50%, transparent);
+  --accent-2: oklch(48% 0.12 58);             /* #8e4900 mély borostyán */
+  --accent-2-ink: oklch(99% 0 0);             /* a harang száma */
+  --accent-2-soft: color-mix(in oklab, var(--accent-2) 14%, transparent);
+  --danger: oklch(52% 0.17 27);               /* #b6322d */
+  --danger-ink: oklch(99% 0 0);
+  --st-watched: oklch(55% 0.11 158);          /* #2a8558 */
+  --st-dropped: oklch(52% 0.15 295);          /* #7152b5 */
+  --c-coral: oklch(53% 0.15 35);              /* #b14328 */
+  --c-indigo: oklch(50% 0.14 272);            /* #495ab2 */
+  --c-sky: oklch(50% 0.12 245);               /* #0f68a2 */
+  --c-rose: oklch(52% 0.15 355);              /* #a73b6d */
+  --watched-text: oklch(51% 0.02 65);         /* #6e645a */
+  --watched-accent: oklch(51% 0.07 210);      /* #2c717c */
+  --control-border: color-mix(in srgb, var(--muted) 70%, var(--bg));
+  --star-empty: color-mix(in srgb, var(--muted) 72%, var(--bg));
+  --placeholder-bg: linear-gradient(160deg, #ede7de 0%, #ded6cb 100%);
+  --tint: 18 28 44;    /* a „világos fátyol” itt sötét: halvány sötétítés */
+  --shade: 24 36 58;   /* kékesszürke, halvány árnyék */
+  --shade-k: 0.32;
+  --glass: 250 251 253; /* világos üveg */
+  --scrim: 20 28 42;   /* az ablakok mögött enyhe sötétítés */
+  --scrim-k: 0.5;
+  /* a hangulatszín (L 0,72) a krémes papíron csak ~58%-os erővel üt el: ×1,7, így ugyanolyan erős,
+     mint sötétben (terv-3 52.6, „A”, mérés: munka/terv-3/terv-52-6/meres.mjs) */
+  --ambient-k: 1.7;
+  --glint: 255 255 255;
+  --lg-fill: 88%;
+  --edge: rgb(var(--tint) / 0.1);
+  /* neon (D9): színes üveg nappali fényben – a mag a cső színe (türkiz 4,7:1, lila 4,9:1 a papíron) */
+  --neon-2: oklch(54.71% 0.1971 293.48);  /* #7a4fd6 */
+  --neon-tube: 22%;
+  --neon-core: 100%;
+  --neon-k: 0.45;
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23574a40' stroke-width='1.6'/%3E%3C/svg%3E");
+  --chevron-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%2300788c' stroke-width='1.6'/%3E%3C/svg%3E");
+  --check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.75 8.25l2.75 2.75 5.75-6' fill='none' stroke='%23ffffff' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23574a40' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
+  color-scheme: light;
+}
+
+@media (color-gamut: p3) {
+  :root[data-theme='light'] {
+    --accent: oklch(52% 0.13 212);
+    --accent-2: oklch(48% 0.145 58);
+  }
+}
+
+/* a háttér anyaga világosban: halványabb aurora, sötét (nem fehér) filmszemcse */
+:root[data-theme='light'] body::before {
+  opacity: 0.55;
+}
+
+:root[data-theme='light'] body::after {
+  filter: invert(1);
+  opacity: 0.05;
+}
+
+/* sötét szigetek: a képes sávok (kiemelt sáv, háttérképes franchise-sáv, a megosztott oldal képes
+   fejléce, a Franchise-ok logódoboza) világosban is sötétek, mint egy mozivászon – a filmlogók fehérek,
+   és a franchise-logókat sötét alapra fehérítjük (Norbi döntése, 2026-10-08). A sötét tokeneket a fenti
+   :root szabály adja nekik; a szöveg színe innen öröklődik */
+:root[data-theme='light'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo, .gallery-lightbox, .backdrop-pager, .backdrop-dots) {
+  color: var(--text);
+}
+
+/* a képes sávok alapja sötétben áttetsző sötét üveg – világos lapon ettől szürke lenne: itt tömör */
+:root[data-theme='light'] :is(.collection-banner[data-backdrop], .share-hero[data-backdrop]) {
+  background: var(--bg);
+}
+
+/* …a franchise színe ott is (terv-3 52.2; a szigeten a sötét téma erejével) */
+:root[data-theme='light'] .collection-banner[data-backdrop][data-ambient] {
+  background:
+    radial-gradient(28rem 10rem at 0% 50%, color-mix(in oklab, var(--ambient) min(100%, calc(36% * var(--ambient-k))), transparent), transparent 70%),
+    var(--bg);
+}
+
+/* franchise-logók világos felületen (a franchise-szűrő, a háttérkép nélküli franchise-sáv): a világos
+   (fehér) logó sötét sziluett lesz, a sötét marad; a szigeteken (Franchise-ok logódoboza) a sötét
+   témáé (lent a .franchise-logo.dark) */
+:root[data-theme='light'] .franchise-logo:not(.dark),
+:root[data-theme='light'] .collection-banner:not([data-backdrop]) .collection-logo {
+  filter: brightness(0) opacity(0.82);
+}
+
+:root[data-theme='light'] .franchise-logo.dark {
+  filter: none;
+}
+
+:root[data-theme='light'] .fr-logo .franchise-logo:not(.dark) {
+  filter: none;
+}
+
+:root[data-theme='light'] .fr-logo .franchise-logo.dark {
+  filter: brightness(0) invert(1);
+}
+
+/* a Franchise-ok logódoboza: sötétben áttetsző sötétítés a sötét csempén – világos csempén ettől
+   szürke lenne, ezért itt tömör sötét (a sziget --bg-je, a csempe hangulatszínével keverve) */
+:root[data-theme='light'] .fr-logo {
+  background: var(--bg);
+}
+
+:root[data-theme='light'] .fr-main:hover .fr-logo {
+  background: var(--surface);
+}
+
+:root[data-theme='light'] .fr-tile[data-ambient] .fr-logo {
+  background: color-mix(in oklab, var(--ambient) min(100%, calc(22% * var(--ambient-k))), var(--bg));
+}

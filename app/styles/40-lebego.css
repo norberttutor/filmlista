@@ -1,0 +1,120 @@
+/* ---------- Lebegő "+" gomb (telefon) ---------- */
+/* telefonon a "Cím hozzáadása" kerek, teli türkiz gomb a jobb alsó sarokban (a fejléc gombja
+   helyett); lefelé görgetéskor elhúzódik, felfelé visszajön (a Watchlist jelzi: .hidden) */
+.fab {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  header.top .account > .primary {
+    display: none;
+  }
+
+  .fab {
+    position: fixed;
+    right: 1rem;
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    z-index: 40;
+    display: grid;
+    place-items: center;
+    width: 3.5rem;
+    aspect-ratio: 1;
+    padding: 0;
+    color: var(--accent-ink);
+    background: var(--accent);
+    border: 0;
+    border-radius: 50%;
+    box-shadow:
+      0 6px 16px -4px rgb(var(--shade) / calc(0.6 * var(--shade-k))),
+      inset 0 0 0 1px rgb(var(--tint) / 0.12),
+      0 0 24px -4px color-mix(in oklab, var(--accent) 60%, transparent);
+    transition: translate 0.2s ease-out, background-color 0.15s;
+  }
+
+  .fab:active {
+    background: var(--accent-press);
+  }
+
+  .fab.hidden {
+    translate: 0 calc(100% + 1.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* a lap alja ne kerüljön a gomb alá */
+  main {
+    padding-bottom: 5rem;
+  }
+}
+
+/* ---------- „Folyékony üveg” a lebegő gombokon (terv-3 103) ----------
+   Norbi választása a látványterv után (2026-10-15 – https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs): a tartalom
+   fölött lebegő gombok áttetsző, élénkítő üveget kapnak – a felső élen csillanás (--glint, mindkét témában fehér), a
+   széleken fénylő keret, a sarokban halvány fényfolt (::before, soft-light). A türkiz „+” türkiz marad (világosban
+   átlátszatlanabb – --lg-fill –, a fehér ikon miatt). Érinti: a telefonos lebegő „+”, a letapadt szűrősor „↑” gombja
+   (asztal; a „+”-a a 99 óta nincs), a galéria lapozója a jelenetképen (telefon; sötét sziget). Valódi fénytörés
+   (SVG-szűrő) nincs. */
+.fab,
+.stuck-tools > .primary {
+  background-color: transparent;
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, color-mix(in oklab, var(--accent), rgb(var(--glint)) 30%) var(--lg-fill), transparent),
+    color-mix(in oklab, var(--accent) var(--lg-fill), transparent)
+  );
+  -webkit-backdrop-filter: blur(8px) saturate(1.8);
+  backdrop-filter: blur(8px) saturate(1.8);
+}
+
+.stuck-tools > .ghost,
+.stuck-tools .notif-bell,
+.stuck-tools .more-btn,
+.backdrop-pager {
+  background-color: rgb(var(--glass) / 0.22);
+  background-image: linear-gradient(180deg, rgb(var(--tint) / 0.16), rgb(var(--tint) / 0.04));
+  -webkit-backdrop-filter: blur(5px) saturate(1.9) brightness(1.06);
+  backdrop-filter: blur(5px) saturate(1.9) brightness(1.06);
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 0 rgb(var(--glint) / 0.5),
+    inset 0 -1px 1px rgb(var(--glint) / 0.1),
+    inset 0 0 0 1px rgb(var(--tint) / 0.15),
+    0 8px 22px -8px rgb(var(--shade) / calc(0.5 * var(--shade-k)));
+}
+
+.stuck-tools > .ghost,
+.stuck-tools .more-btn {
+  position: relative;
+}
+
+.backdrop-pager {
+  text-shadow: 0 1px 2px rgb(var(--shade) / 0.5);
+}
+
+.backdrop-pager button {
+  background: rgb(var(--tint) / 0.1);
+  box-shadow: inset 0 1px 0 rgb(var(--glint) / 0.28);
+}
+
+:is(.fab, .stuck-tools > button, .stuck-tools .notif-bell, .stuck-tools .more-btn, .backdrop-pager)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(70% 45% at 30% 12%, rgb(var(--glint) / 0.45), transparent 70%);
+  mix-blend-mode: soft-light;
+}
+
+@media (max-width: 640px) {
+  .fab {
+    box-shadow:
+      inset 0 1.5px 0 rgb(var(--glint) / 0.75),
+      inset 0 -2px 3px rgb(var(--shade) / 0.25),
+      inset 0 0 0 1px rgb(var(--glint) / 0.28),
+      0 10px 24px -6px rgb(var(--shade) / calc(0.55 * var(--shade-k))),
+      0 0 26px -6px color-mix(in oklab, var(--accent) 70%, transparent);
+  }
+
+  .fab:active {
+    background-image: none;
+  }
+}

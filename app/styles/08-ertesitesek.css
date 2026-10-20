@@ -1,0 +1,395 @@
+/* ---------- Értesítések (harang a fejlécben) ---------- */
+.notif {
+  position: relative;
+}
+
+.notif-bell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.45rem;
+  height: 2.45rem;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.notif-bell:hover,
+.notif-bell[aria-expanded='true'] {
+  color: var(--text);
+  border-color: var(--muted);
+  background-color: var(--hover-tint);
+}
+
+/* van új: türkiz harang, a szám kis borostyán jelvényben a jobb felső sarkon */
+.notif-bell[data-unread] {
+  color: var(--accent);
+  border-color: var(--accent-line);
+}
+
+.notif-count {
+  position: absolute;
+  top: -0.3rem;
+  right: -0.35rem;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.15rem;
+  text-align: center;
+  color: var(--accent-2-ink);
+  background: var(--accent-2);
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px var(--bg-top); /* elválik a harang keretétől */
+  font-variant-numeric: tabular-nums;
+}
+
+/* a lenyíló lista egy réteggel a lap fölött (mint a franchise-szűrőé), a harang bal széléhez
+   igazítva: a harang után a fejléc eszközei állnak, így jobbra mindig van hely */
+.notif-panel {
+  position: absolute;
+  z-index: 35; /* a letapadó szűrősor (30) fölött */
+  top: calc(100% + 0.5rem);
+  left: 0;
+  width: min(25rem, calc(100vw - 2 * var(--gutter)));
+  padding: 0.5rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgb(var(--tint) / 0.05), var(--shadow-pop);
+}
+
+/* ha a harang bal széléhez igazítva kilógna (a fejléc a szélességtől függően átrendeződik), a
+   jobb széléhez igazodik (NotificationBell: popupSide) */
+.notif-panel.to-right {
+  right: 0;
+  left: auto;
+}
+
+/* telefonon a harang a sor elején is lehet: a lista a képernyő teljes szélességét kapja,
+   közvetlenül a harang alatt (a body-ban, a top-ot a usePhonePopup adja – mint a ⋮ menünél) */
+@media (max-width: 640px) {
+  .notif-panel,
+  .notif-panel.to-right {
+    position: fixed;
+    top: auto;
+    right: var(--gutter);
+    left: var(--gutter);
+    width: auto;
+  }
+}
+
+.notif-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0.2rem 0.4rem 0.4rem;
+}
+
+.notif-head p {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* „Összes törlése”: halk szöveges gomb a fejléc jobb szélén (rámutatva türkiz) */
+.notif-clear {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 999px;
+}
+
+.notif-clear:hover,
+.notif-clear:focus-visible {
+  color: var(--accent);
+  background: var(--hover-tint);
+}
+
+/* soronként × a jobb szélen: egérrel csak a sorra mutatva / fókusznál látszik, érintőn mindig */
+.notif-list li {
+  position: relative;
+}
+
+.notif-list .notif-item {
+  padding-right: 2.4rem; /* a × helye (a később álló .notif-item padding ne írja felül) */
+}
+
+.notif-del {
+  position: absolute;
+  top: 50%;
+  right: 0.45rem;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  color: var(--text);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  transform: translateY(-50%);
+}
+
+.notif-del:hover {
+  color: var(--accent);
+  background: var(--surface-raised);
+  border-color: var(--accent-line);
+}
+
+@media (hover: hover) {
+  .notif-del {
+    opacity: 0;
+  }
+
+  .notif-list li:hover .notif-del,
+  .notif-del:focus-visible {
+    opacity: 1;
+  }
+}
+
+.notif-empty {
+  margin: 0.2rem 0.4rem 0.4rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.notif-list {
+  display: grid;
+  gap: 2px;
+  max-height: min(26rem, 70vh);
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* csoportcím: „Ma” / „Ezen a héten” / „Korábban” – kis, ritkított nagybetűk, mint a táblázat fejléce
+   (terv-3 76, Norbi választása: „A”, 2026-10-13) */
+.notif-list .notif-group {
+  padding: 0.7rem 0.6rem 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.notif-list .notif-group:first-child {
+  padding-top: 0.2rem;
+}
+
+.notif-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.45rem;
+  color: var(--text);
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+}
+
+.notif-item:hover {
+  background-color: var(--hover-tint);
+}
+
+/* fajtánként saját szín (terv-3 51.5, Norbi választása, 2026-10-08 – látványterv:
+   munka/terv-3/terv-51/): megjelent évad zsálya (lejátszás), bejelentett évad indigó (naptár),
+   digitális megjelenés égkék (letöltés), Mama borostyán („M” – saját jelölés). A leírás ebben a
+   színben, a borító jobb alsó sarkán kis kerek ikon */
+.notif-item {
+  --kind: var(--accent);
+  --kind-icon: none;
+}
+
+.notif-item[data-kind='season_aired'] {
+  --kind: var(--c-sage);
+  --kind-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M7 4.5v15l12.5-7.5z'/%3E%3C/svg%3E");
+}
+
+.notif-item[data-kind='season_announced'] {
+  --kind: var(--c-indigo);
+  --kind-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='5' width='17' height='15' rx='2.5'/%3E%3Cpath d='M3.5 10h17M8 3v4M16 3v4'/%3E%3C/svg%3E");
+}
+
+.notif-item[data-kind='movie_digital'] {
+  --kind: var(--c-sky);
+  --kind-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v12M7 10l5 5 5-5M5 21h14'/%3E%3C/svg%3E");
+}
+
+/* új rész egy franchise TMDB-gyűjteményében (terv-3 36): korall – mozi, filmcsapó */
+.notif-item[data-kind='collection_new'] {
+  --kind: var(--c-coral);
+  --kind-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 11h16v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z'/%3E%3Cpath d='m4 11-.6-3.2a1 1 0 0 1 .8-1.2l13.8-2.5a1 1 0 0 1 1.2.8L19.6 7 4 11'/%3E%3C/svg%3E");
+}
+
+.notif-item[data-kind='mama_interested'] {
+  --kind: var(--accent-2);
+  --kind-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 19V5l7 9 7-9v14'/%3E%3C/svg%3E");
+}
+
+/* követett színész / rendező új filmje (M4): indigó (bejelentett), a sarokban a személy kerek fotója */
+.notif-item[data-kind='person_new'] {
+  --kind: var(--c-indigo);
+}
+
+.notif-item[data-kind='person_new'] .notif-kind {
+  right: -0.6rem;
+  bottom: -0.4rem;
+  width: 1.55rem;
+  height: 1.55rem;
+  overflow: hidden;
+  background: var(--placeholder-bg);
+  box-shadow: 0 0 0 2px var(--surface-raised), 0 0 0 3.5px var(--c-indigo);
+}
+
+.notif-item[data-kind='person_new'] .notif-kind::before {
+  display: none;
+}
+
+.notif-item[data-kind='person_new'] .notif-kind img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* a kinyitáskor még olvasatlan: leheletnyi háttér, a cím előtt pötty a fajta színében (korábban az
+   egész sor türkiz volt – a harang listája így egyszínű lett) */
+.notif-item[data-new] {
+  background: rgb(var(--tint) / 0.04);
+}
+
+.notif-item[data-new]:hover {
+  background-color: var(--hover-tint);
+}
+
+.notif-item[data-new] .notif-title::before {
+  content: '';
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-right: 0.4rem;
+  vertical-align: 0.1em;
+  background: var(--kind);
+  border-radius: 50%;
+}
+
+/* a borító és a sarkán a fajta ikonja (a borító levágja a kilógót, ezért külön burkolóban) */
+.notif-pic {
+  position: relative;
+  flex: none;
+  display: flex;
+}
+
+.notif-kind {
+  position: absolute;
+  right: -0.45rem;
+  bottom: -0.3rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  background: var(--kind);
+  box-shadow: 0 0 0 2px var(--surface-raised);
+}
+
+.notif-kind::before {
+  content: '';
+  position: absolute;
+  inset: 0.25rem;
+  background: var(--bg);
+  -webkit-mask: var(--kind-icon) center / contain no-repeat;
+  mask: var(--kind-icon) center / contain no-repeat;
+}
+
+/* világosban a fajta színe sötét: rajta fehér ikon */
+:root[data-theme='light'] .notif-kind::before {
+  background: var(--surface);
+}
+
+.notif-thumb {
+  flex: none;
+  width: 2.25rem;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--placeholder-bg);
+}
+
+.notif-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.notif-text {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.notif-title {
+  overflow: hidden;
+  font-size: 0.9rem;
+  font-weight: 650;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.notif-what {
+  font-size: 0.8rem;
+  color: var(--kind);
+}
+
+.notif-when {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+/* súgó buborék egy gomb alatt: egérrel rámutatva, vagy billentyűzetes fókusznál látszik;
+   helyet nem foglal */
+.has-hint {
+  position: relative;
+}
+
+.hint {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 0.6rem);
+  right: 0;
+  width: max-content;
+  max-width: min(19rem, 80vw);
+  padding: 0.65rem 0.8rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface-raised);
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  box-shadow: var(--shadow-pop);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s, visibility 0.15s;
+}
+
+.has-hint:hover .hint,
+.has-hint:has(:focus-visible) .hint {
+  opacity: 1;
+  visibility: visible;
+}

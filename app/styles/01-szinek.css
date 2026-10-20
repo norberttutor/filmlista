@@ -1,0 +1,107 @@
+/* ---------- Színek és alapértékek ---------- */
+/* A színek OKLCH-ban (érzékelt világosság, telítettség, árnyalat): az egyforma világosságú
+   színek egyformán olvashatók. Mellettük a régi hex érték – a hagyományos (sRGB) kijelzőn
+   pontosan ez látszik. A széles színterű (P3) kijelzőn a két kiemelőszín élénkebb (lent).
+   Ez a sötét téma (az alap); a világos lent, „Világos téma”. A felsorolt elemek a „sötét szigetek”:
+   világos témában is ezekkel a színekkel rajzolódnak (lent). */
+:root,
+:root[data-theme='light'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo, .gallery-lightbox, .backdrop-pager, .backdrop-dots) {
+  --bg: oklch(22.04% 0.0199 258.35);          /* #151b24 vetítőterem-kék háttér */
+  --surface: oklch(26.97% 0.0259 255.74);     /* #1e2733 */
+  --line: oklch(33.59% 0.0296 252.57);        /* #2c3846 */
+  --text: oklch(94.45% 0.008 253.85);         /* #e9edf2 */
+  --muted: oklch(70.35% 0.0296 253.31);       /* #93a1b2 */
+  --accent: oklch(83.05% 0.1328 204.05);      /* #33e0ef neon türkiz */
+  --accent-ink: oklch(26.21% 0.0429 210.13);  /* #032a30 */
+  --danger: oklch(73.99% 0.1265 27.61);       /* #f08a7e */
+
+  /* második kiemelőszín: borostyán – csak a saját jelöléseken (saját csillagok, Mama, a harang
+     száma); a türkiz marad a gomboké, az állapotoké és a kiválasztott szűrőké. 9,8:1 a háttéren */
+  --accent-2: oklch(82.45% 0.1486 73.35);     /* #ffb547 */
+  --accent-2-ink: oklch(28.11% 0.0594 74.74); /* #3a2400 */
+  --accent-2-soft: color-mix(in oklab, var(--accent-2) 16%, transparent);
+  --accent-2-line: color-mix(in oklab, var(--accent-2) 55%, transparent);
+
+  /* állapotszínek – új állapotnál ide kell egy sor */
+  --st-to_watch: transparent; /* alapállapot: üres, nincs színe */
+  --st-watching: var(--accent);
+  --st-watched: oklch(77.21% 0.0957 160.07);  /* #7cc8a0 */
+  --st-dropped: oklch(71.49% 0.1204 295.38);  /* #a993e6 Abbahagyva (sorozat): halvány lila, 6,6:1 */
+
+  /* tartalomfajták színei (terv-3 51): egyforma világosság, mérsékelt telítettség; mindig ugyanazt
+     jelentik, és soha nem gombszínek (a gomboké a türkiz, a saját jelöléseké a borostyán) */
+  --c-coral: oklch(76% 0.115 35);   /* #f0967f mozi */
+  --c-indigo: oklch(74% 0.105 272); /* #94a7ed bejelentett / hamarosan */
+  --c-sky: oklch(77% 0.095 238);    /* #78bdea digitális / letöltve */
+  --c-sage: var(--st-watched);      /* megjelent / megnézve */
+  --c-rose: oklch(75% 0.11 355);    /* #e590b1 ajánlás */
+
+  /* árnyalatok */
+  --bg-top: oklch(24.94% 0.024 256.44);         /* #1a222d a lap teteje egy árnyalattal világosabb */
+  --line-soft: oklch(29% 0.0254 255.73);        /* #232c38 halk vonal a táblázat sorai között */
+  --surface-raised: oklch(28.97% 0.0277 255.17); /* #222c39 felugró elemek (lenyíló lista, súgó) */
+  --edge: rgb(var(--tint) / 0.08);   /* vékony világos keret a felugró elemeken */
+  --shadow-pop: 0 1px 2px rgb(var(--shade) / calc(0.3 * var(--shade-k))),
+    0 10px 20px -6px rgb(var(--shade) / calc(0.4 * var(--shade-k))),
+    0 28px 56px -14px rgb(var(--shade) / calc(0.6 * var(--shade-k)));
+  --accent-soft: color-mix(in oklab, var(--accent) 16%, transparent); /* kiválasztott háttér */
+  --accent-line: color-mix(in oklab, var(--accent) 55%, transparent); /* kiválasztott keret */
+  --accent-hover: color-mix(in srgb, var(--accent) 82%, white);
+  --accent-press: color-mix(in srgb, var(--accent) 86%, black);
+  --hover-tint: rgb(var(--tint) / 0.05);
+  --press-tint: rgb(var(--tint) / 0.09);
+  --control-border: color-mix(in srgb, var(--muted) 60%, var(--bg)); /* 3:1 a háttéren */
+  --star-empty: color-mix(in srgb, var(--muted) 60%, var(--bg));     /* 3:1 a háttéren */
+  --watched-text: oklch(62.46% 0.0273 252.02);   /* #7c8998 megnézett cím szövegei: 4,85:1 */
+  --watched-accent: oklch(61.64% 0.0954 206.9);  /* #2895a2 megnézett cím türkiz szövegei: 4,87:1 */
+
+  /* ikonok (a színt a CSS adja: a lenyíló-nyíl és a pipa itt, a többi maszkként) */
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%2393a1b2' stroke-width='1.6'/%3E%3C/svg%3E");
+  --chevron-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%2333e0ef' stroke-width='1.6'/%3E%3C/svg%3E");
+  --check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.75 8.25l2.75 2.75 5.75-6' fill='none' stroke='%23032a30' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2393a1b2' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
+  --icon-film: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Cpath d='M7 3v18M17 3v18M3 7.5h4M3 12h18M3 16.5h4M17 7.5h4M17 16.5h4'/%3E%3C/svg%3E");
+  --icon-download: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v12M7 10l5 5 5-5M5 21h14'/%3E%3C/svg%3E");
+  --placeholder-bg: linear-gradient(160deg, #26313f 0%, #1a222d 100%); /* hiányzó borító */
+
+  /* fátylak, árnyékok, üveg (terv-3 50): RGB-csatornák, az átlátszóság a felhasználás helyén
+     (rgb(var(--tint) / 0.05)) – a világos téma ezeket cseréli, így a beégetett színek is váltanak */
+  --tint: 255 255 255;   /* világos fátyol / keret a sötét felületen */
+  --shade: 0 0 0;        /* árnyék */
+  --shade-k: 1;          /* az árnyékok erőssége (világosban halványabb) */
+  --glass: 10 13 18;     /* sötét üveg / fátyol (letapadt sávok, a képek alja) */
+  --scrim: 7 10 15;      /* az ablakok mögötti sötétítés (::backdrop) */
+  --scrim-k: 1;          /* a sötétítés erőssége */
+  --ambient-k: 1;        /* a film / franchise színével kevert derengések erőssége (terv-3 52.6) */
+  /* „folyékony üveg” a lebegő gombokon (terv-3 103): a csillanás mindkét témában fehér (fény), a türkiz üveg
+     átlátszatlansága világosban nagyobb (a fehér ikon kontrasztja miatt) */
+  --glint: 255 255 255;
+  --lg-fill: 64%;
+  /* a felhasználói leírás számozott jelölője (terv-3 52.7): a képek jelölőivel azonos, ezért mindkét
+     témában ugyanaz (munka/terv-3/33-leiras/leiras-kepek.mjs) */
+  --marker-bg: oklch(82.45% 0.1486 73.35);  /* #ffb547 */
+  --marker-ink: oklch(18.89% 0.026 77.5);   /* #1a1206 */
+  --danger-ink: #2a0d09; /* felirat a teli piros gombon */
+
+  /* neonfelirat a fejlécben (D9): a két cső színe; a cső (kikapcsolt üveg) átlátszósága, az égő mag
+     fehérbe keverése és a fény erőssége (világosban halványabb – nappali fény) */
+  --neon-1: var(--accent);
+  --neon-2: oklch(72.49% 0.1654 298.22);  /* #b48cff lila */
+  --neon-tube: 16%;
+  --neon-core: 12%;
+  --neon-k: 1;
+
+  --gutter: clamp(1rem, 4vw, 3rem);
+  --head-c: 3.6rem; /* az összecsukott fejléc sávja (terv-3 99) – = HEAD_COMPACT_REM a Watchlistben */
+  color-scheme: dark;
+}
+
+/* széles színterű (P3) kijelzőn a két kiemelőszín élénkebb: ugyanaz a világosság és árnyalat,
+   nagyobb telítettség (a P3 határának 90%-a), így az olvashatóság nem változik */
+@media (color-gamut: p3) {
+  :root,
+  :root[data-theme='light'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo, .gallery-lightbox, .backdrop-pager, .backdrop-dots) {
+    --accent: oklch(83.05% 0.1832 204.05);
+    --accent-2: oklch(82.45% 0.1819 73.35);
+  }
+}

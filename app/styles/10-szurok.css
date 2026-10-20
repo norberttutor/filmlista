@@ -1,0 +1,1009 @@
+/* ---------- Szűrők ---------- */
+/* az alsó vonal a széleken elhalványul (a vastagsága nem változik) */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 2.5rem;
+  padding: 0 var(--gutter) 1.5rem;
+  border-bottom: 1px solid var(--line);
+  border-image: linear-gradient(90deg, transparent, var(--line) 15%, var(--line) 85%, transparent) 1;
+}
+
+/* görgetéskor a szűrősor a lap tetejére tapad; amíg a helyén van, semmi nem változik,
+   letapadva ([data-stuck], a Watchlist jelzi) áttetsző, elmosott üveg – a lista átúszik
+   alatta. A felső belső margó mindig ott van (negatív külső margóval kiegyenlítve), így a
+   letapadáskor semmi nem ugrik. A magasságát (--filters-h) a Watchlist méri: a táblázat
+   ragadós fejléce ez alá tapad. */
+.filters {
+  position: sticky;
+  top: var(--head-c); /* az összecsukott fejléc sávja alatt (terv-3 99) */
+  z-index: 30;
+  margin-top: -0.85rem;
+  padding-top: 0.85rem;
+  transition: background-color 0.2s, box-shadow 0.2s, backdrop-filter 0.2s;
+}
+
+/* letapadva a sáv mögött fokozatos elmosás (terv-3 102, ProgressiveBlur – lent „Fokozatos elmosás”): a sáv maga
+   átlátszó, vonal és árnyék nélkül (a saját backdrop-filtere a rétegeket elvakítaná) */
+.filters[data-stuck] {
+  border-image: none;
+  border-bottom-color: transparent;
+}
+
+/* telefonon kinyitva se takarja el az egész képernyőt: legfeljebb 70%, belül görgethető – ilyenkor a rétegek a
+   belső görgetéssel elcsúsznának, ezért a korábbi egyforma üveg */
+@media (max-width: 640px) {
+  .filters[data-stuck].open {
+    max-height: 70dvh;
+    overflow-y: auto;
+    background-color: color-mix(in oklab, var(--bg) 68%, transparent);
+    -webkit-backdrop-filter: blur(18px) saturate(1.5);
+    backdrop-filter: blur(18px) saturate(1.5);
+    border-bottom-color: rgb(var(--tint) / 0.07);
+    box-shadow: 0 12px 28px -16px rgb(var(--shade) / calc(0.75 * var(--shade-k)));
+  }
+
+  .filters[data-stuck].open .pblur {
+    display: none;
+  }
+}
+
+/* ---------- Fokozatos elmosás (terv-3 102, components/ProgressiveBlur.js) ----------
+   Norbi választása a látványterv után (2026-10-15 – https://claude.ai/artifact/BDiSAgUT78ijod5PEMQLfs): a letapadt
+   szűrősor mögött öt réteg (1–24 px), lépcsőzetes maszkkal: a sávban teljes erővel, a sávon túl
+   --pb-fade alatt elgyengül (a legerősebb a leghamarabb). Előtte a sáv színével halványuló fátyol. --pb-solid: a sávon
+   túl még teljes erővel – a táblázat ragadós fejléce alatt (az ott átlátszó). */
+.pblur {
+  --pb-fade: 3.5rem;
+  --pb-solid: 0px;
+  --pb-tint: color-mix(in oklab, var(--bg) 72%, transparent);
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.pblur > i {
+  position: absolute;
+  inset: 0;
+}
+
+.pblur-top {
+  top: calc(-1 * var(--head-c)); /* az összecsukott fejléc sávja mögé is (terv-3 99) */
+  bottom: calc(-1 * (var(--pb-solid) + var(--pb-fade)));
+  background: linear-gradient(
+    180deg,
+    var(--pb-tint) calc(100% - var(--pb-fade)),
+    color-mix(in oklab, var(--bg) 40%, transparent) calc(100% - var(--pb-fade) / 2),
+    transparent 100%
+  );
+}
+
+.pblur > :nth-child(1) {
+  -webkit-backdrop-filter: blur(1px);
+  backdrop-filter: blur(1px);
+  --pb-end: 100%;
+}
+
+.pblur > :nth-child(2) {
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  --pb-end: calc(100% - var(--pb-fade) * 0.2);
+}
+
+.pblur > :nth-child(3) {
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+  --pb-end: calc(100% - var(--pb-fade) * 0.4);
+}
+
+/* telítésnövelés nélkül: a halmozott saturate a sötétkék hátteret kékes sávvá erősítette (Norbi kérése, 2026-10-15 –
+   előbb a dokkolt lapozónál, utána a szűrősornál is) */
+.pblur > :nth-child(4) {
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  --pb-end: calc(100% - var(--pb-fade) * 0.6);
+}
+
+.pblur > :nth-child(5) {
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  --pb-end: calc(100% - var(--pb-fade) * 0.8);
+}
+
+.pblur-top > i {
+  -webkit-mask-image: linear-gradient(180deg, black calc(100% - var(--pb-fade)), transparent var(--pb-end));
+  mask-image: linear-gradient(180deg, black calc(100% - var(--pb-fade)), transparent var(--pb-end));
+}
+
+/* asztali listanézet: a táblázat ragadós fejléce a sáv alatt – letapadva átlátszó, a rétegek teljes erővel alatta,
+   és a sáv fölé kerül (különben az elmosás a feliratait is elmosná); nyitott szűrőlistánál (franchise, műfaj) nem,
+   mert az a sávból lóg le a fejléc fölé */
+body:has(.titles-table) .pblur-top {
+  --pb-solid: 2.7rem;
+}
+
+body:has(.filters[data-stuck]) .titles-table th {
+  background: none;
+  box-shadow: none;
+}
+
+body:has(.filters[data-stuck]):not(:has(.filters [aria-expanded='true'])) .titles-table th {
+  z-index: 31;
+}
+
+/* állapotgombok + "Letöltés" egy egységként */
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1.5rem;
+}
+
+/* telefonon a szűrők alapból összecsukva: a "Szűrők" gomb (mellette röviden a beállítás)
+   nyitja ki őket; összecsukva csak a gomb és a kereső látszik. Asztalon nincs gomb. */
+.filters-toggle {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .filters-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.6rem 0.9rem;
+    color: var(--text);
+    text-align: left;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+
+  .filters-toggle:hover {
+    border-color: var(--muted);
+  }
+
+  .filters-toggle[aria-expanded='true'] {
+    border-color: var(--accent-line);
+  }
+
+  .filters-toggle b {
+    flex: none;
+    font-weight: 650;
+  }
+
+  .filters-summary {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.85rem;
+    color: var(--muted);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .filters-toggle svg {
+    flex: none;
+    color: var(--muted);
+    transition: rotate 0.15s;
+  }
+
+  .filters-toggle[aria-expanded='true'] svg {
+    rotate: 180deg;
+  }
+
+  .filters:not(.open) > :not(.filters-toggle):not(.list-tools):not(.pblur):not(.active-filters),
+  .filters:not(.open) .list-tools > :not(.list-search) {
+    display: none;
+  }
+
+  /* összecsukva a „Szűrők” gomb keskeny, mellette a beállított szűrők címkeként (terv-3 101) – az összefoglaló
+     helyett; kinyitva a régi: teljes szélességű gomb az összefoglalóval, címkék nélkül */
+  .filters:not(.open) .filters-toggle {
+    flex: none;
+    width: auto;
+  }
+
+  .filters:not(.open) .filters-summary {
+    display: none;
+  }
+
+  .filters.open .active-filters {
+    display: none;
+  }
+
+  .active-filters {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+    padding-block: 2px;
+    padding-inline-end: 1rem; /* a jobb szélen halványuló maszk ne takarja az utolsót */
+    overflow-x: auto;
+    scrollbar-width: none;
+    /* a széle csak arra halványul, amerre van még címke (lib/useScrollFade, átnézés J14) */
+    --fade-s: 0rem;
+    --fade-e: 0rem;
+    -webkit-mask-image: linear-gradient(90deg, transparent, black var(--fade-s), black calc(100% - var(--fade-e)), transparent);
+    mask-image: linear-gradient(90deg, transparent, black var(--fade-s), black calc(100% - var(--fade-e)), transparent);
+  }
+
+  .active-filters[data-fade-start] {
+    --fade-s: 1.5rem;
+  }
+
+  .active-filters[data-fade-end] {
+    --fade-e: 2.5rem;
+  }
+
+  .active-filter {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.2rem 0.2rem 0.2rem 0.7rem;
+    font-size: 0.82rem;
+    color: var(--accent);
+    white-space: nowrap;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-line);
+    border-radius: 999px;
+    animation: chip-in 0.18s ease-out;
+  }
+
+  .active-filter.fixed {
+    padding-right: 0.7rem;
+    color: var(--text);
+    background: rgb(var(--tint) / 0.05);
+    border-color: var(--line);
+  }
+
+  .active-filter button {
+    display: grid;
+    place-items: center;
+    width: 1.55rem;
+    height: 1.55rem;
+    padding: 0;
+    color: inherit;
+    background: color-mix(in oklab, var(--accent) 14%, transparent);
+    border: 0;
+    border-radius: 50%;
+  }
+
+  .active-filter button:active {
+    background: color-mix(in oklab, var(--accent) 30%, transparent);
+  }
+
+  .active-reset {
+    flex: none;
+    padding: 0.28rem 0.75rem;
+    font-size: 0.82rem;
+    color: var(--muted);
+    white-space: nowrap;
+    background: none;
+    border: 1px dashed var(--line);
+    border-radius: 999px;
+  }
+}
+
+@keyframes chip-in {
+  from {
+    opacity: 0;
+    scale: 0.85;
+  }
+}
+
+/* asztalon a szűrők mind látszanak: nincs szükség a címkékre */
+@media (min-width: 641px) {
+  .active-filters {
+    display: none;
+  }
+}
+
+/* a Franchise és mellette az alaphelyzet gomb együtt (együtt törnek új sorba) */
+.filter-end {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+/* letapadt szűrősorban gyorsgombok: vissza a lap tetejére, és – mert asztalon a fejléc sávja ilyenkor felgördül (Norbi
+   választása, 2026-10-16, „A – Egy sáv”) – „+” (Cím hozzáadása, teli türkiz), a harang és a ⋮ menü; telefonon nincs
+   (ott a lebegő „+” és a fejléc sávja marad). Csak a közvetlen gombok kerekek: a harang és a ⋮ listájában is van gomb */
+.stuck-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-left: 0.9rem;
+  border-left: 1px solid var(--line);
+}
+
+.stuck-tools[data-off] {
+  visibility: hidden;
+}
+
+.stuck-tools > button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  border-radius: 50%;
+}
+
+@media (max-width: 640px) {
+  .stuck-tools {
+    display: none;
+  }
+}
+
+/* ↺ a szűrők alaphelyzetbe: kerek ikongomb. Ha van mit visszaállítani, türkiz körvonalas;
+   alapállapotban halvány és nem kattintható (a súgója akkor is olvasható) */
+.filter-reset {
+  display: grid;
+  place-items: center;
+  width: 2.45rem;
+  height: 2.45rem;
+  padding: 0;
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--accent-line);
+  border-radius: 50%;
+}
+
+.filter-reset:hover:not(:disabled) {
+  background-color: var(--accent-soft);
+}
+
+.filter-reset:active:not(:disabled) {
+  background-color: color-mix(in oklab, var(--accent) 26%, transparent);
+}
+
+.filter-reset:disabled {
+  color: var(--muted);
+  border-color: var(--line);
+  cursor: default;
+  opacity: 0.5;
+}
+
+.type-select,
+.status-select {
+  font-weight: 600;
+}
+
+/* az állapot-lenyíló csak mobilon látszik, ott a gombok helyett */
+.status-select {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .status-select {
+    display: block;
+  }
+
+  .chips.status-chips {
+    display: none; /* a később álló .chips { display: flex } ne írja felül */
+  }
+
+  .filters {
+    gap: 0.75rem 1rem;
+  }
+}
+
+/* ---------- Franchise-szűrő logókkal (saját lenyíló) ---------- */
+.franchise-filter,
+.filter-select {
+  position: relative;
+}
+
+.franchise-filter-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.45rem;
+  padding: 0.35rem 0.75rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.franchise-filter-button:hover {
+  border-color: var(--muted);
+  background-color: var(--hover-tint);
+}
+
+.franchise-filter-button:active {
+  background-color: var(--press-tint);
+}
+
+/* a lenyíló nyila (az utolsó; előtte állhat a kiválasztott ikonja – M3) */
+.franchise-filter-button > svg:last-child {
+  margin-left: 0.25rem;
+  color: var(--muted);
+}
+
+/* műfajikonok a műfajszűrőben (terv-3 56, Norbi választása: „A”): egyvonalas ikon a műfaj pöttyének
+   színében (--g = genreColor), keskeny oszlopban; a kiválasztotté a zárt mezőben is */
+.genre-icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  color: var(--g);
+}
+
+.genre-icon svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.franchise-listbox .icon-slot {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.genre-filter .franchise-listbox li {
+  gap: 0.6rem;
+  padding-block: 0.32rem;
+}
+
+.genre-filter .franchise-filter-button .genre-icon svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+/* világos témában ugyanaz az árnyalat mélyebben (a 0,78-as világosságú pötty-szín a krémes lapon halvány) */
+@supports (color: oklch(from red l c h)) {
+  :root[data-theme='light'] .genre-icon {
+    color: oklch(from var(--g) 0.56 c h);
+  }
+}
+
+.franchise-listbox {
+  position: absolute;
+  z-index: 20; /* a ragadós táblázatfejléc fölött */
+  top: calc(100% + 0.35rem);
+  left: 0;
+  width: max-content;
+  min-width: 100%;
+  max-width: min(24rem, 90vw);
+  max-height: 22rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.3rem;
+  list-style: none;
+  /* egy réteggel a lap fölött: világosabb lap, finom felső fényél, rétegzett árnyék */
+  background: var(--surface-raised);
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  box-shadow: inset 0 1px 0 rgb(var(--tint) / 0.05), var(--shadow-pop);
+}
+
+.franchise-listbox:focus {
+  outline: none;
+}
+
+.franchise-listbox li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.franchise-listbox li.active {
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+}
+
+.franchise-listbox li[aria-selected='true'] {
+  color: var(--accent);
+}
+
+/* a kiválasztott pipát kap a sor végén, mint a natív lenyílókban (option::checkmark – I5); a helye
+   minden sorban foglalt, hogy a lista szélessége ne függjön attól, melyik a kiválasztott */
+.franchise-listbox li[role='option']::after {
+  content: '✓';
+  flex: none;
+  margin-left: auto;
+  padding-left: 0.2rem;
+  font-weight: 700;
+  visibility: hidden;
+}
+
+.franchise-listbox li[aria-selected='true']::after {
+  visibility: visible;
+}
+
+/* csoportok és címkék (terv-3 54, Norbi választása: „A”): „Van még megnézendő” fölül „N hátra”
+   címkével, „Mind megnézve” alul, tompán (rámutatva / kiválasztva teljes színű) */
+.franchise-listbox:has(.franchise-badge) {
+  max-width: min(28rem, 90vw);
+  max-height: 30rem;
+}
+
+.franchise-listbox .franchise-group {
+  padding: 0.6rem 0.6rem 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: default;
+}
+
+.franchise-listbox .franchise-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.franchise-badge {
+  flex: none;
+  margin-left: 0.75rem;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  border-radius: 999px;
+}
+
+.franchise-listbox li[data-done] .franchise-badge {
+  color: var(--c-sage);
+  background: color-mix(in oklab, var(--c-sage) 12%, transparent);
+  border-color: color-mix(in oklab, var(--c-sage) 40%, transparent);
+}
+
+.franchise-listbox li[data-done]:not(.active, [aria-selected='true']) :is(.franchise-name, .logo-slot) {
+  opacity: 0.55;
+  filter: grayscale(1);
+}
+
+/* a logók egy oszlopban, hogy a nevek egymás alá essenek */
+.franchise-listbox .logo-slot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 5.5rem;
+  height: 1.6rem;
+}
+
+.franchise-logo {
+  display: block;
+  max-width: 5.5rem;
+  max-height: 1.4rem;
+  object-fit: contain;
+}
+
+/* sötét logó → fehér, hogy a sötét háttéren is olvasható legyen */
+.franchise-logo.dark {
+  filter: brightness(0) invert(1);
+}
+
+.franchise-filter-button .franchise-logo {
+  max-width: 4.5rem;
+  max-height: 1.2rem;
+}
+
+/* ---------- Szűrősor asztalon: állapotsáv, Letöltés-gombcsoport, lenyílók (M3) ---------- */
+/* Norbi választása, 2026-10-17 (látványterv: https://claude.ai/artifact/KSVj66nfYKQDykEBn312AJ, helyben
+   munka/terv-3/terv-m3/): az állapot „Mind” gombja külön, elválasztóval; az állapotok egy közös sávban, ikonnal és
+   darabszám-pirulával, teltebb, üveges csúszó kijelölővel. A Letöltés gombcsoport. A lenyílók (FranchiseFilter)
+   gombján kis címke az érték fölött, a nem alapértelmezett érték halvány türkiz; a panel elmosott üveg, soronként
+   ikon, név, darabszám, pipa; a műfajpanel rácsos. Telefonon minden a régi (a beépített lenyílók maradnak). */
+/* keskenyebb ablakban (pl. sorozatoknál négy állapottal) a „Mind” és a sáv is törhet */
+.chips.status-chips {
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.status-chips .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.25rem;
+}
+
+.status-chips .chip .n {
+  min-width: 1.6rem;
+  margin-left: 0;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  background: rgb(var(--tint) / 0.06);
+  border-radius: 999px;
+}
+
+.status-chips .chip[aria-pressed='true'] .n {
+  opacity: 1;
+  background: color-mix(in oklab, var(--accent) 18%, transparent);
+}
+
+.status-sep {
+  width: 1px;
+  height: 1.6rem;
+  background: var(--line);
+}
+
+/* a közös sáv (és a Letöltés gombcsoportja): halvány, besüllyesztett vályú */
+.status-track,
+.download-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+  max-width: 100%;
+  padding: 0.22rem;
+  background: rgb(var(--tint) / 0.035);
+  border: 1px solid var(--line);
+  border-radius: 1.45rem; /* egy sorban pirula, törve lekerekített téglalap */
+  box-shadow: inset 0 1px 2px rgb(var(--shade) / calc(0.25 * var(--shade-k)));
+}
+
+.status-track .chip {
+  padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+  border-color: transparent;
+}
+
+.status-track .chip:hover {
+  border-color: transparent;
+}
+
+.download-seg button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.25rem;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+}
+
+.download-seg button:not([aria-pressed='true']):hover {
+  background-color: var(--hover-tint);
+}
+
+.download-seg button:not([aria-pressed='true']):active {
+  background-color: var(--press-tint);
+}
+
+.download-seg button[aria-pressed='true'] {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+:is(.status-chips, .download-seg) .filter-icon {
+  flex: none;
+  width: 1.05rem;
+  height: 1.05rem;
+  color: var(--muted);
+}
+
+:is(.status-chips, .download-seg) [aria-pressed='true'] .filter-icon {
+  color: var(--accent);
+}
+
+/* teltebb, üveges kijelölő: halvány türkiz, felül csillanás, alatta puha türkiz derengés */
+:is(.status-track, .download-seg).sliding[data-thumb]::before {
+  background:
+    linear-gradient(180deg, rgb(var(--glint) / 0.09), transparent 60%),
+    color-mix(in oklab, var(--accent) 20%, transparent);
+  box-shadow:
+    inset 0 0 0 1px var(--accent-line),
+    inset 0 1px 0 rgb(var(--glint) / 0.18),
+    0 2px 8px -2px color-mix(in oklab, var(--accent) 35%, transparent);
+}
+
+.mama-dot {
+  display: inline-block;
+  flex: none;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--muted);
+}
+
+.mama-dot[data-mama='interested'] {
+  background: var(--accent-2);
+  box-shadow: none;
+}
+
+.mama-dot[data-mama='received'] {
+  background: var(--st-watched);
+  box-shadow: none;
+}
+
+.franchise-listbox .ff-count {
+  flex: none;
+  margin-left: auto;
+  padding-left: 0.75rem;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.franchise-listbox li:has(.ff-count)::after {
+  margin-left: 0;
+  padding-left: 0.5rem;
+}
+
+.franchise-listbox li[aria-selected='true'] .ff-count {
+  color: inherit;
+}
+
+.franchise-listbox li[data-zero]:not(.active, [aria-selected='true']) {
+  opacity: 0.4;
+}
+
+@media (min-width: 641px) {
+  .filters .franchise-filter-button {
+    gap: 0.6rem;
+    min-height: 2.75rem;
+    padding: 0.3rem 0.7rem 0.3rem 0.8rem;
+    text-align: left;
+  }
+
+  .filters .franchise-filter-button > .filter-icon {
+    flex: none;
+    width: 1.15rem;
+    height: 1.15rem;
+    color: var(--muted);
+  }
+
+  .type-filter .franchise-filter-button {
+    font-weight: 600;
+  }
+
+  .ff-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+  }
+
+  .ff-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .ff-value {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* nem alapértelmezett érték: halvány türkiz */
+  .filters .franchise-filter-button[data-changed] {
+    background: var(--accent-soft);
+    border-color: var(--accent-line);
+  }
+
+  .franchise-filter-button[data-changed] :is(.ff-label, .ff-value),
+  .franchise-filter-button[data-changed] > svg:last-child {
+    color: var(--accent);
+  }
+
+  .filters .franchise-filter-button[aria-expanded='true'] {
+    border-color: var(--accent-line);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 18%, transparent);
+  }
+
+  .list-search {
+    min-height: 2.75rem;
+  }
+
+  /* a lista / rács váltó ugyanolyan magas, mint mellette a Rendezés (3 px belső margó + 1 px keret) */
+  .list-tools .view-toggle button {
+    height: calc(2.75rem - 8px);
+  }
+
+  /* üveges panel; ha jobbra kilógna, a FranchiseFilter balra tolja (--shift) */
+  .franchise-listbox {
+    top: calc(100% + 0.45rem);
+    padding: 0.35rem;
+    translate: var(--shift, 0) 0;
+    background: rgb(var(--glass) / 0.82);
+    -webkit-backdrop-filter: blur(22px) saturate(1.6);
+    backdrop-filter: blur(22px) saturate(1.6);
+    box-shadow: inset 0 1px 0 rgb(var(--glint) / 0.07), var(--shadow-pop);
+  }
+
+  .franchise-listbox li[role='option'] {
+    padding: 0.5rem 0.65rem;
+    border-radius: 12px;
+  }
+
+  .franchise-listbox.ff-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(9.5rem, 1fr));
+    gap: 0.25rem;
+    max-width: none;
+    max-height: none;
+    padding: 0.5rem;
+  }
+
+  .franchise-listbox.ff-grid li:first-child {
+    grid-column: 1 / -1;
+    margin-bottom: 0.2rem;
+    border-bottom: 1px solid var(--line);
+    border-radius: 12px 12px 4px 4px;
+  }
+}
+
+
+/* a szűrősor jobb szélén: kereső a listában, mellette a rendezés */
+.list-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+/* nagyítós keresőmező (a böngésző saját törlés gombjával) */
+.list-search {
+  width: 15rem;
+  padding-left: 2.3rem;
+  background: var(--surface) var(--icon-search) no-repeat 0.75rem 50% / 1rem;
+}
+
+.list-search:hover {
+  border-color: var(--muted);
+}
+
+/* asztalon (≥ 641 px) keskenyebb kereső és kisebb csoportköz (2026-10-16): a letapadt sáv gyorsgombjainak helye
+   nyugalomban is foglalt („A – Egy sáv”, .stuck-tools[data-off]) – így a sor a legtöbb szélességen ugyanannyi sorba
+   törik, mint a gyorsgombok előtt (mérve 660–2560 px között) */
+@media (min-width: 641px) {
+  .filters {
+    column-gap: 1.5rem; /* M3: 1,75 → 1,5 rem, hogy 2560 px-en az új állapotsáv és Letöltés-gombcsoport mellett is egy sor maradjon */
+  }
+
+  .filter-group {
+    column-gap: 1.25rem;
+  }
+
+  .list-search {
+    width: 10.5rem;
+  }
+}
+
+/* rácsos / listás nézet váltó (csak asztali szélességen): két ikongomb egy kerek keretben,
+   a kiválasztott halvány türkiz – akkora, mint a mellette álló lenyíló */
+.view-toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.view-toggle button {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 1.95rem;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+}
+
+.view-toggle button:not([aria-pressed='true']):hover {
+  color: var(--text);
+  background-color: var(--hover-tint);
+}
+
+.view-toggle button:not([aria-pressed='true']):active {
+  background-color: var(--press-tint);
+}
+
+.view-toggle button[aria-pressed='true'] {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+/* telefonon a kereső teljes szélességű sort kap, alatta a rendezés */
+@media (max-width: 640px) {
+  .list-tools {
+    flex-wrap: wrap;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .list-search {
+    flex: 1 1 100%;
+    width: auto;
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chip {
+  font-size: 0.9rem;
+  padding: 0.35rem 0.85rem;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.chip:hover {
+  border-color: var(--muted);
+}
+
+.chip:not([aria-pressed='true']):hover {
+  background-color: var(--hover-tint);
+}
+
+.chip:not([aria-pressed='true']):active {
+  background-color: var(--press-tint);
+}
+
+/* kiválasztva halvány türkiz: teli türkiz csak a fő gombokon van */
+.chip[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+
+.chip .n {
+  margin-left: 0.4rem;
+  color: var(--muted);
+}
+
+.chip[aria-pressed='true'] .n {
+  color: inherit;
+  opacity: 0.75;
+}
+
+.inline-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.check input {
+  width: 1rem;
+  height: 1rem;
+}
+
+.state {
+  padding: 2rem var(--gutter);
+  color: var(--muted);
+  max-width: 40rem;
+}

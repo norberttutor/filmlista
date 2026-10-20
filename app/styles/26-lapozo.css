@@ -1,0 +1,181 @@
+/* ---------- Lapozó ---------- */
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem 1rem;
+  padding: 0 var(--gutter) 3rem;
+}
+
+/* a lista alsó margója helyett a lapozó ad helyet */
+.table-wrap:has(+ .pagination),
+.grid:has(+ .pagination) {
+  padding-bottom: 1.5rem;
+}
+
+/* asztalon (lista- és rácsnézetben egyaránt) a lapozó és a lábléc egy sávban, az ablak alján (Norbi kérése,
+   2026-10-15): balra a forrásmegjelölés, középen (1800 px alatt jobbra, a „sponsored by” mellett) a lapozó, jobbra a
+   „sponsored by”. A lapozó minden oldalon pontosan
+   ugyanott van, a lábléc mindig látszik, és görgetősáv csak akkor jelenik meg, ha a kártyák nem férnek ki. A lábléc
+   ragad (sticky, bottom: 0 – a body flex oszlopának végén, így rövid oldalon is az alján), a lapozó rögzített (fixed),
+   a lábléc fölött; a forrásmegjelölés szövege ezért csak a lapozóig ér (--pager-w: a lapozó szélessége, a leghosszabb – „1 … 4 5 6 … 47”, „1000–1022. / 1025 cím” – alapján). Közös üveg: a lábléc háttere
+   (::before), telítésnövelés nélkül (a kékes derengés nem kell – Norbi kérése). A lábléc a main[data-docked]
+   jelzőhöz kötődik (a Watchlist asztalon adja), nem a lapozóhoz: egyoldalas találatnál (nincs lapozó) is ugyanez
+   a keskeny, üveg lábléc (átnézés K4, 2026-10-15). */
+body:has(main[data-docked]) {
+  --docked-footer-h: 3.25rem;
+  --pager-w: 40rem;
+  --sponsor-w: 7.5rem;
+}
+
+main[data-docked] {
+  display: flex;
+  flex-direction: column;
+}
+
+.pagination.docked {
+  position: fixed;
+  z-index: 26;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: max-content;
+  margin-inline: auto;
+  box-sizing: border-box;
+  height: var(--docked-footer-h);
+  flex-wrap: nowrap;
+  padding: 0;
+  white-space: nowrap;
+}
+
+body:has(main[data-docked]) .site-footer {
+  position: sticky;
+  z-index: 25;
+  bottom: 0;
+  box-sizing: border-box;
+  height: var(--docked-footer-h);
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  padding: 0 var(--gutter);
+  border-top: 0;
+}
+
+body:has(main[data-docked]) .site-footer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: color-mix(in oklab, var(--bg) 68%, transparent);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+/* a forrásmegjelölés a lapozóig ér (egy közzel előtte); 1800 px alatt középen nem férne el két sorban, ott a lapozó
+   jobbra, a „sponsored by” mellé kerül */
+body:has(.pagination.docked) .site-footer p {
+  flex: 0 1 auto;
+  max-width: calc(100% - var(--sponsor-w) - var(--pager-w) - 4rem);
+  line-height: 1.35;
+}
+
+@media (max-width: 1799px) {
+  .pagination.docked {
+    left: auto;
+    right: calc(var(--gutter) + var(--sponsor-w) + 2rem);
+  }
+}
+
+@media (min-width: 1800px) {
+  body:has(.pagination.docked) .site-footer p {
+    max-width: calc(50% - var(--pager-w) / 2 - 2rem);
+  }
+}
+
+/* az értesítősáv a sáv fölött */
+body:has(main[data-docked]) .toaster {
+  bottom: calc(var(--docked-footer-h) + 1.25rem);
+}
+
+.pagination ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pagination .page {
+  min-width: 2.2rem;
+  padding: 0.35rem 0.6rem;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pagination .page:hover {
+  border-color: var(--muted);
+}
+
+.pagination .page:not([aria-current]):hover {
+  background-color: var(--hover-tint);
+}
+
+.pagination .page:not([aria-current]):active {
+  background-color: var(--press-tint);
+}
+
+/* az aktuális oldal halvány türkiz (mint a kiválasztott szűrőgomb) */
+.pagination .page[aria-current='page'] {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent);
+  font-weight: 650;
+}
+
+.pagination .gap {
+  align-self: center;
+  padding: 0 0.2rem;
+  color: var(--muted);
+}
+
+.pagination .ghost:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.page-info {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* telefonon tömörebben (Norbi kérése, 2026-10-15): az „Előző” / „Következő” csak nyíl (kerek, mint az oldalszámok),
+   kisebb közök – így a sor ritkábban törik két sorba –, és alatta nincs fölösleges köz */
+@media (max-width: 640px) {
+  .pagination {
+    gap: 0.5rem 0.6rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .pagination .pg-word {
+    display: none;
+  }
+
+  .pagination .pg-step {
+    min-width: 2.2rem;
+    padding: 0.35rem 0.6rem;
+  }
+
+  .pagination ol {
+    gap: 0.25rem;
+  }
+
+  .page-info {
+    font-size: 0.8rem;
+  }
+}

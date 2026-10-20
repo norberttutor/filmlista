@@ -1,0 +1,419 @@
+/* ---------- Mozgás ---------- */
+/* A "kevesebb mozgás" rendszerbeállításnál mind kikapcsol (a lap végén; a nézetváltást a
+   Watchlist / TitleEditor el sem indítja). */
+
+/* a neonfelirat felkapcsolása (D9): munkamenetenként egyszer, 1,5 s – kétszer-háromszor felvillan, aztán ég
+   (a NeonBrand teszi rá a neon-on osztályt); „kevesebb mozgás”-nál nincs, rögtön ég */
+.brand.neon-on .neon-line::after,
+.brand.neon-on .neon-line::before {
+  animation: neon-on 1.5s steps(1, end) both;
+}
+
+@keyframes neon-on {
+  0% { opacity: 0; }
+  9% { opacity: 1; }
+  12% { opacity: 0.1; }
+  20% { opacity: 1; }
+  23% { opacity: 0; }
+  27% { opacity: 0.9; }
+  30% { opacity: 0.2; }
+  36%,
+  100% { opacity: 1; }
+}
+
+/* mikro-átmenetek (terv-3 74, Norbi választása, 2026-10-13 – látványterv: munka/terv-3/tervek-1013/):
+   állapotváltáskor a pálca / állapotcsík színe, a megnézett sor / kártya szürkülése és a szövegek
+   halványulása 0,2 s alatt úszik át (eddig ugrott; a gombok, lenyílók és a borító már eddig is
+   0,15 s-mal váltottak – azok saját átmenetét ez nem írja felül) */
+.titles-table td:first-child::before,
+.status-strip {
+  transition:
+    background-color 0.2s ease-out,
+    box-shadow 0.2s ease-out;
+}
+
+.titles-table tbody :is(.row-name, .original, .meta, .row-genres, .added, .row-overview, .rating-number),
+.card :is(h3, .original, .meta, .status-name, .genres, .added, .card-franchise, .card-season) {
+  transition: color 0.2s ease-out;
+}
+
+.titles-table tbody .stars,
+.card .card-stars,
+:is(.titles-table tbody, .card) .genre::before,
+.titles-table tbody td:is(.col-check, .col-status, .col-mama, .col-actions) > :not(button, select, .lock),
+.titles-table tbody td:is(.col-check, .col-status, .col-mama, .col-actions) > .lock > :not(button, select) {
+  transition:
+    opacity 0.2s ease-out,
+    filter 0.2s ease-out;
+}
+
+/* a lenyílók és a menük (franchise- és műfajszűrő, harang, ⋮) nyitáskor 0,16 s alatt halványan,
+   6 px-et lecsúszva jelennek meg; bezáráskor azonnal eltűnnek */
+:is(.franchise-listbox, .notif-panel, .more-menu) {
+  animation: popup-in 0.16s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes popup-in {
+  from {
+    opacity: 0;
+    translate: 0 -6px;
+    scale: 0.98;
+  }
+}
+
+/* lehúzás frissítéshez (terv-3 85): elengedés után, amíg a lista újratölt, a jelző forog (az ismétlődő
+   animáció a frissítés végéig tart; „kevesebb mozgás” módban áll) */
+.pull-refresh:not([data-state]) {
+  transition: translate 0.2s, opacity 0.2s;
+}
+
+.pull-refresh[data-state='refreshing'] .pull-refresh-dot svg {
+  animation: pull-spin 0.8s linear infinite;
+}
+
+@keyframes pull-spin {
+  to {
+    rotate: calc(var(--turn, 0deg) + 360deg);
+  }
+}
+
+/* az adatlap „Mentve” pipája (terv-3 79): 0,15 s alatt bepattan, 2 mp múlva elhalványul (a kód 2,1 mp
+   után leveszi; „kevesebb mozgás” módban csak megjelenik és eltűnik) */
+.saved-check {
+  animation: saved-check 2s ease-out forwards;
+}
+
+@keyframes saved-check {
+  0% {
+    opacity: 0;
+    scale: 0.5;
+  }
+  8% {
+    opacity: 1;
+    scale: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* kihúzás (terv-3 40): megnézettre váltáskor (betöltéskor nem – lib/useStrike.js) egy zöld vonal
+   fut végig a címen (0,26 s), majd elhalványul – összesen 0,75 s, a kártyán és a soron; a
+   nézési sorrendben a vonal megmarad (0,3 s alatt húzódik be). A vonal háttér (a szöveg mögött),
+   így több sorban is minden sort áthúz; a színe regisztrált változó, hogy áttűnhessen. A 0,2 s-os
+   szabály kivétele. */
+@property --strike-ink {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+
+.strike {
+  background: linear-gradient(var(--strike-ink), var(--strike-ink)) 0 58% / 0 2px no-repeat;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.strike[data-strike] {
+  animation: strike-sweep 0.75s ease-out;
+}
+
+@keyframes strike-sweep {
+  0% {
+    background-size: 0 2px;
+    --strike-ink: var(--st-watched);
+  }
+  35%,
+  60% {
+    background-size: 100% 2px;
+    --strike-ink: var(--st-watched);
+  }
+  100% {
+    background-size: 100% 2px;
+    --strike-ink: transparent;
+  }
+}
+
+.wo-list li[data-done] .strike {
+  --strike-ink: var(--watched-text);
+  background-size: 100% 2px;
+}
+
+.wo-list li[data-strike] .strike {
+  animation: wo-strike 0.3s ease-out;
+}
+
+@keyframes wo-strike {
+  from {
+    background-size: 0 2px;
+  }
+}
+
+/* nézetváltás: kattintáskor a kártya / sor borítója átsiklik a szerkesztő ablak nagy
+   borítójának helyére, bezáráskor vissza (asztalon, ≥ 900 px; View Transitions). A forrás
+   borító csak a váltás idejére kapja ugyanezt a nevet. ~0,3 s – a 0,2 s-os szabály kivétele. */
+.title-editor .editor-page:not([hidden]) .editor-poster {
+  view-transition-name: editor-poster;
+}
+
+::view-transition-group(editor-poster) {
+  animation-duration: 0.3s;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+::view-transition-old(editor-poster),
+::view-transition-new(editor-poster) {
+  height: 100%;
+  object-fit: cover;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.2s;
+}
+
+/* görgetésre beúszó kártyák: a borítófal kártyái beúszáskor finoman felúsznak és kinagyulnak
+   (csak CSS, a görgetés vezérli; ahol a böngésző nem tudja, azonnal látszanak) */
+@supports (animation-timeline: view()) {
+  .grid > li {
+    animation: card-in linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 45%;
+  }
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0.25;
+    transform: translateY(28px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* lapozáskor (terv-3 49.8, Norbi kérése, 2026-10-08) a kártyák / sorok egymás után úsznak be
+   (balról jobbra, soronként; 0,3 s + elemenként 22 ms késés). A Watchlist ~1,2 s-ig ad
+   data-paging jelzőt: addig ez az animáció váltja a borítófal görgetéses beúszását (ugyanazon az
+   elemen egyszerre csak egy fut). A sibling-index() nélküli böngészőben egyszerre úsznak be. */
+.grid[data-paging] > li,
+.titles-table tbody[data-paging] > tr {
+  animation: page-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-timeline: auto;
+  animation-delay: calc((sibling-index() - 1) * 22ms);
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* animált átrendeződés szűréskor / rendezéskor (terv-3 49.3, Norbi kérése, 2026-10-08): a
+   components/Reflow.js mozgatja a kártyákat / sorokat (Web Animations, 0,32 s); a kiesők másolata
+   (.reflow-ghost) a régi helyén halványul el – a rács / a táblázat burkolója a helyük alapja */
+.grid,
+.table-wrap {
+  position: relative;
+}
+
+.reflow-ghost,
+.grid > li.reflow-ghost {
+  position: absolute;
+  margin: 0;
+  pointer-events: none;
+  animation: none;
+}
+
+/* lista ↔ rács váltáskor a borítók klónja ezen a rögzített rétegen siklik a helyére (terv-3 73, Norbi
+   választása: „B” – lépcsőzetesen, borítónként 22 ms; 0,42 s, mint a borító ↔ adatlap nézetváltás –
+   lib/viewSwitch.js, JS-ből, a „kevesebb mozgás”-t maga nézi); a letapadt szűrősor (30) alatt marad */
+.view-switch-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.view-switch-layer img {
+  position: absolute;
+  object-fit: cover;
+  transform-origin: 0 0;
+  box-shadow: 0 18px 40px -16px rgb(var(--shade) / calc(0.7 * var(--shade-k)));
+}
+
+/* csillag: kattintáskor a kitöltött csillagok egymás után "pattannak" (a StarRating adja a
+   .pop osztályt és a sorszámot) */
+.stars label.pop svg {
+  animation: star-pop 0.34s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+  animation-delay: calc(var(--i, 0) * 22ms);
+}
+
+@keyframes star-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.4);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* jelölőnégyzet: a pipa bepattan (átmenet: betöltéskor nem mozog, csak kattintásra) */
+input[type='checkbox'] {
+  background-size: 30% 30%;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    background-size 0.22s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+input[type='checkbox']:checked {
+  background-size: 100% 100%;
+}
+
+/* harang: új értesítésnél egyszer megrezzen (a NotificationBell adja a .ringing osztályt) */
+.notif-bell.ringing svg {
+  transform-origin: 50% 10%;
+  animation: bell-ring 0.9s ease-in-out;
+}
+
+@keyframes bell-ring {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  12% {
+    transform: rotate(16deg);
+  }
+  28% {
+    transform: rotate(-14deg);
+  }
+  44% {
+    transform: rotate(10deg);
+  }
+  60% {
+    transform: rotate(-6deg);
+  }
+  76% {
+    transform: rotate(3deg);
+  }
+}
+
+/* tiltott bezárás (pl. törlés-megerősítés közben kikattintás): az ablak egy pillanatra
+   megbillen – látszik, hogy a kattintás odaért, csak most nem zárhat (lib/useBackdropClose,
+   nudgeDialog; átnézés J14). A scale önálló tulajdonság: a beúszás translate-jével nem ütközik. */
+dialog[data-nudge] {
+  animation: dialog-nudge 0.22s ease-out;
+}
+
+@keyframes dialog-nudge {
+  0%,
+  100% {
+    scale: 1;
+  }
+  40% {
+    scale: 1.015;
+  }
+}
+
+/* csontváz-betöltés: a lista (és a hasonló címek) helyén halvány körvonalak csillogó
+   áthúzással, amíg az adatok jönnek */
+.sk {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(
+      100deg,
+      var(--surface) 30%,
+      color-mix(in oklab, var(--surface), white 7%) 50%,
+      var(--surface) 70%
+    )
+    0 0 / 300% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+.sk-line {
+  height: 0.7rem;
+  border-radius: 999px;
+}
+
+.sk-w80 {
+  width: 80%;
+}
+
+.sk-w60 {
+  width: 60%;
+}
+
+.sk-w40 {
+  width: 40%;
+}
+
+/* lista: sorok a táblázat helyén */
+.skeleton-table {
+  display: grid;
+  gap: 1.75rem;
+  padding: 2.5rem var(--gutter) 3.5rem;
+}
+
+.sk-row {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.sk-row .sk-thumb {
+  flex: none;
+  width: 4.5rem;
+  aspect-ratio: 2 / 3;
+}
+
+.sk-lines {
+  display: grid;
+  flex: 1;
+  gap: 0.6rem;
+  max-width: 34rem;
+}
+
+/* rács: kártyák (a .grid elrendezésével) */
+.sk-card {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.sk-card .sk-poster {
+  aspect-ratio: 2 / 3;
+  border-radius: 8px;
+}
+
+/* hasonló címek: borítók a vízszintes sorban */
+.similar-sk {
+  display: flex;
+  gap: 0.75rem;
+  overflow: hidden;
+}
+
+.similar-sk .sk-card {
+  flex: none;
+  width: 6.75rem;
+}

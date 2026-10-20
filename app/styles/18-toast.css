@@ -1,0 +1,139 @@
+/* ---------- Értesítősáv (toast, lib/toast.js) ---------- */
+/* alul középen, telefonon a lebegő „+” fölött; a fogyó csík a hátralévő idő (rámutatáskor
+   megáll) */
+.toaster {
+  position: fixed;
+  left: 50%;
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  width: max-content;
+  max-width: calc(100vw - 2rem);
+  translate: -50% 0;
+  pointer-events: none;
+}
+
+.toast {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: min(26rem, 100%);
+  max-width: 100%;
+  padding: 0.65rem 0.6rem 0.65rem 1.1rem;
+  overflow: hidden;
+  color: var(--text);
+  background: var(--surface-raised);
+  border: 1px solid var(--edge);
+  border-radius: 18px;
+  box-shadow: var(--shadow-pop);
+  pointer-events: auto;
+  animation: toast-in 0.18s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+}
+
+.toast img {
+  flex: none;
+  width: 2.1rem;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.toast-text {
+  flex: 1;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.toast .ghost,
+.toast .stars {
+  flex: none;
+}
+
+.toast-close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 50%;
+}
+
+.toast-close:hover {
+  color: var(--text);
+  background: var(--hover-tint);
+}
+
+.toast-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--accent);
+  transform-origin: left;
+  animation: toast-bar linear forwards;
+}
+
+@keyframes toast-bar {
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* a sáv fajtája szerint (terv-3 52.5, Norbi választása: „B”): törlés piros, „Hogy tetszett?”
+   borostyán (mint a saját értékelés) – halványan színezett háttér és keret, elöl kerek ikon, a fogyó
+   csík is ebben a színben; a többi sáv a megszokott türkiz */
+.toast[data-kind='delete'] {
+  --kind: var(--danger);
+}
+
+.toast[data-kind='rating'] {
+  --kind: var(--accent-2);
+}
+
+.toast[data-kind] {
+  background: color-mix(in oklab, var(--kind) 9%, var(--surface-raised));
+  border-color: color-mix(in oklab, var(--kind) 38%, transparent);
+}
+
+.toast[data-kind] .toast-bar {
+  background: var(--kind);
+}
+
+.toast-kind {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  color: var(--kind);
+  background: color-mix(in oklab, var(--kind) 18%, transparent);
+}
+
+@media (max-width: 640px) {
+  .toaster {
+    bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .toast {
+    flex-wrap: wrap;
+    width: calc(100vw - 2rem);
+    min-width: 0;
+  }
+}

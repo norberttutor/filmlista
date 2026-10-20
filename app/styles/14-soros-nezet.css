@@ -1,0 +1,594 @@
+/* ---------- Soros nézet (asztali gép) ---------- */
+.table-wrap {
+  padding: 0.5rem var(--gutter) 3.5rem;
+}
+
+/* fix oszlopelrendezés: a vezérlőoszlopok szélessége rögzített, minden maradék hely a címé */
+.titles-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+/* fejléc: kis, ritkított nagybetűs címkék (a sormagasság a régi 12,8 px × 1,5, így a
+   fejléc magassága nem változik) */
+.titles-table th {
+  position: sticky;
+  top: calc(var(--head-c) + var(--filters-h, 0px)); /* a fejléc sávja és a letapadt szűrősor alatt */
+  z-index: 1;
+  padding: 0.9rem 0.75rem 0.6rem;
+  text-align: left;
+  font-size: 0.6875rem;
+  line-height: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--bg);
+  /* border helyett: a ragadós fejléc alsó vonala görgetéskor is látszódjon */
+  box-shadow: inset 0 -1px 0 var(--line);
+}
+
+/* a "CÍM" a borítók fölött kezdődik (mint a sorok első cellája) */
+.titles-table th:first-child {
+  padding-left: 1.1rem;
+}
+
+/* a "Cím" kivételével a fejlécek a vezérlők fölött középen */
+.titles-table th:not(:first-child) {
+  text-align: center;
+}
+
+/* halk sorelválasztó; a fejléc alatti vonal erősebb marad */
+.titles-table td {
+  padding: 0.75rem;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.titles-table tbody td {
+  transition: background-color 0.12s;
+}
+
+/* rámutatáskor és billentyűzettel is látszik, melyik sorban vagyunk */
+.titles-table tbody tr:hover > td,
+.titles-table tbody tr:has(:focus-visible) > td {
+  background: rgb(var(--tint) / 0.04);
+}
+
+/* állapotszín a sor bal szélén: a borító magasságában álló, lekerekített pálca (helyet nem
+   foglal; a teljes magasságú sávok egymás alatt összefolytak) */
+.titles-table td:first-child {
+  position: relative;
+  padding-left: 1.1rem;
+}
+
+.titles-table td:first-child::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 5.25rem; /* = a borító magassága */
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: var(--strip);
+}
+
+/* a "Folyamatban" halványan világít (neon türkiz) */
+.titles-table tr[data-status='watching'] td:first-child::before {
+  box-shadow: 0 0 8px color-mix(in srgb, var(--strip) 70%, transparent);
+}
+
+.titles-table .col-check {
+  width: 5.5rem;
+  text-align: center;
+}
+
+.titles-table .col-mama {
+  width: 9.75rem; /* a "Nem érdekli" egy sorban kiférjen (átnézés K7; 8,5 rem-en két sorba tört) */
+}
+
+.titles-table .col-status {
+  width: 9.75rem; /* a "Folyamatban" még kiférjen */
+}
+
+.titles-table .col-rating {
+  width: 23rem; /* 10 (másfélszeres) csillag középen + jobbra mellette a "10/10" */
+}
+
+/* a csillagsor az oszlop közepén (a fejléc alatt); a "8/10" mellette, a középre
+   igazítást nem tolja el */
+.titles-table td.col-rating {
+  text-align: center;
+}
+
+.titles-table .rating-field {
+  display: inline-flex;
+  position: relative;
+  vertical-align: middle;
+}
+
+.titles-table .col-actions {
+  width: 3.5rem;
+  text-align: center;
+}
+
+.titles-table select,
+.titles-table textarea {
+  width: 100%;
+}
+
+/* a nyílnak jobbra 16 px, balra a böngésző 4 px-es belső margója (mint a beépítettnél); egy sorban (K7) */
+.titles-table select {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 0.45rem calc(0.6rem + 16px) 0.45rem calc(0.6rem + 4px);
+  background-position: right 0.6rem center;
+  font-size: 0.9rem;
+}
+
+/* a sorban ugyanott, ahol a beépített jelölőnégyzet volt */
+.titles-table input[type='checkbox'] {
+  width: 1.15rem;
+  height: 1.15rem;
+  vertical-align: -3px;
+}
+
+/* az üres Állapot / Mama lenyíló és a kuka csak a sorra mutatva látszik (mint az üres
+   franchise mező); a helyük megmarad, Tabbal is elérhetők. Érintőképernyőn minden
+   mindig látszik. A :has() nélküli böngészőben a lenyíló marad a régi. */
+.titles-table td.col-status select,
+.titles-table td.col-mama select,
+.titles-table .icon-btn {
+  transition: opacity 0.15s, color 0.15s, background-color 0.15s, border-color 0.15s;
+}
+
+/* kitöltött Mama: saját jelölés, a második kiemelőszínnel (borostyán) */
+.titles-table td.col-mama select.mama-set {
+  color: var(--accent-2);
+}
+
+/* „Nem érdekli” (terv-3 13): nem kért jelölés – tompa szürke, nem borostyán */
+.titles-table td.col-mama select.mama-set:has(> option[value='declined']:checked) {
+  color: var(--muted);
+}
+
+@media (hover: hover) {
+  .titles-table td.col-status select:where(:has(> option[value='to_watch']:checked)),
+  .titles-table td.col-mama select:where(:has(> option[value='']:checked)) {
+    opacity: 0;
+  }
+
+  .titles-table .icon-btn {
+    opacity: 0.6;
+  }
+
+  .titles-table tr:hover td.col-status select,
+  .titles-table tr:hover td.col-mama select,
+  .titles-table tr:focus-within td.col-status select,
+  .titles-table tr:focus-within td.col-mama select,
+  .titles-table tr:hover .icon-btn,
+  .titles-table tr:focus-within .icon-btn {
+    opacity: 1;
+  }
+}
+
+/* borító | adatok | franchise – a leírás alattuk (keskenyebb soros nézet).
+   A borító 72 px széles (Norbi kérése): így ugyanolyan magas, mint mellette az öt sor adat,
+   a sor magassága alig nő.
+   A franchise oszlop fix 11rem (176 px): Norbi leghosszabb franchise-neve is kifér a
+   lenyílóval együtt (mérve: 128 px a név, ~165 px a lenyíló) */
+.row-title {
+  --franchise-col: 11rem;
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr) var(--franchise-col);
+  align-items: center;
+  column-gap: 0.9rem;
+}
+
+.row-title .thumb {
+  grid-row: span 2;
+  width: 4.5rem;
+}
+
+/* az utolsó sor nem lesz egyetlen árva szó */
+.row-overview {
+  grid-column: 2 / -1;
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--muted);
+  text-wrap: pretty;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+/* széles képernyőn (1440p-re optimalizálva): borító | adatok | franchise | leírás egymás
+   mellett. A cím oszlop fix 22.5rem (360 px): Norbi címeinek kb. 96%-a belefér (16 px-es
+   címmel mérve: 95% ≤ 273 px, a 20 px-es cím ennek 1,25-szöröse), a hosszabbak "…"-val. A franchise oszlop két oldalán ugyanakkora a rácsköz. A leírás
+   minden maradék helyet megkap; a "Letöltve" oszlop felirata felé 120 px (--overview-gap-end).
+   1900 px alatt a leírás túl keskeny lenne a franchise oszlop mellett, ott a cím alatt van. */
+@media (min-width: 1900px) {
+  .row-title {
+    --overview-gap-end: 7.5rem;
+    grid-template-columns: 4.5rem 22.5rem var(--franchise-col) minmax(0, 1fr);
+    column-gap: 1.25rem;
+  }
+
+  .row-title .thumb {
+    grid-row: auto;
+  }
+
+  /* a nagyon hosszú sorokban nagyobb sorköz: könnyebb a következő sor elejére visszatalálni
+     (a 4 sor így is alacsonyabb a borítónál, a sor magassága nem változik) */
+  .row-overview {
+    grid-column: 4;
+    /* jobb: a cella belső margója (0.75rem) és a középre igazított, nagybetűs "LETÖLTVE"
+       felirat előtti hely (~0.94rem) már adott */
+    margin: 0 calc(var(--overview-gap-end) - 1.6875rem) 0 0;
+    line-height: 1.5;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+  }
+}
+
+/* Látványosabb listanézet (terv-3 59, Norbi választása: „B”, 2026-10-11): legfeljebb ~1720 px széles,
+   középre zárt táblázat, kártyaszerű sorok sorközzel, nagyobb (100 px-es) borító és cím, a leírás
+   mindig a cím alatt két sorban (a keskenyebb táblázatban oldalt túl keskeny lenne – ez felülírja a
+   fenti széles elrendezést), a film jelenetképe halványan a sor jobb felén; oldalanként 10 cím
+   (TABLE_PAGE_SIZE). A sor színe: „Hangulatszín a borítóból” szakasz. */
+.table-wrap {
+  max-width: 1720px;
+  margin-inline: auto;
+}
+
+.titles-table {
+  border-collapse: separate;
+  border-spacing: 0 0.7rem;
+}
+
+.titles-table tbody td {
+  border-bottom: 0;
+  background: rgb(var(--tint) / 0.03);
+  border-block: 1px solid rgb(var(--tint) / 0.07);
+}
+
+.titles-table tbody td:first-child {
+  padding-left: 1.4rem;
+  border-left: 1px solid rgb(var(--tint) / 0.07);
+  border-radius: 20px 0 0 20px;
+}
+
+.titles-table tbody td:last-child {
+  border-right: 1px solid rgb(var(--tint) / 0.07);
+  border-radius: 0 20px 20px 0;
+}
+
+.titles-table td:first-child::before {
+  left: 0.45rem;
+  width: 4px;
+  height: 9rem; /* = a borító magassága */
+}
+
+/* borító | a cím és az adatai (fölül) + a leírás (alul) – a franchise a „Hozzáadva” sor végén (.row-added, átnézés K6,
+   2026-10-16): korábban saját, 11rem-es oszlopban a cím mellett, így 1440 px-en a cím ~170 px-et kapott (az üres,
+   láthatatlan mező is foglalta a helyet), most ~365-öt */
+.row-title {
+  grid-template-columns: 6.25rem minmax(0, 1fr);
+  column-gap: 1.25rem;
+}
+
+.row-title .thumb {
+  grid-row: span 2;
+  width: 6.25rem;
+}
+
+.row-added {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.9rem;
+  margin-top: 0.2rem;
+}
+
+.row-text .row-added .added {
+  margin: 0;
+}
+
+/* a „Hozzáadva” mellett balra zárva, a lenyíló a franchise-oszlop szélességéig */
+.row-added .franchise-field {
+  justify-content: flex-start;
+  max-width: var(--franchise-col);
+}
+
+.row-name {
+  font-size: 1.5rem;
+}
+
+.titles-table .original {
+  font-size: 0.9rem;
+}
+
+.titles-table .meta {
+  font-size: 0.88rem;
+}
+
+.row-overview {
+  grid-column: 2;
+  max-width: 62rem;
+  margin: 0.45rem 0 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+/* a jelenetkép a leírás mögött, balra a sor színébe olvadva */
+.titles-table td.cell-title {
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.titles-table tr[data-img] td.cell-title::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  width: 58%;
+  background: var(--row-img) center 30% / cover no-repeat;
+  opacity: 0.28;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 55%);
+  mask-image: linear-gradient(90deg, transparent, #000 55%);
+  pointer-events: none;
+}
+
+/* a megnézett / abbahagyott sor képe is fakó (mint a borítója) */
+.titles-table tbody tr:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) td.cell-title::after {
+  filter: grayscale(1);
+  opacity: 0.16;
+}
+
+.row-text {
+  min-width: 0;
+}
+
+.row-text p {
+  margin: 0;
+}
+
+/* a cím legfeljebb 2 sorban; ha így sem fér ki, "…" (a teljes cím rámutatáskor látszik) – átnézés K6, 2026-10-16:
+   korábban egy sorban, és a hosszú cím vészett el, miközben az eredeti cím 2–3 sorba tört */
+.row-name {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 1.25rem;
+  font-weight: 650;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  text-wrap: balance;
+}
+
+/* soros nézet: másodlagos szövegek mérete; az évszámok és dátumok számjegyei egyforma
+   szélesek, így egymás alatt egy vonalban vannak */
+.titles-table .original,
+.titles-table .meta {
+  font-size: 0.8rem;
+}
+
+/* az eredeti cím egy sorban, "…"-val (a teljes rámutatáskor) – átnézés K6 */
+.titles-table .original {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.titles-table .added {
+  font-size: 0.75rem;
+}
+
+.titles-table .meta,
+.titles-table .added {
+  font-variant-numeric: tabular-nums;
+}
+
+.titles-table .rating-number {
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  min-width: 0;
+  margin-left: 0.45rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  transform: translateY(-50%);
+}
+
+/* másfélszeres csillagok a soros nézetben */
+.titles-table .stars svg {
+  width: 1.575rem;
+  height: 1.575rem;
+}
+
+.row-name a {
+  text-decoration: none;
+}
+
+.row-name a:hover {
+  text-decoration: underline;
+}
+
+.row-text .meta,
+.row-text .row-genres,
+.row-text .added,
+.row-text .error {
+  margin-top: 0.2rem;
+}
+
+/* műfajok külön sorban (nem az évszám / IMDb sorában) */
+.row-genres {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* franchise saját oszlopban a cím és a leírás között, középre igazítva */
+.franchise-field {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  font-size: 0.75rem;
+  text-align: center;
+  color: var(--muted);
+  transition: opacity 0.15s;
+}
+
+/* üresen csak rámutatáskor, vagy ha billentyűzettel a sorban vagyunk, látszik; a helyét
+   mindig megtartja, így a sor nem ugrik meg (és Tabbal is elérhető marad) */
+.franchise-field.empty {
+  opacity: 0;
+}
+
+.titles-table tr:hover .franchise-field.empty,
+.titles-table tr:focus-within .franchise-field.empty {
+  opacity: 1;
+}
+
+/* új franchise / törlés megerősítése a keskeny oszlopban: egymás alatt, középen */
+.franchise-field .franchise-new {
+  width: 100%;
+  justify-content: center;
+}
+
+.franchise-field .franchise-new input {
+  width: 100%;
+}
+
+/* türkiz szöveghez türkiz nyíl; a háttér rövidítése a nyilat is törölné, ezért minden
+   állapotban újra megadjuk */
+.titles-table .franchise-select {
+  width: auto;
+  max-width: 100%;
+  /* csak a kiválasztott érték szélessége (Chrome/Edge) – különben a leghosszabb
+     lehetőség ("× … törlése…") szélességét venné fel, és szétnyomná a táblázatot */
+  field-sizing: content;
+  padding: 0.15rem calc(0.4rem + 16px) 0.15rem calc(0.4rem + 4px);
+  font-size: 0.8rem;
+  color: var(--accent);
+  background: transparent var(--chevron-accent) no-repeat right 0.4rem center / 10px 10px;
+  border-color: transparent;
+}
+
+.titles-table tr:hover .franchise-select,
+.titles-table .franchise-select:focus {
+  background: var(--surface) var(--chevron-accent) no-repeat right 0.4rem center / 10px 10px;
+  border-color: var(--line);
+}
+
+.franchise-new {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.franchise-new input {
+  width: 11rem;
+  max-width: 100%;
+  padding: 0.25rem 0.5rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.franchise-new .error {
+  flex-basis: 100%;
+}
+
+.mini {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+}
+
+.card-franchise {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+
+/* a borító jobb felső sarka: Mama „Érdekli” jelölése („M”) és a „Letöltve” jelvény egymás mellett;
+   a kártyán a többi Mama-érték nem látszik (a szűrő mutatja) */
+.poster-corner {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.poster-corner .badge {
+  position: static;
+}
+
+/* saját jelölés: borostyán */
+.mama-mark {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent-2);
+  background: rgb(var(--glass) / 0.8);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 1px var(--accent-2-line),
+    0 2px 8px rgb(var(--shade) / calc(0.35 * var(--shade-k)));
+}
+
+.card:is([data-status='watched'], [data-status='dropped']):not(:hover):not(:focus-within) .mama-mark {
+  color: var(--muted);
+  box-shadow: inset 0 0 0 1px rgb(var(--tint) / 0.14);
+}
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 50%;
+}
+
+.icon-btn svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* kuka: rámutatva piros ikon halvány piros körben */
+.icon-btn:hover {
+  color: var(--danger);
+  background-color: color-mix(in srgb, var(--danger) 14%, transparent);
+}
+
+.icon-btn:active {
+  background-color: color-mix(in srgb, var(--danger) 22%, transparent);
+}

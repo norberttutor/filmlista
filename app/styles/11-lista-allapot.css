@@ -1,0 +1,129 @@
+/* ---------- Offline (terv-3 44): net nélkül a tárolt lista, csak olvasható ---------- */
+.offline-note {
+  margin: 0 var(--gutter) 1rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--control-border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.offline-note strong {
+  color: var(--text);
+}
+
+/* a vezérlőket letiltó fieldset (Lock): az elrendezésen nem változtat */
+fieldset.lock {
+  display: contents;
+}
+
+/* a letiltott csillagsor rámutatásra se mutasson előnézetet */
+fieldset.lock:disabled .stars {
+  pointer-events: none;
+}
+
+/* net nélkül (csak olvasható mód) a tiltott vezérlők halványabbak – már ránézésre látszik, hogy
+   nem kattinthatók (átnézés J3); a gombcsoport és a csillagsor egészében */
+main[data-readonly] :is(button, select, input[type='checkbox']):disabled,
+main[data-readonly] :is(.segmented, .stars):has(input:disabled) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@supports (corner-shape: squircle) {
+  .offline-note {
+    corner-shape: squircle;
+  }
+}
+
+/* ---------- Keresés a listán: kiemelés (terv-3 66, Norbi választása: „A” – halk, 2026-10-13) ---------- */
+/* a cím (eredeti cím, franchise neve) keresett része türkiz aláhúzást kap; a betűszín nem változik */
+mark.hl {
+  color: inherit;
+  background: none;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.18em;
+}
+
+/* a kártya címe eleve halványan aláhúzott link: a kiemelés ugyanarra a vonalra kerül, nem alá */
+.card h3 a mark.hl {
+  text-underline-offset: auto;
+}
+
+/* a lista fölötti mondat: elírás javítva / a franchise neve szerinti találatok */
+.search-note {
+  width: 100%;
+  margin: 0 0 0.5rem;
+  padding-inline: var(--gutter);
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+/* a rácsnak saját felső térköze van */
+.search-note:has(+ .grid) {
+  margin-bottom: -1rem;
+}
+
+.search-note b {
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* listanézetben a táblázattal egy vonalban (az is legfeljebb 1720 px, középre zárva) */
+.search-note:has(+ .table-wrap) {
+  max-width: 1720px;
+  margin-inline: auto;
+}
+
+/* a franchise neve miatt illő sor: a franchise mezője aláhúzva, halvány türkiz kerettel */
+.franchise-field.search-hit select {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 0.2em;
+  box-shadow: 0 0 0 1px var(--accent-line);
+}
+
+/* ---------- Üres állapot (üres lista, találat nélküli szűrés / keresés) ---------- */
+.empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+  padding: 4rem var(--gutter) 5rem;
+  text-align: center;
+}
+
+.empty-art {
+  width: 9.5rem;
+  height: auto;
+  margin-bottom: 0.4rem;
+  color: var(--accent);
+}
+
+/* a nagyító lencséje kitakarja a mögötte lévő filmkockát */
+.empty-art-lens {
+  fill: var(--bg);
+}
+
+.empty-state h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  text-wrap: balance;
+}
+
+.empty-state p {
+  margin: 0;
+  max-width: 34rem;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
