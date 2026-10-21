@@ -18,6 +18,7 @@ import { usePosterColor, ambientProps, franchisePosterPath } from '@/lib/posterC
 import { article, franchiseSuggestions } from '@/lib/franchiseSuggest';
 import FranchiseSuggestions from '@/components/FranchiseSuggestions';
 import { FranchiseActions } from '@/components/FranchiseActions';
+import DialogClose from '@/components/DialogClose';
 
 // ábécérend névelő nélkül (Norbi döntése): „A majmok bolygója” az M-nél, „The Purge” a P-nél
 const sortKey = (name) => name.replace(/^(a|az|the)\s+/i, '');
@@ -56,10 +57,9 @@ export default function FranchisesDialog({
   const [creating, setCreating] = useState(null); // { name, error, busy }
   // asztalon kikattintásra bezárul – szerkesztés közben (átnevezés, törlés megerősítése, új név) nem,
   // hogy a beírt szöveg ne vesszen el; a nyitott gyűjtemény-ablakot a saját kikattintása zárja
-  const backdrop = useBackdropClose(dialogRef, {
-    onClose: () => dialogRef.current.close(),
-    canClose: () => !edit && !creating && openId == null,
-  });
+  // (a „Bezárás” gomb ugyanígy)
+  const closing = { onClose: () => dialogRef.current.close(), canClose: () => !edit && !creating && openId == null };
+  const backdrop = useBackdropClose(dialogRef, closing);
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
@@ -235,15 +235,13 @@ export default function FranchisesDialog({
       }}
       {...backdrop}
     >
+      <DialogClose dialogRef={dialogRef} {...closing} />
       <div>
         <header className="stats-head">
           <h2 id="franchises-title" ref={headingRef} tabIndex={-1}>
             Franchise-ok
           </h2>
           <p>{franchises.length} franchise · ábécérendben</p>
-          <button type="button" className="ghost" onClick={() => dialogRef.current.close()}>
-            Bezárás
-          </button>
         </header>
 
         <input

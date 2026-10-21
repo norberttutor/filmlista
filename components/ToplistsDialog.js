@@ -11,6 +11,7 @@ import FranchiseFilter from '@/components/FranchiseFilter';
 import GenreIcon from '@/components/GenreIcon';
 import { ALL_GENRES_ICON, DECADE_ICON } from '@/components/FilterIcons';
 import { CreditStatus, useAddCredit, asItem } from '@/components/PersonPage';
+import DialogClose from '@/components/DialogClose';
 
 const IMG = 'https://image.tmdb.org/t/p/';
 // a /api/tmdb/toplist válaszának változata – a válasz (mezők, szűrés, rangsor) változásakor emeld
@@ -129,10 +130,8 @@ export default function ToplistsDialog({ titles, onClose, onPreview, onAdded, re
   const [lists, setLists] = useState(new Map()); // `${type}:${list}` → { status, data, error, slow }
   const [attempt, setAttempt] = useState(0);
   const { adding, errors, add } = useAddCredit(onAdded);
-  const backdrop = useBackdropClose(dialogRef, {
-    onClose: () => dialogRef.current.close(),
-    canClose: () => !adding,
-  });
+  const closing = { onClose: () => dialogRef.current.close(), canClose: () => !adding };
+  const backdrop = useBackdropClose(dialogRef, closing);
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
@@ -205,15 +204,13 @@ export default function ToplistsDialog({ titles, onClose, onPreview, onAdded, re
       onClose={(e) => e.target === e.currentTarget && onClose()}
       {...backdrop}
     >
+      <DialogClose dialogRef={dialogRef} {...closing} />
       <div>
         <header className="stats-head">
           <h2 id="toplist-title" ref={headingRef} tabIndex={-1}>
             Toplisták
           </h2>
           <p>IMDb-értékelés szerint · csak magyarul megjelent címek</p>
-          <button type="button" className="ghost" onClick={() => dialogRef.current.close()}>
-            Bezárás
-          </button>
         </header>
         {teka && (
           <p className="teka-chart" aria-hidden="true">

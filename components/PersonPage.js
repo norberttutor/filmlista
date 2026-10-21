@@ -170,7 +170,7 @@ export function RoleSwitch({ allRoles, onChange, leadCount, allCount }) {
 // marad („✓ A listán”). readOnly: net nélkül nincs felvétel.
 // M4: „Követem” gomb a név alatt; a „További” részben alapból a főszerepek („Főszerepek | Összes
 // szerep”). cast.role: 'director' – az adatlap „Rendező” sorából: a rendezett filmjei (kapcsoló nélkül).
-export default function PersonPage({ person: cast, titles, active, apiRef, back, onBack, onPreview, onAdded, close, readOnly }) {
+export default function PersonPage({ person: cast, titles, active, apiRef, back, onBack, onPreview, onAdded, readOnly }) {
   const role = cast.role ?? 'actor';
   const director = role === 'director';
   const [load, setLoad] = useState({ status: 'loading', person: null, credits: [], error: '' });
@@ -441,13 +441,6 @@ export default function PersonPage({ person: cast, titles, active, apiRef, back,
           {load.status === 'done' && load.person && credits.length === 0 && (
             <p className="muted small">A TMDB-n nincs filmje vagy sorozata.</p>
           )}
-
-          <div className="editor-actions">
-            <span className="spacer" />
-            <button type="button" className="ghost editor-close-btn" onClick={close}>
-              Bezárás
-            </button>
-          </div>
         </div>
       </form>
     </div>

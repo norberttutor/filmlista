@@ -7,6 +7,7 @@ import { useBackdropClose } from '@/lib/useBackdropClose';
 import { usePosterColor, franchisePosterPath } from '@/lib/posterColor';
 import { useTheme } from '@/lib/theme';
 import { tekaStamp } from '@/lib/teka';
+import DialogClose from '@/components/DialogClose';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w154';
 const TOP_GENRES = 7;
@@ -97,15 +98,13 @@ export default function StatsDialog({ titles, franchiseName, onClose }) {
 
   return (
     <dialog ref={dialogRef} className="editor stats-dialog" aria-labelledby="stats-title" onClose={onClose} {...backdrop}>
+      <DialogClose dialogRef={dialogRef} />
       <div>
         <header className="stats-head">
           <h2 id="stats-title" ref={headingRef} tabIndex={-1}>
             Statisztika
           </h2>
           <p>A teljes lista alapján · {s.counts.total} cím</p>
-          <button type="button" className="ghost" onClick={() => dialogRef.current.close()}>
-            Bezárás
-          </button>
         </header>
 
         <div className="bento">

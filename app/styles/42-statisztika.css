@@ -5,7 +5,7 @@
   width: min(72rem, calc(100vw - 2rem));
 }
 
-.stats-dialog > div {
+.stats-dialog > div:not(.dialog-close-bar) {
   display: grid;
   gap: 1.2rem;
   padding: 1.6rem;
@@ -334,7 +334,7 @@
 }
 
 @media (max-width: 640px) {
-  .stats-dialog > div {
+  .stats-dialog > div:not(.dialog-close-bar) {
     padding: 1.2rem;
   }
 }

@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { BACKUP_KINDS, createBackup, listBackups, restoreBackup } from '@/lib/backups';
 import { toast } from '@/lib/toast';
 import { useBackdropClose } from '@/lib/useBackdropClose';
+import DialogClose from '@/components/DialogClose';
 
 const formatWhen = (iso) =>
   new Date(iso).toLocaleString('hu-HU', {
@@ -25,11 +26,9 @@ export default function BackupsDialog({ titleCount, onRestored, onClose }) {
   const [busy, setBusy] = useState(null); // 'backup' | 'restore'
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
-  // asztalon kikattintásra bezárul – mentés / visszaállítás közben és nyitott megerősítésnél nem
-  const backdrop = useBackdropClose(dialogRef, {
-    onClose: () => dialogRef.current.close(),
-    canClose: () => !busy && confirmId == null,
-  });
+  // asztalon kikattintásra / „Bezárás”-ra bezárul – mentés / visszaállítás közben és nyitott megerősítésnél nem
+  const closing = { onClose: () => dialogRef.current.close(), canClose: () => !busy && confirmId == null };
+  const backdrop = useBackdropClose(dialogRef, closing);
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
@@ -64,7 +63,7 @@ export default function BackupsDialog({ titleCount, onRestored, onClose }) {
     setBusy(null);
   }
 
-  // Közben az ablak nem zárható (Esc, Mégse, Bezárás – kódaudit #35), de a Chrome a második
+  // Közben az ablak nem zárható (Esc, Mégse, Bezárás, kikattintás – kódaudit #35), de a Chrome a második
   // Esc-et kattintás nélkül nem engedi megfogni: ha így bezárult, az eredmény az értesítősávba kerül.
   const isOpen = () => dialogRef.current?.open;
 
@@ -96,6 +95,7 @@ export default function BackupsDialog({ titleCount, onRestored, onClose }) {
       onCancel={(e) => busy && e.preventDefault()}
       {...backdrop}
     >
+      <DialogClose dialogRef={dialogRef} {...closing} />
       <div className="import-body">
         <h2 id="backups-title" ref={headingRef} tabIndex={-1}>
           Mentések
@@ -164,15 +164,6 @@ export default function BackupsDialog({ titleCount, onRestored, onClose }) {
         <div className="editor-actions">
           <button type="button" className="ghost" disabled={busy !== null} onClick={backupNow}>
             {busy === 'backup' ? 'Mentés…' : 'Mentés most'}
-          </button>
-          <span className="spacer" />
-          <button
-            type="button"
-            className="ghost"
-            disabled={busy !== null}
-            onClick={() => dialogRef.current.close()}
-          >
-            Bezárás
           </button>
         </div>
       </div>

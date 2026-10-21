@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { useBackdropClose } from '@/lib/useBackdropClose';
+import DialogClose from '@/components/DialogClose';
 import { signInErrorKind } from '@/lib/authErrors';
 
 const MIN_LENGTH = 8;
@@ -55,11 +56,9 @@ export default function PasswordDialog({ email, onClose }) {
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
   // asztalon kikattintásra bezárul – de ha már gépelt valamit, vagy mentés közben, nem (a beírt
-  // jelszavak ne vesszenek el egy félrekattintástól); az Esc és a Mégse mindig zár
-  const backdrop = useBackdropClose(dialogRef, {
-    onClose: () => dialogRef.current.close(),
-    canClose: () => !busy && (done || !(current || next || again)),
-  });
+  // jelszavak ne vesszenek el egy félrekattintástól; a fenti „Bezárás” ugyanígy); az Esc és a Mégse mindig zár
+  const closing = { onClose: () => dialogRef.current.close(), canClose: () => !busy && (done || !(current || next || again)) };
+  const backdrop = useBackdropClose(dialogRef, closing);
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
@@ -98,6 +97,7 @@ export default function PasswordDialog({ email, onClose }) {
 
   return (
     <dialog ref={dialogRef} className="editor password-dialog" aria-labelledby="password-title" onClose={onClose} {...backdrop}>
+      <DialogClose dialogRef={dialogRef} {...closing} />
       <form className="import-body" onSubmit={handleSubmit}>
         <h2 id="password-title" ref={headingRef} tabIndex={-1}>
           Jelszó módosítása
@@ -151,23 +151,17 @@ export default function PasswordDialog({ email, onClose }) {
           </>
         )}
 
-        <div className="editor-actions">
-          <span className="spacer" />
-          {done ? (
+        {!done && (
+          <div className="editor-actions">
+            <span className="spacer" />
             <button type="button" className="ghost" onClick={() => dialogRef.current.close()}>
-              Bezárás
+              Mégse
             </button>
-          ) : (
-            <>
-              <button type="button" className="ghost" onClick={() => dialogRef.current.close()}>
-                Mégse
-              </button>
-              <button type="submit" className="primary" disabled={busy}>
-                {busy ? 'Mentés…' : 'Jelszó mentése'}
-              </button>
-            </>
-          )}
-        </div>
+            <button type="submit" className="primary" disabled={busy}>
+              {busy ? 'Mentés…' : 'Jelszó mentése'}
+            </button>
+          </div>
+        )}
       </form>
     </dialog>
   );

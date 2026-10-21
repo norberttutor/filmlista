@@ -4,6 +4,7 @@ import { useImperativeHandle, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { addTitle } from '@/lib/titles';
 import { MAX_LINES, matchEntry, parseLines, mapLimit } from '@/lib/bulkImport';
+import DialogClose from '@/components/DialogClose';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w92';
 const PARALLEL = 3; // egyszerre ennyi TMDB-kérés
@@ -146,6 +147,7 @@ export default function BulkImport({ existingKeys, onAdded, ref }) {
         onCancel={(e) => phase === 'adding' && e.preventDefault()} // felvétel közben ne záródjon
         onClose={() => runRef.current++}
       >
+        <DialogClose dialogRef={dialogRef} canClose={() => phase !== 'adding'} />
         <div className="import-body">
           <h2 id="bulk-title">Tömeges import</h2>
 
@@ -295,11 +297,7 @@ export default function BulkImport({ existingKeys, onAdded, ref }) {
               </button>
             )}
             <span className="spacer" />
-            {phase === 'done' ? (
-              <button type="button" className="ghost" onClick={() => dialogRef.current.close()}>
-                Bezárás
-              </button>
-            ) : (
+            {phase === 'done' ? null : (
               <>
                 <button
                   type="button"

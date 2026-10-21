@@ -3,56 +3,9 @@
   display: none;
 }
 
-/* bezáró × az adatlap jobb felső sarkában (átnézés J1, 2026-10-15): görgetéskor is ott marad (sticky), a sávja nem
-   foglal helyet (0 magas); üveg kör, mint a galéria lapozója – a jelenetképen és a sima felületen is látszik */
-.editor-close-bar {
-  position: sticky;
-  top: 0;
-  z-index: 6;
-  display: flex;
-  justify-content: flex-end;
-  height: 0;
-  pointer-events: none;
-}
-
-.editor-close {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 2.45rem;
-  height: 2.45rem;
-  margin: 0.8rem 0.8rem 0 0;
-  padding: 0;
-  color: var(--text);
-  background: rgb(var(--glass) / 0.55);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgb(var(--tint) / 0.12);
-  border-radius: 50%;
-  pointer-events: auto;
-}
-
-.editor-close:hover {
-  background-color: rgb(var(--glass) / 0.8);
-  border-color: var(--muted);
-}
-
-.editor-close:active {
-  background-color: rgb(var(--glass) / 0.95);
-}
-
-/* telefonon (alsó lap) nincs × és „Bezárás” (Norbi kérése, 2026-10-15): a fogantyú lehúzása, a Vissza gomb / gesztus és
-   az Esc zár; ha a gombsorban más nem marad (előnézet, színész lapja), az egész sor elmarad */
+/* telefonon (alsó lap) nincs „Bezárás” (Norbi kérése, 2026-10-15; 27-adatlap.css): a fogantyú lehúzása, a Vissza gomb /
+   gesztus és az Esc zár */
 @media (max-width: 640px) {
-  .title-editor .editor-close-bar,
-  .title-editor .editor-close-btn {
-    display: none;
-  }
-
-  .title-editor .editor-actions:not(:has(> :not(.spacer, .editor-close-btn))) {
-    display: none;
-  }
-
   /* a gombsor és az „Előzetes megnézése” középre zárva (Norbi kérése, 2026-10-15) */
   .title-editor .editor-actions {
     justify-content: center;

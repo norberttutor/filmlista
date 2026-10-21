@@ -9,7 +9,7 @@
   max-height: calc(100dvh - min(8vh, 4rem) - 1rem);
 }
 
-.toplist-dialog > div {
+.toplist-dialog > div:not(.dialog-close-bar) {
   grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
 }
@@ -221,7 +221,7 @@
 }
 
 @media (max-width: 640px) {
-  .toplist-dialog > div {
+  .toplist-dialog > div:not(.dialog-close-bar) {
     padding: 1.2rem 1rem 1.6rem;
   }
 

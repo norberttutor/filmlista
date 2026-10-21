@@ -5,6 +5,7 @@ import { parseImdbExport, planRatingImport, planWatchlistImport } from '@/lib/im
 import { mapLimit } from '@/lib/bulkImport';
 import { apiGet } from '@/lib/api';
 import { addTitle, applyMyRatings, titleKey } from '@/lib/titles';
+import DialogClose from '@/components/DialogClose';
 
 const stars = (n) => (n == null ? '–' : `${n}`);
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w92';
@@ -182,6 +183,7 @@ export default function ImdbRatingsImport({ titles, onApplied, onAdded, ref }) {
         }}
         onCancel={(e) => watch?.phase === 'adding' && e.preventDefault()} // felvétel közben ne záródjon
       >
+        <DialogClose dialogRef={dialogRef} canClose={() => watch?.phase !== 'adding'} />
         <div className="import-body">
           <h2 id="imdb-import-title">{watch ? 'IMDb-figyelőlista betöltése' : 'IMDb-értékelések betöltése'}</h2>
 
@@ -334,11 +336,7 @@ export default function ImdbRatingsImport({ titles, onApplied, onAdded, ref }) {
                   {chosenCount} cím felvétele
                 </button>
               </>
-            ) : (
-              <button type="button" className="ghost" disabled={watch?.phase === 'adding'} onClick={close}>
-                Bezárás
-              </button>
-            )}
+            ) : null}
           </div>
         </div>
       </dialog>

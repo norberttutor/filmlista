@@ -38,6 +38,7 @@ import { useMediaQuery } from '@/lib/useMediaQuery';
 import { useTheme } from '@/lib/theme';
 import { useOnline } from '@/lib/offline';
 import { galleryList, GalleryStrip, BackdropPager, GalleryLightbox } from '@/components/TitleGallery';
+import DialogClose from '@/components/DialogClose';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500'; // a nagy borító (asztalon)
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/'; // a háttérkép (telefonon w780, asztalon w1280)
@@ -161,10 +162,8 @@ export default function TitleEditor({
   // épp a törlést erősítenéd meg, vagy a Franchise mezőben új nevet / átnevezést gépelsz, vagy
   // épp felveszed a címet (lib/useBackdropClose: a kifelé húzott kijelölés sem zár, telefonon –
   // alsó lap – a lehúzás zár). Az Esc továbbra is mindig bezárja (onCancel).
-  const backdrop = useBackdropClose(dialogRef, {
-    onClose: close,
-    canClose: () => pageRef.current?.canLeave() ?? true,
-  });
+  const closing = { onClose: close, canClose: () => pageRef.current?.canLeave() ?? true };
+  const backdrop = useBackdropClose(dialogRef, closing);
   // telefonon az ablak alsó lap: a fogantyút lefelé húzva bezárul
   const sheetDrag = useSheetDrag(dialogRef, close);
 
@@ -256,23 +255,11 @@ export default function TitleEditor({
       {...backdrop}
       {...ambientProps(ambient)}
     >
-      {/* telefonon: fogantyú – lefelé húzva bezárja az ablakot (az Esc / Vissza ugyanaz; telefonon nincs × és „Bezárás”) */}
+      {/* telefonon: fogantyú – lefelé húzva bezárja az ablakot (az Esc / Vissza ugyanaz; telefonon nincs „Bezárás”) */}
       <div className="sheet-handle" aria-hidden="true" {...sheetDrag} />
-      {/* bezáró × a jobb felső sarokban, görgetéskor is látszik (átnézés J1, 2026-10-15 – a „Bezárás” a hosszú lap
-          alján van); mint az Esc: törlés-megerősítés / felvétel közben nem zár */}
-      <div className="editor-close-bar">
-        <button
-          type="button"
-          className="editor-close"
-          aria-label="Bezárás"
-          title="Bezárás"
-          onClick={() => canLeavePage() && close()}
-        >
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-            <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-          </svg>
-        </button>
-      </div>
+      {/* asztalon a jobb felső sarokban, görgetéskor is látszik (terv-3 121); mint az Esc: törlés-megerősítés /
+          felvétel közben nem zár */}
+      <DialogClose dialogRef={dialogRef} {...closing} />
       {pages.map((page, i) => {
         const active = i === pages.length - 1;
         const prev = pages[i - 1];
@@ -289,7 +276,6 @@ export default function TitleEditor({
               onBack={() => goBack()}
               onPreview={openPreview}
               onAdded={pageProps.onAdded}
-              close={close}
               readOnly={pageProps.readOnly}
             />
           );
@@ -306,7 +292,6 @@ export default function TitleEditor({
             onPreview={openPreview}
             onPerson={openPerson}
             onAddedHere={(watched) => markAdded(page.id, watched)}
-            close={close}
             closeNow={() => dialogRef.current.close()}
             {...pageProps}
           />
@@ -328,7 +313,6 @@ function TitlePage({
   onPreview,
   onPerson, // a Szereplők neve: a színész lapja (terv-3 61)
   onAddedHere,
-  close, // az ablak bezárása (nézetváltással)
   closeNow, // azonnal (törléskor: nincs hova visszasiklani)
   statuses,
   franchises,
@@ -943,73 +927,58 @@ function TitlePage({
             </p>
           )}
 
-          <div className="editor-actions">
-            {preview ? (
-              <>
-                <span className="spacer" />
-                <button type="button" className="ghost editor-close-btn" onClick={close}>
-                  Bezárás
-                </button>
-              </>
-            ) : readOnly ? (
-              // net nélkül (terv-3 44) csak nézni lehet – a magyarázat a mezők fölött (J3)
-              <>
-                <span className="spacer" />
-                <button type="button" className="ghost editor-close-btn" onClick={close}>
-                  Bezárás
-                </button>
-              </>
-            ) : confirmingDelete ? (
-              <>
-                <span className="confirm-text">Biztosan törlöd a listádról?</span>
-                <span className="spacer" />
-                <button type="button" className="ghost" autoFocus onClick={cancelDelete}>
-                  Mégse
-                </button>
-                <button type="button" className="danger" disabled={busy} onClick={handleDelete}>
-                  Törlés
-                </button>
-              </>
-            ) : (
-              <>
-                {/* ikonos gombok (Norbi kérése, 2026-10-15 – korábban linkek): a törlés pirosas, a frissítés semleges */}
-                <button
-                  type="button"
-                  className="ghost editor-action danger-ghost"
-                  ref={deleteButtonRef}
-                  disabled={busy}
-                  onClick={() => setConfirmingDelete(true)}
-                >
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" />
-                  </svg>
-                  Törlés a listáról
-                </button>
-                <button
-                  type="button"
-                  className="ghost editor-action tmdb-refresh"
-                  disabled={tmdbRefresh === 'busy'}
-                  onClick={refreshFromTmdb}
-                  title="A magyar cím (ha még az eredeti áll itt), a leírás, a borító és a műfajok a TMDB-ről"
-                >
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M21 12a9 9 0 1 1-2.64-6.36L21 8M21 3v5h-5" />
-                  </svg>
-                  {tmdbRefresh === 'busy'
-                    ? 'Frissítés…'
-                    : tmdbRefresh === 'changed'
-                      ? '✓ Frissítve'
-                      : tmdbRefresh === 'same'
-                        ? '✓ Nincs újdonság a TMDB-n'
-                        : 'Frissítés a TMDB-ről'}
-                </button>
-                <span className="spacer" />
-                <button type="button" className="ghost editor-close-btn" onClick={close}>
-                  Bezárás
-                </button>
-              </>
-            )}
-          </div>
+          {/* előnézetben és net nélkül (terv-3 44 – csak nézni lehet, a magyarázat a mezők fölött, J3) nincs gombsor;
+              bezárni fent (DialogClose) */}
+          {!preview && !readOnly && (
+            <div className="editor-actions">
+              {confirmingDelete ? (
+                <>
+                  <span className="confirm-text">Biztosan törlöd a listádról?</span>
+                  <span className="spacer" />
+                  <button type="button" className="ghost" autoFocus onClick={cancelDelete}>
+                    Mégse
+                  </button>
+                  <button type="button" className="danger" disabled={busy} onClick={handleDelete}>
+                    Törlés
+                  </button>
+                </>
+              ) : (
+                <>
+                  {/* ikonos gombok (Norbi kérése, 2026-10-15 – korábban linkek): a törlés pirosas, a frissítés semleges */}
+                  <button
+                    type="button"
+                    className="ghost editor-action danger-ghost"
+                    ref={deleteButtonRef}
+                    disabled={busy}
+                    onClick={() => setConfirmingDelete(true)}
+                  >
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" />
+                    </svg>
+                    Törlés a listáról
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost editor-action tmdb-refresh"
+                    disabled={tmdbRefresh === 'busy'}
+                    onClick={refreshFromTmdb}
+                    title="A magyar cím (ha még az eredeti áll itt), a leírás, a borító és a műfajok a TMDB-ről"
+                  >
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M21 12a9 9 0 1 1-2.64-6.36L21 8M21 3v5h-5" />
+                    </svg>
+                    {tmdbRefresh === 'busy'
+                      ? 'Frissítés…'
+                      : tmdbRefresh === 'changed'
+                        ? '✓ Frissítve'
+                        : tmdbRefresh === 'same'
+                          ? '✓ Nincs újdonság a TMDB-n'
+                          : 'Frissítés a TMDB-ről'}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </form>
       {/* nagy nézet (terv-3 95): a képsorról / a fejléc képéről */}

@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ERROR_KINDS, deleteErrors, listErrors, markErrorsSeen } from '@/lib/errorLog';
 import { useBackdropClose } from '@/lib/useBackdropClose';
+import DialogClose from '@/components/DialogClose';
 
 const formatWhen = (iso) =>
   new Date(iso).toLocaleString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
@@ -60,10 +61,8 @@ export default function ErrorsDialog({ userId, onClose, onChanged }) {
   const [confirmAll, setConfirmAll] = useState(false);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(null); // a vágólapra tett sor id-je, vagy 'all'
-  const backdrop = useBackdropClose(dialogRef, {
-    onClose: () => dialogRef.current.close(),
-    canClose: () => !busy && !confirmAll,
-  });
+  const closing = { onClose: () => dialogRef.current.close(), canClose: () => !busy && !confirmAll };
+  const backdrop = useBackdropClose(dialogRef, closing);
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
@@ -133,6 +132,7 @@ export default function ErrorsDialog({ userId, onClose, onChanged }) {
       }}
       {...backdrop}
     >
+      <DialogClose dialogRef={dialogRef} {...closing} />
       <div className="import-body">
         <h2 id="errors-title" ref={headingRef} tabIndex={-1}>
           Hibák
@@ -242,10 +242,6 @@ export default function ErrorsDialog({ userId, onClose, onChanged }) {
                 </button>
               </>
             )}
-            <span className="spacer" />
-            <button type="button" className="ghost" disabled={busy} onClick={() => dialogRef.current.close()}>
-              Bezárás
-            </button>
           </div>
         )}
       </div>

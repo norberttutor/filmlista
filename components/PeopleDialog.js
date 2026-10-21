@@ -9,6 +9,7 @@ import { useBackdropClose } from '@/lib/useBackdropClose';
 import { useSlidingThumb } from '@/lib/useSlidingThumb';
 import { CollectionMeter } from '@/components/FranchiseCollection';
 import FollowSuggestions from '@/components/FollowSuggestions';
+import DialogClose from '@/components/DialogClose';
 import { CreditStatus, FollowButton, RoleSwitch, useAddCredit, isUpcoming, kindLabel, asItem } from '@/components/PersonPage';
 
 const IMG = 'https://image.tmdb.org/t/p/';
@@ -49,10 +50,8 @@ export default function PeopleDialog({ titles, userId, onClose, onPreview, onPer
   const [attempt, setAttempt] = useState(0); // „Újrapróbálás”: a hibás személy újra sorra kerül
   const busyRef = useRef(false); // felvétel közben (az idővonalon) nem zár
   const scrollTop = useRef(0);
-  const backdrop = useBackdropClose(dialogRef, {
-    onClose: () => dialogRef.current.close(),
-    canClose: () => !busyRef.current,
-  });
+  const closing = { onClose: () => dialogRef.current.close(), canClose: () => !busyRef.current };
+  const backdrop = useBackdropClose(dialogRef, closing);
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
@@ -211,6 +210,7 @@ export default function PeopleDialog({ titles, userId, onClose, onPreview, onPer
       onClose={(e) => e.target === e.currentTarget && onClose()}
       {...backdrop}
     >
+      <DialogClose dialogRef={dialogRef} {...closing} />
       {timelinePerson ? (
         <PersonTimeline
           key={open}
@@ -234,9 +234,6 @@ export default function PeopleDialog({ titles, userId, onClose, onPreview, onPer
               Színészek és rendezők
             </h2>
             <p>{people.length > 0 ? `${people.length} követett · ábécérendben` : 'Még nem követsz senkit'}</p>
-            <button type="button" className="ghost" onClick={() => dialogRef.current.close()}>
-              Bezárás
-            </button>
           </header>
 
           {/* keresés közben nem kell (a követettek között keresel) */}

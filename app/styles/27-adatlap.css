@@ -42,6 +42,82 @@
   }
 }
 
+/* egységes „Bezárás” (terv-3 121, components/DialogClose.js): az ablak jobb felső sarkában, görgetéskor is ott marad
+   (sticky); a sávja nem foglal helyet (0 magas). Üveg pirula: a jelenetképen és a sima felületen is olvasható. A helye
+   ablakonként a --close-top / --close-right; a fejléc szövege helyet hagy neki (lent). Telefonon nincs (ott a
+   lehúzás, a Vissza és az Esc zár). */
+.dialog-close-bar {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  justify-content: flex-end;
+  height: 0;
+  pointer-events: none;
+}
+
+.dialog-close {
+  flex: none;
+  margin: var(--close-top, 1.45rem) var(--close-right, 1.6rem) 0 0;
+  padding: 0.4rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  background: rgb(var(--glass) / 0.72);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgb(var(--tint) / 0.14);
+  border-radius: 999px;
+  box-shadow: 0 2px 10px rgb(var(--shade) / calc(0.25 * var(--shade-k)));
+  pointer-events: auto;
+}
+
+.dialog-close:hover {
+  background-color: rgb(var(--glass) / 0.9);
+  border-color: var(--muted);
+}
+
+.dialog-close:active {
+  background-color: rgb(var(--glass) / 0.97);
+}
+
+@media (min-width: 641px) {
+  /* a fejléc szövege nem fut a gomb alá */
+  .dialog-close-bar ~ div > .stats-head,
+  .dialog-close-bar ~ .import-body > h2 {
+    padding-right: 7rem;
+  }
+
+  .dialog-close-bar ~ .manual-head {
+    padding-right: 8.6rem;
+  }
+
+  .import-dialog,
+  .backups-dialog,
+  .errors-dialog,
+  .password-dialog {
+    --close-top: 1.2rem;
+    --close-right: 1.5rem;
+  }
+
+  .manual-dialog {
+    --close-top: 0.8rem;
+  }
+
+  .title-editor {
+    --close-top: 0.8rem;
+    --close-right: 0.8rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .dialog-close-bar {
+    display: none;
+  }
+}
+
 /* a cím adatai és a szerkeszthető mezők között halvány elválasztó (a térköz közepén) */
 .editor header {
   position: relative;

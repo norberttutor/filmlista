@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useBackdropClose } from '@/lib/useBackdropClose';
+import DialogClose from '@/components/DialogClose';
 
 // a build előtt a scripts/leiras.mjs állítja elő a FELHASZNALOI-LEIRAS.md-ből
 const SOURCE = '/leiras/leiras.html';
@@ -9,7 +10,7 @@ const TOC_ID = 'leiras-tartalom';
 
 // Felhasználói leírás (terv-3 48, a ⋮ menüből): a FELHASZNALOI-LEIRAS.md formázva, képekkel, az
 // appon belüli ablakban (Norbi döntése: nem új lapon). Fent a cím, „Tartalom” (a tartalomjegyzékhez
-// görget) és „Bezárás”; alatta a görgethető leírás. A belső hivatkozások (tartalomjegyzék,
+// görget) és a „Bezárás” (DialogClose); alatta a görgethető leírás. A belső hivatkozások (tartalomjegyzék,
 // „lásd 9.”) az ablakon belül ugranak, a címet nem változtatják; a külsők új lapon nyílnak.
 export default function ManualDialog({ onClose }) {
   const dialogRef = useRef(null);
@@ -58,6 +59,7 @@ export default function ManualDialog({ onClose }) {
 
   return (
     <dialog ref={dialogRef} className="editor manual-dialog" aria-labelledby="manual-title" onClose={onClose} {...backdrop}>
+      <DialogClose dialogRef={dialogRef} />
       <header className="manual-head">
         <h2 id="manual-title" ref={headingRef} tabIndex={-1}>
           Felhasználói leírás
@@ -67,9 +69,6 @@ export default function ManualDialog({ onClose }) {
             Tartalom
           </button>
         )}
-        <button type="button" className="ghost" onClick={() => dialogRef.current.close()}>
-          Bezárás
-        </button>
       </header>
       <div className="manual-scroll">
         {html ? (

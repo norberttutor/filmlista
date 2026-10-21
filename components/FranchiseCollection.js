@@ -8,6 +8,7 @@ import { usePosterColor, ambientProps, franchisePosterPath } from '@/lib/posterC
 import WatchOrder from '@/components/WatchOrder';
 import { useSlidingThumb } from '@/lib/useSlidingThumb';
 import { FranchiseActions, FranchiseLogoPicker } from '@/components/FranchiseActions';
+import DialogClose from '@/components/DialogClose';
 import { article } from '@/lib/franchiseSuggest';
 
 const IMG = 'https://image.tmdb.org/t/p/';
@@ -324,13 +325,15 @@ export function CollectionDialog({
   // megosztás visszavonásának megerősítésekor nem.
   // A nyitott TMDB-gyűjtemény-kereső nem tartja nyitva (Norbi kérése, 2026-10-07: a beírt keresés
   // elvesztése nem baj). onOutsideClose: a Franchise-ok ablakból nyitva az is bezárul
+  // A „Bezárás” gomb ugyanígy, de csak ezt az ablakot zárja.
+  // a nyitott logóválasztó nem tartja nyitva (nincs benne bevitel – a kattintás azonnal ment)
+  const canClose = () => !busyAny && !ordering && !sharing && (!edit || edit.mode === 'logo');
   const outsideClose = useBackdropClose(dialogRef, {
     onClose: () => {
       dialogRef.current.close();
       onOutsideClose?.();
     },
-    // a nyitott logóválasztó nem tartja nyitva (nincs benne bevitel – a kattintás azonnal ment)
-    canClose: () => !busyAny && !ordering && !sharing && (!edit || edit.mode === 'logo'),
+    canClose,
   });
 
   async function saveRename(event) {
@@ -396,6 +399,7 @@ export function CollectionDialog({
       }}
       {...outsideClose}
     >
+      <DialogClose dialogRef={dialogRef} canClose={canClose} />
       <div
         className="collection-head"
         style={backdrop ? { backgroundImage: `url(${IMG}w1280${backdrop})` } : undefined}
@@ -655,10 +659,6 @@ export function CollectionDialog({
             A hiányzó {missing.length} felvétele
           </button>
         )}
-        <span className="spacer" />
-        <button type="button" className="ghost" onClick={() => dialogRef.current.close()}>
-          Bezárás
-        </button>
       </div>
     </dialog>
   );
