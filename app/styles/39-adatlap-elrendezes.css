@@ -34,9 +34,10 @@
 }
 
 /* telefonon alulról felcsúszó "alsó lap": teljes szélesség, felül kerek sarkok, fogantyú;
-   legfeljebb a képernyő 92%-a, belül görgethető; a fogantyút lefelé húzva bezárul */
+   legfeljebb a képernyő 92%-a, belül görgethető; a fogantyút lefelé húzva bezárul. Minden ablak, amelyben
+   DialogClose van (terv-3 122; előtte csak az adatlap) – a kiválasztó erősebb az ablakok saját szélességénél */
 @media (max-width: 640px) {
-  .editor.title-editor {
+  dialog.editor:has(> .dialog-close-bar) {
     width: 100%;
     max-width: 100%;
     max-height: 92dvh;
@@ -48,12 +49,12 @@
 
   /* szándékos kivétel a ~0,2 s-os szabály alól (terv-3 124): az alsó lap felcsúszása – a 36-mozgas.css helyett
      itt, a @starting-style mellett; Mamáé ugyanez (44-mama.css) */
-  .editor.title-editor[open] {
+  dialog.editor[open]:has(> .dialog-close-bar) {
     transition: translate 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), --ambient-on 0.2s ease-out;
   }
 
   @starting-style {
-    .editor.title-editor[open] {
+    dialog.editor[open]:has(> .dialog-close-bar) {
       opacity: 1;
       translate: 0 100%;
     }

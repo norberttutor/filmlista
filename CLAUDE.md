@@ -145,7 +145,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - Moziszerű fejléc jelenetképes lapon asztalon (`WIDE_QUERY`, `.editor-page.has-hero`, `data-frozen`). Teszt:
   `test-104.mjs`.
 - **Bezárás**: „Bezárás” (`DialogClose`, asztalon), Esc, kikattintás asztalon, Vissza gomb (`backHandler`).
-  `closedby="none"` (Android – lásd `lib/backClose.js`). Telefonon alsó lap (`lib/useSheetDrag.js`), nincs gomb.
+  `closedby="none"` (Android – lásd `lib/backClose.js`). Telefonon alsó lap fogantyúval (`DialogClose`), nincs gomb.
 - **Nézetváltás** (`lib/viewTransition.js`): a borító átsiklik az adatlapra, ezért a `showModal()`
   `useLayoutEffect`-ben fut. Csak az első lapról siklik vissza, törléskor nem.
 - Hangulatszín: az ablak saját háttere, nem `::before` réteg (az görgetéskor felgördült).
@@ -254,12 +254,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   és rendezők és Toplisták (felvétel), Franchise-ok (szerkesztés, megerősítés, nyitott gyűjtemény-ablak),
   gyűjtemény-ablak (felvétel, sorrend-szerkesztés, megerősítés, fejléc szerkesztése), Mentések, Hibák (megerősítés /
   törlés), Jelszó (beírt jelszó / mentés); Statisztika és Leírás mindig zár; **az importablakok soha** (Norbi döntése).
-- `components/DialogClose.js` – egységes „Bezárás” (Norbi döntése): **minden ablak `<dialog>`-jának első gyermeke**,
-  jobbra fent, ragadós; ugyanazokkal a szabályokkal, mint a kikattintás (`const closing = { onClose, canClose }`, a
-  `useBackdropClose` és a gomb is ezt kapja; nem zárhat → megbillen). Az ablak alján nincs „Bezárás” (a művelethez
-  tartozó „Mégse” marad). Telefonon rejtett. Helye: `--close-top` / `--close-right`, a fejléc helyet hagy neki
-  (`27-adatlap.css`). **Ablak `> div` szabálya: `> div:not(.dialog-close-bar)`.** Kivétel: Mama adatlapja (×).
-  Teszt: `test-121.mjs`.
+- `components/DialogClose.js` – egységes bezárás (Norbi döntése): **minden ablak `<dialog>`-jának első gyermeke**.
+  Asztalon „Bezárás” jobbra fent, ragadós; telefonon fogantyú (`.sheet-handle`, `lib/useSheetDrag.js`), lehúzva zár,
+  és az ablak ettől alsó lap (`dialog.editor:has(> .dialog-close-bar)`, `39-adatlap-elrendezes.css`). Mindkettő
+  ugyanazzal a szabállyal, mint a kikattintás (`const closing = { onClose, canClose }`, a `useBackdropClose` is ezt
+  kapja; nem zárhat → megbillen, a lap visszaugrik). Az ablak alján nincs „Bezárás” (a művelethez tartozó „Mégse”
+  marad). Helye: `--close-top` / `--close-right`, a fejléc helyet hagy neki (`27-adatlap.css`). **Ablak `> div`
+  szabálya: `> div:not(.dialog-close-bar)`.** Kivétel: Mama adatlapja (×, saját fogantyú). Teszt: `test-121.mjs`.
 - `lib/backClose.js` – a Vissza gomb a legfelső réteget zárja (rétegenként `history.pushState`). A modális
   `<dialog>`-okat MutationObserver kezeli – **új ablakhoz nem kell semmi**; saját szabály: `dialog.backHandler` →
   'stay' | 'stepped' | 'closing'; nem dialog réteg: `useBackLayer(open, close)`. **Android**: nyitott modális

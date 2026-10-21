@@ -31,7 +31,6 @@ import SimilarTitles from '@/components/SimilarTitles';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
 import { canMorph, MORPH_NAME, afterTransition } from '@/lib/viewTransition';
 import { nudgeDialog, useBackdropClose } from '@/lib/useBackdropClose';
-import { useSheetDrag } from '@/lib/useSheetDrag';
 import { TrailerButton, TrailerPlayer } from '@/components/Trailer';
 import { pushDialogPage, popDialogPage } from '@/lib/backClose';
 import { useMediaQuery } from '@/lib/useMediaQuery';
@@ -164,8 +163,6 @@ export default function TitleEditor({
   // alsó lap – a lehúzás zár). Az Esc továbbra is mindig bezárja (onCancel).
   const closing = { onClose: close, canClose: () => pageRef.current?.canLeave() ?? true };
   const backdrop = useBackdropClose(dialogRef, closing);
-  // telefonon az ablak alsó lap: a fogantyút lefelé húzva bezárul
-  const sheetDrag = useSheetDrag(dialogRef, close);
 
   // lapváltás előtt: törlés-megerősítés, franchise-név gépelése, felvétel közben a lap nem hagyható el
   // (mint a kikattintásnál)
@@ -255,10 +252,8 @@ export default function TitleEditor({
       {...backdrop}
       {...ambientProps(ambient)}
     >
-      {/* telefonon: fogantyú – lefelé húzva bezárja az ablakot (az Esc / Vissza ugyanaz; telefonon nincs „Bezárás”) */}
-      <div className="sheet-handle" aria-hidden="true" {...sheetDrag} />
-      {/* asztalon a jobb felső sarokban, görgetéskor is látszik (terv-3 121); mint az Esc: törlés-megerősítés /
-          felvétel közben nem zár */}
+      {/* asztalon „Bezárás” a jobb felső sarokban, görgetéskor is látszik (terv-3 121); telefonon fogantyú – lefelé
+          húzva zár (az Esc / Vissza ugyanaz). Mint a kikattintás: törlés-megerősítés / felvétel közben nem zár */}
       <DialogClose dialogRef={dialogRef} {...closing} />
       {pages.map((page, i) => {
         const active = i === pages.length - 1;
