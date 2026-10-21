@@ -14,7 +14,7 @@ import {
 } from '@/lib/titles';
 import StarRating from '@/components/StarRating';
 import FranchiseSelect from '@/components/FranchiseSelect';
-import ImdbBadge from '@/components/ImdbBadge';
+import ImdbBadge, { CriticBadges } from '@/components/ImdbBadge';
 import GenreList from '@/components/GenreList';
 import ReleaseBadge from '@/components/ReleaseBadge';
 import { hasSeasons, SeasonCell, SeasonDownloads } from '@/components/Seasons';
@@ -211,6 +211,7 @@ function TitleRow({
               {t.release_year && <span>{t.release_year}</span>}
               <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
               <ImdbBadge title={t} />
+              <CriticBadges title={t} />
               {release && <ReleaseBadge state={release} />}
             </p>
             <GenreList className="row-genres" genres={t.genres} />

@@ -32,6 +32,8 @@
   --c-indigo: oklch(50% 0.14 272);            /* #495ab2 */
   --c-sky: oklch(50% 0.12 245);               /* #0f68a2 */
   --c-rose: oklch(52% 0.15 355);              /* #a73b6d */
+  --score-l: 50%;                             /* értékelés-skála: sötétebben, a papíron is ≥ 4,5:1 */
+  --score-c: 0.14;
   --watched-text: oklch(51% 0.02 65);         /* #6e645a */
   --watched-accent: oklch(51% 0.07 210);      /* #2c717c */
   --control-border: color-mix(in srgb, var(--muted) 70%, var(--bg));

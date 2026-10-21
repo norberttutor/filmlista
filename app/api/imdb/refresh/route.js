@@ -6,8 +6,9 @@ const PARALLEL = 5;
 
 // POST /api/imdb/refresh
 // A belépett felhasználó címei közül azoknál, ahol hiányzik vagy 14 napnál régebbi az
-// IMDb-értékelés, lekéri az OMDb-ből és elmenti (a felhasználó jogosultságaival, RLS-sel).
-// Válasz: { updated: [{ id, imdb_rating, imdb_votes, imdb_rating_updated_at }], remaining }
+// IMDb-értékelés, lekéri az OMDb-ből és elmenti (a felhasználó jogosultságaival, RLS-sel) – ugyanabból a
+// válaszból a Rotten Tomatoes és a Metacritic számát is (terv-3 127).
+// Válasz: { updated: [{ id, imdb_rating, imdb_votes, rt_rating, mc_rating, imdb_rating_updated_at }], remaining }
 export async function POST(request) {
   if (!(await getUserFromRequest(request))) return unauthorized();
   if (!omdbEnabled()) return Response.json({ updated: [], remaining: 0, disabled: true });
@@ -38,7 +39,7 @@ export async function POST(request) {
           // ha most nincs adat (a cím hibája, kódaudit #10), a meglévő értékelés marad; csak az
           // időbélyeg frissül, hogy a cím 14 napig ne legyen újra esedékes
           const fields = {
-            ...(rating.imdb_rating != null || rating.imdb_votes != null ? rating : {}),
+            ...(Object.values(rating).some((x) => x != null) ? rating : {}),
             imdb_rating_updated_at: new Date().toISOString(),
           };
           const { error: updateError } = await db.from('titles').update(fields).eq('id', t.id);

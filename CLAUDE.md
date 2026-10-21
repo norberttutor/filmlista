@@ -116,6 +116,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/PosterCard.js` (kártya, w342), `components/TitleTable.js` (asztali lista, w185, `table-layout: fixed`).
   Mama-oszlop / -jelölés csak `mamaApplies(t)` esetén. Az üres lenyílók és a kuka csak rámutatva (`@media (hover:
   hover)`). Mentés: `saveRow`. Megjegyzés mező nincs a felületen (a `notes` oszlop megmaradt). Teszt: `test-84.mjs`.
+- `components/ImdbBadge.js` – IMDb-jelvény és `CriticBadges` (RT / MC). A szám a skála színével (`data-score`,
+  `--score` 0–100, 12-boritofal.css; tokenek `--score-l` / `--score-c`). **Az RT / MC csak az adatlapon és az asztali
+  listán** – a kártyán és Mamánál csak az IMDb (Norbi döntése). A toplista jelvénye nem színes. Teszt: `test-127.mjs`.
 - `components/Seasons.js` – évadok (`hasSeasons`, `useSeasonActions`, `SeasonStrip`, `SeasonList`, `SeasonTimeline`
   …). „Abbahagyva”: kézi, az évadjelölés és az új évad sem írja felül; a „Mind megnézve” feloldja. A TMDB-n is szereplő
   törölt évadot a heti frissítés visszahozza. Epizódszintű követés nem kell.
@@ -294,7 +297,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - Lekérő route-ok: `app/api/tmdb/…` (GET). Ha a cím már nincs a TMDB-n: üres / null. A `details`-ben az OMDb hibája
   nem akadályozza a felvételt. `similar`: ≥ 2000, TMDB ≥ 6,0, ≥ 50 szavazat, animáció nélkül.
 - Háttérfrissítő `POST` route-ok (a felhasználó jogaival, kötegekben, a `Watchlist` hívja betöltéskor):
-  `imdb/refresh`, `tmdb/seasons` (az állapothoz nem nyúl; a `series_status` / `runtime` itt frissül, a megnézett
+  `imdb/refresh` (az `rt_rating` / `mc_rating` is), `tmdb/seasons` (az állapothoz nem nyúl; a `series_status` / `runtime` itt frissül, a megnézett
   sorozatoknál is), `tmdb/backdrops`, `tmdb/releases`,
   `tmdb/title-collections`, `tmdb/collection-parts`, `tmdb/details-refresh`, `franchises/logos`, `people/refresh`.
   Szabályok: az értesítést írók (`collection-parts`, `people/refresh`) **előbb az értesítést írják, utána az
@@ -318,7 +321,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `mama_status` (null | 'interested' | 'declined' | 'received'), `franchise_id` (on delete set null), `my_rating`
   (1–10), `notes`, `watched_at`, `release_date` (sorozatnál `first_air_date`), `runtime` (perc; sorozatnál a
   legutóbbi részé – a TMDB `episode_run_time` szinte mindig üres), `series_status` (a TMDB `status` szövege, a
-  kliens fordítja; `pickFacts()`), …, ellenőrzési időbélyegek (`*_checked_at`). Egyedi `(user_id, media_type,
+  kliens fordítja; `pickFacts()`), `rt_rating` / `mc_rating` (0–100, az OMDb `Ratings` tömbjéből; sorozatnál
+  gyakran nincs), …, ellenőrzési időbélyegek (`*_checked_at`). Egyedi `(user_id, media_type,
   tmdb_id)`.
 - Trigger: „Megnézve”-re váltáskor az `is_downloaded` hamis lesz (utána kézzel bejelölhető); a felület is leveszi.
 - `title_seasons` (PK `(title_id, season_number)`). Triggerek: a sorozat `status` / `is_downloaded` / `watched_at` az
@@ -388,6 +392,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - Tartalomfajták színei: `--c-coral` mozi, `--c-indigo` bejelentett / hamarosan (a még meg nem jelent évad / rész
   mindenhol indigó szaggatott, `data-upcoming`), `--c-sky` digitális / letöltve, `--c-sage` megjelent, `--c-rose`
   ajánlás. Mindig ugyanazt jelentik, **soha nem gombszínek**; teljes erővel csak apró jelölésen.
+- Értékelés-skála (IMDb / RT / MC száma): 40 alatt piros, 60-nál sárga (zöldes, nem borostyán), 80-tól zöld; csak a
+  számon, soha nem gombon / állapoton.
 - Színtokenek OKLCH-ban (mellettük megjegyzésben a hex; hexből: `munka/dizajn-2/eszkozok/oklch.mjs`); P3-on
   élénkebb `--accent` / `--accent-2`. A build hex / `lab()` tartalékot generál, ezért a teszt a színeket vásznon át,
   sRGB-ben hasonlítja (`rgbOf`).
@@ -454,7 +460,8 @@ Norbi döntései; a részletek a TERV.md-ben.
   kitűzés (89), „Következik” a franchise-sávon (90), megosztás az adatlapról (92), IMDb-küszöb szűrő (93), hangalapú
   keresés (94), „Új” jelvény (96), franchise-idővonal (97), rezgés jelöléskor (98); epizódszintű követés;
   szűrőgomb a még meg nem jelent filmekre; megjegyzés mező a felületen; C2 / C3 optimalizálás; kedvenc alkotók a
-  Statisztikában (112), nyomtatható lista (115), visszaállítási próba (119), borítóválasztó az adatlapon (128), magyar korhatár az adatlapon (126).
+  Statisztikában (112), nyomtatható lista (115), visszaállítási próba (119), borítóválasztó az adatlapon (128), magyar korhatár az adatlapon (126);
+  rendezés kritikusi értékelés szerint, RT / MC a kártyán és Mamánál (127).
 
 ## Fejlesztői megjegyzés
 - Ha a terminál nem ismeri a `node`/`npm` parancsot, a VS Code-ot újra kell indítani (a Node a

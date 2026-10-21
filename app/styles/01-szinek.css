@@ -36,6 +36,12 @@
   --c-sage: var(--st-watched);      /* megjelent / megnézve */
   --c-rose: oklch(75% 0.11 355);    /* #e590b1 ajánlás */
 
+  /* értékelés-skála (terv-3 127): az IMDb / RT / MC száma; a színezet a pontszámból (12-boritofal.css, 40 alatt
+     piros, 60-nál sárga, 80 fölött zöld) – itt csak a világosság és a telítettség. A sárga zöldes (85°), nem a
+     borostyán (az a saját jelöléseké) */
+  --score-l: 80%;
+  --score-c: 0.135;
+
   /* árnyalatok */
   --bg-top: oklch(24.94% 0.024 256.44);         /* #1a222d a lap teteje egy árnyalattal világosabb */
   --line-soft: oklch(29% 0.0254 255.73);        /* #232c38 halk vonal a táblázat sorai között */

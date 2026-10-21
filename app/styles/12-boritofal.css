@@ -490,6 +490,15 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* a szám a skála színével (terv-3 127, „A”): --score 0–100 (az IMDb ×10); színezet 40-ig 25° (piros), 60-nál
+   85° (sárga), 80-tól 145° (zöld), közte folyamatosan. Az RT / MC jelvénye ugyanez (CriticBadges). A toplista
+   jelvénye nem kap --score-t, az marad. */
+.imdb[data-score] b {
+  --score-h: clamp(25, calc(25 + (var(--score) - 40) * 3), 145);
+  color: oklch(var(--score-l) var(--score-c) var(--score-h));
+  font-weight: 700;
+}
+
 .card-stars {
   margin: 0.3rem 0 0;
   line-height: 0;

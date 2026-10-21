@@ -23,7 +23,7 @@ import { saveRow } from '@/lib/rowSaves';
 import StarRating from '@/components/StarRating';
 import FranchiseSelect from '@/components/FranchiseSelect';
 import { Lock } from '@/components/TitleTable';
-import ImdbBadge from '@/components/ImdbBadge';
+import ImdbBadge, { CriticBadges } from '@/components/ImdbBadge';
 import ReleaseBadge from '@/components/ReleaseBadge';
 import WatchProviders from '@/components/WatchProviders';
 import TopCast from '@/components/TopCast';
@@ -665,6 +665,7 @@ function TitlePage({
             )}
             {runtime && <span title={runtime.tooltip}>{runtime.text}</span>}
             <ImdbBadge title={t} />
+            <CriticBadges title={t} />
             {/* előnézetnél csak a TMDB-adatokkal (a találatban nincs megjelenési dátum) */}
             {(!preview || details) && <ReleaseBadge state={releaseState(t)} />}
           </p>
