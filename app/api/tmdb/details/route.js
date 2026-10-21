@@ -1,5 +1,5 @@
 import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
-import { tmdbFetch, tmdbErrorResponse, yearOf, pickSeasons, pickReleaseDates, pickOverview, cached, cachedResponse, HOUR_S, titleParams } from '@/lib/server/tmdb';
+import { tmdbFetch, tmdbErrorResponse, yearOf, pickSeasons, pickReleaseDates, pickOverview, pickFacts, cached, cachedResponse, HOUR_S, titleParams } from '@/lib/server/tmdb';
 
 const HOUR = HOUR_S * 1000;
 import { omdbEnabled, fetchImdbRating } from '@/lib/server/omdb';
@@ -65,6 +65,8 @@ async function loadDetails(type, id) {
     backdrop_checked_at: new Date().toISOString(),
     imdb_id: imdbId,
     genres: (data.genres ?? []).map(({ id, name }) => ({ id, name })),
+    // játékidő, sorozatnál az állapota is (terv-3 125, 129)
+    ...pickFacts(type, data),
     ...(type === 'tv' && { seasons: pickSeasons(data) }),
     // filmnél a mozis és a digitális megjelenés (a még meg nem jelent filmek jelvényéhez)
     ...(type === 'movie' && {

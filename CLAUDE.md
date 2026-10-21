@@ -144,6 +144,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - A `watched_at` nem látszik (megnézettre állításkor a mai nap). „Abbahagyva” csak sorozatnál.
 - Moziszerű fejléc jelenetképes lapon asztalon (`WIDE_QUERY`, `.editor-page.has-hero`, `data-frozen`). Teszt:
   `test-104.mjs`.
+- Adatsor (`.meta`, Norbi választása – „D”): év · Film / Sorozat · sorozatnál az állapot szavakkal
+  (`seriesStatusText`) · játékidő (`formatRuntime`; sorozatnál a legutóbbi rész) · IMDb. Korhatár nincs (elvetve).
+  Mamánál csak a játékidő. Teszt: `test-125.mjs`.
 - **Bezárás**: „Bezárás” (`DialogClose`, asztalon), Esc, kikattintás asztalon, Vissza gomb (`backHandler`).
   `closedby="none"` (Android – lásd `lib/backClose.js`). Telefonon alsó lap fogantyúval (`DialogClose`), nincs gomb.
 - **Nézetváltás** (`lib/viewTransition.js`): a borító átsiklik az adatlapra, ezért a `showModal()`
@@ -286,11 +289,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   az `/api/tmdb/*` token nélkül 401.
 - `lib/server/tmdb.js` – `tmdbFetch()` (10 mp), `titleParams(request)`, `cachedResponse(body, mp)` – **hibás vagy
   részben hiányos válasz soha nem tárolható** (ilyenkor sima `Response.json`), `cached(kulcs, ms, betöltő, keep?)`
-  (memória), `pickReleaseDates`, `pickSeasons`, `pickOverview`, `ANIMATION_GENRE`.
+  (memória), `pickReleaseDates`, `pickSeasons`, `pickOverview`, `pickFacts` (runtime, series_status – a `details`,
+  `seasons`, `details-refresh` közös forrása), `ANIMATION_GENRE`.
 - Lekérő route-ok: `app/api/tmdb/…` (GET). Ha a cím már nincs a TMDB-n: üres / null. A `details`-ben az OMDb hibája
   nem akadályozza a felvételt. `similar`: ≥ 2000, TMDB ≥ 6,0, ≥ 50 szavazat, animáció nélkül.
 - Háttérfrissítő `POST` route-ok (a felhasználó jogaival, kötegekben, a `Watchlist` hívja betöltéskor):
-  `imdb/refresh`, `tmdb/seasons` (az állapothoz nem nyúl), `tmdb/backdrops`, `tmdb/releases`,
+  `imdb/refresh`, `tmdb/seasons` (az állapothoz nem nyúl; a `series_status` / `runtime` itt frissül, a megnézett
+  sorozatoknál is), `tmdb/backdrops`, `tmdb/releases`,
   `tmdb/title-collections`, `tmdb/collection-parts`, `tmdb/details-refresh`, `franchises/logos`, `people/refresh`.
   Szabályok: az értesítést írók (`collection-parts`, `people/refresh`) **előbb az értesítést írják, utána az
   ismerteket**, és első ellenőrzéskor csak megjegyeznek; le nem tölthető gyűjteményt nem jelölnek ellenőrzöttnek. A
@@ -311,8 +316,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   kínálja). Új állapotnál szín és CSS is kell (Konvenciók).
 - `titles` – `user_id` (default `auth.uid()`), `media_type`, `tmdb_id`, `imdb_id`, `status`, `is_downloaded`,
   `mama_status` (null | 'interested' | 'declined' | 'received'), `franchise_id` (on delete set null), `my_rating`
-  (1–10), `notes`, `watched_at`, `release_date` (sorozatnál `first_air_date`), …, ellenőrzési időbélyegek
-  (`*_checked_at`). Egyedi `(user_id, media_type, tmdb_id)`.
+  (1–10), `notes`, `watched_at`, `release_date` (sorozatnál `first_air_date`), `runtime` (perc; sorozatnál a
+  legutóbbi részé – a TMDB `episode_run_time` szinte mindig üres), `series_status` (a TMDB `status` szövege, a
+  kliens fordítja; `pickFacts()`), …, ellenőrzési időbélyegek (`*_checked_at`). Egyedi `(user_id, media_type,
+  tmdb_id)`.
 - Trigger: „Megnézve”-re váltáskor az `is_downloaded` hamis lesz (utána kézzel bejelölhető); a felület is leveszi.
 - `title_seasons` (PK `(title_id, season_number)`). Triggerek: a sorozat `status` / `is_downloaded` / `watched_at` az
   évadokból számolódik (`seasons_summary`): minden megjelent évad megnézve → `watched`; van megkezdett → `watching`;
@@ -420,7 +427,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 
 ## Elvetett ötletek – magadtól ne javasold újra
 Norbi döntései; a részletek a TERV.md-ben.
-- **Kinézet**: álló betűs eredeti cím, színskálás IMDb-jelvény, OLED fekete, 3D billenés a borítókon, plakátszerű
+- **Kinézet**: álló betűs eredeti cím, OLED fekete, 3D billenés a borítókon, plakátszerű
   tipográfia, számláló a fejlécben, „Ma este” kiemelt sáv, haladásgyűrű a sorozatoknál, egyedi helykitöltő a hiányzó
   borítóhoz, a kurzort követő fénylő kártyaél, mozgó borítófal a belépésnél, elmosottból kiélesedő borítók,
   kedvencek borostyán kerete, szikrák 10 csillagnál, felpörgő számok / felnövő oszlopok a Statisztikában, feltöltődő
@@ -447,7 +454,7 @@ Norbi döntései; a részletek a TERV.md-ben.
   kitűzés (89), „Következik” a franchise-sávon (90), megosztás az adatlapról (92), IMDb-küszöb szűrő (93), hangalapú
   keresés (94), „Új” jelvény (96), franchise-idővonal (97), rezgés jelöléskor (98); epizódszintű követés;
   szűrőgomb a még meg nem jelent filmekre; megjegyzés mező a felületen; C2 / C3 optimalizálás; kedvenc alkotók a
-  Statisztikában (112), nyomtatható lista (115), visszaállítási próba (119).
+  Statisztikában (112), nyomtatható lista (115), visszaállítási próba (119), borítóválasztó az adatlapon (128), magyar korhatár az adatlapon (126).
 
 ## Fejlesztői megjegyzés
 - Ha a terminál nem ismeri a `node`/`npm` parancsot, a VS Code-ot újra kell indítani (a Node a

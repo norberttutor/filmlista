@@ -16,6 +16,8 @@ import {
   mamaApplies,
   mamaLabel,
   refreshTitleDetails,
+  formatRuntime,
+  seriesStatusText,
 } from '@/lib/titles';
 import { saveRow } from '@/lib/rowSaves';
 import StarRating from '@/components/StarRating';
@@ -625,6 +627,8 @@ function TitlePage({
   );
 
   const player = <TrailerPlayer trailer={trailer} playing={playing} title={t.title} />;
+  const statusText = seriesStatusText(t);
+  const runtime = formatRuntime(t);
 
   // a cím, a borító és az adatok: asztalon (≥ 900 px) a jelenetképes lapon a képen (terv-3 104, moziszerű fejléc),
   // különben a jobb oszlop tetején
@@ -652,7 +656,14 @@ function TitlePage({
           <p className="meta">
             {t.release_year && <span>{t.release_year}</span>}
             <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>
-            {preview && t.seasons?.length > 0 && <span>{t.seasons.length} évad</span>}
+            {/* sorozatnál az állapota szavakkal, a megjelent évadok számával (terv-3 125, „D”) – ha ismert,
+                az előnézet külön évadszáma helyett */}
+            {statusText ? (
+              <span>{statusText}</span>
+            ) : (
+              preview && t.seasons?.length > 0 && <span>{t.seasons.length} évad</span>
+            )}
+            {runtime && <span title={runtime.tooltip}>{runtime.text}</span>}
             <ImdbBadge title={t} />
             {/* előnézetnél csak a TMDB-adatokkal (a találatban nincs megjelenési dátum) */}
             {(!preview || details) && <ReleaseBadge state={releaseState(t)} />}

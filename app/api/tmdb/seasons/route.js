@@ -1,5 +1,5 @@
 import { getUserFromRequest, supabaseAsUser, unauthorized } from '@/lib/server/auth';
-import { tmdbFetch, pickSeasons } from '@/lib/server/tmdb';
+import { tmdbFetch, pickSeasons, pickFacts } from '@/lib/server/tmdb';
 import { budapestToday, SEASONS_REFRESH_DAYS } from '@/lib/refreshDue';
 
 const BATCH = 10; // egy kérésben legfeljebb ennyi sorozat (a szerverfüggvény időkorlátja miatt)
@@ -12,7 +12,8 @@ const aired = (s, today) => s.air_date != null && s.air_date <= today;
 // régebben néztük meg, lekéri a TMDB-ről az évadokat: felveszi az újakat (megjelent vagy
 // bejelentett), és frissíti a nevet, az epizódszámot, a megjelenési dátumot. Az állapothoz és
 // a "Letöltve" jelzőhöz nem nyúl. A sorozat állapotát az adatbázis újraszámolja (trigger),
-// pl. ha egy bejelentett évad közben megjelent.
+// pl. ha egy bejelentett évad közben megjelent. A sorozat TMDB-állapota és a rész hossza
+// (series_status, runtime – terv-3 125, 129) is itt frissül, a megnézett sorozatoknál is.
 // Értesítés (10_notifications.sql): ha egy már ismert évadlistájú sorozathoz új, még meg nem
 // jelent évad érkezik → "bejelentve" értesítés; az új, már megjelent évadról a
 // collect_season_notifications() szól (aired_notified = false). Az első feltöltésnél (még nem
@@ -53,8 +54,8 @@ export async function POST(request) {
     for (const r of rows) known.get(r.title_id).add(r.season_number);
   }
 
-  const checked = (id) =>
-    db.from('titles').update({ seasons_checked_at: new Date().toISOString() }).eq('id', id);
+  const checked = (id, facts = {}) =>
+    db.from('titles').update({ ...facts, seasons_checked_at: new Date().toISOString() }).eq('id', id);
 
   const done = [];
   let failed = false; // pl. a TMDB most nem érhető el: ebben a körben nem próbálkozunk tovább
@@ -62,7 +63,8 @@ export async function POST(request) {
     await Promise.all(
       batch.slice(i, i + PARALLEL).map(async (t) => {
         try {
-          const seasons = pickSeasons(await tmdbFetch(`/tv/${t.tmdb_id}`, { language: 'hu-HU' }));
+          const data = await tmdbFetch(`/tv/${t.tmdb_id}`, { language: 'hu-HU' });
+          const seasons = pickSeasons(data);
           const have = known.get(t.id);
           const firstFill = have.size === 0;
           const existing = seasons.filter((s) => have.has(s.season_number));
@@ -103,7 +105,9 @@ export async function POST(request) {
               if (noteError) throw noteError;
             }
           }
-          const { error: checkError } = await checked(t.id);
+          // a TMDB-ről hiányzó adat nem törli a meglévőt
+          const facts = Object.fromEntries(Object.entries(pickFacts('tv', data)).filter(([, v]) => v != null));
+          const { error: checkError } = await checked(t.id, facts);
           if (checkError) throw checkError;
           done.push(t.id);
         } catch (err) {

@@ -1,11 +1,11 @@
 import { getUserFromRequest, supabaseAsUser, unauthorized } from '@/lib/server/auth';
-import { tmdbFetch, yearOf, pickOverview } from '@/lib/server/tmdb';
+import { tmdbFetch, yearOf, pickOverview, pickFacts } from '@/lib/server/tmdb';
 import { budapestToday, detailsDue } from '@/lib/refreshDue';
 import { fetchAll } from '@/lib/fetchAll';
 
 const BATCH = 40; // egy kérésben legfeljebb ennyi cím (a szerverfüggvény időkorlátja miatt)
 const PARALLEL = 8;
-const FIELDS = 'id, media_type, tmdb_id, status, title, original_title, overview, poster_path, release_date, release_year, details_checked_at, created_at';
+const FIELDS = 'id, media_type, tmdb_id, status, title, original_title, overview, poster_path, release_date, release_year, runtime, series_status, details_checked_at, created_at';
 const DUE_FIELDS = 'id, tmdb_id, status, release_date, details_checked_at, created_at'; // = detailsDue() mezői
 
 // POST /api/tmdb/details-refresh  (törzs nélkül: a háttérfrissítés; { id }: egy cím, kézzel – az adatlap
@@ -15,7 +15,8 @@ const DUE_FIELDS = 'id, tmdb_id, status, release_date, details_checked_at, creat
 // Mama, letöltve) nem nyúl. Ami változhat:
 //   - cím: csak ha most az eredeti cím áll ott (felvételkor még nem volt magyar) – a kézzel adott címek
 //     (pl. a Marvel-import „Pókember 2.1”) így maradnak (Norbi döntése, 2026-10-14);
-//   - leírás (magyarul, ha nincs: angolul), borító, pontos dátum (+ év), műfajok – ha a TMDB-n más.
+//   - leírás (magyarul, ha nincs: angolul), borító, pontos dátum (+ év), műfajok, játékidő, a sorozat
+//     állapota (terv-3 125, 129) – ha a TMDB-n más.
 // Esedékes: lib/refreshDue.js detailsDue() (a böngésző is azzal dönti el, hív-e). Ha a cím már nincs a
 // TMDB-n, csak megjelöli.
 // Válasz: { updated: [a változott címek sora a titles_with_genres nézetből], remaining } | egy címnél
@@ -130,6 +131,9 @@ async function refreshOne(db, t, genreIds) {
     if (date && date !== t.release_date) {
       changes.release_date = date;
       changes.release_year = yearOf(date);
+    }
+    for (const [key, value] of Object.entries(pickFacts(t.media_type, data))) {
+      if (value != null && value !== t[key]) changes[key] = value;
     }
   }
 

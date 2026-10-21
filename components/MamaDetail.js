@@ -6,6 +6,7 @@ import { useBackdropClose } from '@/lib/useBackdropClose';
 import { useSheetDrag } from '@/lib/useSheetDrag';
 import { usePosterColor, ambientProps } from '@/lib/posterColor';
 import ImdbBadge from '@/components/ImdbBadge';
+import { formatRuntime } from '@/lib/titles';
 import WatchProviders from '@/components/WatchProviders';
 import { TrailerButton, TrailerPlayer } from '@/components/Trailer';
 
@@ -66,7 +67,8 @@ export default function MamaDetail({ item: t, onMark, onClose }) {
             {t.title}
           </h2>
           <p className="mama-meta">
-            {[t.release_year, genres].filter(Boolean).join(' · ')}
+            {/* a játékidő is (terv-3 129); a mama_list() filmet ad, a media_type nincs benne */}
+            {[t.release_year, genres, formatRuntime({ ...t, media_type: 'movie' })?.text].filter(Boolean).join(' · ')}
             <ImdbBadge title={t} />
           </p>
           <TrailerButton trailer={trailer} playing={playing} onToggle={() => setPlaying((p) => !p)} />
