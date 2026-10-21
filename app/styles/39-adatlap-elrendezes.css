@@ -93,6 +93,8 @@
     corner-shape: round;
   }
 
+  /* szándékos kivétel a ~0,2 s-os szabály alól (terv-3 124): az alsó lap felcsúszása – a 36-mozgas.css helyett
+     itt, a @starting-style mellett; Mamáé ugyanez (44-mama.css) */
   .editor.title-editor[open] {
     transition: translate 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), --ambient-on 0.2s ease-out;
   }

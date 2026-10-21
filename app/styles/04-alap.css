@@ -41,6 +41,7 @@ body::before {
   /* két szélén lágyan elfogy (ne legyen éle) */
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+  /* szándékos kivétel a ~0,2 s-os szabály alól (terv-3 124): lassú háttérhullámzás */
   animation: aurora 36s ease-in-out infinite alternate;
 }
 

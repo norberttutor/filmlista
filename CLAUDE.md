@@ -383,13 +383,17 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   lenyílónak, a nyilat is újra meg kell adni. A natív `<select>` `appearance: base-select`-tel (`@supports` mögött);
   a telefonos szűrő-opciók előtt ikon (`--opt-icon`) / szín (`--opt-dot`) – **új opciókódnál ide is kell ikon, és
   asztalra a `components/FilterIcons.js`-be is**.
-- **Mozgás**: legfeljebb ~0,2 s-os átmenetek; kivételek az `app/styles/36-mozgas.css`-ben. A `46-kevesebb-mozgas.css`
-  `prefers-reduced-motion` szabálya mindent kikapcsol; a JS-ből indított mozgások (`Reflow`, `viewSwitch`,
-  nézetváltás) maguk nézik.
+- **Mozgás**: legfeljebb ~0,2 s-os átmenetek; kivételek az `app/styles/36-mozgas.css`-ben, valamint helyben,
+  megjegyzéssel, a saját blokkjukban: az aurora-háttér (`04-alap.css`), a telefonos alsó lap felcsúszása
+  (`39-adatlap-elrendezes.css`, `44-mama.css`) és a csúszó kijelölő (`45-csuszo.css`). Új kivétel a 36-osba kerüljön.
+  A `46-kevesebb-mozgas.css` `prefers-reduced-motion` szabálya mindent kikapcsol; a JS-ből indított mozgások
+  (`Reflow`, `viewSwitch`, nézetváltás) maguk nézik.
 - Görgetősáv: saját (`::-webkit-scrollbar`). Elemre ne adj `scrollbar-width` / `scrollbar-color`-t (Chrome-ban akkor
   a `::-webkit-scrollbar` nem érvényes).
 - „Squircle” sarkok (`corner-shape: squircle`, `@supports` mögött): borító 22 px, kis borító 13 px, szerkesztő ablak
-  32 px, panelek 20 px, mezők 12 px; új lekerekített elemnél (és a `::before` / `::after` keretnek) is kell.
+  32 px, panelek 20 px, mezők 12 px; új lekerekített elemnél (és a `::before` / `::after` keretnek) is kell. A
+  pirula alakú (kerek végű) elemek és a körök kivételek. A `34-squircle.css` után jövő fájlok elemeinél a szabály
+  helyben áll (különben a későbbi `border-radius` felülírja).
 - Új dizájnötletnél: előbb látványterv / előtte–utána képek (`munka/dizajn-2/eszkozok/`), beépítés csak Norbi
   jóváhagyása után.
 - **Új ablaknál (`<dialog>`) mindig vizsgáld a kikattintásos bezárást** (`useBackdropClose`, `canClose`): mikor ne

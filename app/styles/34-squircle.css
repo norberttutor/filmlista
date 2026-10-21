@@ -82,4 +82,39 @@
     corner-shape: squircle;
     border-radius: 7px;
   }
+
+  /* terv-3 123: a kimaradt elemek – a belépési kártya (telefonon nincs kártya, ott nem látszik) és a natív
+     lenyíló listája panel, a gyűjtemény borítói (a keretük is), a kiemelt sáv kis képei */
+  .login-form {
+    corner-shape: squircle;
+    border-radius: 20px;
+  }
+
+  /* külön szabály: ahol a ::picker ismeretlen, a vele közös szabály egésze elveszne */
+  ::picker(select) {
+    corner-shape: squircle;
+    border-radius: 20px;
+  }
+
+  .collection-poster img,
+  .collection-poster .poster-fallback,
+  .collection-parts li[data-state='missing'] .collection-poster,
+  .collection-parts li[data-state='listed'] .collection-poster {
+    corner-shape: squircle;
+    border-radius: 20px;
+  }
+
+  .featured-thumbs button {
+    corner-shape: squircle;
+    border-radius: 13px;
+  }
+
+  /* a sugár marad: az asztali lista sorának két szélső cellája (a sor kártyaszerű sarkai), a lenyílók
+     opciói (a műfajpanel első, „Összes” eleme a saját sarkaival) */
+  .titles-table tbody td:first-child,
+  .titles-table tbody td:last-child,
+  .franchise-listbox li[role='option'],
+  select option {
+    corner-shape: squircle;
+  }
 }

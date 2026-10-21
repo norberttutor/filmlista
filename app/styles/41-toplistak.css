@@ -115,7 +115,8 @@
 }
 
 @supports (corner-shape: squircle) {
-  .toplist-poster {
+  .toplist-poster,
+  .toplist-row {
     corner-shape: squircle;
   }
 }

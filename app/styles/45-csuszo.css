@@ -24,6 +24,7 @@
   pointer-events: none;
 }
 
+/* szándékos kivétel a ~0,2 s-os szabály alól (terv-3 124): a rugós túllendüléshez kell az idő */
 .sliding[data-thumb-anim]::before {
   transition:
     translate 0.32s cubic-bezier(0.3, 1.25, 0.5, 1),

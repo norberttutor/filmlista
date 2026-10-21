@@ -195,6 +195,19 @@
   box-shadow: 0 20px 60px rgb(var(--shade) / 0.6);
 }
 
+/* terv-3 123 (a 34-squircle.css előbb jön, ezért itt) */
+@supports (corner-shape: squircle) {
+  .gallery-strip button {
+    corner-shape: squircle;
+    border-radius: 13px;
+  }
+
+  .gallery-stage img {
+    corner-shape: squircle;
+    border-radius: 20px;
+  }
+}
+
 .gallery-nav {
   position: absolute;
   top: 50%;
