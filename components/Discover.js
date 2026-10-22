@@ -1,11 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { titleKey, SIMILAR_V } from '@/lib/titles';
 import { unhideSuggestion, useHiddenSuggestions } from '@/lib/hiddenSuggestions';
 import { HideButton, HideNote, useHideSuggestion } from '@/components/HideSuggestion';
 import FeaturedBand from '@/components/FeaturedBand';
+import OnList from '@/components/OnList';
+import Reflow, { HIDE_EXIT } from '@/components/Reflow';
+
+const hideExit = () => HIDE_EXIT;
 import { mapLimit } from '@/lib/bulkImport';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w185';
@@ -89,6 +93,9 @@ export default function Discover({ existingKeys, seeds = [], rowState, onAdd, on
   const hidden = useHiddenSuggestions();
   const { note, hide, undo } = useHideSuggestion();
   const [showHidden, setShowHidden] = useState(false);
+  // soronként a lista eleme (a Reflow méri)
+  const listRefs = useRef({});
+  const listRef = (list) => (listRefs.current[list] ??= { current: null });
   const [hiddenError, setHiddenError] = useState('');
 
   async function unhide(h) {
@@ -185,53 +192,56 @@ export default function Discover({ existingKeys, seeds = [], rowState, onAdd, on
                 ))}
               </div>
             ) : (
-              <ul className="discover-list">
-                {results.map((r) => {
-                  const key = titleKey(r);
-                  const id = `discover-${r.media_type}-${r.tmdb_id}`;
-                  const state = rowState[key] ?? {};
-                  return (
-                    <li key={key} className="discover-item">
-                      <button
-                        type="button"
-                        className="discover-poster"
-                        aria-label={`${r.title} adatlapja`}
-                        onClick={(e) => onPreview(r, e.currentTarget)}
-                      >
-                        {/* CORS-szal (a vászonra rajzolhatóság miatt; a hangulatszín ma már külön, kisebb képből számol) */}
-                        <img src={POSTER_BASE + r.poster_path} alt="" loading="lazy" crossOrigin="anonymous" />
-                      </button>
-                      {!existingKeys.has(key) && <HideButton item={r} onHide={hide} />}
-                      <b className="discover-title" id={id}>
-                        {r.title}
-                      </b>
-                      <span className="muted small">
-                        {s.list === 'upcoming' && r.release_date ? shortDate(r.release_date) : r.release_year}
-                        {' · '}
-                        {r.media_type === 'tv' ? 'Sorozat' : 'Film'}
-                      </span>
-                      {existingKeys.has(key) ? (
-                        <span className="on-list">✓ A listán</span>
-                      ) : (
+              // „Nem érdekel”-re a sor többi tagja odacsúszik, visszavonáskor visszaúszik (terv-3 137)
+              <Reflow trigger={results.map(titleKey).join()} boxRef={listRef(s.list)} exit={hideExit}>
+                <ul className="discover-list" ref={listRef(s.list)}>
+                  {results.map((r) => {
+                    const key = titleKey(r);
+                    const id = `discover-${r.media_type}-${r.tmdb_id}`;
+                    const state = rowState[key] ?? {};
+                    return (
+                      <li key={key} className="discover-item" data-flip={key}>
                         <button
                           type="button"
-                          className="ghost"
-                          aria-describedby={id}
-                          disabled={state.busy}
-                          onClick={() => onAdd(r)}
+                          className="discover-poster"
+                          aria-label={`${r.title} adatlapja`}
+                          onClick={(e) => onPreview(r, e.currentTarget)}
                         >
-                          {state.busy ? 'Hozzáadás…' : '+ Hozzáadás'}
+                          {/* CORS-szal (a vászonra rajzolhatóság miatt; a hangulatszín ma már külön, kisebb képből számol) */}
+                          <img src={POSTER_BASE + r.poster_path} alt="" loading="lazy" crossOrigin="anonymous" />
                         </button>
-                      )}
-                      {state.error && (
-                        <p className="error small" role="alert">
-                          {state.error}
-                        </p>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
+                        {!existingKeys.has(key) && <HideButton item={r} onHide={hide} />}
+                        <b className="discover-title" id={id}>
+                          {r.title}
+                        </b>
+                        <span className="muted small">
+                          {s.list === 'upcoming' && r.release_date ? shortDate(r.release_date) : r.release_year}
+                          {' · '}
+                          {r.media_type === 'tv' ? 'Sorozat' : 'Film'}
+                        </span>
+                        {existingKeys.has(key) ? (
+                          <OnList item={r} />
+                        ) : (
+                          <button
+                            type="button"
+                            className="ghost"
+                            aria-describedby={id}
+                            disabled={state.busy}
+                            onClick={(e) => onAdd(r, false, e.currentTarget)}
+                          >
+                            {state.busy ? 'Hozzáadás…' : '+ Hozzáadás'}
+                          </button>
+                        )}
+                        {state.error && (
+                          <p className="error small" role="alert">
+                            {state.error}
+                          </p>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </Reflow>
             )}
           </section>
         );

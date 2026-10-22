@@ -7,6 +7,10 @@ import { afterTransition } from '@/lib/viewTransition';
 import { useHiddenSuggestions } from '@/lib/hiddenSuggestions';
 import { HideButton, HideNote, useHideSuggestion } from '@/components/HideSuggestion';
 import { useArrival } from '@/lib/useArrival';
+import OnList from '@/components/OnList';
+import Reflow, { HIDE_EXIT } from '@/components/Reflow';
+
+const hideExit = () => HIDE_EXIT;
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w154';
 // alapból nyitva; ha becsukja, a böngésző megjegyzi (ha nem tudja, nyitva marad). Telefonon
@@ -39,6 +43,7 @@ export default function SimilarTitles({ title, existingKeys, onAdded, onPreview,
   const [load, setLoad] = useState({ status: 'idle', results: [], error: '' });
   const [adding, setAdding] = useState(null); // a felvétel alatt álló cím kulcsa
   const [errors, setErrors] = useState({}); // kulcs → hibaüzenet
+  const listRef = useRef(null);
   const fetched = useRef(false); // betöltve (újranyitáskor nem kéri le újra)
   const hidden = useHiddenSuggestions();
   const { note, hide, undo } = useHideSuggestion();
@@ -138,56 +143,59 @@ export default function SimilarTitles({ title, existingKeys, onAdded, onPreview,
             </p>
           )}
           {shown.length > 0 && (
-            <ul className="similar-list" aria-label={`Hasonló címek – ${title.title}`} data-arrive={arrive}>
-              {shown.map((r) => {
-                const key = titleKey(r);
-                const onList = existingKeys.has(key);
-                return (
-                  <li key={key} className="similar-item">
-                    <button
-                      type="button"
-                      className="similar-poster"
-                      aria-label={`${r.title} adatlapja`}
-                      onClick={() => onPreview(r)}
-                    >
-                      <img src={POSTER_BASE + r.poster_path} alt="" loading="lazy" />
-                    </button>
-                    {!onList && !readOnly && <HideButton item={r} onHide={hide} />}
-                    <a
-                      className="similar-title"
-                      href={`https://www.themoviedb.org/${r.media_type}/${r.tmdb_id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title={r.title}
-                      aria-label={`${r.title} megnyitása: TMDB`}
-                    >
-                      {r.title}
-                    </a>
-                    <span className="similar-meta">
-                      {[r.release_year, r.media_type === 'tv' ? 'Sorozat' : 'Film']
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </span>
-                    {onList ? (
-                      <span className="on-list">✓ A listán</span>
-                    ) : (
-                      !readOnly && (
+            // „Nem érdekel”-re a többi odacsúszik, visszavonáskor visszaúszik (terv-3 137)
+            <Reflow trigger={shown.map(titleKey).join()} boxRef={listRef} exit={hideExit}>
+              <ul className="similar-list" aria-label={`Hasonló címek – ${title.title}`} data-arrive={arrive} ref={listRef}>
+                {shown.map((r) => {
+                  const key = titleKey(r);
+                  const onList = existingKeys.has(key);
+                  return (
+                    <li key={key} className="similar-item" data-flip={key}>
                       <button
                         type="button"
-                        className="ghost mini"
-                        disabled={adding === key}
-                        aria-label={`Hozzáadás a listához: ${r.title}`}
-                        onClick={() => add(r)}
+                        className="similar-poster"
+                        aria-label={`${r.title} adatlapja`}
+                        onClick={() => onPreview(r)}
                       >
-                        {adding === key ? 'Hozzáadás…' : '+ Hozzáadás'}
+                        <img src={POSTER_BASE + r.poster_path} alt="" loading="lazy" />
                       </button>
-                      )
-                    )}
-                    {errors[key] && <span className="error small">{errors[key]}</span>}
-                  </li>
-                );
-              })}
-            </ul>
+                      {!onList && !readOnly && <HideButton item={r} onHide={hide} />}
+                      <a
+                        className="similar-title"
+                        href={`https://www.themoviedb.org/${r.media_type}/${r.tmdb_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={r.title}
+                        aria-label={`${r.title} megnyitása: TMDB`}
+                      >
+                        {r.title}
+                      </a>
+                      <span className="similar-meta">
+                        {[r.release_year, r.media_type === 'tv' ? 'Sorozat' : 'Film']
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </span>
+                      {onList ? (
+                        <OnList item={r} />
+                      ) : (
+                        !readOnly && (
+                        <button
+                          type="button"
+                          className="ghost mini"
+                          disabled={adding === key}
+                          aria-label={`Hozzáadás a listához: ${r.title}`}
+                          onClick={() => add(r)}
+                        >
+                          {adding === key ? 'Hozzáadás…' : '+ Hozzáadás'}
+                        </button>
+                        )
+                      )}
+                      {errors[key] && <span className="error small">{errors[key]}</span>}
+                    </li>
+                  );
+                })}
+              </ul>
+            </Reflow>
           )}
         </div>
       )}

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { addTitle, titleKey } from '@/lib/titles';
 import Discover from '@/components/Discover';
+import OnList from '@/components/OnList';
+import { flyToList } from '@/lib/flyPoster';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w154';
 const FACE_BASE = 'https://image.tmdb.org/t/p/w185';
@@ -51,12 +53,15 @@ export default function TitleSearch({ existingKeys, recommendSeeds, onAdded, onP
   }, [q]);
 
   // watched: „Már láttam” (terv-3 80) – megnézettként kerül fel, a Watchlist rögtön megkérdezi, hogy tetszett
-  async function handleAdd(result, watched = false) {
+  // from: a megnyomott gomb – a borítója a fejléchez repül (terv-3 134)
+  async function handleAdd(result, watched = false, from = null) {
     const key = titleKey(result);
     setRowState((s) => ({ ...s, [key]: { busy: watched ? 'watched' : 'add' } }));
     try {
       onAdded(await addTitle(result, null, { watched }));
       setRowState((s) => ({ ...s, [key]: {} }));
+      const img = from?.closest('li, .featured-slide')?.querySelector('.thumb img, .discover-poster img');
+      if (result.poster_path) flyToList(img ?? from, THUMB_BASE + result.poster_path);
     } catch (err) {
       setRowState((s) => ({ ...s, [key]: { error: err.message } }));
     }
@@ -177,7 +182,7 @@ export default function TitleSearch({ existingKeys, recommendSeeds, onAdded, onP
                   </p>
 
                   {existingKeys.has(key) ? (
-                    <p className="on-list">✓ A listán</p>
+                    <OnList item={r} as="p" />
                   ) : (
                     <div className="result-actions">
                       <button
@@ -185,7 +190,7 @@ export default function TitleSearch({ existingKeys, recommendSeeds, onAdded, onP
                         className="primary"
                         aria-describedby={titleId}
                         disabled={Boolean(state.busy)}
-                        onClick={() => handleAdd(r)}
+                        onClick={(e) => handleAdd(r, false, e.currentTarget)}
                       >
                         {state.busy === 'add' ? 'Hozzáadás…' : 'Hozzáadás a listához'}
                       </button>
@@ -195,7 +200,7 @@ export default function TitleSearch({ existingKeys, recommendSeeds, onAdded, onP
                         className="ghost"
                         aria-describedby={titleId}
                         disabled={Boolean(state.busy)}
-                        onClick={() => handleAdd(r, true)}
+                        onClick={(e) => handleAdd(r, true, e.currentTarget)}
                       >
                         {state.busy === 'watched' ? 'Hozzáadás…' : 'Már láttam'}
                       </button>

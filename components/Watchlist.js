@@ -243,7 +243,8 @@ export default function Watchlist({ session }) {
           <NeonBrand />
           {!loading && !loadError && (
             <p className="count">
-              {titles.length} cím a listán
+              {/* a szám felvételkor dobban (terv-3 134, lib/flyPoster.js) */}
+              <span className="count-n">{titles.length}</span> cím a listán
               {/* a tárolt lista látszik, a friss a háttérben jön (a sáv csak hibánál szól) */}
               {stale && online && !failed && <span className="muted"> · frissítés…</span>}
             </p>

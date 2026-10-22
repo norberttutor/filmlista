@@ -11,8 +11,16 @@ import { Component } from 'react';
 // másolata a layer-be kerül (position: relative; a rácsnál maga a box, a táblázatnál a
 // .table-wrap). A mérés a DOM-módosítás előtt kell, ezért osztálykomponens
 // (getSnapshotBeforeUpdate). A „kevesebb mozgás” beállításnál nem mozog.
+// Mama sorai (136) és a „Nem érdekel” (137) is ezzel mozog: exit(kulcs) a kieső tétel saját mozgása ({ keyframes,
+// timing } – pl. balra kiúszik; ha nincs, elhalványul); a réteg görgethető is lehet (vízszintes sor).
 const ID = 'reflow';
 const MOVE = { duration: 320, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' };
+
+// „Nem érdekel” (terv-3 137): az elrejtett ajánlás összemegy és elhalványul, a többi odacsúszik
+export const HIDE_EXIT = {
+  keyframes: [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(0.82)' }],
+  timing: { duration: 200, easing: 'ease-in' },
+};
 
 export default class Reflow extends Component {
   ghosts = new Set();
@@ -85,12 +93,12 @@ export default class Reflow extends Component {
     const present = new Set(current.map((el) => el.dataset.flip));
     for (const [key, old] of snap.items) {
       if (present.has(key) || !old.seen) continue;
-      this.fadeOut(old, snap.tableInfo, layer);
+      this.fadeOut(old, snap.tableInfo, layer, this.props.exit?.(key));
     }
   }
 
   // a kieső tétel másolata a régi helyén elhalványul (nem kattintható, felolvasó nem látja)
-  fadeOut(old, tableInfo, layer) {
+  fadeOut(old, tableInfo, layer, exit) {
     const copy = old.el.cloneNode(true);
     copy.removeAttribute('data-flip');
     for (const el of [copy, ...copy.querySelectorAll('[id]')]) el.removeAttribute('id');
@@ -108,13 +116,13 @@ export default class Reflow extends Component {
       body.append(copy);
       ghost.append(cols, body);
       ghost.style.width = `${tableInfo.width}px`;
-      ghost.style.left = `${tableInfo.x}px`;
+      ghost.style.left = `${tableInfo.x + layer.scrollLeft}px`;
     } else {
       ghost.style.width = `${old.w}px`;
-      ghost.style.left = `${old.x - old.w / 2}px`;
+      ghost.style.left = `${old.x - old.w / 2 + layer.scrollLeft}px`;
     }
     ghost.style.height = `${old.h}px`;
-    ghost.style.top = `${old.y - old.h / 2}px`;
+    ghost.style.top = `${old.y - old.h / 2 + layer.scrollTop}px`;
     ghost.classList.add('reflow-ghost');
     ghost.setAttribute('aria-hidden', 'true');
     ghost.inert = true;
@@ -124,10 +132,12 @@ export default class Reflow extends Component {
       ghost.remove();
       this.ghosts.delete(ghost);
     };
-    const a = ghost.animate(
-      [{ opacity: 1 }, { opacity: 0, transform: 'scale(0.94)' }],
-      { duration: 200, easing: 'ease-in', fill: 'forwards' }
-    );
+    const a = ghost.animate(exit?.keyframes ?? [{ opacity: 1 }, { opacity: 0, transform: 'scale(0.94)' }], {
+      duration: 200,
+      easing: 'ease-in',
+      ...exit?.timing,
+      fill: 'forwards',
+    });
     a.onfinish = done;
     a.oncancel = done;
   }

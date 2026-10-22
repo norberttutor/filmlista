@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { titleKey } from '@/lib/titles';
 import { followKey, followPerson, useFollowed } from '@/lib/people';
+import Reflow, { HIDE_EXIT } from '@/components/Reflow';
 
 const IMG = 'https://image.tmdb.org/t/p/';
 const SUGGEST_SEEDS = 40; // a 8+ értékelésűek közül ennyi (a route MAX_SEEDS-e)
@@ -51,6 +52,7 @@ export default function FollowSuggestions({ titles, userId, onPerson }) {
   const [people, setPeople] = useState(null);
   const [hidden, setHidden] = useState(() => loadHidden(userId));
   const [errors, setErrors] = useState({});
+  const listRef = useRef(null);
 
   // a megnyitáskori kedvencekből (a közben adott értékelés a következő megnyitáskor számít)
   const [seeds] = useState(() => suggestSeeds(titles));
@@ -91,44 +93,47 @@ export default function FollowSuggestions({ titles, userId, onPerson }) {
         Kit érdemes követned?
       </h3>
       <p className="follow-suggest-note">A 8+ csillagos címeid gyakori szereplői és rendezői.</p>
-      <ul className="follow-suggest-list">
-        {shown.map((p) => {
-          const key = followKey(p.id, p.role);
-          const names = p.keys.map((k) => rows.get(k)?.title).filter(Boolean);
-          const open = () => onPerson({ id: p.id, name: p.name, profile_path: p.profile_path, role: p.role });
-          return (
-            <li key={key} className="follow-suggest-item">
-              <button type="button" className="follow-suggest-photo" tabIndex={-1} aria-hidden="true" onClick={open}>
-                {p.profile_path && <img src={`${IMG}w185${p.profile_path}`} alt="" loading="lazy" />}
-              </button>
-              <span className="follow-suggest-text">
-                <button type="button" className="follow-suggest-name" onClick={open}>
-                  {p.name}
+      {/* elrejtéskor / követéskor a többi a helyére csúszik (terv-3 137) */}
+      <Reflow trigger={shown.map((p) => followKey(p.id, p.role)).join()} boxRef={listRef} exit={() => HIDE_EXIT}>
+        <ul className="follow-suggest-list" ref={listRef}>
+          {shown.map((p) => {
+            const key = followKey(p.id, p.role);
+            const names = p.keys.map((k) => rows.get(k)?.title).filter(Boolean);
+            const open = () => onPerson({ id: p.id, name: p.name, profile_path: p.profile_path, role: p.role });
+            return (
+              <li key={key} className="follow-suggest-item" data-flip={key}>
+                <button type="button" className="follow-suggest-photo" tabIndex={-1} aria-hidden="true" onClick={open}>
+                  {p.profile_path && <img src={`${IMG}w185${p.profile_path}`} alt="" loading="lazy" />}
                 </button>
-                <span className="follow-suggest-meta">
-                  {p.role === 'director' ? 'Rendező' : 'Színész'} · {p.keys.length} kedvenced
-                  {names.length > 0 && `: ${names.slice(0, TITLES_NAMED).join(', ')}${names.length > TITLES_NAMED ? '…' : ''}`}
+                <span className="follow-suggest-text">
+                  <button type="button" className="follow-suggest-name" onClick={open}>
+                    {p.name}
+                  </button>
+                  <span className="follow-suggest-meta">
+                    {p.role === 'director' ? 'Rendező' : 'Színész'} · {p.keys.length} kedvenced
+                    {names.length > 0 && `: ${names.slice(0, TITLES_NAMED).join(', ')}${names.length > TITLES_NAMED ? '…' : ''}`}
+                  </span>
+                  {errors[key] && <span className="error small">{errors[key]}</span>}
                 </span>
-                {errors[key] && <span className="error small">{errors[key]}</span>}
-              </span>
-              <button type="button" className="ghost mini" aria-label={`Követem: ${p.name}`} onClick={() => follow(p)}>
-                Követem
-              </button>
-              <button
-                type="button"
-                className="follow-suggest-hide"
-                aria-label={`Nem kell: ${p.name}`}
-                title="Nem kell"
-                onClick={() => hide(p)}
-              >
-                <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-                  <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-                </svg>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+                <button type="button" className="ghost mini" aria-label={`Követem: ${p.name}`} onClick={() => follow(p)}>
+                  Követem
+                </button>
+                <button
+                  type="button"
+                  className="follow-suggest-hide"
+                  aria-label={`Nem kell: ${p.name}`}
+                  title="Nem kell"
+                  onClick={() => hide(p)}
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                    <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </Reflow>
     </section>
   );
 }

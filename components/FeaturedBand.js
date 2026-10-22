@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { titleKey } from '@/lib/titles';
 import { HideButton } from '@/components/HideSuggestion';
 import { Chevron } from '@/components/TitleGallery';
+import OnList from '@/components/OnList';
 
 const IMG = 'https://image.tmdb.org/t/p/';
 const MONTHS = ['jan.', 'febr.', 'márc.', 'ápr.', 'máj.', 'jún.', 'júl.', 'aug.', 'szept.', 'okt.', 'nov.', 'dec.'];
@@ -107,9 +108,9 @@ export default function FeaturedBand({ items, existingKeys, rowState, onAdd, onP
               Adatlap
             </button>
             {onList ? (
-              <span className="on-list">✓ A listán</span>
+              <OnList item={it} />
             ) : (
-              <button type="button" className="ghost featured-add" disabled={state.busy} onClick={() => onAdd(it)}>
+              <button type="button" className="ghost featured-add" disabled={state.busy} onClick={(e) => onAdd(it, false, e.currentTarget)}>
                 {state.busy ? 'Hozzáadás…' : '+ Hozzáadás'}
               </button>
             )}

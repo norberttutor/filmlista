@@ -160,6 +160,44 @@
   }
 }
 
+/* megnézettre váltáskor a kihúzással együtt kifolyik a szín (terv-3 133, lib/useStrike.js – a kártyán az adatlap
+   bezárásakor): alatta már a megnézett, szürke borító (rámutatva is, átmenet nélkül), fölötte a színes másolat
+   maszkja balról jobbra átlátszóvá válik (0,6 s – a 0,2 s-os szabály kivétele). „Kevesebb mozgás”-nál a másolat
+   nem látszik (a --drain alapértéke 100%). */
+@property --drain {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 100%;
+}
+
+.card[data-draining] .poster img,
+.titles-table tbody tr[data-draining] .thumb img {
+  filter: grayscale(1) brightness(0.8);
+  opacity: 0.55;
+  transition: none;
+}
+
+:is(.poster, .thumb) img.drain-copy {
+  position: absolute;
+  inset: 0;
+  /* a megnézett borító szabálya (12-boritofal.css) erősebb – a másolat színes marad */
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent var(--drain), #000 calc(var(--drain) + 18%));
+  mask-image: linear-gradient(90deg, transparent var(--drain), #000 calc(var(--drain) + 18%));
+  animation: drain 0.6s cubic-bezier(0.45, 0, 0.3, 1) forwards;
+}
+
+@keyframes drain {
+  from {
+    --drain: -18%;
+  }
+  to {
+    --drain: 100%;
+  }
+}
+
 .wo-list li[data-done] .strike {
   --strike-ink: var(--watched-text);
   background-size: 100% 2px;
@@ -246,7 +284,12 @@
    components/Reflow.js mozgatja a kártyákat / sorokat (Web Animations, 0,32 s); a kiesők másolata
    (.reflow-ghost) a régi helyén halványul el – a rács / a táblázat burkolója a helyük alapja */
 .grid,
-.table-wrap {
+.table-wrap,
+.mama-rows,
+.discover-list,
+.similar-list,
+.follow-suggest-list {
+  /* a Mama sorai (136) és a „Nem érdekel” (137) sorai is így mozognak */
   position: relative;
 }
 
@@ -533,8 +576,49 @@ dialog[data-nudge] {
   }
 }
 
-.notif-count[data-bump] {
+/* a szám egyet dobban (a harang száma – 141 d; a fejléc „N cím a listán” száma – 134; Mama füleinek száma – 136):
+   nem pörög, csak megugrik */
+.count-n,
+.mama-tabs .n {
+  display: inline-block;
+}
+
+:is(.notif-count, .count-n, .mama-tabs .n)[data-bump] {
   animation: count-bump 0.38s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+/* beröppenő borító (terv-3 134, lib/flyPoster.js): a felvett cím borítójának másolata ív mentén a fejléc számához
+   repül (Web Animations, 0,55 s – a 0,2 s-os szabály kivétele; „kevesebb mozgás”-nál el sem indul) */
+.flying-poster {
+  position: fixed;
+  z-index: 70;
+  margin: 0;
+  object-fit: cover;
+  border-radius: 6px;
+  pointer-events: none;
+  box-shadow: 0 16px 34px -12px rgb(var(--shade) / calc(0.75 * var(--shade-k)));
+}
+
+/* „✓ A listán” a most felvett címnél (components/OnList.js): a pipa balról jobbra megrajzolódik, a címke beúszik */
+.on-list .tick {
+  display: inline-block;
+}
+
+.on-list[data-new] {
+  animation: arrive 0.2s ease-out both;
+}
+
+.on-list[data-new] .tick {
+  animation: tick-draw 0.32s ease-out 0.08s both;
+}
+
+@keyframes tick-draw {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0);
+  }
 }
 
 @keyframes count-bump {

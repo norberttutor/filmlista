@@ -5,6 +5,7 @@ import { apiGet } from '@/lib/api';
 import { addTitle, titleKey, releaseState, todayDate } from '@/lib/titles';
 import { followKey, followPerson, unfollowPerson, useFollowed, PERSON_V } from '@/lib/people';
 import { useSlidingThumb } from '@/lib/useSlidingThumb';
+import OnList from '@/components/OnList';
 
 const IMG = 'https://image.tmdb.org/t/p/';
 const REST_SHOWN = 10; // ennyi „további” cím látszik, a többi a „Továbbiak mutatása” után
@@ -90,7 +91,7 @@ export function CreditStatus({ c, row, adding, add, readOnly }) {
   const done = row.status === 'watched' || row.status === 'dropped';
   return (
     <>
-      <span className="on-list">{row.status === 'watched' ? '✓ Megnézve' : '✓ A listán'}</span>
+      <OnList item={row}>{row.status === 'watched' ? 'Megnézve' : 'A listán'}</OnList>
       {done && row.my_rating && (
         <span className="person-rating" aria-label={`Saját értékelés: ${row.my_rating}/10`}>
           ★ {row.my_rating}

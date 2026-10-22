@@ -18,7 +18,7 @@ import ImdbBadge, { CriticBadges } from '@/components/ImdbBadge';
 import GenreList from '@/components/GenreList';
 import ReleaseBadge from '@/components/ReleaseBadge';
 import { hasSeasons, SeasonCell, SeasonDownloads } from '@/components/Seasons';
-import { useStrike } from '@/lib/useStrike';
+import { useDrain, useStrike } from '@/lib/useStrike';
 import { saveRow } from '@/lib/rowSaves';
 import { Hl, useSearchHighlight } from '@/components/Highlight';
 import { usePrefetchOnHover } from '@/lib/prefetch';
@@ -130,6 +130,7 @@ function TitleRow({
   // még meg nem jelent film: szaggatott keret a borító körül és dátumos jelvény
   const release = releaseState(t);
   const strike = useStrike(item ? item.status : t.status); // megnézettre váltáskor kihúzás a címen
+  const draining = useDrain(strike); // …és a borító színe kifolyik (terv-3 133)
   const { byFranchise: searchHit } = useSearchHighlight(); // a franchise neve szerinti találatok (terv-3 66)
   const prefetch = usePrefetchOnHover(t); // rámutatáskor az adatlap adatai előre (terv-3 69)
 
@@ -171,6 +172,7 @@ function TitleRow({
       data-flip={flipKey}
       data-status={item ? item.status : t.status}
       data-release={release ? release.kind : undefined}
+      data-draining={draining ? '' : undefined}
       data-img={t.backdrop_path ? '' : undefined}
       style={{ ...ambientStyle, ...(t.backdrop_path && { '--row-img': `url(${BACKDROP_BASE}${t.backdrop_path})` }) }}
       {...ambientData}
@@ -187,6 +189,7 @@ function TitleRow({
             onClick={(e) => onEdit(t, e.currentTarget)}
           >
             {t.poster_path && <img src={THUMB_BASE + t.poster_path} alt="" loading="lazy" />}
+            {t.poster_path && draining && <img key={strike} className="drain-copy" src={THUMB_BASE + t.poster_path} alt="" />}
           </button>
           <div className="row-text">
             {/* legfeljebb 2 sorban; ha így sem fér ki, "…" és rámutatva a teljes cím (átnézés K6) */}

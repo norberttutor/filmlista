@@ -6,7 +6,7 @@ import ImdbBadge from '@/components/ImdbBadge';
 import GenreList from '@/components/GenreList';
 import { hasSeasons, seasonCounts, SeasonStrip } from '@/components/Seasons';
 import ReleaseBadge from '@/components/ReleaseBadge';
-import { useStrike } from '@/lib/useStrike';
+import { useDrain, useStrike } from '@/lib/useStrike';
 import { useAppearance } from '@/lib/afterDialogs';
 import { Hl } from '@/components/Highlight';
 import { usePrefetchOnHover } from '@/lib/prefetch';
@@ -23,6 +23,7 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
   const status = item ? item.status : t.status;
   const label = season ? `${t.title} – ${season}. évad` : t.title;
   const strike = useStrike(status); // megnézettre váltáskor kihúzás a címen
+  const draining = useDrain(strike); // …és a borító színe kifolyik (terv-3 133)
   const seasons = hasSeasons(t) ? seasonCounts(t) : null;
   // még meg nem jelent film: szaggatott keret a borító körül és dátumos jelvény
   const release = releaseState(t);
@@ -50,6 +51,7 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
       className="card"
       data-status={status}
       data-release={release ? release.kind : undefined}
+      data-draining={draining ? '' : undefined}
       onPointerEnter={(e) => {
         setPointed(true);
         prefetch.onPointerEnter(e);
@@ -62,7 +64,10 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
           szakasz, egyébként egy állapotcsík */}
       <div className="poster" ref={posterRef} onClick={() => onEdit(t, posterRef.current)}>
         {t.poster_path ? (
-          <img src={POSTER_BASE + t.poster_path} alt="" loading="lazy" />
+          <>
+            <img src={POSTER_BASE + t.poster_path} alt="" loading="lazy" />
+            {draining && <img key={strike} className="drain-copy" src={POSTER_BASE + t.poster_path} alt="" />}
+          </>
         ) : (
           <span className="poster-fallback">{t.title}</span>
         )}

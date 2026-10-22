@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { signOut } from '@/lib/offline';
 import { toast } from '@/lib/toast';
@@ -11,6 +11,8 @@ import ThemeToggle from '@/components/ThemeToggle';
 import { useSlidingThumb } from '@/lib/useSlidingThumb';
 import { useAppFreshness } from '@/lib/appVersion';
 import { reportError } from '@/lib/errorLog';
+import Reflow from '@/components/Reflow';
+import { bump, flyPoster } from '@/lib/flyPoster';
 
 const POSTER = 'https://image.tmdb.org/t/p/w185';
 const PAGE = 5; // a „Filmek” fülön ennyi film látszik egyszerre, utána „További filmek” (+5; Norbi kérése, M1)
@@ -25,6 +27,19 @@ const TABS = [
 // Címenként sorba állítva: gyors kattintásoknál (jelölés + visszavonás) a kérések sorrendje
 // így biztosan az, amit a felület mutat.
 const markQueues = new Map();
+
+// a kieső sor mozgása (Reflow exit): „Nem érdekel” – balra kiúszik; „Érdekel” – elhalványul (a borítója közben a
+// fülhöz repül)
+const EXITS = {
+  declined: {
+    keyframes: [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-2.5rem)' }],
+    timing: { duration: 240 },
+  },
+  interested: {
+    keyframes: [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(0.97)' }],
+    timing: { duration: 220, easing: 'ease-out' },
+  },
+};
 
 async function sendMark(id, choice) {
   let error;
@@ -55,6 +70,8 @@ function mamaMark(id, choice) {
 // leveszi a sort (az adatlapot is zárja), a helyére jön a következő, az értesítősávban „Visszavonás”.
 // Az „Érdekel” fül egyben mutat mindent; ott a „✓ Érdekel” újra kattintva visszavonható – a sor
 // ezért a fül váltásáig a helyén marad (kept).
+// A sor elköltözik (terv-3 136): jelöléskor és visszavonáskor a sorok a helyükre csúsznak (Reflow; a fülváltásnál
+// nem) – „Érdekel”-re a borító az „Érdekel” fül számához repül (az dobban), „Nem érdekel”-re a sor balra kiúszik.
 export default function MamaView() {
   const [list, setList] = useState(null); // null: tölt
   const [loadError, setLoadError] = useState('');
@@ -63,6 +80,20 @@ export default function MamaView() {
   const [kept, setKept] = useState(() => new Set());
   const [shown, setShown] = useState(PAGE);
   const [openId, setOpenId] = useState(null);
+  const [moves, setMoves] = useState(0); // jelölésenként nő: a Reflow ekkor mozgatja a sorokat
+  const rowsRef = useRef(null);
+  const exits = useRef(new Map()); // a kieső sor mozgása (címazonosító → 'declined' | 'interested')
+  const move = (id, how) => {
+    if (how) exits.current.set(String(id), how);
+    setMoves((n) => n + 1);
+  };
+  const exit = (key) => EXITS[exits.current.get(key)];
+  // „Érdekel”: a sor borítója az „Érdekel” fül számához repül, az dobban
+  const flyToInterested = (item) => {
+    const to = document.querySelector('.mama-tabs [data-tab="interested"] .n');
+    const from = rowsRef.current?.querySelector(`[data-flip="${item.id}"] .mama-poster img`);
+    flyPoster({ from, src: item.poster_path && POSTER + item.poster_path, to, lift: 70 }).then(() => bump(to));
+  };
 
   function pickTab(code) {
     setTab(code);
@@ -99,6 +130,7 @@ export default function MamaView() {
     if (choice === 'declined') {
       // a sor eltűnik (a helyét megjegyezve, hogy a visszavonás oda tegye vissza)
       const index = list.findIndex((t) => t.id === item.id);
+      move(item.id, 'declined');
       setList((l) => l.filter((t) => t.id !== item.id));
       if (openId === item.id) setOpenId(null);
       try {
@@ -115,6 +147,7 @@ export default function MamaView() {
           onClick: async () => {
             try {
               await mamaMark(item.id, previous);
+              move();
               setList((l) => [...l.slice(0, index), item, ...l.slice(index)]);
             } catch (err) {
               toast({ text: err.message });
@@ -123,6 +156,10 @@ export default function MamaView() {
         },
       });
       return;
+    }
+    if (tab === 'open' && choice === 'interested') {
+      flyToInterested(item);
+      move(item.id, 'interested');
     }
     setStatus(item.id, choice);
     if (tab === 'open' && choice === 'interested') {
@@ -142,7 +179,9 @@ export default function MamaView() {
           onClick: async () => {
             try {
               await mamaMark(item.id, previous);
+              move();
               setStatus(item.id, previous);
+              bump(document.querySelector('.mama-tabs [data-tab="interested"] .n'));
             } catch (err) {
               toast({ text: err.message });
             }
@@ -184,7 +223,14 @@ export default function MamaView() {
       {list && !loadError && (
         <div className="mama-tabs sliding" ref={tabsThumb} role="group" aria-label="Szűrés">
           {TABS.map((x) => (
-            <button key={x.code} type="button" className="chip" aria-pressed={tab === x.code} onClick={() => pickTab(x.code)}>
+            <button
+              key={x.code}
+              type="button"
+              className="chip"
+              data-tab={x.code}
+              aria-pressed={tab === x.code}
+              onClick={() => pickTab(x.code)}
+            >
               {x.label}
               <span className="n">{list.filter(x.match).length}</span>
             </button>
@@ -205,43 +251,45 @@ export default function MamaView() {
         <p className="mama-empty">{current.empty}</p>
       ) : (
         <>
-          <ul className="mama-rows">
-            {visible.slice(0, limit).map((t) => {
-              const yes = t.mama_status === 'interested';
-              return (
-                <li key={t.id} className={yes ? 'interested' : undefined}>
-                  <button type="button" className="mama-open" onClick={() => setOpenId(t.id)} aria-label={`${t.title} adatlapja`}>
-                    <span className="mama-poster">{t.poster_path && <img src={POSTER + t.poster_path} alt="" loading="lazy" />}</span>
-                  </button>
-                  <div className="mama-text">
-                    <h2>
-                      <button type="button" className="mama-title" onClick={() => setOpenId(t.id)}>
-                        {t.title}
+          <Reflow trigger={moves} boxRef={rowsRef} exit={exit}>
+            <ul className="mama-rows" ref={rowsRef}>
+              {visible.slice(0, limit).map((t) => {
+                const yes = t.mama_status === 'interested';
+                return (
+                  <li key={t.id} data-flip={t.id} className={yes ? 'interested' : undefined}>
+                    <button type="button" className="mama-open" onClick={() => setOpenId(t.id)} aria-label={`${t.title} adatlapja`}>
+                      <span className="mama-poster">{t.poster_path && <img src={POSTER + t.poster_path} alt="" loading="lazy" />}</span>
+                    </button>
+                    <div className="mama-text">
+                      <h2>
+                        <button type="button" className="mama-title" onClick={() => setOpenId(t.id)}>
+                          {t.title}
+                        </button>
+                      </h2>
+                      <p className="mama-meta">
+                        {[t.release_year, (t.genres ?? []).slice(0, 3).join(' · ')].filter(Boolean).join(' · ')}
+                        <ImdbBadge title={t} />
+                      </p>
+                      {t.overview && <p className="mama-overview">{t.overview}</p>}
+                    </div>
+                    <div className="mama-buttons">
+                      <button
+                        type="button"
+                        className="mama-btn yes"
+                        aria-pressed={yes}
+                        onClick={() => mark(t, yes ? null : 'interested')}
+                      >
+                        {yes ? '✓ Érdekel' : 'Érdekel'}
                       </button>
-                    </h2>
-                    <p className="mama-meta">
-                      {[t.release_year, (t.genres ?? []).slice(0, 3).join(' · ')].filter(Boolean).join(' · ')}
-                      <ImdbBadge title={t} />
-                    </p>
-                    {t.overview && <p className="mama-overview">{t.overview}</p>}
-                  </div>
-                  <div className="mama-buttons">
-                    <button
-                      type="button"
-                      className="mama-btn yes"
-                      aria-pressed={yes}
-                      onClick={() => mark(t, yes ? null : 'interested')}
-                    >
-                      {yes ? '✓ Érdekel' : 'Érdekel'}
-                    </button>
-                    <button type="button" className="mama-btn" onClick={() => mark(t, 'declined')}>
-                      Nem érdekel
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                      <button type="button" className="mama-btn" onClick={() => mark(t, 'declined')}>
+                        Nem érdekel
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </Reflow>
           {visible.length > limit && (
             <button type="button" className="ghost mama-more" onClick={() => setShown((n) => n + PAGE)}>
               További filmek

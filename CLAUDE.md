@@ -117,13 +117,16 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - **Csúszó kijelölő** (`lib/useSlidingThumb.js`): új gombcsoportnál `className="… sliding"` +
   `ref={useSlidingThumb()}`; a kiválasztott közvetlen gyermek `aria-pressed` / `aria-selected`.
 - **Animált átrendeződés**: `components/Reflow.js` – saját FLIP, **nem View Transitions** (az a letapadt szűrősor
-  fölé rajzolna, és közben a lap nem kattintható). `data-flip="<kulcs>"`; a `.grid` / `.table-wrap` ezért
-  `position: relative`. Teszt: `test-49-3.mjs`.
+  fölé rajzolna, és közben a lap nem kattintható). `data-flip="<kulcs>"`; a réteg (`.grid` / `.table-wrap`, Mama
+  sorai, a „Nem érdekel”-es sorok) ezért `position: relative`; görgethető is lehet. `exit(kulcs)`: a kieső tétel
+  saját mozgása (`HIDE_EXIT`; Mamánál balra kiúszik). Teszt: `test-49-3.mjs`, `test-133-137.mjs`.
 
 ### A lista elemei
 - `components/PosterCard.js` (kártya, w342), `components/TitleTable.js` (asztali lista, w185, `table-layout: fixed`).
   Mama-oszlop / -jelölés csak `mamaApplies(t)` esetén. Az üres lenyílók és a kuka csak rámutatva (`@media (hover:
   hover)`). Mentés: `saveRow`. Megjegyzés mező nincs a felületen (a `notes` oszlop megmaradt). Teszt: `test-84.mjs`.
+  Megnézettre váltáskor kihúzás + a borító színe kifolyik (`lib/useStrike.js`: `useStrike`, `useDrain`, `.drain-copy`);
+  nyitott ablaknál a bezárásáig vár (a kártya az adatlap mögött van).
 - `components/ImdbBadge.js` – IMDb-jelvény és `CriticBadges` (RT / MC). A szám a skála színével (`data-score`,
   `--score` 0–100, 12-boritofal.css; tokenek `--score-l` / `--score-c`). **Az RT / MC csak az adatlapon és az asztali
   listán** – a kártyán és Mamánál csak az IMDb (Norbi döntése). A toplista jelvénye nem színes. Teszt: `test-127.mjs`.
@@ -184,7 +187,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   megjelenést itt nem szűri). Lapozáskor áttűnik: a régi kép másolata (`.featured-bg-old`) alatta, a kép és a szöveg
   címenként új elem (**külön kulcs – `kep:` / `szoveg:`; azonos kulcsnál a régiek a lapon maradtak**).
 - `lib/hiddenSuggestions.js` + `components/HideSuggestion.js` – „Nem érdekel”; a Felfedezés és a Hasonló címek szűri,
-  a keresés nem.
+  a keresés nem. Elrejtéskor a sor többi tagja odacsúszik (`Reflow`, a trigger a kulcsok sora).
+- Felvételkor (`lib/flyPoster.js`, 134): a „Cím hozzáadása” panelen a borító a fejléc számához (`.count-n`;
+  összecsukva a kis címhez) repül, a szám dobban (`bump`); a „✓ A listán” mindenhol `components/OnList.js` – a most
+  felvettnél (`justAdded`, az `addTitle` jegyzi) a pipa megrajzolódik. **Új „✓ A listán” helynél ezt használd** (a
+  tesztek a „✓ A listán” szöveget keresik – a pipa egy `.tick` span).
 
 ### Franchise-ok
 - `components/FranchisesDialog.js` – ábécérend **névelő nélkül** („A” / „Az” / „The” nem számít). Csempére kattintva
@@ -246,7 +253,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 ### Mama
 - `components/MamaView.js` + `components/MamaDetail.js` – fülek „Filmek” / „Érdekel”; optimista `mama_mark()`
   (címenként sorba állítva). Helyben nem tárol. Visszatéréskor `useAppFreshness`. E2e: „Mama oldala (terv-3 13)…” a
-  Mama-tesztfiókkal.
+  Mama-tesztfiókkal. Jelöléskor / visszavonáskor a sorok a `Reflow`-val mozognak (`moves` a trigger – fülváltáskor
+  nem), „Érdekel”-re a borító a fül számához repül (`flyPoster`).
 
 ### Közös könyvtárak
 - `lib/supabase.js` – kliens. `lib/api.js` – `apiGet()`: saját `/api` route Bearer tokennel.
@@ -268,7 +276,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   állapotfrissítést ezzel késleltesd** (terhelt gépen akadást okozott).
 - `lib/afterDialogs.js` – `afterDialogs(fn)`: ha már nincs nyitott `<dialog>`; `useAppearance(on)`: a jelölés
   megjelenésének mozgása az adatlap bezárásakor (`'wait'` → `'play'`; a kártyán az adatlap mögött nem látszana –
-  így a „Letöltve” jelvény, 141 a).
+  így a „Letöltve” jelvény, 141 a; a kihúzás is erre vár, 133).
 - `lib/useBackdropClose.js` – `useBackdropClose(dialogRef, { onClose, canClose, onBlocked })`: kikattintásra zár
   (asztalon), ha nem zárhat, `nudgeDialog()`. Nem zár: adatlap (megerősítés / név gépelése / felvétel), Színészek
   és rendezők és Toplisták (felvétel), Franchise-ok (szerkesztés, megerősítés, nyitott gyűjtemény-ablak),
