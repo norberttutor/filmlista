@@ -193,6 +193,8 @@ export default function ToplistsDialog({ titles, onClose, onPreview, onAdded, re
     .filter(({ t }) => !hiddenKeys?.has(titleKey(t)));
   const page = visible.slice(0, shown);
   const filtered = activeGenre || activeDecade;
+  // hányat láttál belőle (terv-3 130): a szűrt toplistából a „Megnézve” állapotúak – a „Már láttam”-ra rögtön nő
+  const seen = ranked.filter((t) => rows.get(titleKey(t))?.status === 'watched').length;
 
   const filterLabel = (text, id) => isPhone && <span id={id}>{text}</span>;
 
@@ -316,6 +318,7 @@ export default function ToplistsDialog({ titles, onClose, onPreview, onAdded, re
             <>
               <p className="toplist-note">
                 {listNote(type, list)}
+                {ranked.length > 0 && ` · ${seen} / ${ranked.length} megnézve`}
                 {entry.data.built_at && ` · frissítve: ${builtFormat.format(new Date(entry.data.built_at))}`}
               </p>
               {!entry.data.complete && (
