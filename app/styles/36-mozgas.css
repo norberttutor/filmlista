@@ -219,7 +219,8 @@
   }
 }
 
-/* lapozáskor (terv-3 49.8, Norbi kérése, 2026-10-08) a kártyák / sorok egymás után úsznak be
+/* lapozáskor (terv-3 49.8, Norbi kérése, 2026-10-08) – és induláskor munkamenetenként egyszer (terv-3 135,
+   components/list/usePaging.js) – a kártyák / sorok egymás után úsznak be
    (balról jobbra, soronként; 0,3 s + elemenként 22 ms késés). A Watchlist ~1,2 s-ig ad
    data-paging jelzőt: addig ez az animáció váltja a borítófal görgetéses beúszását (ugyanazon az
    elemen egyszerre csak egy fut). A sibling-index() nélküli böngészőben egyszerre úsznak be. */
@@ -439,4 +440,105 @@ dialog[data-nudge] {
 .similar-sk .sk-card {
   flex: none;
   width: 6.75rem;
+}
+
+/* az adatlap később érkező részei (terv-3 138: Szereplők, „Hol nézhető?”, Hasonló címek, képek) beúsznak: csak
+   áttűnés (a lap nem moccan), elemenként 22 ms késéssel. A jelzőt (data-arrive) a lib/useArrival.js adja az első
+   megjelenéskor, ~1 s-ig. */
+[data-arrive] :is(li, .watch-title, .watch-source, .cast-line, .cast-more, .gallery-head) {
+  animation: arrive 0.2s ease-out both;
+  animation-delay: calc((sibling-index() - 1) * 22ms);
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+  }
+}
+
+/* kiemelt sáv lapozáskor (terv-3 139, components/FeaturedBand.js): az új jelenetkép a régi másolata (alatta)
+   fölött tűnik elő (0,34 s), a szöveg a lapozás irányából úszik be (0,28 s) – a 0,2 s-os szabály kivétele */
+.featured-bg[data-in] {
+  animation: arrive 0.34s ease-out both;
+}
+
+.featured-body[data-dir] {
+  animation: featured-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.featured-body[data-dir='next'] {
+  --dir: 1;
+}
+
+.featured-body[data-dir='prev'] {
+  --dir: -1;
+}
+
+@keyframes featured-in {
+  from {
+    opacity: 0;
+    translate: calc(var(--dir) * 1rem) 0;
+  }
+}
+
+/* keresgélő nagyító (terv-3 140, components/EmptyState.js): az üres állapot rajzán a nagyító lassan körbejár a
+   filmkocka fölött, meg-megállva (8 s-os kör, amíg az üres állapot a lapon van) – a 0,2 s-os szabály kivétele */
+.empty-art-search {
+  animation: lens-search 8s ease-in-out infinite;
+}
+
+@keyframes lens-search {
+  0%,
+  12%,
+  100% {
+    translate: 0 0;
+  }
+  30%,
+  42% {
+    translate: -26px -14px;
+  }
+  60%,
+  72% {
+    translate: -48px -2px;
+  }
+  86% {
+    translate: -22px 6px;
+  }
+}
+
+/* apró visszajelzések (terv-3 141) – a 0,2 s-os szabály kivételei: (a) a „Letöltve” jelvény lecsúszik a helyére,
+   mint egy letöltés (a PosterCard adja a data-new-t, az adatlap bezárásakor); (b) a téma gombján a nap / hold
+   átfordul; (d) a harang száma egyet dobban, ha nő */
+.poster-corner .badge[data-new] {
+  animation: badge-drop 0.34s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+
+@keyframes badge-drop {
+  from {
+    opacity: 0;
+    translate: 0 -0.8rem;
+  }
+}
+
+.theme-toggle svg[data-new],
+.theme-toggle-labeled svg[data-new] {
+  animation: theme-flip 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes theme-flip {
+  from {
+    opacity: 0;
+    rotate: -100deg;
+    scale: 0.5;
+  }
+}
+
+.notif-count[data-bump] {
+  animation: count-bump 0.38s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+@keyframes count-bump {
+  40% {
+    scale: 1.32;
+  }
 }

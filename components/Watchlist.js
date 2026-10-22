@@ -144,9 +144,8 @@ export default function Watchlist({ session }) {
   // a szűrősor eredeti helye: lapozáskor ide görget (a letapadt szűrősorhoz nem lehetne)
   const filtersAnchorRef = useRef(null);
   const pageSize = !isDesktop ? PAGE_SIZE : view === 'grid' ? GRID_PAGE_SIZE : TABLE_PAGE_SIZE;
-  const { page, pageCount, paged, changePage, paging } = usePaging(visible, filterKey, pageSize, filtersAnchorRef);
-
   const listShown = !loading && !loadError;
+  const { page, pageCount, paged, changePage, paging } = usePaging(visible, filterKey, pageSize, filtersAnchorRef, listShown);
   const { headRef, filtersRef, filtersStuck, fabHidden } = useCollapsingHeader(listShown, adding);
 
   const changes = useListChanges({

@@ -7,6 +7,7 @@ import GenreList from '@/components/GenreList';
 import { hasSeasons, seasonCounts, SeasonStrip } from '@/components/Seasons';
 import ReleaseBadge from '@/components/ReleaseBadge';
 import { useStrike } from '@/lib/useStrike';
+import { useAppearance } from '@/lib/afterDialogs';
 import { Hl } from '@/components/Highlight';
 import { usePrefetchOnHover } from '@/lib/prefetch';
 import { useTheme } from '@/lib/theme';
@@ -29,6 +30,8 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
   // (terv-3 84; a nézési sorrend évad-tételén nincs)
   const upcoming = item ? null : nextSeason(t);
   const downloaded = item ? item.downloaded : t.is_downloaded;
+  // letöltöttre váltáskor a jelvény lecsúszik a helyére (terv-3 141 a) – az adatlap bezárásakor, addig nem látszik
+  const downloadPhase = useAppearance(Boolean(downloaded));
   const mamaWants = t.mama_status === 'interested';
   // a borító hangulatszíne: az első rámutatáskor számolódik, rámutatva a borító ebben fénylik
   const [pointed, setPointed] = useState(false);
@@ -72,7 +75,11 @@ export default function PosterCard({ title: t, item = null, franchise, onEdit })
                 M
               </span>
             )}
-            {downloaded && <span className="badge">Letöltve</span>}
+            {downloaded && downloadPhase !== 'wait' && (
+              <span className="badge" data-new={downloadPhase === 'play' ? '' : undefined}>
+                Letöltve
+              </span>
+            )}
           </span>
         )}
         {release && <ReleaseBadge state={release} />}

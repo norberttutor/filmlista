@@ -108,7 +108,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - **„Hogy tetszett?”**: táblázatból Megnézve-re váltott, értékelés nélküli címnél, csak a mentett sorra, egyszer; a
   szerkesztő ablakból nem.
 - **Lapozás**: 25 (telefon / keskeny rács), 10 (asztali lista), 22 (asztali rács); asztalon a lapozó és a lábléc
-  egy sávban (`docked`). A lapozás az oldal első címét jegyzi (`pageState.first`).
+  egy sávban (`docked`). A lapozás az oldal első címét jegyzi (`pageState.first`). Lapozáskor és induláskor
+  (munkamenetenként egyszer, `filmlista-beuszas`) a kártyák / sorok beúsznak (`data-paging`). Teszt: `test-135-141.mjs`.
 - **Letapadt szűrősor** (sticky, `data-stuck`, mögötte `ProgressiveBlur`): **a sáv és az ősei nem kaphatnak
   `backdrop-filter`-t, `filter`-t, `opacity`-t, maszkot** – különben a rétegek nem látnak át. A gyorsgombok
   (`.stuck-tools`) helye nyugalomban is foglalt (`data-off` → `visibility: hidden`), hogy a sor ne törjön másként.
@@ -165,7 +166,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - Részei: `TopCast` + `/api/tmdb/credits` (`CREDITS_V`), `PersonPage` + `/api/tmdb/person` (`PERSON_V`, közös
   forrás `lib/server/people.js`; teszt: `test-61.mjs`, `test-m4.mjs`), `TitleGallery` (az Esc a window rögzítő
   fázisában; teszt: `test-95.mjs`), `WatchProviders` (csak HU `flatrate` + `free` + `ads`; kötelező „Forrás:
-  JustWatch” – TMDB-feltétel), `SimilarTitles` (`SIMILAR_V`), `Trailer` (`youtube-nocookie.com`).
+  JustWatch” – TMDB-feltétel), `SimilarTitles` (`SIMILAR_V`), `Trailer` (`youtube-nocookie.com`). A később érkező
+  részek első megjelenéskor beúsznak: `lib/useArrival.js` (`data-arrive` ~1 s-ig – a visszajövő rejtett lapon nem ismétlődik).
 
 ### Felfedezés, kereső
 - `components/TitleSearch.js` – 400 ms késleltetett TMDB-keresés; színészek / rendezők is (≤ 6, a személy lapja a
@@ -179,7 +181,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `DISCOVER_V` – **a válasz változásakor emeld**. A Hasonló címek és a kereső nem szűr így. A `.discover` oszlopa
   `minmax(0, 1fr)` (különben telefonon az egész lap kicsinyedik). Teszt: `test-m2.mjs`.
 - `components/FeaturedBand.js` (kiemelt sáv, hibánál elmarad), „Neked ajánlott” (8+ értékelésűek alapján; a magyar
-  megjelenést itt nem szűri).
+  megjelenést itt nem szűri). Lapozáskor áttűnik: a régi kép másolata (`.featured-bg-old`) alatta, a kép és a szöveg
+  címenként új elem (**külön kulcs – `kep:` / `szoveg:`; azonos kulcsnál a régiek a lapon maradtak**).
 - `lib/hiddenSuggestions.js` + `components/HideSuggestion.js` – „Nem érdekel”; a Felfedezés és a Hasonló címek szűri,
   a keresés nem.
 
@@ -263,6 +266,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (a CORS nélkül tárolt kép a vásznat tiltaná). `ambientProps`, `franchisePosterPath`.
 - `lib/viewTransition.js` – `afterTransition()`: **a szerkesztő megnyitásakor érkező új, nem sürgős
   állapotfrissítést ezzel késleltesd** (terhelt gépen akadást okozott).
+- `lib/afterDialogs.js` – `afterDialogs(fn)`: ha már nincs nyitott `<dialog>`; `useAppearance(on)`: a jelölés
+  megjelenésének mozgása az adatlap bezárásakor (`'wait'` → `'play'`; a kártyán az adatlap mögött nem látszana –
+  így a „Letöltve” jelvény, 141 a).
 - `lib/useBackdropClose.js` – `useBackdropClose(dialogRef, { onClose, canClose, onBlocked })`: kikattintásra zár
   (asztalon), ha nem zárhat, `nudgeDialog()`. Nem zár: adatlap (megerősítés / név gépelése / felvétel), Színészek
   és rendezők és Toplisták (felvétel), Franchise-ok (szerkesztés, megerősítés, nyitott gyűjtemény-ablak),

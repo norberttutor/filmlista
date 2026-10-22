@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { titleKey } from '@/lib/titles';
 import { HideButton } from '@/components/HideSuggestion';
 import { Chevron } from '@/components/TitleGallery';
@@ -26,6 +26,8 @@ function runtimeText(min) {
 // (ha nincs, a cím), évvel, műfajjal, játékidővel, a mozis bemutató napjával, a leírással és az
 // „Adatlap” / „+ Hozzáadás” gombbal. Lapozás: ‹ / › és a pöttyök, asztalon alatta a kis képek,
 // telefonon ujjal húzva. Magától nem lapoz (Norbi döntése). A nem listán lévőn × („Nem érdekel”).
+// Lapozáskor (terv-3 139) az új jelenetkép a régi másolata fölött tűnik elő, a szöveg a lapozás irányából úszik be
+// (a kép és a szöveg címenként új elem – key –, így a CSS-animáció gyors lapozásnál is újraindul).
 export default function FeaturedBand({ items, existingKeys, rowState, onAdd, onPreview, onHide }) {
   const [index, setIndex] = useState(0);
   const swipe = useRef(null);
@@ -33,7 +35,18 @@ export default function FeaturedBand({ items, existingKeys, rowState, onAdd, onP
   // ha egy kiemelt eltűnik (elrejtve), a hely a következőé; a végén az utolsó marad
   const current = Math.min(index, count - 1);
   const it = items[current];
-  const go = (i) => setIndex(((i % count) + count) % count);
+  const [turn, setTurn] = useState(null); // { from: az előző jelenetkép, dir: 'next' | 'prev' }
+  const go = (i, dir) => {
+    const next = ((i % count) + count) % count;
+    if (next === current) return;
+    setTurn({ from: it.backdrop_path, dir });
+    setIndex(next);
+  };
+  useEffect(() => {
+    if (!turn) return;
+    const timer = setTimeout(() => setTurn(null), 420);
+    return () => clearTimeout(timer);
+  }, [turn]);
 
   const key = titleKey(it);
   const onList = existingKeys.has(key);
@@ -59,13 +72,19 @@ export default function FeaturedBand({ items, existingKeys, rowState, onAdd, onP
           if (swipe.current === null) return;
           const dx = e.clientX - swipe.current;
           swipe.current = null;
-          if (Math.abs(dx) >= SWIPE_PX && count > 1) go(current + (dx < 0 ? 1 : -1));
+          if (Math.abs(dx) >= SWIPE_PX && count > 1) go(current + (dx < 0 ? 1 : -1), dx < 0 ? 'next' : 'prev');
         }}
         onPointerCancel={() => (swipe.current = null)}
       >
-        <div className="featured-bg" style={{ backgroundImage: `url(${IMG}w1280${it.backdrop_path})` }} />
+        {turn && <div className="featured-bg featured-bg-old" style={{ backgroundImage: `url(${IMG}w1280${turn.from})` }} />}
+        <div
+          key={`kep:${key}`}
+          className="featured-bg"
+          data-in={turn ? '' : undefined}
+          style={{ backgroundImage: `url(${IMG}w1280${it.backdrop_path})` }}
+        />
         {!onList && <HideButton item={it} onHide={onHide} />}
-        <div className="featured-body">
+        <div key={`szoveg:${key}`} className="featured-body" data-dir={turn?.dir}>
           {it.logo_path ? (
             <h4 className="featured-logo">
               <img src={`${IMG}w500${it.logo_path}`} alt={it.title} />
@@ -111,14 +130,14 @@ export default function FeaturedBand({ items, existingKeys, rowState, onAdd, onP
                   className={i === current ? 'on' : undefined}
                   aria-label={`${i + 1}. kiemelés: ${x.title}`}
                   aria-current={i === current || undefined}
-                  onClick={() => go(i)}
+                  onClick={() => go(i, i > current ? 'next' : 'prev')}
                 />
               ))}
             </div>
-            <button type="button" className="featured-arrow" aria-label="Előző kiemelés" onClick={() => go(current - 1)}>
+            <button type="button" className="featured-arrow" aria-label="Előző kiemelés" onClick={() => go(current - 1, 'prev')}>
               <Chevron left />
             </button>
-            <button type="button" className="featured-arrow" aria-label="Következő kiemelés" onClick={() => go(current + 1)}>
+            <button type="button" className="featured-arrow" aria-label="Következő kiemelés" onClick={() => go(current + 1, 'next')}>
               <Chevron />
             </button>
           </div>
@@ -133,7 +152,7 @@ export default function FeaturedBand({ items, existingKeys, rowState, onAdd, onP
               tabIndex={-1}
               className={i === current ? 'on' : undefined}
               style={{ backgroundImage: `url(${IMG}w300${x.backdrop_path})` }}
-              onClick={() => go(i)}
+              onClick={() => go(i, i > current ? 'next' : 'prev')}
             />
           ))}
         </div>

@@ -6,6 +6,7 @@ import { addTitle, titleKey, SIMILAR_V } from '@/lib/titles';
 import { afterTransition } from '@/lib/viewTransition';
 import { useHiddenSuggestions } from '@/lib/hiddenSuggestions';
 import { HideButton, HideNote, useHideSuggestion } from '@/components/HideSuggestion';
+import { useArrival } from '@/lib/useArrival';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w154';
 // alapból nyitva; ha becsukja, a böngésző megjegyzi (ha nem tudja, nyitva marad). Telefonon
@@ -42,6 +43,7 @@ export default function SimilarTitles({ title, existingKeys, onAdded, onPreview,
   const hidden = useHiddenSuggestions();
   const { note, hide, undo } = useHideSuggestion();
   const shown = load.results.filter((r) => !hidden.has(titleKey(r)));
+  const arrive = useArrival(open && shown.length > 0);
 
   // kinyitáskor tölt be; ha betöltés közben becsukja, vagy hiba volt, a következő nyitás újrapróbálja
   useEffect(() => {
@@ -136,7 +138,7 @@ export default function SimilarTitles({ title, existingKeys, onAdded, onPreview,
             </p>
           )}
           {shown.length > 0 && (
-            <ul className="similar-list" aria-label={`Hasonló címek – ${title.title}`}>
+            <ul className="similar-list" aria-label={`Hasonló címek – ${title.title}`} data-arrive={arrive}>
               {shown.map((r) => {
                 const key = titleKey(r);
                 const onList = existingKeys.has(key);

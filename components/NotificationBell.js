@@ -97,8 +97,13 @@ export default function NotificationBell({ notifications, titles, franchiseName,
   // új értesítés érkezett (több az olvasatlan, mint eddig): a harang egyszer megrezzen
   const [seenUnread, setSeenUnread] = useState(() => (quiet ? unread : 0));
   const [ringing, setRinging] = useState(false);
+  // a szám is dobban (terv-3 141 d): a számláló a szám kulcsa, így az animáció újraindul
+  const [bumps, setBumps] = useState(0);
   if (unread !== seenUnread) {
-    if (unread > seenUnread) setRinging(true);
+    if (unread > seenUnread) {
+      setRinging(true);
+      setBumps(bumps + 1);
+    }
     setSeenUnread(unread);
   }
 
@@ -133,7 +138,7 @@ export default function NotificationBell({ notifications, titles, franchiseName,
         ref={buttonRef}
         type="button"
         className={ringing ? 'notif-bell ringing' : 'notif-bell'}
-        onAnimationEnd={() => setRinging(false)}
+        onAnimationEnd={(e) => e.animationName === 'bell-ring' && setRinging(false)}
         aria-expanded={open}
         aria-controls={panelId}
         aria-label={unread ? `Értesítések: ${unread} új` : 'Értesítések'}
@@ -156,7 +161,7 @@ export default function NotificationBell({ notifications, titles, franchiseName,
           <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
         </svg>
         {unread > 0 && (
-          <span className="notif-count" aria-hidden="true">
+          <span key={bumps} className="notif-count" aria-hidden="true" data-bump={bumps ? '' : undefined}>
             {unread > 9 ? '9+' : unread}
           </span>
         )}

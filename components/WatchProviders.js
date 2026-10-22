@@ -1,4 +1,8 @@
-const LOGO_BASE = 'https://image.tmdb.org/t/p/w92';
+'use client';
+
+import { useArrival } from '@/lib/useArrival';
+
+const LOGO_BASE ='https://image.tmdb.org/t/p/w92';
 
 // „Hol nézhető?” az adatlapon: a magyarországi előfizetéses és ingyenes streamingszolgáltatók
 // logója (/api/tmdb/providers). Norbi döntései (2026-10-04): csak az adatlapon – asztalon a nagy
@@ -6,9 +10,10 @@ const LOGO_BASE = 'https://image.tmdb.org/t/p/w92';
 // nincs ilyen, semmi nem látszik; a logók nem kattinthatók (a név a súgóban). A JustWatch-forrás-
 // megjelölés a TMDB feltétele.
 export default function WatchProviders({ providers, className }) {
+  const arrive = useArrival(providers?.length > 0);
   if (!providers?.length) return null;
   return (
-    <div className={className ? `watch-providers ${className}` : 'watch-providers'}>
+    <div className={className ? `watch-providers ${className}` : 'watch-providers'} data-arrive={arrive}>
       <span className="watch-title" aria-hidden="true">
         Hol nézhető?
       </span>

@@ -13,14 +13,16 @@ export default function EmptyState({ title, text, children }) {
         strokeLinejoin="round"
         aria-hidden="true"
       >
-        {/* filmkocka, előtte nagyító */}
+        {/* filmkocka, előtte nagyító – az lassan körbejár, keresgél (terv-3 140, 36-mozgas.css) */}
         <g opacity=".38">
           <rect x="14" y="22" width="84" height="64" rx="10" />
           <path d="M14 38h84M14 70h84M34 22v16M56 22v16M78 22v16M34 70v16M56 70v16M78 70v16" />
         </g>
-        <circle cx="98" cy="72" r="24" className="empty-art-lens" />
-        <path d="m116 90 18 18" />
-        <path d="M90 66l16 12M106 66 90 78" opacity=".7" />
+        <g className="empty-art-search">
+          <circle cx="98" cy="72" r="24" className="empty-art-lens" />
+          <path d="m116 90 18 18" />
+          <path d="M90 66l16 12M106 66 90 78" opacity=".7" />
+        </g>
       </svg>
       <h2>{title}</h2>
       {text && <p>{text}</p>}

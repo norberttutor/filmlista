@@ -456,6 +456,13 @@
     mask: linear-gradient(0deg, transparent, #000 40%);
   }
 
+  /* lapozáskor a régi kép másolata (terv-3 139) az új alatt, a helyén – nem foglal külön helyet */
+  .featured-bg-old {
+    position: absolute;
+    inset: 0 0 auto;
+    width: 100%;
+  }
+
   .featured-slide::after,
   .featured-thumbs,
   .featured-arrow {

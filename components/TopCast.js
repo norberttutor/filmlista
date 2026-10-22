@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useMediaQuery } from '@/lib/useMediaQuery';
+import { useArrival } from '@/lib/useArrival';
 
 const PHOTO_BASE = 'https://image.tmdb.org/t/p/w185';
 const TOP = 3;
@@ -20,6 +21,7 @@ const PHONE_QUERY = '(max-width: 640px)';
 export default function TopCast({ cast, directors, variant, onPerson }) {
   const [expanded, setOpen] = useState(false);
   const phone = useMediaQuery(PHONE_QUERY);
+  const arrive = useArrival(cast?.length > 0 || directors?.length > 0);
   if (!cast?.length && !directors?.length) return null;
   cast ??= [];
   directors ??= [];
@@ -47,7 +49,7 @@ export default function TopCast({ cast, directors, variant, onPerson }) {
 
   if (variant === 'inline') {
     return (
-      <div className="cast-inline" data-open={open ? '' : undefined}>
+      <div className="cast-inline" data-open={open ? '' : undefined} data-arrive={arrive}>
         {top.length > 0 && (
           <p className="cast-line">
             <b>Szereplők:</b>{' '}
@@ -85,7 +87,7 @@ export default function TopCast({ cast, directors, variant, onPerson }) {
   }
 
   return (
-    <div className="cast side" data-open={open ? '' : undefined}>
+    <div className="cast side" data-open={open ? '' : undefined} data-arrive={arrive}>
       {top.length > 0 && (
         <>
           <span className="watch-title" aria-hidden="true">

@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useBackLayer } from '@/lib/backClose';
+import { useArrival } from '@/lib/useArrival';
 
 // Képgaléria az adatlapon (terv-3 95, 2026-10-14, Norbi választása a látványterv után: asztalon „A” – „Képek”
 // sor, telefonon „B” – lapozható jelenetkép; https://claude.ai/artifact/BDEffdLNcJoJ4h3gtjsGWC). A képek a
@@ -45,8 +46,9 @@ export const Chevron = ({ left }) => (
 
 // A – asztalon: „Képek N” szakasz, vízszintesen görgethető kis képek
 export function GalleryStrip({ images, onOpen }) {
+  const arrive = useArrival(true); // a képek a lap után érkeznek (terv-3 138)
   return (
-    <section className="gallery" aria-labelledby="gallery-title">
+    <section className="gallery" aria-labelledby="gallery-title" data-arrive={arrive}>
       <div className="gallery-head">
         <h3 className="gallery-title" id="gallery-title">
           Képek
