@@ -80,8 +80,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - **Offline / csak olvasható**: induláskor a helyben tárolt lista (`stale`), a friss a háttérben; minden változás
   1,5 mp után helyben is mentődik. `readOnly` (tárolt lista vagy nincs net): az írási menüpontok kimaradnak
   (`ONLINE_ONLY`), az adatlap mezői tiltva (`Lock`), minden írási hely elrejti / tiltja az írást.
-  **Új írási gombnál a `readOnly`-t is kezeld** (a „Visszavonás” is). `main[data-list]`: `loading` | `stale` |
-  `live` (a teszt erre vár).
+  **Új írási gombnál a `readOnly`-t is kezeld** (a „Visszavonás” is). A fejléc „Cím hozzáadása” gombja tiltva marad
+  a helyén (eltűnve a fejléc a friss listánál másként törne, a lista megugrana – teszt: `test-131.mjs`; a tesztek
+  az írható listát az engedélyezett gombon ismerik fel). `main[data-list]`: `loading` | `stale` | `live` (a teszt
+  erre vár).
 - **Fejléc** (összecsukódó): `--head-h`, `--head-p` (0–1), `--head-c`; asztalon `main[data-head-away]`. Teszt:
   `test-1015.mjs`. **Neonfelirat** (`components/NeonBrand.js`): két cső egy sorban, egyforma méretben (Norbi kérése);
   munkamenetenként egyszer villan fel (`sessionStorage` `filmlista-neon`).
@@ -284,8 +286,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `public/sw.js` + `lib/offline.js` – service worker (csak kiadott változatban): az `/api` és a Supabase nem
   tárolódik. A borítótároló (`POSTERS`) a tárolt listából dönti el, mi tartozik ide: `LIST_SIZES` w342 / w185 – **a
   `PosterCard` / `TitleTable` / `FranchiseFilter` képméretének változásakor itt is**. **A tárolás módjának
-  változásakor emeld a `VERSION`-t.** Lista: IndexedDB (`loadSnapshot` / `saveSnapshot` / `clearSnapshots`). Teszt:
-  `test-44.mjs`.
+  változásakor emeld a `VERSION`-t.** Minden válasz a `respond()`-on át: ha a tároló hibát dob (már a `caches.open`
+  is – sérült profil, betelt lemez), a hálózatról; a tárolóba írás hibája nem buktathatja el a választ. Lista:
+  IndexedDB (`loadSnapshot` / `saveSnapshot` / `clearSnapshots`). Teszt: `test-44.mjs`, `test-131.mjs`.
 
 ### Szerveroldal
 - Minden `lib/server/` modul `import 'server-only'`-val kezdődik (újba is tedd bele).

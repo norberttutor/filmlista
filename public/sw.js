@@ -200,7 +200,7 @@ async function navigate(request) {
   const network = fetch(request).then(async (res) => {
     if (res.ok && res.type === 'basic') {
       // mindig a gyökér kulcsán: a ?nyit=… gyorsindítók is ugyanazt a lapot kapják
-      await cache.put('/', res.clone());
+      await cache.put('/', res.clone()).catch(() => {});
     }
     return res;
   });
@@ -267,13 +267,19 @@ async function networkFirst(request) {
   const cache = await caches.open(SHELL);
   try {
     const res = await fetch(request);
-    if (res.ok && res.type === 'basic') await cache.put(request, res.clone());
+    if (res.ok && res.type === 'basic') await cache.put(request, res.clone()).catch(() => {});
     return res;
   } catch (err) {
     const hit = await cache.match(request);
     if (hit) return hit;
     throw err;
   }
+}
+
+// ha a tároló nem használható (sérült profil, betelt lemez – már a caches.open is hibát dobhat), a kérés
+// a hálózatról menjen: különben az app el sem indul, a böngésző hibaoldala jön (terv-3 131, P2)
+function respond(event, handler) {
+  event.respondWith(handler().catch(() => fetch(event.request)));
 }
 
 self.addEventListener('fetch', (event) => {
@@ -284,20 +290,20 @@ self.addEventListener('fetch', (event) => {
   if (url.hostname === 'image.tmdb.org') {
     // a hangulatszín mintája (lib/posterColor.js, ?szin): a böngésző saját gyorsítótára elég
     if (url.searchParams.has('szin')) return;
-    event.respondWith(image(request, url));
+    respond(event, () => image(request, url));
     return;
   }
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === 'navigate') {
-    if (url.pathname === '/') event.respondWith(navigate(request));
+    if (url.pathname === '/') respond(event, () => navigate(request));
     return;
   }
   if (url.pathname.startsWith('/_next/static/')) {
-    event.respondWith(cacheFirst(STATIC, request, url.pathname));
+    respond(event, () => cacheFirst(STATIC, request, url.pathname));
     return;
   }
   // az /api, a Next belső kérései (?_rsc) és a fejlesztői szerver: hálózat, beavatkozás nélkül
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/_next/') || url.searchParams.has('_rsc')) return;
-  event.respondWith(networkFirst(request));
+  respond(event, () => networkFirst(request));
 });

@@ -251,11 +251,14 @@ export default function Watchlist({ session }) {
           )}
         </div>
         <div className="account">
-          {!loading && !loadError && !readOnly && (
+          {/* csak olvasható módban is a helyén marad, tiltva: ha eltűnne, a friss lista érkezésekor a fejléc sora
+              másként törne, és az egész lista megugrana (terv-3 131, P1) */}
+          {!loading && !loadError && (
             <button
               type="button"
               className="primary"
-              aria-expanded={adding}
+              disabled={readOnly}
+              aria-expanded={adding && !readOnly}
               aria-controls="add-panel"
               onClick={() => (adding ? setAdding(false) : openAdd())}
             >
