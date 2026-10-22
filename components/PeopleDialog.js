@@ -108,11 +108,19 @@ export default function PeopleDialog({ titles, userId, onClose, onPreview, onPer
     scrollTop.current = dialogRef.current.scrollTop;
     setOpen(key);
   }
+  // a fókusz a személy csempéjére kerül vissza (billentyűzettel ott folytatható); ha már nincs ott (közben
+  // nem követett), az ablak címére
   function backToTiles() {
     if (busyRef.current) return;
+    const key = open;
     setOpen(null);
     requestAnimationFrame(() => {
-      if (dialogRef.current) dialogRef.current.scrollTop = scrollTop.current;
+      const d = dialogRef.current;
+      if (!d) return;
+      d.scrollTop = scrollTop.current;
+      const tileButton = d.querySelector(`.people-main[data-key="${key}"]`);
+      if (tileButton) tileButton.focus({ preventScroll: true });
+      else headingRef.current?.focus({ preventScroll: true });
     });
   }
 
@@ -147,7 +155,7 @@ export default function PeopleDialog({ titles, userId, onClose, onPreview, onPer
     const s = d?.status === 'done' ? personSummary(d.data.credits, rows, today) : null;
     return (
       <li key={key} className="people-tile">
-        <button type="button" className="people-main" onClick={() => openTimeline(key)}>
+        <button type="button" className="people-main" data-key={key} onClick={() => openTimeline(key)}>
           <span className="people-photo">
             {p.profile_path && <img src={`${IMG}w185${p.profile_path}`} alt="" loading="lazy" />}
           </span>
@@ -386,7 +394,7 @@ function PersonTimeline({ person, detail, rows, today, onBack, onPreview, onAdde
         <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
           <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        Vissza: Színészek és rendezők
+        <span>Vissza: Színészek és rendezők</span>
       </button>
       <div className="person-head">
         <span className="person-photo" aria-hidden="true">

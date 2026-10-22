@@ -2,7 +2,7 @@
 
 // A fő lista szűrősora (components/Watchlist.js): típus, állapot, letöltés, műfaj, Mama, franchise, alaphelyzet,
 // keresés, rendezés, lista / rács váltó; telefonon összecsukva. Az állapot és a logika: useListFilters.js.
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import ProgressiveBlur from '@/components/ProgressiveBlur';
 import FranchiseFilter from '@/components/FranchiseFilter';
 import GenreIcon from '@/components/GenreIcon';
@@ -322,7 +322,9 @@ export default function FilterBar({ f, isPhone, isDesktop, view, changeView, sec
               <path d="M12 19V5M5 12l7-7 7 7" />
             </svg>
           </button>
-          {stuckTools}
+          {/* visszagörgetéskor (a sáv elenged) újraépül: a nyitva hagyott harang / ⋮ menü bezárul – különben
+              láthatatlanul nyitva maradna, és a következő Vissza azt zárná */}
+          <Fragment key={stuck ? 'on' : 'off'}>{stuckTools}</Fragment>
         </span>
       </div>
 

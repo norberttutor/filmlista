@@ -649,7 +649,7 @@ function TitlePage({
               <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
                 <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              Vissza: {back}
+              <span>Vissza: {back}</span>
             </button>
           )}
           <h2 id={active ? 'editor-title' : undefined} tabIndex={-1}>

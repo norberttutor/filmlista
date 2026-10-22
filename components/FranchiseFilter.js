@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { useBackLayer } from '@/lib/backClose';
 
 const LOGO_BASE = 'https://image.tmdb.org/t/p/w185';
 const DARK_LIMIT = 0.5; // ennél sötétebb logót fehérre színezünk, hogy a sötét háttéren látsszon
@@ -87,6 +88,9 @@ export default function FranchiseFilter({
   const selected = options[selectedIndex];
   // a lista és a gomb felirata: külső felirat, vagy a gombon belüli (látható / rejtett) címke
   const labelledBy = labelId ?? `${id}-label`;
+
+  // a Vissza (telefonon a vissza-gesztus) a nyitott lenyílót zárja, nem az ablakot / lapot
+  useBackLayer(open, () => setOpen(false));
 
   // kattintás a lenyílón kívül: bezár
   useEffect(() => {

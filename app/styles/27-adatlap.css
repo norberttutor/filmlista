@@ -144,6 +144,8 @@ body:has(.editor[open]) {
 
 .editor-main {
   display: grid;
+  /* az oszlop ne nőjön a nowrap tartalom (pl. hosszú „Vissza: …”) szélességére – telefonon kilógott */
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.15rem;
   min-width: 0;
 }

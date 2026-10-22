@@ -109,6 +109,13 @@
   flex: none;
 }
 
+/* a hosszú cím „…”-ra rövidül (az inline-flex gomb saját szövegén a text-overflow nem hat) */
+.back-link > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .preview-add {
   display: grid;
   justify-items: start;

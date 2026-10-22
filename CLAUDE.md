@@ -138,7 +138,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `lib/genreColors.js` (`genreColor(név)`, a kulcs a TMDB magyar műfajneve), `components/GenreIcon.js`.
 - `components/FranchiseFilter.js` – saját listbox (franchise, és asztalon a szűrősor többi lenyílója is); a
   felolvasónak „Név, 2 hátra” (a teszt `frOption()`-ja erre épít). **A `.grid` osztálynév foglalt** (borítórács) – a
-  rácsos panelé `.ff-grid`.
+  rácsos panelé `.ff-grid`. Nyitva Vissza-réteg (`useBackLayer`).
 - `components/FranchiseSelect.js` – `.franchise-new` módban az adatlap nem zár kikattintásra.
 - `components/StarRating.js` – billentyűzettel a nyíl csak előnézet, Enter / Szóköz ment; a kiválasztottra újra
   kattintva `null`.
@@ -275,7 +275,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (a CORS nélkül tárolt kép a vásznat tiltaná). `ambientProps`, `franchisePosterPath`.
 - `lib/viewTransition.js` – `afterTransition()`: **a szerkesztő megnyitásakor érkező új, nem sürgős
   állapotfrissítést ezzel késleltesd** (terhelt gépen akadást okozott).
-- `lib/afterDialogs.js` – `afterDialogs(fn)`: ha már nincs nyitott `<dialog>`; `useAppearance(on)`: a jelölés
+- `lib/afterDialogs.js` – `afterDialogs(fn)`: ha már nincs nyitott `<dialog>` (a „close” nélkül, nyitva eltávolított
+  ablakot is észreveszi – DOM-figyelő); `useAppearance(on)`: a jelölés
   megjelenésének mozgása az adatlap bezárásakor (`'wait'` → `'play'`; a kártyán az adatlap mögött nem látszana –
   így a „Letöltve” jelvény, 141 a; a kihúzás is erre vár, 133).
 - `lib/useBackdropClose.js` – `useBackdropClose(dialogRef, { onClose, canClose, onBlocked })`: kikattintásra zár
@@ -294,8 +295,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `<dialog>`-okat MutationObserver kezeli – **új ablakhoz nem kell semmi**; saját szabály: `dialog.backHandler` →
   'stay' | 'stepped' | 'closing'; nem dialog réteg: `useBackLayer(open, close)`. **Android**: nyitott modális
   ablaknál a vissza-gesztus `cancel`-ként jut az ablakhoz, ezért az adatlap `closedby="none"`, az Esc-et `keydown`
-  kezeli; az adatlap lapjai saját bejegyzést kapnak (`pushDialogPage` / `popDialogPage`). Teszt: `test-1013b.mjs`,
-  `test-gesztus.mjs`.
+  kezeli; az adatlap lapjai saját bejegyzést kapnak (`pushDialogPage` / `popDialogPage`). **A bejegyzések
+  `scrollRestoration = 'manual'`-lal** (`pushOwn`; a beállítás bejegyzésenként tárolódik, a cél bejegyzésé számít) –
+  különben a réteg bezárásakor a lap a nyitásakori helyre ugrana. Teszt: `test-1013b.mjs`, `test-gesztus.mjs`,
+  `test-atnezes-f.mjs`.
 - `lib/appVersion.js` + `/api/version` – `useAppFreshness` (≥ 5 perc rejtés után csendes újratöltés; új buildnél
   „Frissült az app” sáv).
 - `lib/prefetch.js` – rámutatásra előtöltés **ugyanazzal az URL-lel, mint a `TitleEditor` – ha ott a paraméterek
