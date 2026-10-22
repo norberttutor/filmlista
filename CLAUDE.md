@@ -432,9 +432,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   fejlesztés commitjában ne nyúlj hozzá. Frissítés Norbi kérésére: a leírás utolsó commitja óta készült változások
   (`git log $(git log -1 --format=%H -- FELHASZNALOI-LEIRAS.md)..HEAD`) alapján a szakaszok, a változott felület képei
   (`leiras-seed.mjs`, majd `leiras-kepek.mjs <név>`; a jelölők és a szöveg számai egyezzenek), az „Utolsó frissítés”
-  dátuma és a Változásnapló (legújabb felül). Norbi szemszögéből, pontos feliratokkal; tervezett funkció nem kerül
-  bele. Hangnem: könnyed, tegező, de pontos; a Változásnapló tömör. A címsorokat ne írd át (hivatkozások mutatnak
-  rájuk). Utána a tesztfiókot ürítsd ki.
+  dátuma, és a végén a **Mérföldkövek** (Norbi döntése, 2026-10-22: részletes változásnapló nincs – csak a nagyobb
+  funkciók megjelenése, legújabb felül, egy sor naponta). Új funkció a meglévő számozott fejezetbe kerül, ne új
+  fejezetbe (a számok eltolódnának). Norbi szemszögéből, pontos feliratokkal; tervezett funkció nem kerül bele.
+  Hangnem: könnyed, tegező, de pontos. A címsorokat ne írd át (hivatkozások mutatnak rájuk). Utána a tesztfiókot
+  ürítsd ki.
 - Roadmap listázásakor minden pont mellé becsült időt írj (teszttel és doksival együtt).
 
 ## Elvetett ötletek – magadtól ne javasold újra

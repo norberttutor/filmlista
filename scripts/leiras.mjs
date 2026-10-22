@@ -3,7 +3,7 @@
 // public/leiras/ mappába kerül (git-ből kizárva, mindig újra előáll):
 //   public/leiras/leiras.html – a leírás törzse (a főcím nélkül)
 //   public/leiras/kepek/*.jpg – a docs/kepek/ képei
-// A fejlécek azonosítója a GitHub szabálya szerint készül (a tartalomjegyzék és a Változásnapló
+// A fejlécek azonosítója a GitHub szabálya szerint készül (a tartalomjegyzék és a Mérföldkövek
 // hivatkozásai erre mutatnak), „leiras-” előtaggal, hogy az app többi azonosítójával ne ütközzön.
 import { copyFileSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
