@@ -86,7 +86,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   erre vár).
 - **Fejléc** (összecsukódó): `--head-h`, `--head-p` (0–1), `--head-c`; asztalon `main[data-head-away]`. Teszt:
   `test-1015.mjs`. **Neonfelirat** (`components/NeonBrand.js`): két cső egy sorban, egyforma méretben (Norbi kérése);
-  munkamenetenként egyszer villan fel (`sessionStorage` `filmlista-neon`).
+  munkamenetenként egyszer villan fel (`sessionStorage` `filmlista-neon`). **A neon él** (terv-3 132): 1–4
+  percenként egy cső megrebben (`data-blip`) vagy az egész újra felkapcsol (`neon-on`, 1,6 s után lekerül); ≥ 5 perc
+  távollét után és témaváltáskor is felkapcsol; rámutatásra rebben. Csak látható lapon, nyitott `<dialog>` nélkül;
+  összecsukott fejlécnél a kis cím (`.top-compact[data-blip|data-on]`). Teszt: `test-132.mjs` (`page.clock`).
 - **Szűrők alapállapota** (`DEFAULT_FILTERS`, Norbi kérése): Filmek – Megnézendő – Nem letöltött – Összes műfaj –
   Franchise nélkül. „Folyamatban” / „Abbahagyva” csak sorozatos típusnál (`MOVIE_HIDDEN_STATUSES`). Mama-szűrő
   sorozatnál / franchise-ra szűrve nem szűr (`mamaFilter`). Franchise választásakor a típus „all”, megszűnésekor
@@ -452,7 +455,7 @@ Norbi döntései; a részletek a TERV.md-ben.
   (D1–D7, D11): lámpaoltás előzetesnél, filmszalagos hibalap, műsorfüzet-stílusú megosztott oldal, lyukasztott jegy a
   megnézetteken, filmszalagos nézési sorrend, függöny belépéskor, Ken Burns a jelenetképen, felületi hangok;
   polcnézet (D8), borítómozaik a Statisztikában (D12), franchise-univerzum (D13); a neonfelirat „rakoncátlan” betűje;
-  akadálymentességi kör (A1–A4); kör alakú átmenet témaváltáskor (114).
+  akadálymentességi kör (A1–A4); kör alakú átmenet témaváltáskor (114); a „Követem” pipájának megrajzolódása (141c).
 - **Funkciók**: gyorsműveletek a borítón, parancspaletta / billentyűparancsok, „Mit nézzek ma?”, játékidő és szűrő
   rá, saját címkék, szinkron / felirat jelölése, csoportosítás hónapok szerint, évértékelő, web push; „Elérhető az
   előfizetéseimen” szűrő, share target, adatminőség-ellenőrző, „Letölthető most” gyorsnézet, megjelenési naptár,

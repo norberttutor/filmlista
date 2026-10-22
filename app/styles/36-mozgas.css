@@ -21,6 +21,29 @@
   100% { opacity: 1; }
 }
 
+/* a neon él (terv-3 132): időnként, rámutatásra / koppintásra egy cső kétszer megrebben (0,45 s), utána
+   nyugodtan ég; legörgetve a kis cím rebben, ill. kapcsol fel újra (data-on). A NeonBrand teszi rá a jelzőket
+   (a felkapcsolás alatt rebbenés nincs, így a kettő nem akad össze). A kis cím csak összecsukva (data-compact) –
+   ha közben visszagörgetnek, az animáció leáll, és nem írja felül az elhalványulását. */
+.brand .neon-line[data-blip]::after,
+.brand .neon-line[data-blip]::before,
+.top[data-compact] .top-compact[data-blip] {
+  animation: neon-blip 0.45s steps(1, end);
+}
+
+.top[data-compact] .top-compact[data-on] {
+  animation: neon-on 1.5s steps(1, end) both;
+}
+
+@keyframes neon-blip {
+  0% { opacity: 1; }
+  10% { opacity: 0.12; }
+  20% { opacity: 1; }
+  44% { opacity: 0.4; }
+  54%,
+  100% { opacity: 1; }
+}
+
 /* mikro-átmenetek (terv-3 74, Norbi választása, 2026-10-13 – látványterv: munka/terv-3/tervek-1013/):
    állapotváltáskor a pálca / állapotcsík színe, a megnézett sor / kártya szürkülése és a szövegek
    halványulása 0,2 s alatt úszik át (eddig ugrott; a gombok, lenyílók és a borító már eddig is
