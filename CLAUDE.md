@@ -163,7 +163,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 ### Felfedezés, kereső
 - `components/TitleSearch.js` – 400 ms késleltetett TMDB-keresés; színészek / rendezők is (≤ 6, a személy lapja a
   `TitleEditor` első lapjaként). A mező felirata „Film vagy sorozat címe – vagy színész, rendező” (**az eleje a
-  tesztek kapaszkodója**). Teszt: `test-110-111.mjs`.
+  tesztek kapaszkodója**). A mező `focus({ preventScroll: true })`-t kap, **nem `autoFocus`-t** (az megszakítaná az
+  `openAdd` lap tetejére görgetését). Teszt: `test-110-111.mjs`.
 - `components/Discover.js` + `lib/server/discover.js` – **Norbit csak a magyar szinkronos címek érdeklik** –
   közelítés: film = HU megjelenés (`region=HU`, release type 2|3 vagy 4), sorozat = HU előfizetéses streaming, 90
   napon belüli rész; angol vagy magyar eredeti, van magyar leírás; nincs dokumentum / valóságshow / talkshow / hírek /

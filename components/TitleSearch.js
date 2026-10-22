@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { addTitle, titleKey } from '@/lib/titles';
 import Discover from '@/components/Discover';
@@ -22,6 +22,10 @@ export default function TitleSearch({ existingKeys, recommendSeeds, onAdded, onP
   const [found, setFound] = useState(NOTHING);
   // találatonként: { busy } mentés közben, { error } ha nem sikerült
   const [rowState, setRowState] = useState({});
+  // megnyitáskor a mezőé a fókusz, de görgetés nélkül: a megnyitó (Watchlist openAdd) simán a lap tetejére görget,
+  // az autoFocus görgetése ezt félbeszakította – telefonon a lap a mező szélénél megállt (T1)
+  const inputRef = useRef(null);
+  useEffect(() => inputRef.current?.focus({ preventScroll: true }), []);
 
   const q = query.trim();
   const searching = q.length >= MIN_LENGTH && found.q !== q;
@@ -107,8 +111,8 @@ export default function TitleSearch({ existingKeys, recommendSeeds, onAdded, onP
           {/* (a „Film vagy sorozat címe” eleje a tesztek kapaszkodója) */}
           Film vagy sorozat címe – vagy színész, rendező
           <input
+            ref={inputRef}
             type="search"
-            autoFocus
             autoComplete="off"
             placeholder="pl. Dűne vagy Tom Hanks"
             value={query}
