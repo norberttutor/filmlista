@@ -333,7 +333,9 @@ export default function FilterBar({ f, isPhone, isDesktop, view, changeView, sec
           className="list-search"
           aria-label="Keresés a listán"
           placeholder="Keresés a listán"
-          value={f.query}
+          value={f.searchInput}
+          // amire a lista épp szűr (a mezőt átmenetben követi – terv-3 131, P3); a tesztek erre várnak
+          data-searched={f.query}
           onChange={(e) => f.changeQuery(e.target.value)}
         />
         {isPhone ? (

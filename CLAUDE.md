@@ -93,7 +93,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   vissza Filmek; az állapot „Mind” (`statusBeforeFranchise`). Asztalon (≥ 641 px) saját lenyílók (`FranchiseFilter`),
   telefonon natív `<select>`-ek. Teszt: `test-m3.mjs`.
 - **Keresés**: `lib/listSearch.js` (`fold()`, `resolveWords` – elírás-tűrés), `components/Highlight.js`; gépeléskor a
-  szűrők félreállnak (`SEARCH_FILTERS`). Teszt: `test-1013.mjs`.
+  szűrők félreállnak (`SEARCH_FILTERS`). A mező (`searchInput`) azonnal frissül, a lista szűrése (`query` + a
+  szűrőváltás együtt) `startTransition`-ben – a leütés nem vár rá. **A tesztek a lista keresőjébe írás után a
+  `input.list-search[data-searched]` értékére várnak** (új tesztben is). Teszt: `test-1013.mjs`, `test-131.mjs`.
 - **Rendezés** (`SORTS`): franchise-ra szűrve a nézési sorrend (`WATCH_ORDER`) vagy megjelenés (`FRANCHISE_SORT`);
   kézi rendezés után az marad. Nézési sorrendnél a lista tételekből áll (`{ key, title, item }`, sorozat évadonként).
 - **Nézetek**: ≥ 1400 px-en lista (`TitleTable`) | rács (`localStorage` `filmlista-nezet`), alatta mindig rács.

@@ -2,7 +2,7 @@
 
 // A fő lista szűrői, keresése és rendezése (components/Watchlist.js): a szűrők állapota, a látható bejegyzések
 // (visible), a darabszámok és a „megtartott” sorok (kept). A szűrősor felülete: FilterBar.js.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
 import { DROPPED_STATUS, mamaLabel } from '@/lib/titles';
 import { franchisesWithOrder, orderedItems } from '@/lib/watchOrder';
 // keresés: kis- és nagybetű, valamint ékezet nélkül hasonlít ("dune" → "Dűne"); a franchise nevében is,
@@ -38,8 +38,12 @@ export function useListFilters({ titles, statuses, franchises, orders, franchise
   // franchise-ra szűrve magától áll be: nézési sorrend, ha van, különben a legrégebbi megjelenés
   // (amíg a felhasználó mást nem választ)
   const [orderSort, setOrderSort] = useState(true);
-  const [query, setQuery] = useState(''); // keresés a felvett címek között
-  const [beforeSearch, setBeforeSearch] = useState(null); // a keresés előtti szűrők
+  // keresés a felvett címek között: a mező tartalma azonnal frissül, a lista szűrése (query) utána, megszakítható
+  // átmenetben – a leütött betű nem vár a szűrésre (lassú telefonon az első betű 0,4 mp volt; terv-3 131, P3)
+  const [searchInput, setSearchInput] = useState('');
+  const [query, setQuery] = useState('');
+  // a keresés előtti szűrők – ref, mert a gépelés idején a szűrők átmenete még függőben lehet
+  const beforeSearch = useRef(null);
   const filters = { type, status, downloaded, genre, mama, franchise };
 
   function applyFilters(f) {
@@ -314,7 +318,8 @@ export function useListFilters({ titles, statuses, franchises, orders, franchise
   // szűrők se hozzák vissza. gone(value): a szűrő értéke egy megszűnt franchise
   function releaseFranchise(gone) {
     if (gone(franchise)) changeFranchise('');
-    setBeforeSearch((b) => (b && gone(b.franchise) ? { ...b, franchise: '' } : b));
+    const b = beforeSearch.current;
+    if (b && gone(b.franchise)) beforeSearch.current = { ...b, franchise: '' };
   }
 
   // kézi állapotválasztás: a franchise-szűrő megszűnésekor ez marad
@@ -327,21 +332,33 @@ export function useListFilters({ titles, statuses, franchises, orders, franchise
   // keresés törlésekor visszaállnak a keresés előtti szűrők
   function changeQuery(value) {
     const nowSearching = fold(value).trim() !== '';
-    setQuery(value);
-    if (nowSearching && !searching) {
-      setBeforeSearch(filters);
-      applyFilters(SEARCH_FILTERS);
-    } else if (!nowSearching && searching) {
-      applyFilters(beforeSearch ?? DEFAULT_FILTERS);
-      setBeforeSearch(null);
+    const wasSearching = fold(searchInput).trim() !== '';
+    setSearchInput(value);
+    let next = null;
+    if (nowSearching && !wasSearching) {
+      beforeSearch.current = filters;
+      next = SEARCH_FILTERS;
+    } else if (!nowSearching && wasSearching) {
+      next = beforeSearch.current ?? DEFAULT_FILTERS;
+      beforeSearch.current = null;
     }
+    // a keresőszöveg és a szűrők együtt váltanak (különben egy pillanatra a teljes, szűretlen lista látszana)
+    startTransition(() => {
+      setQuery(value);
+      if (next) applyFilters(next);
+    });
+  }
+
+  function clearSearch() {
+    setSearchInput('');
+    setQuery('');
+    beforeSearch.current = null;
   }
 
   // a Franchise-ok ablakból („Szűrés erre”): a lista ennek a franchise-nak minden címét mutatja
   // (a többi szűrő elenged, a keresés törlődik)
   function showFranchise(id) {
-    setQuery('');
-    setBeforeSearch(null);
+    clearSearch();
     applyFilters({ ...SEARCH_FILTERS, franchise: String(id) });
     setOrderSort(true);
   }
@@ -384,8 +401,7 @@ export function useListFilters({ titles, statuses, franchises, orders, franchise
   const atSearchFilters = sameFilters(filters, SEARCH_FILTERS);
 
   function resetToDefault() {
-    setQuery('');
-    setBeforeSearch(null);
+    clearSearch();
     applyFilters(DEFAULT_FILTERS);
   }
 
@@ -406,6 +422,7 @@ export function useListFilters({ titles, statuses, franchises, orders, franchise
     franchise,
     franchiseChosen,
     downloaded,
+    searchInput,
     query,
     activeSort,
     filterKey,
