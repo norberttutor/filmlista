@@ -378,7 +378,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `mama_mark()` (security definer; Mama a `titles` táblát közvetlenül nem látja). **`title_released(t)` a
   `releaseState()` szabálya SQL-ben – ha az egyik változik, a másikat is.** Teszt: `test-17.mjs` (`--live`).
 - `client_errors` – írni csak a `log_client_error()`; Mamánál a gazda naplójába kerül. A `clearTestAccount()` üríti.
-- `imdb_ratings`, `toplists`: **közös** (nem felhasználói) gyorsítótár; írni csak a `store_*` függvények.
+- `imdb_ratings`, `toplists`: **közös** (nem felhasználói) gyorsítótár; írni csak a `store_*` függvények. A közös táblákat (`genres` is) a
+  néző (`list_viewers`) nem írhatja.
 - `titles_with_genres` nézet (`security_invoker`): `titles.*` + `status_name` + `genres` + `seasons`.
 - Realtime: `titles`, `title_seasons`, `notifications`, `franchises`.
 - Nincs a mentésben: `franchise_shares`, `list_viewers`, `client_errors`, `imdb_ratings`, `toplists`,
