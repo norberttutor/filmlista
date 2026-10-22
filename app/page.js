@@ -7,7 +7,7 @@ import { forgetThemeUser, initUserTheme } from '@/lib/theme';
 import { clearToasts } from '@/lib/toast';
 import { clearPendingDeletes } from '@/lib/titles';
 import { startBackClose } from '@/lib/backClose';
-import { startErrorLog } from '@/lib/errorLog';
+import { reportError, startErrorLog } from '@/lib/errorLog';
 import LoginForm from '@/components/LoginForm';
 import Watchlist from '@/components/Watchlist';
 import MamaView from '@/components/MamaView';
@@ -96,7 +96,7 @@ export default function Home() {
       .eq('viewer_id', userId)
       .maybeSingle()
       .then(({ data, error }) => {
-        if (error) console.error('Néző ellenőrzése:', error.message);
+        if (error) reportError(error);
         else rememberViewer(userId, data);
         if (!cancelled) setViewer({ userId, row: error ? (cachedViewer(userId) ?? null) : data });
       });

@@ -58,12 +58,15 @@ export async function POST(request) {
           console.error(err); // átmeneti TMDB-hiba: a következő betöltéskor újra
           return;
         }
-        const { error: updateError } = await db
+        // csak ha közben nem választottak kézzel logót (a „Csak a név” – '' – is választás)
+        const { data: written, error: updateError } = await db
           .from('franchises')
           .update({ logo_path: logo, logo_checked_at: new Date().toISOString() })
-          .eq('id', id);
+          .eq('id', id)
+          .is('logo_path', null)
+          .select('id');
         if (updateError) console.error(updateError);
-        else updated.push({ id, logo_path: logo });
+        else if (written.length) updated.push({ id, logo_path: logo });
       })
     );
   }

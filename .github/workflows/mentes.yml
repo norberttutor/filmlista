@@ -49,14 +49,14 @@ jobs:
           retention-days: 56
           if-no-files-found: error
 
-      # ha az adatbázis heti mentése elmaradt (8 napnál régebbi a legfrissebb), a futás hibával
+      # ha az adatbázis heti mentése elmaradt (8 napnál régebbi a legfrissebb heti – a kézi nem számít),
       # áll le – erről a GitHub e-mailt küld
       - name: Friss-e az adatbázis mentése
         env:
           BACKUP_DB_URL: ${{ secrets.BACKUP_DB_URL }}
         run: |
           fresh=$(psql "$BACKUP_DB_URL" -X -v ON_ERROR_STOP=1 -At -c \
-            "select count(*) from public.backups where created_at > now() - interval '8 days'")
+            "select count(*) from public.backups where kind = 'weekly' and created_at > now() - interval '8 days'")
           echo "Mentések az utolsó 8 napból: $fresh"
           if [ "$fresh" = "0" ]; then
             echo "::error::Nincs 8 napon belüli mentés az adatbázisban – elmaradt a heti mentés (pg_cron)."

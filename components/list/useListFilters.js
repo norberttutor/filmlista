@@ -319,7 +319,16 @@ export function useListFilters({ titles, statuses, franchises, orders, franchise
   function releaseFranchise(gone) {
     if (gone(franchise)) changeFranchise('');
     const b = beforeSearch.current;
-    if (b && gone(b.franchise)) beforeSearch.current = { ...b, franchise: '' };
+    if (b && gone(b.franchise)) {
+      // mint a changeFranchise(''): a franchise-szűrő megszűnésekor a „Filmek és sorozatok” helyett újra Filmek
+      const next = { ...b, franchise: '' };
+      if (b.type === 'all') {
+        next.type = 'movie';
+        if (b.genre && !titles.some((t) => t.media_type === 'movie' && t.genres?.includes(b.genre))) next.genre = '';
+        if (MOVIE_HIDDEN_STATUSES.has(b.status)) next.status = 'all';
+      }
+      beforeSearch.current = next;
+    }
   }
 
   // kézi állapotválasztás: a franchise-szűrő megszűnésekor ez marad

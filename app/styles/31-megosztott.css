@@ -182,7 +182,7 @@ a.wo-share-open {
    kerete és derengése, a „Nézési sorrend” felirat és a sorszámok */
 .share-page[data-ambient] .share-hero {
   border-color: color-mix(in oklab, var(--ambient) min(100%, calc(45% * var(--ambient-k))), transparent);
-  box-shadow: 0 18px 44px -26px color-mix(in oklab, var(--ambient) 85%, transparent);
+  box-shadow: 0 18px 44px -26px color-mix(in oklab, var(--ambient) min(100%, calc(85% * var(--ambient-k))), transparent);
 }
 
 .share-page[data-ambient] .share-hero::after {

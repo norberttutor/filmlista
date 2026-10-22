@@ -483,9 +483,11 @@ function TitlePage({
 
   // nyitva marad az ablak (kikattintásra, lapváltáskor), ha épp a törlést erősítenéd meg, a
   // Franchise mezőben új nevet / átnevezést gépelsz, vagy felveszed a címet (mentetlen módosítás
-  // nincs – minden azonnal mentődik)
+  // nincs – minden azonnal mentődik). Net nélkül a megerősítés / névmező „Mégse” gombja rejtett vagy
+  // tiltott, és úgysem menthető – ilyenkor elhagyható (különben telefonon nem lehetne bezárni).
   useImperativeHandle(apiRef, () => ({
-    canLeave: () => !busy && !confirmingDelete && !pageEl.current?.querySelector('.franchise-new'),
+    canLeave: () =>
+      !busy && (readOnly || (!confirmingDelete && !pageEl.current?.querySelector('.franchise-new'))),
   }));
 
   // az idővonal pöttyére kattintva a lista az évadhoz görget, és annak első gombja kapja a fókuszt

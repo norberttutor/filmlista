@@ -81,16 +81,8 @@ export async function POST(request) {
             if (upsertError) throw upsertError;
           }
           if (fresh.length > 0) {
-            const { error: insertError } = await db.from('title_seasons').upsert(
-              fresh.map((s) => ({
-                title_id: t.id,
-                ...s,
-                aired_notified: firstFill && aired(s, today),
-              })),
-              { onConflict: 'title_id,season_number', ignoreDuplicates: true }
-            );
-            if (insertError) throw insertError;
-
+            // előbb az értesítés, utána az évad: ha közben hiba jön, a következő kör az évadot újnak látja, és
+            // az értesítést is megírja (fordítva az értesítés elveszne; az upsert nem ír kétszer)
             const announced = fresh.filter((s) => !aired(s, today));
             if (!firstFill && t.status !== 'dropped' && announced.length > 0) {
               const { error: noteError } = await db.from('notifications').upsert(
@@ -104,6 +96,16 @@ export async function POST(request) {
               );
               if (noteError) throw noteError;
             }
+
+            const { error: insertError } = await db.from('title_seasons').upsert(
+              fresh.map((s) => ({
+                title_id: t.id,
+                ...s,
+                aired_notified: firstFill && aired(s, today),
+              })),
+              { onConflict: 'title_id,season_number', ignoreDuplicates: true }
+            );
+            if (insertError) throw insertError;
           }
           // a TMDB-ről hiányzó adat nem törli a meglévőt
           const facts = Object.fromEntries(Object.entries(pickFacts('tv', data)).filter(([, v]) => v != null));

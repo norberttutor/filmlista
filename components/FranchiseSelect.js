@@ -147,7 +147,8 @@ export default function FranchiseSelect({
 
   if (mode === 'delete' && current) {
     return (
-      <div className="franchise-new">
+      // az Esc itt is csak a megerősítést zárja, nem a szerkesztő ablakot (mint a névmezőkben)
+      <div className="franchise-new" onKeyDown={(e) => e.key === 'Escape' && handleKey(e)}>
         <span className="confirm-text">
           Törlöd ezt a franchise-t: „{current.name}”? Minden címről lekerül.
         </span>

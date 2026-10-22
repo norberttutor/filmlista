@@ -51,7 +51,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `app/page.js` – kliensoldali session. A `list_viewers` saját sora alapján néző → `MamaView`, különben (hibánál is)
   `Watchlist`; a választ `localStorage` jegyzi (`filmlista-nezo:<userId>`). Net nélkül / lejárt tokennel / ha a
   `getSession()` nem válaszol (4 mp, net nélkül 0,3 mp) a tárolt munkamenettel (`storedSession()`, `offline: true`).
-  `signOut()` (`lib/offline.js`) net nélkül / 5 mp után helyben léptet ki.
+  `signOut()` (`lib/offline.js`) csak ezen az eszközön léptet ki (`scope: 'local'`, Norbi döntése); net nélkül /
+  5 mp után helyben.
 - Ikonok: mind a `munka/e2e/ikon.mjs`-ből; ikonváltozáskor ezzel generáld újra (ellenőrzés: `verify-ikon.mjs`).
 - `app/manifest.js` – gyorsindítók `/?nyit=hozzaadas|franchise-ok|statisztika` (`SHORTCUTS` a `Watchlist`-ben).
 - `app/error.js` + `app/sorrend/[token]/error.js` → `components/ErrorScreen.js`.
@@ -278,7 +279,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   megjelenésének mozgása az adatlap bezárásakor (`'wait'` → `'play'`; a kártyán az adatlap mögött nem látszana –
   így a „Letöltve” jelvény, 141 a; a kihúzás is erre vár, 133).
 - `lib/useBackdropClose.js` – `useBackdropClose(dialogRef, { onClose, canClose, onBlocked })`: kikattintásra zár
-  (asztalon), ha nem zárhat, `nudgeDialog()`. Nem zár: adatlap (megerősítés / név gépelése / felvétel), Színészek
+  (asztalon), ha nem zárhat, `nudgeDialog()`. Nem zár: adatlap (megerősítés / név gépelése / felvétel; net nélkül zár), Színészek
   és rendezők és Toplisták (felvétel), Franchise-ok (szerkesztés, megerősítés, nyitott gyűjtemény-ablak),
   gyűjtemény-ablak (felvétel, sorrend-szerkesztés, megerősítés, fejléc szerkesztése), Mentések, Hibák (megerősítés /
   törlés), Jelszó (beírt jelszó / mentés); Statisztika és Leírás mindig zár; **az importablakok soha** (Norbi döntése).

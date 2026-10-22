@@ -6,7 +6,7 @@ import { omdbEnabled, fetchImdbRating } from '@/lib/server/omdb';
 
 // IMDb-értékelés az OMDb-ből (1 óráig tárolva – az OMDb napi kerete véges; a hibás válasz nem
 // tárolódik); ha nem sikerül, a cím attól még felvehető, a hiányzó értékelést a
-// /api/imdb/refresh később pótolja.
+// /api/imdb/refresh később pótolja. Hibánál null (a válasz ilyenkor nem tárolható).
 async function imdbFields(imdbId) {
   if (!imdbId || !omdbEnabled()) return {};
   try {
@@ -16,7 +16,7 @@ async function imdbFields(imdbId) {
     }));
   } catch (err) {
     console.error(err);
-    return {};
+    return null;
   }
 }
 
@@ -35,7 +35,10 @@ export async function GET(request) {
   } catch (err) {
     return tmdbErrorResponse(err);
   }
-  return cachedResponse({ ...title, ...(await imdbFields(title.imdb_id)) }, HOUR_S);
+  const imdb = await imdbFields(title.imdb_id);
+  // OMDb-hibánál az értékelés nélküli válasz nem tárolódik (különben 1 óráig így jönne)
+  if (!imdb) return Response.json(title);
+  return cachedResponse({ ...title, ...imdb }, HOUR_S);
 }
 
 // a cím TMDB-adatai (az IMDb-érték nélkül; az időbélyegek a lekérdezéskoriak)

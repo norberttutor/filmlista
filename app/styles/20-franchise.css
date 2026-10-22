@@ -499,11 +499,11 @@
   background:
     radial-gradient(28rem 10rem at 0% 50%, color-mix(in oklab, var(--ambient) min(100%, calc(36% * var(--ambient-k))), transparent), transparent 70%),
     rgb(var(--glass) / 0.55);
-  box-shadow: 0 14px 34px -22px color-mix(in oklab, var(--ambient) 80%, transparent);
+  box-shadow: 0 14px 34px -22px color-mix(in oklab, var(--ambient) min(100%, calc(80% * var(--ambient-k))), transparent);
 }
 
 .collection-banner[data-ambient] .collection-logo {
-  filter: drop-shadow(0 0 14px color-mix(in oklab, var(--ambient) 55%, transparent))
+  filter: drop-shadow(0 0 14px color-mix(in oklab, var(--ambient) min(100%, calc(55% * var(--ambient-k))), transparent))
     drop-shadow(0 2px 6px rgb(var(--shade) / calc(0.6 * var(--shade-k))));
 }
 
@@ -512,7 +512,7 @@
 }
 
 .collection-banner[data-ambient] .ghost {
-  border-color: color-mix(in oklab, var(--ambient) 60%, transparent);
+  border-color: color-mix(in oklab, var(--ambient) min(100%, calc(60% * var(--ambient-k))), transparent);
 }
 
 .editor.collection-dialog {
