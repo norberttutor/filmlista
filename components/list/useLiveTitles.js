@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { isPendingDelete } from '@/lib/titles';
 import { loadNotifications } from '@/lib/notifications';
 import { useLiveSync } from '@/lib/liveSync';
-import { hasPendingSave } from '@/lib/rowSaves';
+import { hasPendingSave, writeMark, writtenSince } from '@/lib/rowSaves';
 import { byName, loadFranchises } from '@/components/list/useListData';
 import { NO_FRANCHISE } from '@/components/list/listFilters';
 
@@ -28,6 +28,7 @@ export function useLiveTitles(enabled, userId, { data, notes, replaceTitle, rele
   useLiveSync(enabled, userId, {
     async onTitles(ids, deletedIds) {
       const seq = ++syncSeq.current;
+      const mark = writeMark(); // B1: a közben helyben mentett / felvett / törölt címet a válasz nem írja felül
       const known = (id) => titlesRef.current.some((t) => t.id === id);
       const gone = new Set(deletedIds.filter(known));
       let rows = [];
@@ -49,8 +50,8 @@ export function useLiveTitles(enabled, userId, { data, notes, replaceTitle, rele
       }
       // amit azóta egy újabb jelzés újra kért, azt az újabb válasz intézi
       const latest = (id) => syncAsked.current.get(id) === seq;
-      rows = rows.filter((r) => latest(r.id));
-      for (const id of gone) if (!latest(id)) gone.delete(id);
+      rows = rows.filter((r) => latest(r.id) && !writtenSince(r.id, mark));
+      for (const id of gone) if (!latest(id) || writtenSince(id, mark)) gone.delete(id);
       for (const id of [...wanted, ...deletedIds]) if (latest(id)) syncAsked.current.delete(id);
       for (const row of rows) {
         if (hasPendingSave(row.id) || isPendingDelete(row.id)) continue;
@@ -58,7 +59,7 @@ export function useLiveTitles(enabled, userId, { data, notes, replaceTitle, rele
         if (old && JSON.stringify(old) === JSON.stringify(row)) continue;
         if (old) {
           titlesRef.current = titlesRef.current.map((t) => (t.id === row.id ? row : t));
-          replaceTitle(row);
+          replaceTitle(row, { remote: true });
         } else {
           titlesRef.current = [row, ...titlesRef.current];
           setTitles((ts) => (ts.some((t) => t.id === row.id) ? ts.map((t) => (t.id === row.id ? row : t)) : [row, ...ts]));

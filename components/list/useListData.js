@@ -4,16 +4,16 @@
 // offline indulás a helyben tárolt listával (terv-3 44), újrapróbálás, csendes újratöltés, helyi mentés.
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { isPendingDelete } from '@/lib/titles';
+import { cancelPendingDeletes, isPendingDelete } from '@/lib/titles';
 import { toast } from '@/lib/toast';
 import { loadNotifications } from '@/lib/notifications';
 import { loadOrders } from '@/lib/watchOrder';
 import { loadHidden, resetHidden } from '@/lib/hiddenSuggestions';
-import { resetFollowed } from '@/lib/people';
+import { loadFollowed, resetFollowed } from '@/lib/people';
 import { fetchAll } from '@/lib/fetchAll';
 import { loadSnapshot, saveSnapshot, useOnline } from '@/lib/offline';
 import { useAppFreshness } from '@/lib/appVersion';
-import { hasPendingSave } from '@/lib/rowSaves';
+import { hasPendingSave, writeMark, writtenSince } from '@/lib/rowSaves';
 import { reportError } from '@/lib/errorLog';
 import { startBackgroundRefresh } from '@/components/list/backgroundRefresh';
 
@@ -102,6 +102,7 @@ export function useListData(userId, notes) {
     let cancelled = false;
     const stopped = () => cancelled; // a háttérfrissítések körönként nézik (kódaudit #30)
     loadRunning.current = true;
+    const mark = writeMark(); // B1: az ezután helyben írt címeknél a helyi sor az érvényes
 
     async function load() {
       const [titlesRes, statusesRes, franchisesRes] = await Promise.all([
@@ -136,12 +137,15 @@ export function useListData(userId, notes) {
         setFailed(false);
         setLoadError('');
         // a függő (még visszavonható) törlés nem jön vissza, a függő mentésű sor a helyi marad (S6 – mint
-        // az élő szinkronnál)
+        // az élő szinkronnál); a betöltés indulása után helyben mentett / felvett / törölt cím is a helyi (B1)
         setTitles((prev) => {
           const local = new Map(prev.map((t) => [t.id, t]));
-          return titlesRes.data
-            .filter((t) => !isPendingDelete(t.id))
-            .map((t) => (hasPendingSave(t.id) && local.has(t.id) ? local.get(t.id) : t));
+          const newer = (id) => writtenSince(id, mark);
+          const fresh = titlesRes.data
+            .filter((t) => !isPendingDelete(t.id) && !(newer(t.id) && !local.has(t.id)))
+            .map((t) => ((hasPendingSave(t.id) || newer(t.id)) && local.has(t.id) ? local.get(t.id) : t));
+          const ids = new Set(fresh.map((t) => t.id));
+          return [...prev.filter((t) => newer(t.id) && !ids.has(t.id)), ...fresh];
         });
         setStatuses(statusesRes.data);
         setFranchises(franchisesRes.data.sort(byName));
@@ -239,8 +243,11 @@ export function useListData(userId, notes) {
     return () => document.removeEventListener('visibilitychange', flush);
   }, [userId]);
 
-  // visszaállítás (Mentések) után: a lista, a franchise-ok és az értesítések újra az adatbázisból
+  // visszaállítás (Mentések) után: a lista, a franchise-ok, a követések és az értesítések újra az adatbázisból;
+  // a még visszavonható törlések elmaradnak (B7 – a lejáratkor a visszaállított címet törölnék)
   async function reloadAfterRestore() {
+    cancelPendingDeletes();
+    loadFollowed().catch((err) => console.warn(err.message));
     const [titlesRes, franchisesRes] = await Promise.all([loadTitles(), loadFranchises()]);
     const error = titlesRes.error || franchisesRes.error;
     if (error) {

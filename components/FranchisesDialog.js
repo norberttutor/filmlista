@@ -57,8 +57,10 @@ export default function FranchisesDialog({
   const [creating, setCreating] = useState(null); // { name, error, busy }
   // asztalon kikattintásra bezárul – szerkesztés közben (átnevezés, törlés megerősítése, új név) nem,
   // hogy a beírt szöveg ne vesszen el; a nyitott gyűjtemény-ablakot a saját kikattintása zárja
-  // (a „Bezárás” gomb ugyanígy)
-  const closing = { onClose: () => dialogRef.current.close(), canClose: () => !edit && !creating && openId == null };
+  // (a „Bezárás” gomb ugyanígy). A lassan nyíló („megnyitás…”) gyűjteményre várva zárható (B12): az ablaka még nincs
+  // a lapon, a megnyitás a bezárással elmarad
+  const collectionShown = openId != null && loaded.has(openId);
+  const closing = { onClose: () => dialogRef.current.close(), canClose: () => !edit && !creating && !collectionShown };
   const backdrop = useBackdropClose(dialogRef, closing);
 
   useLayoutEffect(() => {
@@ -173,40 +175,53 @@ export default function FranchisesDialog({
     knownIds.current = ids;
   }, [franchises, openId]);
 
+  // Mentés közben a „Mégse” / Esc elveti a szerkesztést (B11): a válasz után csak a még nyitott, ugyanarra a
+  // franchise-ra szóló szerkesztés változik (a null-ból nem lesz mód nélküli objektum – az ablak nem zárt volna)
+  const sameEdit = (id, mode) => (fn) => setEdit((e) => (e?.id === id && e.mode === mode ? fn(e) : e));
+
   async function saveRename(event) {
     event.preventDefault();
     const name = edit.name.trim();
     if (!name) return;
-    setEdit((e) => ({ ...e, busy: true, error: '' }));
+    const update = sameEdit(edit.id, 'rename');
+    update((e) => ({ ...e, busy: true, error: '' }));
     try {
       await onRename(edit.id, name);
-      setEdit(null);
+      update(() => null);
     } catch (err) {
-      setEdit((e) => ({ ...e, busy: false, error: err.message }));
+      update((e) => ({ ...e, busy: false, error: err.message }));
     }
   }
 
   async function confirmDelete() {
-    setEdit((e) => ({ ...e, busy: true, error: '' }));
+    const update = sameEdit(edit.id, 'delete');
+    update((e) => ({ ...e, busy: true, error: '' }));
     try {
       await onDelete(edit.id);
-      setEdit(null);
+      update(() => null);
     } catch (err) {
-      setEdit((e) => ({ ...e, busy: false, error: err.message }));
+      update((e) => ({ ...e, busy: false, error: err.message }));
     }
   }
+
+  // a mentés közben elvetett új franchise (B11) gyűjtemény-ablaka nem nyílik meg
+  const creatingRef = useRef(creating);
+  useEffect(() => {
+    creatingRef.current = creating;
+  }, [creating]);
 
   async function create(event) {
     event.preventDefault();
     const name = creating.name.trim();
     if (!name) return;
-    setCreating((c) => ({ ...c, busy: true, error: '' }));
+    setCreating((c) => c && { ...c, busy: true, error: '' });
     try {
       const created = await onCreate(name);
+      if (!creatingRef.current) return; // közben elvetve
       setCreating(null);
       setOpenId(created.id); // a gyűjtemény-ablakban rögtön hozzárendelhető egy TMDB-gyűjtemény
     } catch (err) {
-      setCreating((c) => ({ ...c, busy: false, error: err.message }));
+      setCreating((c) => c && { ...c, busy: false, error: err.message });
     }
   }
 

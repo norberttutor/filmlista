@@ -269,6 +269,16 @@
   font-size: 1.15rem;
 }
 
+/* elbukó jelölés (átnézés B16): a gombok fölött, teljes szélességben */
+.mama-detail-actions:has(.mama-detail-error) {
+  flex-wrap: wrap;
+}
+
+.mama-detail-error {
+  flex-basis: 100%;
+  margin: 0;
+}
+
 /* az adatlap a borító színében (terv-3 52.4, Norbi választása: „A” – mint Norbi adatlapja, az 51.8
    megfelelője; látványterv: munka/terv-3/terv-52-4/): a borító mögül dereng, színezett keret és
    árnyék, a háttér sötétítése is kap egy árnyalatot, a nagy borító a film színében fénylik, a „Hol

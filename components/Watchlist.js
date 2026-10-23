@@ -528,6 +528,7 @@ export default function Watchlist({ session }) {
           onPreview={(item) => openEditor(item)}
           onPerson={(person) => openEditor({ person })}
           onAdded={handleAdded}
+          readOnly={readOnly}
         />
       )}
       {dialog === 'toplists' && (

@@ -125,7 +125,9 @@ export default function MamaView() {
 
   const setStatus = (id, status) => setList((l) => l.map((t) => (t.id === id ? { ...t, mama_status: status } : t)));
 
-  async function mark(item, choice) {
+  // fromDetail: az adatlapról (MamaDetail) – ha az még nyitva, a hibát az mutatja helyben (B16: az értesítősáv a
+  // nyitott ablak mögött nem látszik); a „Nem érdekel” és a „Filmek” fülön az „Érdekel” bezárja, ott marad a sáv
+  async function mark(item, choice, fromDetail = false) {
     const previous = item.mama_status;
     if (choice === 'declined') {
       // a sor eltűnik (a helyét megjegyezve, hogy a visszavonás oda tegye vissza)
@@ -195,6 +197,7 @@ export default function MamaView() {
       await mamaMark(item.id, choice);
     } catch (err) {
       setStatus(item.id, previous);
+      if (fromDetail && document.querySelector('dialog.mama-detail[open]')) throw err;
       toast({ text: err.message });
     }
   }
@@ -298,7 +301,7 @@ export default function MamaView() {
         </>
       )}
 
-      {opened && <MamaDetail item={opened} onMark={mark} onClose={() => setOpenId(null)} />}
+      {opened && <MamaDetail item={opened} onMark={(t, choice) => mark(t, choice, true)} onClose={() => setOpenId(null)} />}
       <Toaster />
     </main>
   );

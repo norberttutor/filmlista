@@ -14,21 +14,25 @@ import {
   refreshCollectionParts,
 } from '@/lib/titles';
 import { loadFollowed, refreshPeople } from '@/lib/people';
+import { rebasePending } from '@/lib/rowSaves';
 
 // titles / franchises: a most betöltött sorok; setTitles: a lista állapota; reloadNotifications: az értesítések
 // újratöltése; isCancelled: a betöltés elavult (újabb indult, vagy kilépés) – a frissítések körönként nézik (kódaudit #30)
 export function startBackgroundRefresh({ titles, franchises, setTitles, reloadNotifications, isCancelled }) {
-  // a frissített sorok mezői a meglévőre (merge), vagy a változott címek teljes sora (replace)
-  const merge = (rows) => {
+  // a frissített sorok mezői a meglévőre (merge), vagy a változott címek teljes sora (replace). A függő mentésű
+  // sornál a mentés alapjába kerül, a függő módosítások megmaradnak (B8 – lib/rowSaves.js rebasePending)
+  const update = (rows, next) => {
     if (isCancelled()) return;
     const byId = new Map(rows.map((r) => [r.id, r]));
-    setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t)));
+    const pending = new Map();
+    for (const r of rows) {
+      const shown = rebasePending(r.id, (base) => next(base, r));
+      if (shown) pending.set(r.id, shown);
+    }
+    setTitles((ts) => ts.map((t) => pending.get(t.id) ?? (byId.has(t.id) ? next(t, byId.get(t.id)) : t)));
   };
-  const replace = (rows) => {
-    if (isCancelled()) return;
-    const byId = new Map(rows.map((r) => [r.id, r]));
-    setTitles((ts) => ts.map((t) => byId.get(t.id) ?? t));
-  };
+  const merge = (rows) => update(rows, (t, r) => ({ ...t, ...r }));
+  const replace = (rows) => update(rows, (t, r) => r);
 
   // hiányzó / régi IMDb-értékelések pótlása a háttérben; hiba esetén csak a konzolba ír
   refreshImdbRatings(titles, merge, isCancelled).catch((err) =>

@@ -328,34 +328,46 @@ export function CollectionDialog({
   // A „Bezárás” gomb ugyanígy, de csak ezt az ablakot zárja.
   // a nyitott logóválasztó nem tartja nyitva (nincs benne bevitel – a kattintás azonnal ment)
   const canClose = () => !busyAny && !ordering && !sharing && (!edit || edit.mode === 'logo');
+  // ha a rejtett „Nézési sorrend” fülön maradt szerkesztés / megerősítés tartja nyitva, az a fül jön elő (B12) –
+  // különben az ablak ok nélkül billegne
+  const onBlocked = () => {
+    if ((ordering || sharing) && tab !== 'order') setTab('order');
+  };
   const outsideClose = useBackdropClose(dialogRef, {
     onClose: () => {
       dialogRef.current.close();
       onOutsideClose?.();
     },
     canClose,
+    onBlocked,
   });
+
+  // mentés közben a „Mégse” / Esc elveti a szerkesztést (B11): a válasz után csak a még nyitott, ugyanolyan
+  // módú szerkesztés változik (a null-ból nem lesz mód nélküli objektum – az ablak nem zárt volna)
+  const sameEdit = (mode) => (fn) => setEdit((e) => (e?.mode === mode ? fn(e) : e));
 
   async function saveRename(event) {
     event.preventDefault();
     const name = edit.name.trim();
     if (!name) return;
-    setEdit((e) => ({ ...e, busy: true, error: '' }));
+    const update = sameEdit('rename');
+    update((e) => ({ ...e, busy: true, error: '' }));
     try {
       await onRename(franchise.id, name);
-      setEdit(null);
+      update(() => null);
     } catch (err) {
-      setEdit((e) => ({ ...e, busy: false, error: err.message }));
+      update((e) => ({ ...e, busy: false, error: err.message }));
     }
   }
 
   // törlés után a franchise eltűnik: az ablak a szülővel együtt bezárul
   async function confirmDelete() {
-    setEdit((e) => ({ ...e, busy: true, error: '' }));
+    const update = sameEdit('delete');
+    update((e) => ({ ...e, busy: true, error: '' }));
     try {
       await onDelete(franchise.id);
     } catch (err) {
-      setEdit((e) => ({ ...e, busy: false, error: err.message }));
+      update((e) => ({ ...e, busy: false, error: err.message }));
     }
   }
 
@@ -399,7 +411,7 @@ export function CollectionDialog({
       }}
       {...outsideClose}
     >
-      <DialogClose dialogRef={dialogRef} canClose={canClose} />
+      <DialogClose dialogRef={dialogRef} canClose={canClose} onBlocked={onBlocked} />
       <div
         className="collection-head"
         style={backdrop ? { backgroundImage: `url(${IMG}w1280${backdrop})` } : undefined}

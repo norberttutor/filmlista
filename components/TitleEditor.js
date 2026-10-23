@@ -38,6 +38,7 @@ import { pushDialogPage, popDialogPage } from '@/lib/backClose';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 import { useTheme } from '@/lib/theme';
 import { useOnline } from '@/lib/offline';
+import { radioKeys } from '@/lib/radioKeys';
 import { galleryList, GalleryStrip, BackdropPager, GalleryLightbox } from '@/components/TitleGallery';
 import DialogClose from '@/components/DialogClose';
 
@@ -49,10 +50,11 @@ const WIDE_QUERY = '(min-width: 900px)'; // a kétoszlopos asztali adatlap (app/
 // Rádiógombok "chip" formában; a kiválasztottra újra kattintva visszaáll üresre.
 const DOWNLOADED_OPTIONS = [{ code: 'yes', name: 'Letöltve' }];
 
-// flash: épp mentődött (terv-3 79, „B”) – a kiválasztott gomb sarkán egy pillanatra türkiz pipa
+// flash: épp mentődött (terv-3 79, „B”) – a kiválasztott gomb sarkán egy pillanatra türkiz pipa.
+// Billentyűzettel a nyíl csak a fókuszt viszi, az Enter / Szóköz ment (B15 – lib/radioKeys.js)
 function ClearableChips({ name, options, value, onChange, className, flash }) {
   return (
-    <div className={className ? `segmented ${className}` : 'segmented'}>
+    <div className={className ? `segmented ${className}` : 'segmented'} onKeyDown={radioKeys}>
       {options.map((o) => (
         <label key={o.code}>
           <input

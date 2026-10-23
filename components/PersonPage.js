@@ -39,21 +39,28 @@ export const asItem = (c) => ({
 });
 
 // A szerep felvétele a listára (a színész lapja és a követett személy idővonala – M4 – közös része):
-// { adding: a felvétel alatt álló cím ({ key, watched }), errors: kulcs → hibaüzenet, add(c, watched) }
+// { adding: a felvétel alatt álló címek (kulcs → watched; üresen null), errors: kulcs → hibaüzenet, add(c, watched) }.
+// Több cím is felvétel alatt lehet (B10): az első vége a másodikat nem teszi újra kattinthatóvá
 export function useAddCredit(onAdded) {
   const [adding, setAdding] = useState(null);
   const [errors, setErrors] = useState({});
+  const change = (fn) =>
+    setAdding((a) => {
+      const next = new Map(a ?? []);
+      fn(next);
+      return next.size ? next : null;
+    });
   // watched: „Már láttam” (terv-3 80) – megnézettként kerül fel
   async function add(c, watched = false) {
     const key = titleKey(c);
-    setAdding({ key, watched });
+    change((m) => m.set(key, watched));
     setErrors((e) => ({ ...e, [key]: '' }));
     try {
       onAdded(await addTitle({ media_type: c.media_type, tmdb_id: c.tmdb_id }, null, { watched }));
     } catch (err) {
       setErrors((e) => ({ ...e, [key]: err.message }));
     }
-    setAdding(null);
+    change((m) => m.delete(key));
   }
   return { adding, errors, add };
 }
@@ -63,7 +70,8 @@ export function useAddCredit(onAdded) {
 export function CreditStatus({ c, row, adding, add, readOnly }) {
   if (!row) {
     if (readOnly) return null;
-    const busy = adding?.key === titleKey(c);
+    const busy = adding?.has(titleKey(c)) ?? false;
+    const busyWatched = busy && adding.get(titleKey(c));
     return (
       <>
         <button
@@ -73,7 +81,7 @@ export function CreditStatus({ c, row, adding, add, readOnly }) {
           aria-label={`Hozzáadás a listához: ${c.title}`}
           onClick={() => add(c)}
         >
-          {busy && !adding.watched ? 'Hozzáadás…' : '+ Hozzáadás'}
+          {busy && !busyWatched ? 'Hozzáadás…' : '+ Hozzáadás'}
         </button>
         {/* már látott cím: megnézettként kerül fel (terv-3 80) */}
         <button
@@ -83,7 +91,7 @@ export function CreditStatus({ c, row, adding, add, readOnly }) {
           aria-label={`Már láttam: ${c.title}`}
           onClick={() => add(c, true)}
         >
-          {busy && adding.watched ? 'Hozzáadás…' : 'Már láttam'}
+          {busyWatched ? 'Hozzáadás…' : 'Már láttam'}
         </button>
       </>
     );

@@ -31,10 +31,11 @@ const TABS = [
 // főszerepek), és ha van, a legközelebbi dátummal bejelentett főszerepe (indigó). A számok a
 // személyek filmjeiből (/api/tmdb/person) jönnek, egyszerre 3-asával. Csempére kattintva az ablakon
 // belül az idővonal (PersonTimeline); az Esc / Vissza onnan a csempékhez lép vissza.
-// Kikattintásra zár, kivéve ha épp cím kerül fel a listára (az idővonalon). Net nélkül a menüpont nincs.
+// Kikattintásra zár, kivéve ha épp cím kerül fel a listára (az idővonalon). Net nélkül a menüpont nincs; ha
+// nyitva megy el a net (readOnly – B9), nincs felvétel, követés-váltás és javaslat.
 // onPreview(item): a borítóra kattintva a cím adatlapja (az ablak fölött nyílik); onPerson(személy): a
 // követési javaslat (terv-3 111) nevére kattintva a személy lapja (szintén az ablak fölött).
-export default function PeopleDialog({ titles, userId, onClose, onPreview, onPerson, onAdded }) {
+export default function PeopleDialog({ titles, userId, onClose, onPreview, onPerson, onAdded, readOnly }) {
   const dialogRef = useRef(null);
   const headingRef = useRef(null);
   const followed = useFollowed();
@@ -59,11 +60,15 @@ export default function PeopleDialog({ titles, userId, onClose, onPreview, onPer
     headingRef.current?.focus();
   }, []);
 
-  // a személyek filmjei 3-asával (a már betöltöttek és a betöltés alattiak kimaradnak)
+  // a személyek filmjei 3-asával (a már betöltöttek és a hibásak kimaradnak). A betöltés alattiak is sorra
+  // kerülnek (B3): az előző kör takarítása leállította őket – a details itt még a takarítás előtti
   const people = [...followed.values()];
   const peopleKey = people.map((p) => followKey(p.person_id, p.role)).join(',');
   useEffect(() => {
-    const queue = people.filter((p) => !details.has(followKey(p.person_id, p.role)));
+    const queue = people.filter((p) => {
+      const d = details.get(followKey(p.person_id, p.role));
+      return !d || d.status === 'loading';
+    });
     if (queue.length === 0) return;
     let cancelled = false;
     setDetails((d) => {
@@ -230,6 +235,7 @@ export default function PeopleDialog({ titles, userId, onClose, onPreview, onPer
           onPreview={onPreview}
           onAdded={onAdded}
           busyRef={busyRef}
+          readOnly={readOnly}
           onRetry={() => {
             setDetails((d) => new Map([...d].filter(([k]) => k !== open)));
             setAttempt((n) => n + 1);
@@ -245,7 +251,7 @@ export default function PeopleDialog({ titles, userId, onClose, onPreview, onPer
           </header>
 
           {/* keresés közben nem kell (a követettek között keresel) */}
-          {!q && <FollowSuggestions titles={titles} userId={userId} onPerson={onPerson} />}
+          {!q && !readOnly && <FollowSuggestions titles={titles} userId={userId} onPerson={onPerson} />}
 
           {people.length === 0 ? (
             <p className="muted people-empty">
@@ -307,7 +313,7 @@ export default function PeopleDialog({ titles, userId, onClose, onPreview, onPer
 // („Hamarosan” – indigó), alatta évenként, a legújabb elöl. A listán lévők mindig (mellékszerepben is),
 // a többiből a főszerepek („Főszerepek | Összes szerep”). A borítóra kattintva a cím adatlapja; a „+
 // Hozzáadás” / „Már láttam” felveszi (felvétel közben az ablak nem zár, a Vissza vár).
-function PersonTimeline({ person, detail, rows, today, onBack, onPreview, onAdded, busyRef, onRetry }) {
+function PersonTimeline({ person, detail, rows, today, onBack, onPreview, onAdded, busyRef, onRetry, readOnly }) {
   const director = person.role === 'director';
   const [allRoles, setAllRoles] = useState(false);
   const [allShown, setAllShown] = useState(false);
@@ -382,7 +388,7 @@ function PersonTimeline({ person, detail, rows, today, onBack, onPreview, onAdde
           {errors[key] && <span className="error small">{errors[key]}</span>}
         </span>
         <span className="person-row-side">
-          <CreditStatus c={c} row={row} adding={adding} add={add} readOnly={false} />
+          <CreditStatus c={c} row={row} adding={adding} add={add} readOnly={readOnly} />
         </span>
       </li>
     );
@@ -419,7 +425,7 @@ function PersonTimeline({ person, detail, rows, today, onBack, onPreview, onAdde
               </>
             )}
           </p>
-          <FollowButton person={{ id: person.person_id, name: person.name, profile_path: person.profile_path }} role={person.role} />
+          <FollowButton person={{ id: person.person_id, name: person.name, profile_path: person.profile_path }} role={person.role} readOnly={readOnly} />
         </div>
       </div>
 

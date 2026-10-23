@@ -14,8 +14,9 @@ import {
   renameFranchise,
 } from '@/lib/titles';
 import { toast, dismissToast } from '@/lib/toast';
+import { afterDialogs } from '@/lib/afterDialogs';
 import { article, collectionFranchiseMap, suggestedFranchiseId } from '@/lib/franchiseSuggest';
-import { isOptimistic, saveRow } from '@/lib/rowSaves';
+import { isOptimistic, noteLocalWrite, saveRow } from '@/lib/rowSaves';
 import { byName } from '@/components/list/useListData';
 
 const TOAST_THUMB = 'https://image.tmdb.org/t/p/w92';
@@ -25,8 +26,10 @@ export function useListChanges({ data, keepShown, releaseFranchise, openFranchis
   const { setTitles, titlesRef, franchises, setFranchises, setOrders } = data;
 
   // a nyitott szerkesztő ablak is a friss sort kapja (pl. évadok változása után); a sor a
-  // szűrés változásáig a helyén marad – de csak ha eddig is látszott (keepShown)
-  function replaceTitle(row) {
+  // szűrés változásáig a helyén marad – de csak ha eddig is látszott (keepShown). remote: az élő szinkron
+  // hozta (másik eszköz) – a többi helyi írás, azt a közben induló újratöltés nem írja felül (B1)
+  function replaceTitle(row, { remote = false } = {}) {
+    if (!remote) noteLocalWrite(row.id);
     setTitles((ts) => ts.map((x) => (x.id === row.id ? row : x)));
     keepShown(row);
     // más franchise-ba került: a régi sorrendből kikerült (az adatbázis-trigger is ezt teszi) – csak a
@@ -47,16 +50,47 @@ export function useListChanges({ data, keepShown, releaseFranchise, openFranchis
   // az IMDb-importból beírt csillagok helyben is
   function applyRatingsLocally(changes) {
     const byId = new Map(changes.map((c) => [c.id, c.to]));
+    for (const id of byId.keys()) noteLocalWrite(id);
     setTitles((ts) => ts.map((t) => (byId.has(t.id) ? { ...t, my_rating: byId.get(t.id) } : t)));
   }
 
   // törlés visszavonással: a cím azonnal lekerül, az adatbázisból csak a sáv lejártakor (8 mp)
   // vagy a × gombra törlődik; „Visszavonás”: vissza a listára. Ha a lapot közben bezárják, a cím
-  // megmarad (biztonságos hiba).
+  // megmarad (biztonságos hiba). A sáv csak akkor jön, ha már nincs nyitott ablak (B2): a Színészek és
+  // rendezők / Toplisták fölött nyitott adatlapból törölve a „Visszavonás” az ablak mögött nem volna
+  // kattintható, és a visszaszámlálás közben lejárna – addig a törlés függőben marad.
+  const waitingDeletes = useRef(new Set()); // a sávra (az ablakok bezárására) váró törlések lemondói
+  useEffect(() => {
+    const waiting = waitingDeletes.current;
+    return () => {
+      // kilépéskor a függő törlés elmarad (mint a lap bezárásakor – lib/toast.js clearToasts)
+      for (const stop of waiting) stop();
+      waiting.clear();
+    };
+  }, []);
+
   function requestDelete(t) {
     setTitles((ts) => ts.filter((x) => x.id !== t.id));
     const restore = () => setTitles((ts) => (ts.some((x) => x.id === t.id) ? ts : [t, ...ts]));
-    const toastId = toast({
+    let toastId = 0;
+    let stopWaiting = null; // (nyitott ablak nélkül az afterDialogs rögtön hív – a lemondó ekkor még nincs meg)
+    stopWaiting = afterDialogs(() => {
+      toastId = showDeleteToast(t, restore);
+      if (stopWaiting) waitingDeletes.current.delete(stopWaiting);
+    });
+    if (!toastId) waitingDeletes.current.add(stopWaiting);
+    // ha közben újra felveszed (kereső, Felfedezés…): a törlés elmarad, a sávot eltüntetjük, a
+    // sort a felvétel (handleAdded) teszi vissza (kódaudit #22)
+    registerPendingDelete(t, () => {
+      unregisterPendingDelete(t);
+      stopWaiting();
+      waitingDeletes.current.delete(stopWaiting);
+      if (toastId) dismissToast(toastId);
+    });
+  }
+
+  function showDeleteToast(t, restore) {
+    return toast({
       kind: 'delete',
       text: (
         <>
@@ -72,17 +106,12 @@ export function useListChanges({ data, keepShown, releaseFranchise, openFranchis
       },
       onExpire: () => {
         unregisterPendingDelete(t);
+        noteLocalWrite(t.id); // a közben induló újratöltés válasza ne hozza vissza (B1)
         deleteTitle(t.id).catch((err) => {
           restore();
           toast({ text: `Nem sikerült törölni: „${t.title}”. ${err.message}` });
         });
       },
-    });
-    // ha közben újra felveszed (kereső, Felfedezés…): a törlés elmarad, a sávot eltüntetjük, a
-    // sort a felvétel (handleAdded) teszi vissza (kódaudit #22)
-    registerPendingDelete(t, () => {
-      unregisterPendingDelete(t);
-      dismissToast(toastId);
     });
   }
 
@@ -132,6 +161,7 @@ export function useListChanges({ data, keepShown, releaseFranchise, openFranchis
         </>
       ),
       content: <StarRating name={`ask-${t.id}`} label={`Értékelés – ${t.title}`} value={null} onChange={rate} />,
+      needsNet: 'content',
       action: { label: 'Később', onClick: () => {} },
       hideClose: true,
     });
@@ -153,6 +183,7 @@ export function useListChanges({ data, keepShown, releaseFranchise, openFranchis
 
   function handleAdded(row) {
     // (a visszavont törlésnél a sor esetleg már a listán van – nem kerül fel kétszer)
+    noteLocalWrite(row.id);
     titlesRef.current = [row, ...titlesRef.current.filter((x) => x.id !== row.id)];
     setTitles((ts) => [row, ...ts.filter((x) => x.id !== row.id)]);
     // „Már láttam” (terv-3 80): megnézettként felvett, értékelés nélküli cím – rögtön kérdezünk (nyitott ablak
@@ -204,6 +235,7 @@ export function useListChanges({ data, keepShown, releaseFranchise, openFranchis
           </>
         ),
         action: { label: 'Hozzárendelés', onClick: () => assignFranchise(t, f) },
+        needsNet: 'action',
       });
     }
   }

@@ -84,7 +84,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   **Új írási gombnál a `readOnly`-t is kezeld** (a „Visszavonás” is). A fejléc „Cím hozzáadása” gombja tiltva marad
   a helyén (eltűnve a fejléc a friss listánál másként törne, a lista megugrana – teszt: `test-131.mjs`; a tesztek
   az írható listát az engedélyezett gombon ismerik fel). `main[data-list]`: `loading` | `stale` | `live` (a teszt
-  erre vár).
+  erre vár). Író gomb / tartalom értesítősávban: `toast({ needsNet: 'action' | 'content' })` – net nélkül rejtve.
 - **Fejléc** (összecsukódó): `--head-h`, `--head-p` (0–1), `--head-c`; asztalon `main[data-head-away]`. Teszt:
   `test-1015.mjs`. **Neonfelirat** (`components/NeonBrand.js`): két cső egy sorban, egyforma méretben (Norbi kérése);
   munkamenetenként egyszer villan fel (`sessionStorage` `filmlista-neon`). **A neon él** (terv-3 132): 1–4
@@ -105,7 +105,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - **Nézetek**: ≥ 1400 px-en lista (`TitleTable`) | rács (`localStorage` `filmlista-nezet`), alatta mindig rács.
 - **`kept`**: a most szerkesztett sor a szűrés változásáig a helyén marad, akkor is, ha már nem illik a szűrőbe.
 - **Törlés visszavonással** (`requestDelete`): azonnal lekerül, 8 mp „Visszavonás”; az adatbázisból csak lejáratkor
-  / ×-re törlődik.
+  / ×-re törlődik. Nyitott ablak (pl. Színészek és rendezők) fölötti adatlapból a sáv és a visszaszámlálás az
+  ablakok bezárásáig vár (`afterDialogs`). Mentés visszaállításakor a függő törlések elmaradnak.
 - **„Hogy tetszett?”**: táblázatból Megnézve-re váltott, értékelés nélküli címnél, csak a mentett sorra, egyszer; a
   szerkesztő ablakból nem.
 - **Lapozás**: 25 (telefon / keskeny rács), 10 (asztali lista), 22 (asztali rács); asztalon a lapozó és a lábléc
@@ -227,7 +228,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - Szűrés (Norbi döntése, „laza” – `huOk()`): film – angol / magyar eredetinél HU megjelenés vagy bármilyen HU
   szolgáltató, más nyelvűnél csak HU megjelenés; sorozat – HU streaming; magyar leírás kell; dokumentum / hírek /
   valóságshow / szappanopera / talkshow / koncertfilm nincs, **az animáció benne van**. IMDb-értékelés: `imdb_ratings`
-  (30 nap) → saját lista → OMDb, napi keret 400 (`DAILY_OMDB`). Súlyozott IMDb-sorrend, ≤ 250 tárolva (`toplists`, 7
+  (30 nap) → saját lista → OMDb, napi keret 400 (`DAILY_OMDB`; hullámonként újraolvasva és tárolva, a példányon
+  futó kérések levonva – párhuzamos összeállításnál sem lépi túl). Súlyozott IMDb-sorrend, ≤ 250 tárolva (`toplists`, 7
   nap; hiányos lista másnap újraépül). Első összeállítás 10–30 mp (`maxDuration = 60`).
 
 ### Egyéb ablakok és menük
@@ -266,7 +268,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   változásakor emeld**; a kérők mind innen veszik. A franchise nevét a kliens keresi ki (nincs a nézetben).
 - `lib/rowSaves.js` – `saveRow(sor, apply, kérés, show)`: soronként sorba állított optimista mentés.
   `hasPendingSave`, `isOptimistic(row)` (mellékhatást csak mentett sorra). **Új optimista mentésnél ezt használd.**
-  Teszt: `test-audit-9.mjs`.
+  `rebasePending`: a háttérfrissítés a függő mentés alapjába ír. Helyi írások jelölése (`noteLocalWrite` /
+  `writeMark` / `writtenSince`): a csendes újratöltés és az élő szinkron a kérés indulása után helyben írt címnél a
+  helyi sort tartja meg – **új, a fő listát helyben író útnál (a `replaceTitle` / `handleAdded` /
+  `applyRatingsLocally` / törlés mellett) jelölni kell**; az élő szinkron `replaceTitle(row, { remote: true })`.
+  Teszt: `test-audit-9.mjs`, `test-atnezes-b.mjs`.
+- `lib/radioKeys.js` – azonnal mentő rádiógomb-csoport (`onKeyDown={radioKeys}`): a nyíl csak a fókuszt viszi, az
+  Enter / Szóköz ment (mint a `StarRating`). **Új mentő rádiógomb-csoportnál ezt használd.**
 - `lib/fetchAll.js` – a PostgREST kérésenként legfeljebb **1000 sort** ad. **Új, a teljes listát lekérő
   lekérdezésnél ezt használd** (egyértelmű rendezéssel).
 - `lib/refreshDue.js` – esedékességi szabályok. **A route-ok ugyanezt kérdezik (részben SQL-ben) – változtatáskor
@@ -281,8 +289,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   így a „Letöltve” jelvény, 141 a; a kihúzás is erre vár, 133).
 - `lib/useBackdropClose.js` – `useBackdropClose(dialogRef, { onClose, canClose, onBlocked })`: kikattintásra zár
   (asztalon), ha nem zárhat, `nudgeDialog()`. Nem zár: adatlap (megerősítés / név gépelése / felvétel; net nélkül zár), Színészek
-  és rendezők és Toplisták (felvétel), Franchise-ok (szerkesztés, megerősítés, nyitott gyűjtemény-ablak),
-  gyűjtemény-ablak (felvétel, sorrend-szerkesztés, megerősítés, fejléc szerkesztése), Mentések, Hibák (megerősítés /
+  és rendezők és Toplisták (felvétel), Franchise-ok (szerkesztés, megerősítés, nyitott gyűjtemény-ablak – a
+  „megnyitás…” alatt még zár), gyűjtemény-ablak (felvétel, sorrend-szerkesztés, megerősítés, fejléc szerkesztése; ha
+  a rejtett „Nézési sorrend” fülön maradt szerkesztés tartja, az a fül jön elő – `onBlocked`), Mentések, Hibák (megerősítés /
   törlés), Jelszó (beírt jelszó / mentés); Statisztika és Leírás mindig zár; **az importablakok soha** (Norbi döntése).
 - `components/DialogClose.js` – egységes bezárás (Norbi döntése): **minden ablak `<dialog>`-jának első gyermeke**.
   Asztalon „Bezárás” jobbra fent, ragadós; telefonon fogantyú (`.sheet-handle`, `lib/useSheetDrag.js`), lehúzva zár,
@@ -324,8 +333,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - Lekérő route-ok: `app/api/tmdb/…` (GET). Ha a cím már nincs a TMDB-n: üres / null. A `details`-ben az OMDb hibája
   nem akadályozza a felvételt. `similar`: ≥ 2000, TMDB ≥ 6,0, ≥ 50 szavazat, animáció nélkül.
 - Háttérfrissítő `POST` route-ok (a felhasználó jogaival, kötegekben, a `Watchlist` hívja betöltéskor):
-  `imdb/refresh` (az `rt_rating` / `mc_rating` is), `tmdb/seasons` (az állapothoz nem nyúl; a `series_status` / `runtime` itt frissül, a megnézett
-  sorozatoknál is), `tmdb/backdrops`, `tmdb/releases`,
+  `imdb/refresh` (az `rt_rating` / `mc_rating` is), `tmdb/seasons` (az állapothoz nem nyúl – kivéve az első
+  kitöltést: az évad nélkül kézzel beállított állapot / „Letöltve” a megjelent évadokra kerül; a `series_status` /
+  `runtime` itt frissül, a megnézett sorozatoknál is), `tmdb/backdrops`, `tmdb/releases`,
   `tmdb/title-collections`, `tmdb/collection-parts`, `tmdb/details-refresh`, `franchises/logos`, `people/refresh`.
   Szabályok: az értesítést írók (`collection-parts`, `people/refresh`) **előbb az értesítést írják, utána az
   ismerteket**, és első ellenőrzéskor csak megjegyeznek; le nem tölthető gyűjteményt nem jelölnek ellenőrzöttnek. A

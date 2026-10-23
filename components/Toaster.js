@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { dismissToast, getToasts, subscribeToasts } from '@/lib/toast';
+import { useOnline } from '@/lib/offline';
 
 const NONE = [];
 
@@ -27,6 +28,7 @@ function ToastItem({ toast: t }) {
   // rámutatáskor és fókusznál megáll (a csík is), utána a maradék idő fut tovább
   const [paused, setPaused] = useState(false);
   const remaining = useRef(t.duration);
+  const online = useOnline(); // needsNet: net nélkül az író rész (gomb / tartalom) nem látszik (B9)
 
   useEffect(() => {
     if (paused || t.duration == null) return; // duration: null – nem jár le (pl. „Frissült az app”)
@@ -58,8 +60,8 @@ function ToastItem({ toast: t }) {
       )}
       {t.image && <img src={t.image} alt="" />}
       <p className="toast-text">{t.text}</p>
-      {t.content}
-      {t.action && (
+      {(t.needsNet !== 'content' || online) && t.content}
+      {t.action && (t.needsNet !== 'action' || online) && (
         <button
           type="button"
           className="ghost"

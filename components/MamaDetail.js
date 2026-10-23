@@ -26,6 +26,11 @@ export default function MamaDetail({ item: t, onMark, onClose }) {
   const [trailer, setTrailer] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [providers, setProviders] = useState(null);
+  const [error, setError] = useState(''); // elbukó jelölés (B16): helyben – az értesítősáv az ablak mögött volna
+  const mark = (choice) => {
+    setError('');
+    Promise.resolve(onMark(t, choice)).catch((err) => setError(err.message));
+  };
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
@@ -78,10 +83,16 @@ export default function MamaDetail({ item: t, onMark, onClose }) {
         </div>
       </div>
       <div className="mama-detail-actions">
-        <button type="button" className="mama-btn yes" aria-pressed={yes} onClick={() => onMark(t, yes ? null : 'interested')}>
+        {/* a gombok fölött, telefonon a ragadós sávval együtt látszik */}
+        {error && (
+          <p className="error mama-detail-error" role="alert">
+            {error}
+          </p>
+        )}
+        <button type="button" className="mama-btn yes" aria-pressed={yes} onClick={() => mark(yes ? null : 'interested')}>
           {yes ? '✓ Érdekel' : 'Érdekel'}
         </button>
-        <button type="button" className="mama-btn" onClick={() => onMark(t, 'declined')}>
+        <button type="button" className="mama-btn" onClick={() => mark('declined')}>
           Nem érdekel
         </button>
       </div>

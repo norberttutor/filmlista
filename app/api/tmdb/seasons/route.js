@@ -32,7 +32,7 @@ export async function POST(request) {
       .not('tmdb_id', 'is', null)
       .or(`seasons_checked_at.is.null,seasons_checked_at.lt."${cutoff}"`);
 
-  const { data: batch, error } = await due(db.from('titles').select('id, tmdb_id, status'))
+  const { data: batch, error } = await due(db.from('titles').select('id, tmdb_id, status, is_downloaded, watched_at'))
     .order('seasons_checked_at', { ascending: true, nullsFirst: true })
     .limit(BATCH);
   if (error) {
@@ -97,15 +97,38 @@ export async function POST(request) {
               if (noteError) throw noteError;
             }
 
+            // első kitöltéskor (B5) az évad nélkül kézzel beállított állapot és „Letöltve” a megjelent évadokra
+            // kerül – különben a trigger az üres évadokból újraszámolva elvetné: „Megnézve” → mind megnézett (a
+            // megnézés napjával), „Folyamatban” → az első megjelent évad folyamatban; az „Abbahagyva” kézi, marad
+            const airedFresh = firstFill ? fresh.filter((s) => aired(s, today)) : [];
+            const firstAired = Math.min(...airedFresh.map((s) => s.season_number));
+            // (minden sor ugyanazokkal a mezőkkel: a több soros kérésben a hiányzó oszlop NULL lenne, nem az alapérték)
+            const carried = (s) => {
+              const base = { status: 'to_watch', is_downloaded: false, watched_at: null };
+              if (!airedFresh.includes(s)) return base;
+              if (t.status === 'watched') return { ...base, status: 'watched', watched_at: t.watched_at };
+              const started = t.status === 'watching' && s.season_number === firstAired;
+              return { ...base, status: started ? 'watching' : 'to_watch', is_downloaded: Boolean(t.is_downloaded) };
+            };
             const { error: insertError } = await db.from('title_seasons').upsert(
               fresh.map((s) => ({
                 title_id: t.id,
                 ...s,
+                ...carried(s),
                 aired_notified: firstFill && aired(s, today),
               })),
               { onConflict: 'title_id,season_number', ignoreDuplicates: true }
             );
             if (insertError) throw insertError;
+            // a megnézettként beszúrt évad „Letöltve” jelzését a trigger törli (megnézettre váltás) – utólag vissza
+            if (t.status === 'watched' && t.is_downloaded && airedFresh.length > 0) {
+              const { error: dlError } = await db
+                .from('title_seasons')
+                .update({ is_downloaded: true })
+                .eq('title_id', t.id)
+                .in('season_number', airedFresh.map((s) => s.season_number));
+              if (dlError) throw dlError;
+            }
           }
           // a TMDB-ről hiányzó adat nem törli a meglévőt
           const facts = Object.fromEntries(Object.entries(pickFacts('tv', data)).filter(([, v]) => v != null));

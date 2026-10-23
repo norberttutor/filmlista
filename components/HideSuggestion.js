@@ -57,15 +57,21 @@ export function HideButton({ item, onHide }) {
   );
 }
 
-export function HideNote({ note, onUndo }) {
+// readOnly: net nélkül a visszavonás nem menthető – a gomb nem látszik (B9)
+export function HideNote({ note, onUndo, readOnly = false }) {
   return (
     <p className="hide-note" role="status">
       {note?.item && (
         <>
-          „{note.item.title}” elrejtve – többé nem ajánljuk.{' '}
-          <button type="button" className="link" onClick={onUndo}>
-            Visszavonás
-          </button>
+          „{note.item.title}” elrejtve – többé nem ajánljuk.
+          {!readOnly && (
+            <>
+              {' '}
+              <button type="button" className="link" onClick={onUndo}>
+                Visszavonás
+              </button>
+            </>
+          )}
         </>
       )}
       {note?.error && <span className="error">{note.error}</span>}

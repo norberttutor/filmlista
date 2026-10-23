@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
+import { radioKeys } from '@/lib/radioKeys';
 import {
   NEXT_SEASON_STATUS,
   seasonAired,
@@ -351,7 +352,8 @@ export function SeasonList({ title, actions }) {
               </span>
               {isAired && (
                 <>
-                  <span className="segmented" role="radiogroup" aria-label={`${n}. évad állapota`}>
+                  {/* nyíl: csak a fókusz lép, Enter / Szóköz ment (B15) */}
+                  <span className="segmented" role="radiogroup" aria-label={`${n}. évad állapota`} onKeyDown={radioKeys}>
                     {SEASON_CHOICES.map((c) => (
                       <label key={c.code}>
                         <input

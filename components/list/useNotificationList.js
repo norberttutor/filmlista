@@ -72,6 +72,7 @@ export function useNotificationList() {
           }
         },
       },
+      needsNet: 'action', // net nélkül a visszavonás nem menthető (B9)
     });
   }
 

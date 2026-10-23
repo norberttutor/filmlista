@@ -115,7 +115,7 @@ export default function SimilarTitles({ title, existingKeys, onAdded, onPreview,
 
       {open && (
         <div id={bodyId} className="similar-body">
-          <HideNote note={note} onUndo={undo} />
+          <HideNote note={note} onUndo={undo} readOnly={readOnly} />
           {/* betöltés közben borító-körvonalak (felolvasónak a szöveg) */}
           {load.status === 'loading' && (
             <>
