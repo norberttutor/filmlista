@@ -16,6 +16,7 @@ import { useAppFreshness } from '@/lib/appVersion';
 import { hasPendingSave, writeMark, writtenSince } from '@/lib/rowSaves';
 import { reportError } from '@/lib/errorLog';
 import { startBackgroundRefresh } from '@/components/list/backgroundRefresh';
+import { LIST_COLUMNS, fillOverviews, withOverviews } from '@/components/list/overviews';
 
 export const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 
@@ -23,12 +24,12 @@ export const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 const RETRY_MS = 30_000;
 
 // a teljes lista (legutóbb hozzáadott elöl): ezres adagokban, mert egy kérés legfeljebb 1000
-// sort ad (lib/fetchAll.js); az id a rendezés egyértelműségéhez kell
+// sort ad (lib/fetchAll.js); az id a rendezés egyértelműségéhez kell. A leírás nélkül (P5 – overviews.js).
 export const loadTitles = () =>
   fetchAll(() =>
     supabase
       .from('titles_with_genres')
-      .select('*')
+      .select(LIST_COLUMNS)
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
   );
@@ -78,10 +79,13 @@ export function useListData(userId, notes) {
     []
   );
 
-  // a helyben tárolt lista: azonnal látszik, amíg a friss meg nem jön
+  // a helyben tárolt lista: azonnal látszik, amíg a friss meg nem jön; a friss lista a leírásokat innen is
+  // átveszi (P5 – akkor is, ha a tárolt még nem látszott)
+  const snapshot = useRef(null);
   useEffect(() => {
     let cancelled = false;
-    loadSnapshot(userId).then((snap) => {
+    snapshot.current = loadSnapshot(userId);
+    snapshot.current.then((snap) => {
       if (cancelled || live.current || !snap) return;
       setTitles(snap.titles);
       setStatuses(snap.statuses);
@@ -105,10 +109,11 @@ export function useListData(userId, notes) {
     const mark = writeMark(); // B1: az ezután helyben írt címeknél a helyi sor az érvényes
 
     async function load() {
-      const [titlesRes, statusesRes, franchisesRes] = await Promise.all([
+      const [titlesRes, statusesRes, franchisesRes, snap] = await Promise.all([
         loadTitles(),
         supabase.from('statuses').select('*').order('sort_order'),
         loadFranchises(),
+        snapshot.current,
       ]);
       if (cancelled) return;
       loadRunning.current = false;
@@ -136,17 +141,19 @@ export function useListData(userId, notes) {
         setStale(null);
         setFailed(false);
         setLoadError('');
+        const { rows, missing } = withOverviews(titlesRes.data, titlesRef.current, snap?.titles);
         // a függő (még visszavonható) törlés nem jön vissza, a függő mentésű sor a helyi marad (S6 – mint
         // az élő szinkronnál); a betöltés indulása után helyben mentett / felvett / törölt cím is a helyi (B1)
         setTitles((prev) => {
           const local = new Map(prev.map((t) => [t.id, t]));
           const newer = (id) => writtenSince(id, mark);
-          const fresh = titlesRes.data
+          const fresh = rows
             .filter((t) => !isPendingDelete(t.id) && !(newer(t.id) && !local.has(t.id)))
             .map((t) => ((hasPendingSave(t.id) || newer(t.id)) && local.has(t.id) ? local.get(t.id) : t));
           const ids = new Set(fresh.map((t) => t.id));
           return [...prev.filter((t) => newer(t.id) && !ids.has(t.id)), ...fresh];
         });
+        fillOverviews(missing, setTitles, stopped);
         setStatuses(statusesRes.data);
         setFranchises(franchisesRes.data.sort(byName));
         loadOrders()
@@ -254,7 +261,9 @@ export function useListData(userId, notes) {
       reportError(error);
       throw new Error('A visszaállítás sikerült, de a lista nem töltődött be. Frissítsd az oldalt.');
     }
-    setTitles(titlesRes.data);
+    const { rows, missing } = withOverviews(titlesRes.data, titlesRef.current);
+    setTitles(rows);
+    fillOverviews(missing, setTitles, () => false);
     setFranchises(franchisesRes.data.sort(byName));
     loadOrders()
       .then(setOrders)

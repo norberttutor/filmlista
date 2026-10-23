@@ -75,7 +75,10 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - A `Watchlist` csak összeköt; a logika a `components/list/` hookjaiban (`useListData`, `useListFilters`,
   `listFilters`, `usePaging`, `useListChanges`, `useLiveTitles`, `backgroundRefresh`, `moreItems` …). Az ablakok egy
   állapotban (`dialog`, `openDialog`).
-- **Betöltés**: `titles_with_genres` nézet (`loadTitles()`, `fetchAll`). Háttérfrissítés csak esedékes címnél
+- **Betöltés**: `titles_with_genres` nézet (`loadTitles()`, `fetchAll`) **a leírás (`overview`) nélkül**
+  (`components/list/overviews.js`, `LIST_COLUMNS` – **a nézet új oszlopát ide is fel kell venni**; teszt:
+  `test-p5.mjs`): a leírást a helyben meglévő, azonos `updated_at`-ű sorból veszi át, a hiányzókat utána a háttérben
+  (`fillOverviews`); a lista sorában ezért átmenetileg nincs `overview` kulcs. Háttérfrissítés csak esedékes címnél
   (`lib/refreshDue.js`). Csendes újratöltés (`reloadKey`; szűrők / lapozás / adatlap marad): visszatéréskor,
   lehúzásra, élő szinkron újrakapcsolódásakor.
 - **Offline / csak olvasható**: induláskor a helyben tárolt lista (`stale`), a friss a háttérben; minden változás
