@@ -29,7 +29,7 @@ fiókkal Norbi filmjeit látja és jelöli. Az adatmodell felhasználónként el
 - `APP_VERSION` – nem kell: Vercelen a commit (`VERCEL_GIT_COMMIT_SHA`), helyben `dev`; csak a teszt adja meg.
 
 Csak helyben: `TEST_USER_EMAIL` / `TEST_USER_PASSWORD`, `MAMATEST_USER_EMAIL` / `MAMATEST_USER_PASSWORD` (az értékeket
-soha ne írd ki), `SUPABASE_DB_URL` (admin), `BACKUP_DB_URL` (csak olvasó `backup_reader`, `munka/e2e/mentes-olvaso.mjs`;
+soha ne írd ki), `SUPABASE_DB_URL` (admin), `BACKUP_DB_URL` (csak olvasó `backup_reader`, `munka/e2e/eszkoz/mentes-olvaso.mjs`;
 GitHub-titok is a heti mentéshez).
 
 Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
@@ -53,7 +53,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `getSession()` nem válaszol (4 mp, net nélkül 0,3 mp) a tárolt munkamenettel (`storedSession()`, `offline: true`).
   `signOut()` (`lib/offline.js`) csak ezen az eszközön léptet ki (`scope: 'local'`, Norbi döntése); net nélkül /
   5 mp után helyben.
-- Ikonok: mind a `munka/e2e/ikon.mjs`-ből; ikonváltozáskor ezzel generáld újra (ellenőrzés: `verify-ikon.mjs`).
+- Ikonok: mind a `munka/e2e/eszkoz/ikon.mjs`-ből; ikonváltozáskor ezzel generáld újra (ellenőrzés: `eszkoz/ikon-ellenorzes.mjs`).
 - `app/manifest.js` – gyorsindítók `/?nyit=hozzaadas|franchise-ok|statisztika` (`SHORTCUTS` a `Watchlist`-ben).
 - `app/error.js` + `app/sorrend/[token]/error.js` → `components/ErrorScreen.js`.
 - `components/LoginForm.js` – regisztráció nincs (ki van kapcsolva).
@@ -64,12 +64,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `lib/theme.js` + `lib/themeBoot.js` (React nélküli – a szerverkomponens is használja) + `ThemeToggle`: sötét (alap),
   világos (`<html data-theme="light">`), téka. Választás felhasználónként (`filmlista-tema:<userId>`); alapból Mama
   világos, más sötét; a boot-szkript és a belépési oldal az utoljára használtat (`filmlista-tema`) veszi; a
-  megosztott oldal a `prefers-color-scheme`-et. Teszt: `test-50.mjs`.
+  megosztott oldal a `prefers-color-scheme`-et. Teszt: `kinezet/tema-vilagos-sotet.mjs`.
 - **Videotéka-téma** (`'teka'`, csak Norbinál, ⋮ menüből). **Norbi feltétele: a sötét és a világos kinézet nem
   változhat** – minden téka-szabály `:root[data-theme='teka']`-val kezdődik (`03-teka-szinek.css`,
   `35-teka-felulet.css`), a téka elemei csak `useTheme() === 'teka'` mellett kerülnek a lapra (`lib/teka.js`).
   Ellenőrzés: `munka/terv-3/terv-d/osszevet.mjs` (HEAD vs új fordítás képpontosan, sötétben / világosban). Teszt:
-  `test-d9-d10.mjs`.
+  `kinezet/tema-videoteka-neon.mjs`.
 
 ### Fő lista – `components/Watchlist.js` + `components/list/`
 - A `Watchlist` csak összeköt; a logika a `components/list/` hookjaiban (`useListData`, `useListFilters`,
@@ -77,7 +77,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   állapotban (`dialog`, `openDialog`).
 - **Betöltés**: `titles_with_genres` nézet (`loadTitles()`, `fetchAll`) **a leírás (`overview`) nélkül**
   (`components/list/overviews.js`, `LIST_COLUMNS` – **a nézet új oszlopát ide is fel kell venni**; teszt:
-  `test-p5.mjs`): a leírást a helyben meglévő, azonos `updated_at`-ű sorból veszi át, a hiányzókat utána a háttérben
+  `mukodes/lista-leiras-nelkul.mjs`): a leírást a helyben meglévő, azonos `updated_at`-ű sorból veszi át, a hiányzókat utána a háttérben
   (`fillOverviews`); a lista sorában ezért átmenetileg nincs `overview` kulcs. Háttérfrissítés csak esedékes címnél
   (`lib/refreshDue.js`). Csendes újratöltés (`reloadKey`; szűrők / lapozás / adatlap marad): visszatéréskor,
   lehúzásra, élő szinkron újrakapcsolódásakor.
@@ -85,24 +85,24 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   1,5 mp után helyben is mentődik. `readOnly` (tárolt lista vagy nincs net): az írási menüpontok kimaradnak
   (`ONLINE_ONLY`), az adatlap mezői tiltva (`Lock`), minden írási hely elrejti / tiltja az írást.
   **Új írási gombnál a `readOnly`-t is kezeld** (a „Visszavonás” is). A fejléc „Cím hozzáadása” gombja tiltva marad
-  a helyén (eltűnve a fejléc a friss listánál másként törne, a lista megugrana – teszt: `test-131.mjs`; a tesztek
+  a helyén (eltűnve a fejléc a friss listánál másként törne, a lista megugrana – teszt: `mukodes/inditas-teljesitmeny.mjs`; a tesztek
   az írható listát az engedélyezett gombon ismerik fel). `main[data-list]`: `loading` | `stale` | `live` (a teszt
   erre vár). Író gomb / tartalom értesítősávban: `toast({ needsNet: 'action' | 'content' })` – net nélkül rejtve.
 - **Fejléc** (összecsukódó): `--head-h`, `--head-p` (0–1), `--head-c`; asztalon `main[data-head-away]`. Teszt:
-  `test-1015.mjs`. **Neonfelirat** (`components/NeonBrand.js`): két cső egy sorban, egyforma méretben (Norbi kérése);
+  `kinezet/fejlec-osszecsukodas.mjs`. **Neonfelirat** (`components/NeonBrand.js`): két cső egy sorban, egyforma méretben (Norbi kérése);
   munkamenetenként egyszer villan fel (`sessionStorage` `filmlista-neon`). **A neon él** (terv-3 132): 1–4
   percenként egy cső megrebben (`data-blip`) vagy az egész újra felkapcsol (`neon-on`, 1,6 s után lekerül); ≥ 5 perc
   távollét után és témaváltáskor is felkapcsol; rámutatásra rebben. Csak látható lapon, nyitott `<dialog>` nélkül;
-  összecsukott fejlécnél a kis cím (`.top-compact[data-blip|data-on]`). Teszt: `test-132.mjs` (`page.clock`).
+  összecsukott fejlécnél a kis cím (`.top-compact[data-blip|data-on]`). Teszt: `kinezet/neon-el.mjs` (`page.clock`).
 - **Szűrők alapállapota** (`DEFAULT_FILTERS`, Norbi kérése): Filmek – Megnézendő – Nem letöltött – Összes műfaj –
   Franchise nélkül. „Folyamatban” / „Abbahagyva” csak sorozatos típusnál (`MOVIE_HIDDEN_STATUSES`). Mama-szűrő
   sorozatnál / franchise-ra szűrve nem szűr (`mamaFilter`). Franchise választásakor a típus „all”, megszűnésekor
   vissza Filmek; az állapot „Mind” (`statusBeforeFranchise`). Asztalon (≥ 641 px) saját lenyílók (`FranchiseFilter`),
-  telefonon natív `<select>`-ek. Teszt: `test-m3.mjs`.
+  telefonon natív `<select>`-ek. Teszt: `kinezet/szurosor-asztal.mjs`.
 - **Keresés**: `lib/listSearch.js` (`fold()`, `resolveWords` – elírás-tűrés), `components/Highlight.js`; gépeléskor a
   szűrők félreállnak (`SEARCH_FILTERS`). A mező (`searchInput`) azonnal frissül, a lista szűrése (`query` + a
   szűrőváltás együtt) `startTransition`-ben – a leütés nem vár rá. **A tesztek a lista keresőjébe írás után a
-  `input.list-search[data-searched]` értékére várnak** (új tesztben is). Teszt: `test-1013.mjs`, `test-131.mjs`.
+  `input.list-search[data-searched]` értékére várnak** (új tesztben is). Teszt: `mukodes/kereses-harang.mjs`, `mukodes/inditas-teljesitmeny.mjs`.
 - **Rendezés** (`SORTS`): franchise-ra szűrve a nézési sorrend (`WATCH_ORDER`) vagy megjelenés (`FRANCHISE_SORT`);
   kézi rendezés után az marad. Nézési sorrendnél a lista tételekből áll (`{ key, title, item }`, sorozat évadonként).
 - **Nézetek**: ≥ 1400 px-en lista (`TitleTable`) | rács (`localStorage` `filmlista-nezet`), alatta mindig rács.
@@ -114,27 +114,27 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   szerkesztő ablakból nem.
 - **Lapozás**: 25 (telefon / keskeny rács), 10 (asztali lista), 22 (asztali rács); asztalon a lapozó és a lábléc
   egy sávban (`docked`). A lapozás az oldal első címét jegyzi (`pageState.first`). Lapozáskor és induláskor
-  (munkamenetenként egyszer, `filmlista-beuszas`) a kártyák / sorok beúsznak (`data-paging`). Teszt: `test-135-141.mjs`.
+  (munkamenetenként egyszer, `filmlista-beuszas`) a kártyák / sorok beúsznak (`data-paging`). Teszt: `kinezet/animaciok-beuszas-attunes.mjs`.
 - **Letapadt szűrősor** (sticky, `data-stuck`, mögötte `ProgressiveBlur`): **a sáv és az ősei nem kaphatnak
   `backdrop-filter`-t, `filter`-t, `opacity`-t, maszkot** – különben a rétegek nem látnak át. A gyorsgombok
   (`.stuck-tools`) helye nyugalomban is foglalt (`data-off` → `visibility: hidden`), hogy a sor ne törjön másként.
-  A fejléc felugrói a szűrősor (`z-index: 30`) fölött. Teszt: `test-102-103.mjs`.
+  A fejléc felugrói a szűrősor (`z-index: 30`) fölött. Teszt: `kinezet/elmosas-uveg.mjs`.
 - **Csúszó kijelölő** (`lib/useSlidingThumb.js`): új gombcsoportnál `className="… sliding"` +
   `ref={useSlidingThumb()}`; a kiválasztott közvetlen gyermek `aria-pressed` / `aria-selected`.
 - **Animált átrendeződés**: `components/Reflow.js` – saját FLIP, **nem View Transitions** (az a letapadt szűrősor
   fölé rajzolna, és közben a lap nem kattintható). `data-flip="<kulcs>"`; a réteg (`.grid` / `.table-wrap`, Mama
   sorai, a „Nem érdekel”-es sorok) ezért `position: relative`; görgethető is lehet. `exit(kulcs)`: a kieső tétel
-  saját mozgása (`HIDE_EXIT`; Mamánál balra kiúszik). Teszt: `test-49-3.mjs`, `test-133-137.mjs`.
+  saját mozgása (`HIDE_EXIT`; Mamánál balra kiúszik). Teszt: `kinezet/atrendezodes-animacio.mjs`, `kinezet/animaciok-kifolyas-berepules.mjs`.
 
 ### A lista elemei
 - `components/PosterCard.js` (kártya, w342), `components/TitleTable.js` (asztali lista, w185, `table-layout: fixed`).
   Mama-oszlop / -jelölés csak `mamaApplies(t)` esetén. Az üres lenyílók és a kuka csak rámutatva (`@media (hover:
-  hover)`). Mentés: `saveRow`. Megjegyzés mező nincs a felületen (a `notes` oszlop megmaradt). Teszt: `test-84.mjs`.
+  hover)`). Mentés: `saveRow`. Megjegyzés mező nincs a felületen (a `notes` oszlop megmaradt). Teszt: `kinezet/lista-bejelentett-evad.mjs`.
   Megnézettre váltáskor kihúzás + a borító színe kifolyik (`lib/useStrike.js`: `useStrike`, `useDrain`, `.drain-copy`);
   nyitott ablaknál a bezárásáig vár (a kártya az adatlap mögött van).
 - `components/ImdbBadge.js` – IMDb-jelvény és `CriticBadges` (RT / MC). A szám a skála színével (`data-score`,
   `--score` 0–100, 12-boritofal.css; tokenek `--score-l` / `--score-c`). **Az RT / MC csak az adatlapon és az asztali
-  listán** – a kártyán és Mamánál csak az IMDb (Norbi döntése). A toplista jelvénye nem színes. Teszt: `test-127.mjs`.
+  listán** – a kártyán és Mamánál csak az IMDb (Norbi döntése). A toplista jelvénye nem színes. Teszt: `kinezet/ertekeles-szinskala.mjs`.
 - `components/Seasons.js` – évadok (`hasSeasons`, `useSeasonActions`, `SeasonStrip`, `SeasonList`, `SeasonTimeline`
   …). „Abbahagyva”: kézi, az évadjelölés és az új évad sem írja felül; a „Mind megnézve” feloldja. A TMDB-n is szereplő
   törölt évadot a heti frissítés visszahozza. Epizódszintű követés nem kell.
@@ -162,18 +162,18 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   visszavonással (10 mp). A törölt franchise üresre állítása nem mentendő (`deleted` ref).
 - A `watched_at` nem látszik (megnézettre állításkor a mai nap). „Abbahagyva” csak sorozatnál.
 - Moziszerű fejléc jelenetképes lapon asztalon (`WIDE_QUERY`, `.editor-page.has-hero`, `data-frozen`). Teszt:
-  `test-104.mjs`.
+  `kinezet/adatlap-mozis-fejlec.mjs`.
 - Adatsor (`.meta`, Norbi választása – „D”): év · Film / Sorozat · sorozatnál az állapot szavakkal
   (`seriesStatusText`) · játékidő (`formatRuntime`; sorozatnál a legutóbbi rész) · IMDb. Korhatár nincs (elvetve).
-  Mamánál csak a játékidő. Teszt: `test-125.mjs`.
+  Mamánál csak a játékidő. Teszt: `kinezet/adatlap-adatsor.mjs`.
 - **Bezárás**: „Bezárás” (`DialogClose`, asztalon), Esc, kikattintás asztalon, Vissza gomb (`backHandler`).
   `closedby="none"` (Android – lásd `lib/backClose.js`). Telefonon alsó lap fogantyúval (`DialogClose`), nincs gomb.
 - **Nézetváltás** (`lib/viewTransition.js`): a borító átsiklik az adatlapra, ezért a `showModal()`
   `useLayoutEffect`-ben fut. Csak az első lapról siklik vissza, törléskor nem.
 - Hangulatszín: az ablak saját háttere, nem `::before` réteg (az görgetéskor felgördült).
 - Részei: `TopCast` + `/api/tmdb/credits` (`CREDITS_V`), `PersonPage` + `/api/tmdb/person` (`PERSON_V`, közös
-  forrás `lib/server/people.js`; teszt: `test-61.mjs`, `test-m4.mjs`), `TitleGallery` (az Esc a window rögzítő
-  fázisában; teszt: `test-95.mjs`), `WatchProviders` (csak HU `flatrate` + `free` + `ads`; kötelező „Forrás:
+  forrás `lib/server/people.js`; teszt: `mukodes/szinesz-lap.mjs`, `mukodes/kovetett-szemelyek.mjs`), `TitleGallery` (az Esc a window rögzítő
+  fázisában; teszt: `mukodes/kepgaleria.mjs`), `WatchProviders` (csak HU `flatrate` + `free` + `ads`; kötelező „Forrás:
   JustWatch” – TMDB-feltétel), `SimilarTitles` (`SIMILAR_V`), `Trailer` (`youtube-nocookie.com`). A később érkező
   részek első megjelenéskor beúsznak: `lib/useArrival.js` (`data-arrive` ~1 s-ig – a visszajövő rejtett lapon nem ismétlődik).
 
@@ -181,13 +181,13 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/TitleSearch.js` – 400 ms késleltetett TMDB-keresés; színészek / rendezők is (≤ 6, a személy lapja a
   `TitleEditor` első lapjaként). A mező felirata „Film vagy sorozat címe – vagy színész, rendező” (**az eleje a
   tesztek kapaszkodója**). A mező `focus({ preventScroll: true })`-t kap, **nem `autoFocus`-t** (az megszakítaná az
-  `openAdd` lap tetejére görgetését). Teszt: `test-110-111.mjs`.
+  `openAdd` lap tetejére görgetését). Teszt: `mukodes/kereso-szemelyek.mjs`.
 - `components/Discover.js` + `lib/server/discover.js` – **Norbit csak a magyar szinkronos címek érdeklik** –
   közelítés: film = HU megjelenés (`region=HU`, release type 2|3 vagy 4), sorozat = HU előfizetéses streaming, 90
   napon belüli rész; angol vagy magyar eredeti, van magyar leírás; nincs dokumentum / valóságshow / talkshow / hírek /
   szappanopera / **animáció**. A böngésző a **megnyitáskor már listán lévőket** és az elrejtetteket kihagyja. Kliens
   `DISCOVER_V` – **a válasz változásakor emeld**. A Hasonló címek és a kereső nem szűr így. A `.discover` oszlopa
-  `minmax(0, 1fr)` (különben telefonon az egész lap kicsinyedik). Teszt: `test-m2.mjs`.
+  `minmax(0, 1fr)` (különben telefonon az egész lap kicsinyedik). Teszt: `mukodes/felfedezes-listan-levok.mjs`.
 - `components/FeaturedBand.js` (kiemelt sáv, hibánál elmarad), „Neked ajánlott” (8+ értékelésűek alapján; a magyar
   megjelenést itt nem szűri). Lapozáskor áttűnik: a régi kép másolata (`.featured-bg-old`) alatta, a kép és a szöveg
   címenként új elem (**külön kulcs – `kep:` / `szoveg:`; azonos kulcsnál a régiek a lapon maradtak**).
@@ -200,34 +200,34 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 
 ### Franchise-ok
 - `components/FranchisesDialog.js` – ábécérend **névelő nélkül** („A” / „Az” / „The” nem számít). Csempére kattintva
-  `CollectionDialog` az ablakon belül (teszt: `test-h9.mjs`). Szerkesztés / megerősítés közben az Esc és a Vissza
+  `CollectionDialog` az ablakon belül (teszt: `mukodes/franchise-ablak-gyors-nyitas.mjs`). Szerkesztés / megerősítés közben az Esc és a Vissza
   csak azt zárja. TMDB-hibánál nem „nincs TMDB-gyűjtemény”, hanem újrapróbálás (`loadFailed` / `onRetry`).
 - `components/FranchiseSuggestions.js` + `lib/franchiseSuggest.js` – **csak felajánlja**, magától soha nem rendel
   hozzá, a meglévőt nem írja át; nyitott `<dialog>` alatt a bezárásáig vár.
 - `components/FranchiseCollection.js` – franchise-sáv és `CollectionDialog` (Gyűjtemény / Nézési sorrend fül);
-  felvételkor az ablak nyitva marad. Teszt: `test-hozzarendeles.mjs`, `test-audit-6.mjs`.
+  felvételkor az ablak nyitva marad. Teszt: `mukodes/gyujtemeny-hozzarendeles.mjs`, `mukodes/gyujtemeny-ablak-nyitva-marad.mjs`.
 - `components/FranchiseActions.js` – logóválasztó (`logo_path: ''` = „Csak a név”). **Mentés közben a gombok nem
-  tiltódnak** (a fókusz a body-ra esne, és az Esc az egész ablakot zárná). Teszt: `test-j8.mjs`.
+  tiltódnak** (a fókusz a body-ra esne, és az Esc az egész ablakot zárná). Teszt: `mukodes/franchise-gombok-logo.mjs`.
 - `/api/franchises/logos` – automatikus logó csak `logo_path is null`-nál; a kézzel választottat (`''`-t is) nem
   írja felül.
 - `components/WatchOrder.js` + `lib/watchOrder.js` – nézési sorrend (kulcs `címId:évad`, 0 = film); „Kész” →
   `set_franchise_order` RPC.
 - `components/ShareOrder.js` + `lib/shares.js` + `app/sorrend/[token]/` – megosztott sorrend: szerverkomponens
   (`connection()`, nem indexelt), állapot / értékelés / letöltve / Mama nem látszik; hibás link 404; a service
-  worker nem kezeli. Teszt: `test-41.mjs`, `test-20.mjs`.
+  worker nem kezeli. Teszt: `mukodes/sorrend-megosztas.mjs`, `adatbazis/megosztott-sorrend.mjs`.
 
 ### Színészek és rendezők
 - `lib/people.js` – követések tárolója (`useFollowed`, `followPerson` – követéskor rögtön `refreshPeople`, az első
   ellenőrzés csak megjegyez; `personSummary`).
 - `components/PeopleDialog.js` – asztalon portrérács, telefonon vízszintes csempék (Norbi választása, csak a CSS
-  más); az Esc / Vissza az idővonalról a csempékhez lép. Teszt: `test-m4.mjs`.
+  más); az Esc / Vissza az idővonalról a csempékhez lép. Teszt: `mukodes/kovetett-szemelyek.mjs`.
 - `components/FollowSuggestions.js` + `/api/people/suggest` – „Kit érdemes követned?”; elrejtés `localStorage`-ban.
   Kliens `SUGGEST_V` – **a válasz változásakor emeld**.
 
 ### Toplisták
 - `components/ToplistsDialog.js` + `lib/server/toplists.js` – minden osztálya `toplist-` előtagú (**a `.top-*` a
   fejlécé, a `.tl-*` az évad-idővonalé – mindkettő ütközött már**). Kliens `TOPLIST_V` – **a válasz változásakor
-  emeld**. Teszt: `test-120.mjs`.
+  emeld**. Teszt: `mukodes/toplistak.mjs`.
 - Szűrés (Norbi döntése, „laza” – `huOk()`): film – angol / magyar eredetinél HU megjelenés vagy bármilyen HU
   szolgáltató, más nyelvűnél csak HU megjelenés; sorozat – HU streaming; magyar leírás kell; dokumentum / hírek /
   valóságshow / szappanopera / talkshow / koncertfilm nincs, **az animáció benne van**. IMDb-értékelés: `imdb_ratings`
@@ -245,12 +245,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `components/StatsDialog.js` + `lib/stats.js`; `components/BackupsDialog.js` + `lib/backups.js`.
 - `lib/errorLog.js` + `components/ErrorsDialog.js` – hibanapló: **a kliensoldali `console.error(error)` helyett
   `reportError(error)`** (konzolra is ír, `log_client_error` RPC; a hálózati hibát, megszakítást, böngészőzajt
-  kihagyja). Teszt: `test-113.mjs`.
+  kihagyja). Teszt: `mukodes/hibanaplo.mjs`.
 - `components/PasswordDialog.js` – a jelenlegi jelszót egy **külön, nem tároló Supabase-kliens** ellenőrzi
   (`persistSession: false`, saját `storageKey`, utána `signOut({ scope: 'local' })`); hibakódok: `lib/authErrors.js`.
-  Elfelejtett jelszó nincs. Teszt: `test-27.mjs` (a tesztfiók jelszavát a végén mindenképp visszaállítja).
+  Elfelejtett jelszó nincs. Teszt: `mukodes/jelszo-modositas.mjs` (a tesztfiók jelszavát a végén mindenképp visszaállítja).
 - `components/ManualDialog.js` + `scripts/leiras.mjs` – a `FELHASZNALOI-LEIRAS.md`-ből a `npm run dev` / `build`
-  elején készül a `public/leiras/` (git-ből kizárva). Teszt: `test-48.mjs`.
+  elején készül a `public/leiras/` (git-ből kizárva). Teszt: `kinezet/felhasznaloi-leiras-ablak.mjs`.
 - `components/BulkImport.js` + `lib/bulkImport.js` (csak asztalon), `components/ImdbRatingsImport.js` +
   `lib/imdbImport.js` (az IMDb csillaga felülírja a sajátot, új cím nem kerül fel). Bezárás után a futás a háttérben
   végigfut (`runRef`). Automatikus IMDb-szinkron nincs (nincs API, a gépi olvasás tiltott).
@@ -275,7 +275,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `writeMark` / `writtenSince`): a csendes újratöltés és az élő szinkron a kérés indulása után helyben írt címnél a
   helyi sort tartja meg – **új, a fő listát helyben író útnál (a `replaceTitle` / `handleAdded` /
   `applyRatingsLocally` / törlés mellett) jelölni kell**; az élő szinkron `replaceTitle(row, { remote: true })`.
-  Teszt: `test-audit-9.mjs`, `test-atnezes-b.mjs`.
+  Teszt: `mukodes/optimista-mentes-sorrend.mjs`, `mukodes/vegyes-atnezes-b.mjs`.
 - `lib/radioKeys.js` – azonnal mentő rádiógomb-csoport (`onKeyDown={radioKeys}`): a nyíl csak a fókuszt viszi, az
   Enter / Szóköz ment (mint a `StarRating`). **Új mentő rádiógomb-csoportnál ezt használd.**
 - `lib/fetchAll.js` – a PostgREST kérésenként legfeljebb **1000 sort** ad. **Új, a teljes listát lekérő
@@ -302,20 +302,20 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   ugyanazzal a szabállyal, mint a kikattintás (`const closing = { onClose, canClose }`, a `useBackdropClose` is ezt
   kapja; nem zárhat → megbillen, a lap visszaugrik). Az ablak alján nincs „Bezárás” (a művelethez tartozó „Mégse”
   marad). Helye: `--close-top` / `--close-right`, a fejléc helyet hagy neki (`27-adatlap.css`). **Ablak `> div`
-  szabálya: `> div:not(.dialog-close-bar)`.** Kivétel: Mama adatlapja (×, saját fogantyú). Teszt: `test-121.mjs`.
+  szabálya: `> div:not(.dialog-close-bar)`.** Kivétel: Mama adatlapja (×, saját fogantyú). Teszt: `kinezet/ablak-bezaras-gomb.mjs`.
 - `lib/backClose.js` – a Vissza gomb a legfelső réteget zárja (rétegenként `history.pushState`). A modális
   `<dialog>`-okat MutationObserver kezeli – **új ablakhoz nem kell semmi**; saját szabály: `dialog.backHandler` →
   'stay' | 'stepped' | 'closing'; nem dialog réteg: `useBackLayer(open, close)`. **Android**: nyitott modális
   ablaknál a vissza-gesztus `cancel`-ként jut az ablakhoz, ezért az adatlap `closedby="none"`, az Esc-et `keydown`
   kezeli; az adatlap lapjai saját bejegyzést kapnak (`pushDialogPage` / `popDialogPage`). **A bejegyzések
   `scrollRestoration = 'manual'`-lal** (`pushOwn`; a beállítás bejegyzésenként tárolódik, a cél bejegyzésé számít) –
-  különben a réteg bezárásakor a lap a nyitásakori helyre ugrana. Teszt: `test-1013b.mjs`, `test-gesztus.mjs`,
-  `test-atnezes-f.mjs`.
+  különben a réteg bezárásakor a lap a nyitásakori helyre ugrana. Teszt: `mukodes/vissza-gomb-frissules.mjs`, `mukodes/android-vissza-gesztus.mjs`,
+  `mukodes/vegyes-atnezes-f.mjs`.
 - `lib/appVersion.js` + `/api/version` – `useAppFreshness` (≥ 5 perc rejtés után csendes újratöltés; új buildnél
   „Frissült az app” sáv).
 - `lib/prefetch.js` – rámutatásra előtöltés **ugyanazzal az URL-lel, mint a `TitleEditor` – ha ott a paraméterek
   változnak, itt is**.
-- `components/PullRefresh.js` – csak érintéssel, a telepített appban. Teszt: `test-1014.mjs`.
+- `components/PullRefresh.js` – csak érintéssel, a telepített appban. Teszt: `mukodes/tmdb-frissites-elo-szinkron.mjs`.
 - `lib/liveSync.js` – Supabase Realtime; feliratkozásonként új csatornanév; a törlésről csak a kulcs jön. A
   `useLiveTitles` a saját visszhangot, a függő mentésű és függő törlésű címet kihagyja.
 - `public/sw.js` + `lib/offline.js` – service worker (csak kiadott változatban): az `/api` és a Supabase nem
@@ -323,7 +323,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `PosterCard` / `TitleTable` / `FranchiseFilter` képméretének változásakor itt is**. **A tárolás módjának
   változásakor emeld a `VERSION`-t.** Minden válasz a `respond()`-on át: ha a tároló hibát dob (már a `caches.open`
   is – sérült profil, betelt lemez), a hálózatról; a tárolóba írás hibája nem buktathatja el a választ. Lista:
-  IndexedDB (`loadSnapshot` / `saveSnapshot` / `clearSnapshots`). Teszt: `test-44.mjs`, `test-131.mjs`.
+  IndexedDB (`loadSnapshot` / `saveSnapshot` / `clearSnapshots`). Teszt: `mukodes/offline-indulas.mjs`, `mukodes/inditas-teljesitmeny.mjs`.
 
 ### Szerveroldal
 - Minden `lib/server/` modul `import 'server-only'`-val kezdődik (újba is tedd bele).
@@ -346,12 +346,12 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   a saját adatokhoz nem nyúl.
 - `app/api/keepalive` + `vercel.json` – napi cron, a Supabase ingyenes projekt ébren tartása.
 - `.github/workflows/mentes.yml` – heti külső mentés (`BACKUP_DB_URL`), 8 napnál régebbi mentésnél hibával áll le.
-  Visszatöltés: `munka/e2e/mentes-feltoltes.mjs <fájl.json> <e-mail>`. A `backup_reader` jelszavának cseréje:
-  `mentes-olvaso.mjs`, utána a GitHub-titok is.
+  Visszatöltés: `munka/e2e/eszkoz/mentes-feltoltes.mjs <fájl.json> <e-mail>`. A `backup_reader` jelszavának cseréje:
+  `eszkoz/mentes-olvaso.mjs`, utána a GitHub-titok is.
 
 ### Dokumentáció
 - `supabase/*.sql` – a már lefuttatott adatbázis-szkriptek (számozva).
-- `FELHASZNALOI-LEIRAS.md` – felhasználói leírás (képek: `docs/kepek/*.jpg`, `munka/terv-3/33-leiras/leiras-seed.mjs`
+- `FELHASZNALOI-LEIRAS.md` – felhasználói leírás (képek: `docs/kepek/*.jpg`, `munka/e2e/eszkoz/proba-lista.mjs`
   + `leiras-kepek.mjs <név>`); frissítése: Konvenciók → „Felhasználói leírás”.
 
 ## Adatbázis (részletek: `supabase/`)
@@ -387,9 +387,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   állítható.
 - `franchise_shares` (token; visszavonás = törlés), `shared_watch_order(token)` (security definer, `anon` is):
   állapot, értékelés, letöltve, Mama, megjegyzés, user_id soha.
-- `list_viewers (viewer_id → owner_id)`: írni csak SQL-ből (`munka/e2e/mama-kapcsolas.mjs`). `mama_list()`,
+- `list_viewers (viewer_id → owner_id)`: írni csak SQL-ből (`munka/e2e/eszkoz/mama-kapcsolas.mjs`). `mama_list()`,
   `mama_mark()` (security definer; Mama a `titles` táblát közvetlenül nem látja). **`title_released(t)` a
-  `releaseState()` szabálya SQL-ben – ha az egyik változik, a másikat is.** Teszt: `test-17.mjs` (`--live`).
+  `releaseState()` szabálya SQL-ben – ha az egyik változik, a másikat is.** Teszt: `adatbazis/mama-hozzaferes.mjs` (`--live`).
 - `client_errors` – írni csak a `log_client_error()`; Mamánál a gazda naplójába kerül. A `clearTestAccount()` üríti.
 - `imdb_ratings`, `toplists`: **közös** (nem felhasználói) gyorsítótár; írni csak a `store_*` függvények. A közös táblákat (`genres` is) a
   néző (`list_viewers`) nem írhatja.
@@ -466,7 +466,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - **Felhasználói leírás** (`FELHASZNALOI-LEIRAS.md`): **időszakosan frissül, nem minden fejlesztés után**; a
   fejlesztés commitjában ne nyúlj hozzá. Frissítés Norbi kérésére: a leírás utolsó commitja óta készült változások
   (`git log $(git log -1 --format=%H -- FELHASZNALOI-LEIRAS.md)..HEAD`) alapján a szakaszok, a változott felület képei
-  (`leiras-seed.mjs`, majd `leiras-kepek.mjs <név>`; a jelölők és a szöveg számai egyezzenek), az „Utolsó frissítés”
+  (`eszkoz/proba-lista.mjs`, majd `leiras-kepek.mjs <név>`; a jelölők és a szöveg számai egyezzenek), az „Utolsó frissítés”
   dátuma, és a végén a **Mérföldkövek** (Norbi döntése, 2026-10-22: részletes változásnapló nincs – csak a nagyobb
   funkciók megjelenése, legújabb felül, egy sor naponta). Új funkció a meglévő számozott fejezetbe kerül, ne új
   fejezetbe (a számok eltolódnának). Norbi szemszögéből, pontos feliratokkal; tervezett funkció nem kerül bele.
@@ -516,15 +516,27 @@ Norbi döntései; a részletek a TERV.md-ben.
   és segédszkriptek a `munka/` mappában: a scratchpadbe másolva, ott `npm install` után futtathatók.
 - Szkriptből (supabase-js) kilépéskor `signOut({ scope: 'local' })` kell – az alapértelmezett `global` a böngészőben
   futó munkamenetet is lezárja, és az `/api` route-ok 401-et adnak.
-- A böngészős teszt „kevesebb mozgás” módban fut (`emulateMedia({ reducedMotion: 'reduce' })`); a mozgást a saját
-  lépése kapcsolja vissza. A `page.reload` megvárja a friss listát (`main[data-list]`), a `plainReload` nem; a
-  `clearSnapshot()` törli a tárolt listát. Fix várakozás helyett a mentés utáni friss sorra (`rowRefetched`) vagy két
-  képkockára (`settle`) vár; képernyőkép csak `SHOTS=1`-gyel. Fő teszt: `munka/e2e/test.mjs`. A szűrősor lenyílóit
-  a `munka/e2e/szuro.mjs` kezeli (`typeFilter`, `sortFilter`, `mamaFilterSelect`, `downloadFilter` – asztalon és
-  telefonon ugyanazokkal a módszerekkel).
-- **Teljes tesztkör**: `munka/e2e/teljes.sh` (a scratchpadbe másolt e2e mappából, Git Bash-ben, ~25 perc); minden
-  teszt után üríti a tesztfiókot. Összesítő: `teljes/osszesito.txt`. A `leiras-seed` a címeket
-  `details_checked_at`-tel veszi fel (a TMDB-frissítés ne írja át őket).
+- **Tesztek**: `munka/e2e/` (a „Teszt:” utak ehhez képest értendők; tartalomjegyzék: `munka/README.md`). Mindegyik a
+  közös keretre épül (`eszkoz/keret.mjs`): `step` / `check` / `assert`, `open({ phone, mama, … })` (belépett lap,
+  „kevesebb mozgás”), `settle(page)`, `addFromTmdb`, `adminDb()` (visszagörgetett tranzakció), `clearAccountNowAndAtEnd`,
+  `onCleanup`, `finish()` (a takarítás hibánál is lefut; összesítő „N/M rendben”). **Új teszt is erre épüljön.**
+- A böngészős teszt „kevesebb mozgás” módban fut; a mozgást a saját lépése kapcsolja vissza
+  (`emulateMedia({ reducedMotion: 'no-preference' })`). A `page.reload` megvárja a friss listát (`main[data-list]`), a
+  `plainReload` nem; a `clearSnapshot()` törli a tárolt listát. Fix várakozás helyett a mentés utáni friss sorra
+  (`rowRefetched`) vagy két képkockára (`settle`) vár; képernyőkép csak `SHOTS=1`-gyel. Fő teszt: `mukodes/fo-teszt.mjs`.
+  A szűrősor lenyílóit az `eszkoz/szuro.mjs` kezeli (`typeFilter`, `sortFilter`, `mamaFilterSelect`, `downloadFilter` –
+  asztalon és telefonon ugyanazokkal a módszerekkel).
+- **Teljes tesztkör**: `munka/e2e/teljes.sh` (a scratchpadbe másolt e2e mappából, Git Bash-ben, ~35 perc; egy mappa:
+  `CSAK=kinezet`, a meglévő fordítással `NOBUILD=1`); minden teszt után üríti a tesztfiókot. Összesítő:
+  `teljes/osszesito.txt`, lépésszámok: `node eszkoz/lepesszam.mjs teljes`. A próbalista (`eszkoz/proba-lista.mjs`) a
+  címeket `details_checked_at`-tel veszi fel (a TMDB-frissítés ne írja át őket).
+- **Új teszt neve és helye** (Norbi döntése, T1): `munka/e2e/<mappa>/<téma>.mjs` – mappa: `mukodes/` (böngészős,
+  felületi működés), `kinezet/` (elrendezés, színek, kontraszt, mozgás), `adatbazis/` (triggerek, RLS, függvények –
+  visszagörgetett tranzakcióban), `szerver/` (`/api` route-ok), `eszkoz/` (segéd, próbalista, karbantartó szkript –
+  nem teszt). A név azt mondja meg, mit vizsgál (nem a terv számát), kisbetű, ékezet nélkül, kötőjellel
+  (`mukodes/kereses-elirastures.mjs`); több független pontot vizsgáló csomag: `vegyes-<csomag>`. Az első sor
+  megjegyzése a terv pontszáma (`// terv-3 132`). Az új tesztet a `teljes.sh`-ba és a `munka/README.md`
+  tartalomjegyzékébe is fel kell venni.
 - Képernyőkép / videó a tesztfiókról: a fejléc e-mail-címét mintacímre kell cserélni
   (`munka/dizajn-2/eszkozok/mask.mjs`); videóhoz a Playwright ffmpeg-je a scratchpadbe kerül
   (`PLAYWRIGHT_BROWSERS_PATH`), lásd `munka/dizajn-2/eszkozok/video*.mjs`.
