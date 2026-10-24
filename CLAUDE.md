@@ -519,11 +519,15 @@ Norbi döntései; a részletek a TERV.md-ben.
 - **Tesztek**: `munka/e2e/` (a „Teszt:” utak ehhez képest értendők; tartalomjegyzék: `munka/README.md`). Mindegyik a
   közös keretre épül (`eszkoz/keret.mjs`): `step` / `check` / `assert`, `open({ phone, mama, … })` (belépett lap,
   „kevesebb mozgás”), `settle(page)`, `addFromTmdb`, `adminDb()` (visszagörgetett tranzakció), `clearAccountNowAndAtEnd`,
-  `onCleanup`, `finish()` (a takarítás hibánál is lefut; összesítő „N/M rendben”). **Új teszt is erre épüljön.**
+  `onCleanup`, `finish()` (a takarítás hibánál is lefut; összesítő „N/M rendben”). **Új teszt is erre épüljön.** A
+  Supabase korlátozza a sűrű belépést: az ürítés az adatbázisból megy (`clearAccountDb`), a belépés újrapróbál
+  (`signInWithRetry`, `loginForm`) – új tesztben ne lépj be fölöslegesen.
 - A böngészős teszt „kevesebb mozgás” módban fut; a mozgást a saját lépése kapcsolja vissza
   (`emulateMedia({ reducedMotion: 'no-preference' })`). A `page.reload` megvárja a friss listát (`main[data-list]`), a
   `plainReload` nem; a `clearSnapshot()` törli a tárolt listát. Fix várakozás helyett a mentés utáni friss sorra
-  (`rowRefetched`) vagy két képkockára (`settle`) vár; képernyőkép csak `SHOTS=1`-gyel. Fő teszt: `mukodes/fo-teszt.mjs`.
+  (`rowRefetched`) vagy két képkockára (`settle`) vár; képernyőkép csak `SHOTS=1`-gyel. A régi fő teszt 11 szakasza
+  (`mukodes/lista-*` …, T2) a közös `eszkoz/fo-kozos.mjs`-re épül, a kiinduló állapotuk felvétel
+  (`eszkoz/minta/fo-teszt/`, újra: `FELVESZ=1`).
   A szűrősor lenyílóit az `eszkoz/szuro.mjs` kezeli (`typeFilter`, `sortFilter`, `mamaFilterSelect`, `downloadFilter` –
   asztalon és telefonon ugyanazokkal a módszerekkel).
 - **Teljes tesztkör**: `munka/e2e/teljes.sh` (a scratchpadbe másolt e2e mappából, Git Bash-ben, ~35 perc; egy mappa:
