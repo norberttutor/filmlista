@@ -4,6 +4,7 @@
 
 @import './styles/01-szinek.css'; /* színtokenek, sötét téma (alap) */
 @import './styles/02-vilagos.css'; /* világos téma */
+@import './styles/02b-szinparok.css'; /* színpárok (Kinézet) */
 @import './styles/03-teka-szinek.css'; /* videotéka-téma – színek */
 @import './styles/04-alap.css'; /* oldal, háttér, linkek, fókusz */
 @import './styles/05-urlap.css'; /* űrlapelemek, lenyílók, görgetősáv, gombok */

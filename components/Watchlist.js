@@ -22,12 +22,12 @@ import ListSkeleton from '@/components/ListSkeleton';
 import StatsDialog from '@/components/StatsDialog';
 import ManualDialog from '@/components/ManualDialog';
 import PasswordDialog from '@/components/PasswordDialog';
+import AppearanceDialog from '@/components/AppearanceDialog';
 import BackupsDialog from '@/components/BackupsDialog';
 import ErrorsDialog from '@/components/ErrorsDialog';
 import MoreMenu from '@/components/MoreMenu';
 import ThemeToggle from '@/components/ThemeToggle';
 import NeonBrand from '@/components/NeonBrand';
-import { useTheme } from '@/lib/theme';
 import FranchisesDialog from '@/components/FranchisesDialog';
 import PeopleDialog from '@/components/PeopleDialog';
 import ToplistsDialog from '@/components/ToplistsDialog';
@@ -71,7 +71,6 @@ const SHORTCUTS = {
 };
 
 export default function Watchlist({ session }) {
-  const theme = useTheme();
   const userId = session.user.id;
   const notes = useNotificationList();
   const data = useListData(userId, notes);
@@ -199,7 +198,6 @@ export default function Watchlist({ session }) {
 
   // a ⋮ menü pontjai – a fejlécben és (asztalon, lejjebb görgetve) a letapadt szűrősorban is
   const moreItems = moreMenuItems({
-    theme,
     isPhone,
     isDesktop,
     readOnly,
@@ -544,6 +542,7 @@ export default function Watchlist({ session }) {
 
       {dialog === 'manual' && <ManualDialog onClose={closeDialog} />}
       {dialog === 'password' && <PasswordDialog email={session.user.email} onClose={closeDialog} />}
+      {dialog === 'appearance' && <AppearanceDialog onClose={closeDialog} />}
 
       {dialog === 'errors' && <ErrorsDialog userId={userId} onChanged={refreshErrorInfo} onClose={closeDialog} />}
 

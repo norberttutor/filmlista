@@ -326,3 +326,96 @@ body:not(:has(.filters[data-stuck])) .top.collapsing[data-compact] {
   line-height: 1.35;
   color: var(--muted);
 }
+
+/* ---------- Kinézet (ablak a ⋮ menüből, terv-3 142) ----------
+   Fent a téma (a Színészek ablak kapcsolócsoportja, .role-switch), alatta a színpárok: kerek végű gombok a pár három
+   pöttyével; a kiválasztotton a csúszó kijelölő (45-csuszo.css). Tékában a színpár nem választható. */
+.editor.appearance-dialog {
+  width: min(30rem, calc(100vw - 2rem));
+}
+
+.appearance-part {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.appearance-part h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.import-body .appearance-hint {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.appearance-themes {
+  justify-self: start;
+}
+
+.appearance-themes > button {
+  padding: 0.4rem 1rem;
+  font-size: 0.9rem;
+}
+
+.palette-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.palette-pick > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.42rem 0.95rem 0.42rem 0.55rem;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.palette-pick > button:hover:not(:disabled) {
+  background: var(--hover-tint);
+}
+
+.palette-pick > button[aria-pressed='true'] {
+  font-weight: 600;
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+.palette-pick > button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.palette-pick > button:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+.palette-dots {
+  display: inline-flex;
+}
+
+/* a pár színei: a hex a lib/theme.js PALETTES-ében (a pár színei csak a <html>-en érvényesek) */
+.palette-dots i {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.palette-dots i + i {
+  margin-left: -0.28rem;
+}
+
+.palette-pick > button:disabled .palette-dots {
+  filter: saturate(0.25);
+}

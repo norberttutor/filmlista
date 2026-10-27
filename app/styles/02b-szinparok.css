@@ -1,0 +1,95 @@
+/* ---------- Színpárok (terv-3 142) ---------- */
+/* A ⋮ menü „Kinézet” ablakában választható színpár (lib/theme.js – PALETTES, <html data-pal="…">; az Alapnál
+   nincs jelző): a fő szín (--accent: gombok, kiválasztás, „Folyamatban”, a neon első csöve), a neon második csöve
+   (--neon-2) és a saját jelölés (--accent-2) együtt cserélődik, sötétben és világosban. A tartalomszínek és az
+   értékelés-skála maradnak; ahol egy pár színe túl közel esne, a pár azt is eltolja (EXTRA). A származtatott
+   tokenek (--accent-soft …) a :root-on a felülírt értékből számolódnak; a hex értéket tartalmazó ikonokat
+   (--chevron-accent, --check-mark) itt kell megadni.
+   A téka nem változik: a sötét szabály csak data-theme nélkül, a világos csak data-theme="light" mellett érvényes
+   (az erősségük 0,3,0 – a 01 / 02 szabályai fölött, a sorrendtől függetlenül). A sötét szigetek világosban is a
+   pár sötét színeit kapják. Kontraszt (munka/terv-3/terv-142/szinek.mjs): minden szöveg ≥ 4,5:1 mindkét témában.
+   P3-on nem élénkebb (csak az Alap). */
+
+/* Mérgező: lime gombok, lila saját jelölés */
+:root[data-pal='mergezo']:not([data-theme]),
+:root[data-theme='light'][data-pal='mergezo'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo, .gallery-lightbox, .backdrop-pager, .backdrop-dots) {
+  --accent: oklch(84% 0.24 135);              /* #7eea19 */
+  --accent-ink: oklch(24% 0.05 135);          /* #14240b */
+  --accent-2: oklch(78% 0.1509 310);          /* #d59aff */
+  --accent-2-ink: oklch(26% 0.06 310);        /* #2d1b39 */
+  --neon-2: oklch(74% 0.1622 302);            /* #be8fff */
+  --watched-accent: oklch(62% 0.095 135);     /* #6d9358 */
+  --st-dropped: oklch(71% 0.05 285);          /* #9e9ec0 az Abbahagyva szürkéslila (a lila saját jelölés mellett), 6,6:1 */
+  --chevron-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%237eea19' stroke-width='1.6'/%3E%3C/svg%3E");
+  --check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.75 8.25l2.75 2.75 5.75-6' fill='none' stroke='%2314240b' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+:root[data-theme='light'][data-pal='mergezo'] {
+  --accent: oklch(50% 0.1468 135);            /* #3a7400 */
+  --accent-2: oklch(48% 0.2 310);             /* #802baf */
+  --neon-2: oklch(54% 0.22 302);              /* #893ed6 */
+  --watched-accent: oklch(51% 0.07 135);      /* #556f46 */
+  --st-dropped: oklch(52% 0.07 285);          /* #656390 5,1:1 */
+  --chevron-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%233a7400' stroke-width='1.6'/%3E%3C/svg%3E");
+}
+
+/* Vaporwave: rózsaszín gombok, cián második cső, napsárga saját jelölés */
+:root[data-pal='vaporwave']:not([data-theme]),
+:root[data-theme='light'][data-pal='vaporwave'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo, .gallery-lightbox, .backdrop-pager, .backdrop-dots) {
+  --accent: oklch(72% 0.2097 350);            /* #ff61b7 */
+  --accent-ink: oklch(24% 0.05 350);          /* #301423 */
+  --accent-2: oklch(90% 0.139 92);            /* #ffdb68 */
+  --accent-2-ink: oklch(26% 0.0553 92);       /* #2e2300 */
+  --neon-2: oklch(74% 0.1281 210);            /* #00c0d7 */
+  --watched-accent: oklch(62% 0.095 350);     /* #b16e8e */
+  --c-rose: oklch(75% 0.11 12);               /* #ea909b az ajánlás korallosabb (a rózsaszín gomb mellett), 7,4:1 */
+  --chevron-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23ff61b7' stroke-width='1.6'/%3E%3C/svg%3E");
+  --check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.75 8.25l2.75 2.75 5.75-6' fill='none' stroke='%23301423' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+:root[data-theme='light'][data-pal='vaporwave'] {
+  --accent: oklch(52% 0.2 350);               /* #b51c79 */
+  --accent-2: oklch(50% 0.1028 92);           /* #786000 */
+  --neon-2: oklch(54% 0.0937 210);            /* #007d8d */
+  --watched-accent: oklch(51% 0.07 350);      /* #85556c */
+  --c-rose: oklch(52% 0.15 12);               /* #ad3a52 5,4:1 */
+  --chevron-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23b51c79' stroke-width='1.6'/%3E%3C/svg%3E");
+}
+
+/* Mélytenger: elektromos kék gombok, aqua második cső, citromsárga saját jelölés */
+:root[data-pal='melytenger']:not([data-theme]),
+:root[data-theme='light'][data-pal='melytenger'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo, .gallery-lightbox, .backdrop-pager, .backdrop-dots) {
+  --accent: oklch(72% 0.1466 258);            /* #68a5ff */
+  --accent-ink: oklch(24% 0.05 258);          /* #0f1f37 */
+  --accent-2: oklch(90% 0.1872 100);          /* #fcdf00 */
+  --accent-2-ink: oklch(26% 0.0562 100);      /* #2a2400 */
+  --neon-2: oklch(74% 0.1264 195);            /* #00c3c3 */
+  --watched-accent: oklch(62% 0.095 258);     /* #6287bf */
+  --chevron-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%2368a5ff' stroke-width='1.6'/%3E%3C/svg%3E");
+  --check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.75 8.25l2.75 2.75 5.75-6' fill='none' stroke='%230f1f37' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+:root[data-theme='light'][data-pal='melytenger'] {
+  --accent: oklch(52% 0.1935 258);            /* #0062d5 */
+  --accent-2: oklch(50% 0.1045 100);          /* #716400 */
+  --neon-2: oklch(54% 0.0924 195);            /* #007f7f */
+  --watched-accent: oklch(51% 0.07 258);      /* #4d678e */
+  --chevron-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%230062d5' stroke-width='1.6'/%3E%3C/svg%3E");
+}
+
+/* Zöld + sárga: neonzöld gombok, neonsárga második cső és saját jelölés */
+:root[data-pal='zoldsarga']:not([data-theme]),
+:root[data-theme='light'][data-pal='zoldsarga'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo, .gallery-lightbox, .backdrop-pager, .backdrop-dots) {
+  --accent: oklch(84% 0.24 145);              /* #40f159 */
+  --accent-ink: oklch(24% 0.05 145);          /* #0e2510 */
+  --accent-2: oklch(90% 0.1872 100);          /* #fcdf00 */
+  --accent-2-ink: oklch(26% 0.0562 100);      /* #2a2400 */
+  --neon-2: oklch(88% 0.1869 105);            /* #ebdd00 */
+  --watched-accent: oklch(62% 0.095 145);     /* #609562 */
+  --chevron-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%2340f159' stroke-width='1.6'/%3E%3C/svg%3E");
+  --check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.75 8.25l2.75 2.75 5.75-6' fill='none' stroke='%230e2510' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+:root[data-theme='light'][data-pal='zoldsarga'] {
+  --accent: oklch(50% 0.1579 145);            /* #00791d */
+  --accent-2: oklch(50% 0.1045 100);          /* #716400 */
+  --neon-2: oklch(58% 0.1235 105);            /* #867d00 */
+  --watched-accent: oklch(51% 0.07 145);      /* #4c714d */
+  --chevron-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%2300791d' stroke-width='1.6'/%3E%3C/svg%3E");
+}

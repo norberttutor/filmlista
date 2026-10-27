@@ -2,18 +2,18 @@
 
 import { useEffect, useRef } from 'react';
 import { STALE_MS } from '@/lib/appVersion';
-import { useTheme } from '@/lib/theme';
+import { usePalette, useTheme } from '@/lib/theme';
 
 // Neonfelirat a fejlécben (D9, Norbi választása a látványterv után, 2026-10-19 – „Neon – Bricolage”,
 // https://claude.ai/artifact/VzCx6F4njpfmNG7FvuUnp5): a cím neoncső. A szöveg maga a kikapcsolt üvegcső,
 // fölötte az égő réteg (::after, data-text – így a cím szövege és a felolvasó neve nem duplázódik); a fény a
 // „falra” is vetül (::before). Munkamenetenként egyszer felvillan (neon-on; „kevesebb mozgás”-nál rögtön ég).
-// A színek: --neon-1 / --neon-2 (app/styles/01-szinek.css, világos / téka: 02-, 03-).
+// A színek: --neon-1 / --neon-2 (app/styles/01-szinek.css, világos / színpárok / téka: 02-, 02b-, 03-).
 //
 // A neon él (terv-3 132, Norbi döntése a bemutató után, 2026-10-22): (a) véletlenszerűen 1–4 percenként
 // megrebben – többnyire az egyik cső kétszer (data-blip), kb. minden ötödik alkalommal az egész újra felkapcsol;
 // csak látható lapon, nyitott ablak nélkül, legörgetve a kis cím (.top-compact, a fejlécben); (b) ≥ 5 perc
-// távollét után visszatéréskor és (c) témaváltáskor újra felkapcsol; (d) rámutatásra / koppintásra a cső
+// távollét után visszatéréskor és (c) téma- vagy színpárváltáskor (terv-3 142) újra felkapcsol; (d) rámutatásra / koppintásra a cső
 // megrebben. A mozgás a 36-mozgas.css-ben – „kevesebb mozgás”-nál a 46 kikapcsolja, itt csak a jelzők váltanak.
 const FLICKER_KEY = 'filmlista-neon';
 const ON_MS = 1600; // a felkapcsolás (neon-on, 1,5 s) után lekerül a jelző – addig rebbenés nincs
@@ -32,8 +32,8 @@ export default function NeonBrand() {
   const ref = useRef(null);
   const timers = useRef({});
   const lastHover = useRef(0);
-  const theme = useTheme();
-  const lastTheme = useRef(theme);
+  const look = `${useTheme()}:${usePalette()}`; // téma és színpár
+  const lastLook = useRef(look);
 
   // a kis cím a fejléc saját eleme (Watchlist); legörgetve (data-compact) az látszik a nagy helyett
   const compactTitle = () => {
@@ -117,12 +117,12 @@ export default function NeonBrand() {
     };
   }, []);
 
-  // (c) témaváltáskor
+  // (c) téma- vagy színpárváltáskor
   useEffect(() => {
-    if (theme === lastTheme.current) return;
-    lastTheme.current = theme;
+    if (look === lastLook.current) return;
+    lastLook.current = look;
     switchOn();
-  }, [theme]);
+  }, [look]);
 
   // (d) rámutatásra / koppintásra (az érintés is pointerenter-rel kezdődik)
   const onPointerEnter = (e) => {

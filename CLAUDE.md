@@ -65,7 +65,15 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   világos (`<html data-theme="light">`), téka. Választás felhasználónként (`filmlista-tema:<userId>`); alapból Mama
   világos, más sötét; a boot-szkript és a belépési oldal az utoljára használtat (`filmlista-tema`) veszi; a
   megosztott oldal a `prefers-color-scheme`-et. Teszt: `kinezet/tema-vilagos-sotet.mjs`.
-- **Videotéka-téma** (`'teka'`, csak Norbinál, ⋮ menüből). **Norbi feltétele: a sötét és a világos kinézet nem
+- **Kinézet ablak** (`components/AppearanceDialog.js`, ⋮ menü): téma (Sötét / Világos / Videotéka) és **színpár**
+  egy helyen. Színpár (terv-3 142, Norbi döntése: mind az öt, szabad színcsúszka nem): a fő szín (`--accent`), a neon
+  második csöve (`--neon-2`) és a saját jelölés (`--accent-2`) együtt (`PALETTES` a `lib/theme.js`-ben, `<html
+  data-pal>`, az Alapnál nincs jelző; felhasználónként `filmlista-szinpar:<userId>`, a boot-szkript is beállítja; a
+  megosztott oldalon nincs). Színek: `02b-szinparok.css` – csak téka nélkül érvényes; a pár a közeli tartalomszínt is
+  eltolhatja. **Hex értéket tartalmazó új `--accent`-függő tokennél (mint a `--chevron-accent`) a párokba is kell
+  érték**; a pár új színe: `munka/terv-3/terv-142/szinek.mjs` (kontraszt), a pöttyök hexje a `PALETTES`-ben.
+  Váltáskor a neon felkapcsol. Teszt: `kinezet/szinparok.mjs`; tesztből: `eszkoz/kinezet.mjs` (`pickTheme`, `pickPalette`).
+- **Videotéka-téma** (`'teka'`, csak Norbinál, a Kinézet ablakból). **Norbi feltétele: a sötét és a világos kinézet nem
   változhat** – minden téka-szabály `:root[data-theme='teka']`-val kezdődik (`03-teka-szinek.css`,
   `35-teka-felulet.css`), a téka elemei csak `useTheme() === 'teka'` mellett kerülnek a lapra (`lib/teka.js`).
   Ellenőrzés: `munka/terv-3/terv-d/osszevet.mjs` (HEAD vs új fordítás képpontosan, sötétben / világosban). Teszt:
@@ -295,7 +303,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   és rendezők és Toplisták (felvétel), Franchise-ok (szerkesztés, megerősítés, nyitott gyűjtemény-ablak – a
   „megnyitás…” alatt még zár), gyűjtemény-ablak (felvétel, sorrend-szerkesztés, megerősítés, fejléc szerkesztése; ha
   a rejtett „Nézési sorrend” fülön maradt szerkesztés tartja, az a fül jön elő – `onBlocked`), Mentések, Hibák (megerősítés /
-  törlés), Jelszó (beírt jelszó / mentés); Statisztika és Leírás mindig zár; **az importablakok soha** (Norbi döntése).
+  törlés), Jelszó (beírt jelszó / mentés); Statisztika, Leírás és Kinézet mindig zár; **az importablakok soha** (Norbi döntése).
 - `components/DialogClose.js` – egységes bezárás (Norbi döntése): **minden ablak `<dialog>`-jának első gyermeke**.
   Asztalon „Bezárás” jobbra fent, ragadós; telefonon fogantyú (`.sheet-handle`, `lib/useSheetDrag.js`), lehúzva zár,
   és az ablak ettől alsó lap (`dialog.editor:has(> .dialog-close-bar)`, `39-adatlap-elrendezes.css`). Mindkettő

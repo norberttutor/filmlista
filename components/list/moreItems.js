@@ -1,6 +1,5 @@
 // A fő lista ⋮ menüjének pontjai (components/MoreMenu.js) – a fejlécben és (asztalon, lejjebb görgetve) a letapadt
 // szűrősorban is (components/Watchlist.js)
-import { setTheme } from '@/lib/theme';
 import { downloadListCsv } from '@/lib/exportList';
 
 // a ⋮ menü pontjai, amelyek net nélkül nem működnének (csak olvasható módban nem látszanak); a
@@ -10,7 +9,6 @@ const ONLINE_ONLY = ['imdb', 'bulk', 'backups', 'password', 'people', 'toplists'
 // openDialog(név): a Watchlist ablakai; imdbImport / bulkImport: az importok ref-jei (a saját ablakukat /
 // fájlválasztójukat nyitják); errorInfo: a hibanapló számlálója (terv-3 113)
 export function moreMenuItems({
-  theme,
   isPhone,
   isDesktop,
   readOnly,
@@ -80,13 +78,13 @@ export function moreMenuItems({
           },
         ]
       : []),
-    // videotéka-téma (D10): harmadik, választható téma – kikapcsolva a sötétre vált vissza
+    // téma (a videotéka is – D10) és színpár (terv-3 142)
     {
-      id: 'teka',
-      label: theme === 'teka' ? 'Videotéka-téma kikapcsolása' : 'Videotéka-téma',
-      description: theme === 'teka' ? 'Vissza a sötét témához' : 'A 90-es évek tékája: kazettatok, matricák, videomagnó-feliratok',
-      icon: 'tape',
-      onSelect: () => setTheme(theme === 'teka' ? 'dark' : 'teka'),
+      id: 'appearance',
+      label: 'Kinézet',
+      description: 'Sötét, világos vagy videotéka-téma; a gombok és a neonfelirat színpárja',
+      icon: 'palette',
+      onSelect: () => openDialog('appearance'),
     },
     {
       id: 'backups',
