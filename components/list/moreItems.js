@@ -7,7 +7,8 @@ import { downloadListCsv } from '@/lib/exportList';
 const ONLINE_ONLY = ['imdb', 'bulk', 'backups', 'password', 'people', 'toplists', 'errors'];
 
 // openDialog(név): a Watchlist ablakai; imdbImport / bulkImport: az importok ref-jei (a saját ablakukat /
-// fájlválasztójukat nyitják); errorInfo: a hibanapló számlálója (terv-3 113)
+// fájlválasztójukat nyitják); errorInfo: a hibanapló számlálója (terv-3 113); pickCount / openPick: A nap filmje
+// készletének mérete és megnyitása (terv-3 143)
 export function moreMenuItems({
   isPhone,
   isDesktop,
@@ -18,8 +19,21 @@ export function moreMenuItems({
   openDialog,
   imdbImport,
   bulkImport,
+  pickCount,
+  openPick,
 }) {
   return [
+    // A nap filmje (terv-3 143): letöltött, megnézendő film nélkül tiltva – a leírás mondja meg, miért
+    {
+      id: 'pick',
+      label: 'A nap filmje',
+      description: pickCount
+        ? 'Egy film a letöltött, megnézendők közül – naponta új, de kérhetsz másikat'
+        : 'Nincs letöltött, megnézendő film – ezek közül sorsolok',
+      icon: 'dice',
+      disabled: !pickCount,
+      onSelect: openPick,
+    },
     {
       id: 'stats',
       label: 'Statisztika',

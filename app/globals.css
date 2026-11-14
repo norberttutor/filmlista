@@ -5,6 +5,7 @@
 @import './styles/01-szinek.css'; /* színtokenek, sötét téma (alap) */
 @import './styles/02-vilagos.css'; /* világos téma */
 @import './styles/02b-szinparok.css'; /* színpárok (Kinézet) */
+@import './styles/02c-oled.css'; /* OLED fekete téma */
 @import './styles/03-teka-szinek.css'; /* videotéka-téma – színek */
 @import './styles/04-alap.css'; /* oldal, háttér, linkek, fókusz */
 @import './styles/05-urlap.css'; /* űrlapelemek, lenyílók, görgetősáv, gombok */
@@ -42,6 +43,7 @@
 @import './styles/37-adatlap-hatter.css'; /* adatlap: háttérkép */
 @import './styles/38-galeria.css'; /* képgaléria */
 @import './styles/39-adatlap-elrendezes.css'; /* adatlap: ×, alsó lap, moziszerű fejléc */
+@import './styles/39b-nap-filmje.css'; /* A nap filmje: szalag és sorsoló */
 @import './styles/40-lebego.css'; /* lebegő „+”, folyékony üveg */
 @import './styles/41-toplistak.css'; /* Toplisták */
 @import './styles/42-statisztika.css'; /* Statisztika */

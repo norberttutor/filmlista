@@ -29,12 +29,17 @@ const ICONS = {
   ),
   // figyelmeztető háromszög (hibanapló – terv-3 113)
   alert: <path d="M10.3 4.2 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0zM12 9.5v4.5M12 17.3v.01" />,
+  // dobókocka (A nap filmje – terv-3 143)
+  dice: (
+    <path d="M7.5 3.5h9a4 4 0 0 1 4 4v9a4 4 0 0 1-4 4h-9a4 4 0 0 1-4-4v-9a4 4 0 0 1 4-4zM8.7 8.7h.01M15.3 8.7h.01M12 12h.01M8.7 15.3h.01M15.3 15.3h.01" />
+  ),
 };
 
 // "További műveletek" (⋮) gomb a fejlécben, mint a Chrome menüje: kattintásra vagy
 // billentyűzettel (Enter, Szóköz, nyilak) lenyíló lista. A menüben: nyilak / Home / End
 // között lép, Enter választ, Esc / Tab / kívülre kattintás bezár (Esc után a fókusz a gombra).
-// items: [{ id, label, description, icon, onSelect }]
+// items: [{ id, label, description, icon, onSelect, disabled? }] – a tiltott pont látszik és fókuszálható, de nem nyit
+// semmit (aria-disabled; a menü nyitva marad)
 export default function MoreMenu({ items }) {
   const [open, setOpen] = useState(false);
   const [side, setSide] = useState('right'); // a lista a gomb melyik széléhez igazodik
@@ -125,6 +130,7 @@ export default function MoreMenu({ items }) {
   }
 
   function choose(item) {
+    if (item.disabled) return; // tiltott pont (pl. A nap filmje letöltött film nélkül): a leírása mondja meg, miért
     // a fókusz a gombra kerül: a megnyíló ablak bezárásakor oda tér vissza
     close();
     item.onSelect();
@@ -169,6 +175,7 @@ export default function MoreMenu({ items }) {
                 className="more-item"
                 aria-labelledby={`${menuId}-${item.id}`}
                 aria-describedby={`${menuId}-${item.id}-desc`}
+                aria-disabled={item.disabled || undefined}
                 onClick={() => choose(item)}
               >
                 <svg

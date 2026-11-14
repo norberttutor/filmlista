@@ -1,0 +1,157 @@
+/* ---------- A nap filmje (terv-3 143, components/PickOfDay.js) ---------- */
+/* Az adatlap tetején: szalag („A nap filmje · dátum”, „Másikat”) a film hangulatszínével, alatta a sorsoló – a
+   borítók végigpörögnek és megállnak a nap filmjén (a mozgás a JS-ben; az összecsukódás átmenete a 36-mozgas.css-ben).
+   Pörgés közben az adatlap rejtve, a helye foglalt (data-picking a dialogon); utána beúszik. A szalag pirula alakú
+   (nincs squircle), a sorsoló borítói kis borítók (squircle helyben – a 34-squircle.css után jön). */
+.potd {
+  padding: 1rem 1.25rem 0;
+}
+
+.potd-ribbon {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  min-height: 2.6rem;
+  padding: 0.35rem 0.4rem 0.35rem 0.9rem;
+  font-size: 0.9rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--ambient, var(--accent)) min(100%, calc(14% * var(--ambient-k))), transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ambient, var(--accent)) min(100%, calc(40% * var(--ambient-k))), transparent);
+}
+
+.potd-ribbon > svg {
+  flex: none;
+  color: var(--ambient-ink, var(--accent));
+}
+
+.potd-ribbon b {
+  font-weight: 650;
+}
+
+.potd-day {
+  color: var(--muted);
+}
+
+.potd-another {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.85rem;
+}
+
+.potd-another[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* a sorsoló: összecsukódáskor a sor magassága 0-ra megy (grid-template-rows 1fr → 0fr) */
+.potd-reel {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
+.potd-reel[data-done] {
+  grid-template-rows: 0fr;
+}
+
+.potd-reel > div {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.potd-window {
+  margin: 0 -1.25rem;
+  padding: 0.9rem 0;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+}
+
+.potd-track {
+  display: flex;
+  gap: 0.7rem;
+  width: max-content;
+  will-change: transform;
+}
+
+.potd-face {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 6.4rem;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--placeholder-bg);
+  opacity: 0.55;
+  transition: opacity 0.2s, scale 0.2s, box-shadow 0.2s;
+}
+
+.potd-face img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* borító nélküli film: a címe */
+.potd-face > span {
+  padding: 0.5rem;
+  font-size: 0.78rem;
+  text-align: center;
+  color: var(--muted);
+}
+
+.potd-face[data-won] {
+  opacity: 1;
+  scale: 1.08;
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 8px 26px rgb(var(--shade) / calc(0.5 * var(--shade-k)));
+}
+
+@supports (corner-shape: squircle) {
+  .potd-face {
+    corner-shape: squircle;
+    border-radius: 13px;
+  }
+}
+
+/* pörgés közben az adatlap rejtve, a helye foglalt; utána beúszik */
+.title-editor:has(> .potd) .editor-page {
+  transition: opacity 0.2s ease, translate 0.2s ease;
+}
+
+.title-editor[data-picking] .editor-page {
+  opacity: 0;
+  translate: 0 8px;
+  pointer-events: none;
+}
+
+/* asztalon a szalag nem fut a „Bezárás” alá (a sorsoló a teljes szélességen) */
+@media (min-width: 641px) {
+  .title-editor .potd-ribbon {
+    margin-right: 6rem;
+  }
+}
+
+/* telefonon (alsó lap): a fogantyú (1,75 rem) alatt, keskenyebb margó, kisebb borítók, a dátum nem fér el */
+@media (max-width: 640px) {
+  .potd {
+    padding: 1.75rem 16px 0;
+  }
+
+  .potd-window {
+    margin: 0 -16px;
+  }
+
+  .potd-face {
+    width: 5.2rem;
+  }
+
+  .potd-day {
+    display: none;
+  }
+}

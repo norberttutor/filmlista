@@ -5,13 +5,13 @@
    értékelés-skála maradnak; ahol egy pár színe túl közel esne, a pár azt is eltolja (EXTRA). A származtatott
    tokenek (--accent-soft …) a :root-on a felülírt értékből számolódnak; a hex értéket tartalmazó ikonokat
    (--chevron-accent, --check-mark) itt kell megadni.
-   A téka nem változik: a sötét szabály csak data-theme nélkül, a világos csak data-theme="light" mellett érvényes
-   (az erősségük 0,3,0 – a 01 / 02 szabályai fölött, a sorrendtől függetlenül). A sötét szigetek világosban is a
+   A téka nem változik: a sötét szabály csak data-theme nélkül (és az OLED-ben – terv-3 148), a világos csak
+   data-theme="light" mellett érvényes (az erősségük 0,3,0 – a 01 / 02 szabályai fölött, a sorrendtől függetlenül). A sötét szigetek világosban is a
    pár sötét színeit kapják. Kontraszt (munka/terv-3/terv-142/szinek.mjs): minden szöveg ≥ 4,5:1 mindkét témában.
    P3-on nem élénkebb (csak az Alap). */
 
 /* Mérgező: lime gombok, lila saját jelölés */
-:root[data-pal='mergezo']:not([data-theme]),
+:root[data-pal='mergezo']:is(:not([data-theme]), [data-theme='oled']),
 :root[data-theme='light'][data-pal='mergezo'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo, .gallery-lightbox, .backdrop-pager, .backdrop-dots) {
   --accent: oklch(84% 0.24 135);              /* #7eea19 */
   --accent-ink: oklch(24% 0.05 135);          /* #14240b */
@@ -33,7 +33,7 @@
 }
 
 /* Vaporwave: rózsaszín gombok, cián második cső, napsárga saját jelölés */
-:root[data-pal='vaporwave']:not([data-theme]),
+:root[data-pal='vaporwave']:is(:not([data-theme]), [data-theme='oled']),
 :root[data-theme='light'][data-pal='vaporwave'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo, .gallery-lightbox, .backdrop-pager, .backdrop-dots) {
   --accent: oklch(72% 0.2097 350);            /* #ff61b7 */
   --accent-ink: oklch(24% 0.05 350);          /* #301423 */
@@ -55,7 +55,7 @@
 }
 
 /* Mélytenger: elektromos kék gombok, aqua második cső, citromsárga saját jelölés */
-:root[data-pal='melytenger']:not([data-theme]),
+:root[data-pal='melytenger']:is(:not([data-theme]), [data-theme='oled']),
 :root[data-theme='light'][data-pal='melytenger'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo, .gallery-lightbox, .backdrop-pager, .backdrop-dots) {
   --accent: oklch(72% 0.1466 258);            /* #68a5ff */
   --accent-ink: oklch(24% 0.05 258);          /* #0f1f37 */
@@ -75,7 +75,7 @@
 }
 
 /* Zöld + sárga: neonzöld gombok, neonsárga második cső és saját jelölés */
-:root[data-pal='zoldsarga']:not([data-theme]),
+:root[data-pal='zoldsarga']:is(:not([data-theme]), [data-theme='oled']),
 :root[data-theme='light'][data-pal='zoldsarga'] :is(.featured-slide, .featured-sk, .collection-banner[data-backdrop], .share-hero[data-backdrop], .fr-logo, .gallery-lightbox, .backdrop-pager, .backdrop-dots) {
   --accent: oklch(84% 0.24 145);              /* #40f159 */
   --accent-ink: oklch(24% 0.05 145);          /* #0e2510 */

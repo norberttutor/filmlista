@@ -54,7 +54,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `signOut()` (`lib/offline.js`) csak ezen az eszközön léptet ki (`scope: 'local'`, Norbi döntése); net nélkül /
   5 mp után helyben.
 - Ikonok: mind a `munka/e2e/eszkoz/ikon.mjs`-ből; ikonváltozáskor ezzel generáld újra (ellenőrzés: `eszkoz/ikon-ellenorzes.mjs`).
-- `app/manifest.js` – gyorsindítók `/?nyit=hozzaadas|franchise-ok|statisztika` (`SHORTCUTS` a `Watchlist`-ben).
+- `app/manifest.js` – gyorsindítók `/?nyit=hozzaadas|franchise-ok|statisztika|a-nap-filmje` (`SHORTCUTS` a `Watchlist`-ben).
 - `app/error.js` + `app/sorrend/[token]/error.js` → `components/ErrorScreen.js`.
 - `components/LoginForm.js` – regisztráció nincs (ki van kapcsolva).
 - `components/SiteFooter.js` – kötelező TMDB forrásmegjelölés, ne töröld; a szponzor `span.sponsor`, nem `p` (a teszt
@@ -62,10 +62,14 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 
 ### Téma
 - `lib/theme.js` + `lib/themeBoot.js` (React nélküli – a szerverkomponens is használja) + `ThemeToggle`: sötét (alap),
-  világos (`<html data-theme="light">`), téka. Választás felhasználónként (`filmlista-tema:<userId>`); alapból Mama
+  világos (`<html data-theme="light">`), téka, OLED (`'oled'`, terv-3 148, `02c-oled.css`: a sötétre épül, csak a
+  háttér #000 és a felületek szinte feketék, nincs derengés / filmszemcse; csak a Kinézet ablakból – a nap / hold gomb
+  OLED-ből is világosra, onnan a sima sötétre vált, Norbi döntése). **A sötétre vonatkozó `:not([data-theme])`
+  szabálynál az OLED-et is vedd fel** (`:is(:not([data-theme]), [data-theme='oled'])`, mint a `02b`-ben). Teszt:
+  `kinezet/tema-oled.mjs`. Választás felhasználónként (`filmlista-tema:<userId>`); alapból Mama
   világos, más sötét; a boot-szkript és a belépési oldal az utoljára használtat (`filmlista-tema`) veszi; a
   megosztott oldal a `prefers-color-scheme`-et. Teszt: `kinezet/tema-vilagos-sotet.mjs`.
-- **Kinézet ablak** (`components/AppearanceDialog.js`, ⋮ menü): téma (Sötét / Világos / Videotéka) és **színpár**
+- **Kinézet ablak** (`components/AppearanceDialog.js`, ⋮ menü): téma (Sötét / Világos / OLED / Videotéka) és **színpár**
   egy helyen. Színpár (terv-3 142, Norbi döntése: mind az öt, szabad színcsúszka nem): a fő szín (`--accent`), a neon
   második csöve (`--neon-2`) és a saját jelölés (`--accent-2`) együtt (`PALETTES` a `lib/theme.js`-ben, `<html
   data-pal>`, az Alapnál nincs jelző; felhasználónként `filmlista-szinpar:<userId>`, a boot-szkript is beállítja; a
@@ -244,7 +248,14 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   nap; hiányos lista másnap újraépül). Első összeállítás 10–30 mp (`maxDuration = 60`).
 
 ### Egyéb ablakok és menük
-- `components/MoreMenu.js` – ⋮ menü, pontok `{ id, label, description, icon, onSelect }`.
+- `components/MoreMenu.js` – ⋮ menü, pontok `{ id, label, description, icon, onSelect, disabled? }` (a tiltott pont
+  látszik, `aria-disabled`, a leírása mondja meg, miért).
+- **A nap filmje** (`lib/pickOfDay.js`, `components/PickOfDay.js`, `39b-nap-filmje.css`; ⋮ menü első pontja +
+  gyorsindító): naponta egy film a letöltött, megnézendő filmekből (`pickPool`); a napi film a dátumból (budapesti
+  nap) és a felhasználóból számolódik, a „Másikat” választását az eszköz aznapra jegyzi (`filmlista-napfilmje:<userId>`).
+  Az adatlap a `pick` propot kapja: tetején szalag + sorsoló (`section.potd`, nem `div` – az ablak `> div` szabályai),
+  pörgés alatt `dialog[data-picking]` – az adatlap rejtve, a helye foglalt. A „Másikat” az első lapot cseréli, a fókusz
+  a gombon marad (pörgés alatt `aria-disabled`, nem `disabled`). Üres készletnél a menüpont tiltva. Teszt: `mukodes/nap-filmje.mjs`.
 - `components/NotificationBell.js` + `lib/notifications.js` – `loadNotifications()` előbb lefuttatja a
   `collect_season_notifications()` / `collect_release_notifications()`-t; olvasottra csak azonosító szerint; törlés
   `dismissed_at`. A `mama_interested` csak akkor látszik, ha a `mama_status` most is „Érdekli” / „Megkapta”.
@@ -484,7 +495,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 
 ## Elvetett ötletek – magadtól ne javasold újra
 Norbi döntései; a részletek a TERV.md-ben.
-- **Kinézet**: álló betűs eredeti cím, OLED fekete, 3D billenés a borítókon, plakátszerű
+- **Kinézet**: álló betűs eredeti cím, 3D billenés a borítókon, plakátszerű
   tipográfia, számláló a fejlécben, „Ma este” kiemelt sáv, haladásgyűrű a sorozatoknál, egyedi helykitöltő a hiányzó
   borítóhoz, a kurzort követő fénylő kártyaél, mozgó borítófal a belépésnél, elmosottból kiélesedő borítók,
   kedvencek borostyán kerete, szikrák 10 csillagnál, felpörgő számok / felnövő oszlopok a Statisztikában, feltöltődő
@@ -496,9 +507,8 @@ Norbi döntései; a részletek a TERV.md-ben.
   megnézetteken, filmszalagos nézési sorrend, függöny belépéskor, Ken Burns a jelenetképen, felületi hangok;
   polcnézet (D8), borítómozaik a Statisztikában (D12), franchise-univerzum (D13); a neonfelirat „rakoncátlan” betűje;
   akadálymentességi kör (A1–A4); kör alakú átmenet témaváltáskor (114); a „Követem” pipájának megrajzolódása (141c).
-- **Funkciók**: gyorsműveletek a borítón, parancspaletta / billentyűparancsok, „Mit nézzek ma?”, játékidő és szűrő
-  rá, saját címkék, szinkron / felirat jelölése, csoportosítás hónapok szerint, évértékelő, web push; „Elérhető az
-  előfizetéseimen” szűrő, share target, adatminőség-ellenőrző, „Letölthető most” gyorsnézet, megjelenési naptár,
+- **Funkciók**: gyorsműveletek a borítón, parancspaletta / billentyűparancsok, játékidő és szűrő
+  rá, saját címkék, csoportosítás hónapok szerint, évértékelő, web push; share target, adatminőség-ellenőrző, „Letölthető most” gyorsnézet, megjelenési naptár,
   figyelmeztetés hasonló címre, mentett szűrő-összeállítások, díjak az adatlapon, alsó navigációs sáv telefonon,
   aktivitás-hőtérkép, rámutatásra leírás a borítófalon, sűrűségváltó, fülek az adatlapon telefonon; újranézés-napló,
   „Rég láttad” ajánló, változásnapló visszavonással, előzetes rámutatásra a Felfedezésben; tömeges import
@@ -506,8 +516,8 @@ Norbi döntései; a részletek a TERV.md-ben.
   (26), elfelejtett jelszó; Mama filmet kérhet, „Megkaptam” fül Mamánál, franchise-ugrás az adatlapról, Felfedezés
   műfaj szerint, „Kedvenceim” link, jelölés net nélkül (offline írás), automatikus füstteszt élesítés után;
   IMDb- / TMDB-link beillesztése a keresőbe (64), előző / következő cím az adatlapon (65), kattintható
-  Statisztika-csempék (67), tömeges szerkesztés (68), „Továbbiak” görgetéssel telefonon (75); évszám a keresőben
-  (81), lapozó nyilak a vízszintes sorokon (82), „Cím másolása” (87), „Nemrég megnyitott” (88); „Következőnek”
+  Statisztika-csempék (67), „Továbbiak” görgetéssel telefonon (75); évszám a keresőben
+  (81), lapozó nyilak a vízszintes sorokon (82), „Nemrég megnyitott” (88); „Következőnek”
   kitűzés (89), „Következik” a franchise-sávon (90), megosztás az adatlapról (92), IMDb-küszöb szűrő (93), hangalapú
   keresés (94), „Új” jelvény (96), franchise-idővonal (97), rezgés jelöléskor (98); epizódszintű követés;
   szűrőgomb a még meg nem jelent filmekre; megjegyzés mező a felületen; C2 / C3 optimalizálás; kedvenc alkotók a

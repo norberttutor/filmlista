@@ -1,0 +1,27 @@
+/* ---------- OLED fekete téma (terv-3 148) ---------- */
+/* A Kinézet ablakból választható (<html data-theme="oled">, lib/theme.js). A sötét témára épül, csak a háttér és a
+   felületek mások (Norbi választása: „A – tiszta fekete”): a lap tiszta fekete – OLED kijelzőn a fekete képpont nem
+   világít –, a panelek szinte feketék, semlegesek, és nincs derengés (aurora) és filmszemcse. A többi token (szövegek,
+   kiemelőszínek, tartalomszínek, a színpárok – 02b) a sötété; a háttérből számolt tokenek (--control-border,
+   --star-empty) a :root-on a fekete hátteret veszik (ugyanaz az elem). Az ablakok mögötti sötétítés erősebb (a
+   fekete lapon a sötét téma sötétítése alig látszana). A sötét és a világos téma nem változik.
+   Kontraszt (munka/terv-3/terv-148/terv.html): halvány szöveg a lapon 8,0:1, a panelen 7,4:1, megnézett cím 5,9:1,
+   mezők kerete a lapon 3,3:1, a panelen 3,1:1. */
+:root[data-theme='oled'] {
+  --bg: oklch(0% 0 0);                          /* #000000 */
+  --bg-top: oklch(0% 0 0);                      /* #000000 (a böngésző címsora is – THEME_COLOR) */
+  --surface: oklch(15.93% 0.0066 270.98);       /* #0c0d10 */
+  --surface-raised: oklch(20.42% 0.0086 264.37); /* #15171b */
+  --line: oklch(27.63% 0.0119 264.36);          /* #25282e */
+  --line-soft: oklch(21.3% 0.0085 264.38);      /* #17191d */
+  --placeholder-bg: linear-gradient(160deg, #1a1d22 0%, #0c0d10 100%); /* hiányzó borító */
+  --glass: 0 0 0;
+  --scrim: 0 0 0;
+  --scrim-k: 1.25;
+}
+
+/* se derengés, se filmszemcse: a lap fekete marad */
+:root[data-theme='oled'] body::before,
+:root[data-theme='oled'] body::after {
+  content: none;
+}

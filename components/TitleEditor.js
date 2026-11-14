@@ -41,6 +41,7 @@ import { useOnline } from '@/lib/offline';
 import { radioKeys } from '@/lib/radioKeys';
 import { galleryList, GalleryStrip, BackdropPager, GalleryLightbox } from '@/components/TitleGallery';
 import DialogClose from '@/components/DialogClose';
+import PickOfDay from '@/components/PickOfDay';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500'; // a nagy borító (asztalon)
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/'; // a háttérkép (telefonon w780, asztalon w1280)
@@ -98,6 +99,7 @@ export default function TitleEditor({
   title: opened, // a megnyitott cím: a lista sora, vagy egy TMDB-találat (előnézet)
   titles, // a lista: a lapok mindig a friss sort mutatják, és innen tudják, mi van már a listán
   morphTo, // a borító, amelyről nyílt: bezáráskor oda siklik vissza (nézetváltás)
+  pick, // A nap filmje (terv-3 143): { pool, another(id) } – a lap tetején a sorsoló, vagy null
   onClose,
   ...pageProps
 }) {
@@ -127,6 +129,21 @@ export default function TitleEditor({
   // a borító hangulatszíne: az ablak a film színében dereng (app/styles/33-hangulatszin.css); a
   // színész lapja a legutóbbi film színét tartja (a keresőből nyílt személy lapja előtt nincs film)
   const film = pages.findLast((page) => !page.person);
+
+  // A nap filmje (terv-3 143): a sorsoló pörgése alatt az adatlap rejtve (data-picking); a „Másikat” az első lapot
+  // cseréli a következő filmre, és újra pörget. A fókusz ilyenkor a gombon marad (keepFocus).
+  const [picking, setPicking] = useState(Boolean(pick));
+  const [pickSpin, setPickSpin] = useState(0);
+  const keepFocus = useRef(false);
+  function pickAnother() {
+    if (!canLeavePage()) return;
+    const next = pick.another(stack[0].rowId);
+    if (!next) return;
+    keepFocus.current = true;
+    setStack([{ id: nextId.current++, rowId: next.id, item: next, added: false }]);
+    setPicking(true);
+    setPickSpin((n) => n + 1);
+  }
   const ambient = usePosterColor(film ? (film.row ?? film.item).poster_path : null);
 
   // rajzolás előtt nyílik meg (a nézetváltás új képén már ott legyen az ablak). Lapváltáskor
@@ -138,6 +155,10 @@ export default function TitleEditor({
     scrolls.current.delete(top.id);
     // a böngésző az első mezőre (Franchise) tenné a fókuszt, és a kerete feleslegesen
     // világítana: helyette az ablak címe kapja (billentyűzettel a Tab innen a Franchise-ra visz)
+    if (keepFocus.current) {
+      keepFocus.current = false; // „Másikat”: a fókusz a gombon marad
+      return;
+    }
     dialog.querySelector('.editor-page:not([hidden]) h2')?.focus({ preventScroll: true });
   }, [top.id, topPreview]);
 
@@ -255,10 +276,21 @@ export default function TitleEditor({
       }}
       {...backdrop}
       {...ambientProps(ambient)}
+      data-picking={picking ? '' : undefined}
     >
       {/* asztalon „Bezárás” a jobb felső sarokban, görgetéskor is látszik (terv-3 121); telefonon fogantyú – lefelé
           húzva zár (az Esc / Vissza ugyanaz). Mint a kikattintás: törlés-megerősítés / felvétel közben nem zár */}
       <DialogClose dialogRef={dialogRef} {...closing} />
+      {pick && (
+        <PickOfDay
+          pool={pick.pool}
+          winner={pages[0].row ?? pages[0].item}
+          spinKey={pickSpin}
+          hidden={pages.length > 1}
+          onAnother={pickAnother}
+          onSettled={() => setPicking(false)}
+        />
+      )}
       {pages.map((page, i) => {
         const active = i === pages.length - 1;
         const prev = pages[i - 1];

@@ -24,6 +24,8 @@ export default function manifest() {
       { name: 'Cím hozzáadása', url: '/?nyit=hozzaadas', icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }] },
       { name: 'Franchise-ok', url: '/?nyit=franchise-ok', icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }] },
       { name: 'Statisztika', url: '/?nyit=statisztika', icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }] },
+      // terv-3 143
+      { name: 'A nap filmje', url: '/?nyit=a-nap-filmje', icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }] },
     ],
   };
 }

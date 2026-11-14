@@ -9,6 +9,7 @@ import DialogClose from '@/components/DialogClose';
 const THEMES = [
   { id: 'dark', name: 'Sötét' },
   { id: 'light', name: 'Világos' },
+  { id: 'oled', name: 'OLED' }, // tiszta fekete (terv-3 148)
   { id: 'teka', name: 'Videotéka' },
 ];
 

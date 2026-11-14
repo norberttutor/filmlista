@@ -53,6 +53,8 @@ import { useCollapsingHeader } from '@/components/list/useCollapsingHeader';
 import { useListView } from '@/components/list/useListView';
 import { useListChanges } from '@/components/list/useListChanges';
 import { useLiveTitles } from '@/components/list/useLiveTitles';
+import { anotherPick, dailyPick, pickPool } from '@/lib/pickOfDay';
+import { toast } from '@/lib/toast';
 
 // a helyben tárolt lista ideje: „okt. 8. 21:14”
 const snapshotTime = (iso) =>
@@ -68,6 +70,7 @@ const SHORTCUTS = {
   hozzaadas: ({ openAdd }) => openAdd(),
   'franchise-ok': ({ openDialog }) => openDialog('franchises'),
   statisztika: ({ openDialog }) => openDialog('stats'),
+  'a-nap-filmje': ({ openPick }) => openPick(), // terv-3 143
 };
 
 export default function Watchlist({ session }) {
@@ -101,6 +104,8 @@ export default function Watchlist({ session }) {
   const [editing, setEditing] = useState(null);
   // a borító, amelyről a szerkesztő nyílt: oda siklik vissza bezáráskor (nézetváltás)
   const editorFrom = useRef(null);
+  // A nap filmje (terv-3 143): a szerkesztő a sorsolóval nyílt (⋮ menü / gyorsindító)
+  const [picked, setPicked] = useState(false);
 
   // szerkesztő megnyitása: asztalon a kattintott borító átsiklik az ablak nagy borítójának
   // helyére (lib/viewTransition.js); egyébként egyszerűen megnyílik
@@ -137,6 +142,19 @@ export default function Watchlist({ session }) {
 
   // a keresőben ezek alapján látszik, mi van már a listán
   const existingKeys = useMemo(() => new Set(titles.map(titleKey)), [titles]);
+
+  // A nap filmje (terv-3 143): a letöltött, megnézendő filmek közül a mai; az adatlapja a sorsolóval nyílik
+  const pool = useMemo(() => pickPool(titles), [titles]);
+  function openPick() {
+    const row = dailyPick(pool, userId);
+    if (!row) {
+      toast({ text: 'Nincs letöltött, megnézendő film – a nap filmjét ezek közül sorsolom.' });
+      return;
+    }
+    setPicked(true);
+    openEditor(row);
+  }
+  const pick = picked ? { pool, another: (id) => anotherPick(pool, id, userId) } : null;
 
   useMissingLogos(!loading && !readOnly, titles, franchises, data.setFranchises);
 
@@ -193,7 +211,7 @@ export default function Watchlist({ session }) {
     url.searchParams.delete('nyit');
     window.history.replaceState(null, '', url.pathname + url.search + url.hash);
     if (loadError) return;
-    SHORTCUTS[target]?.({ openAdd, openDialog });
+    SHORTCUTS[target]?.({ openAdd, openDialog, openPick });
   }, [loading, loadError]);
 
   // a ⋮ menü pontjai – a fejlécben és (asztalon, lejjebb görgetve) a letapadt szűrősorban is
@@ -207,6 +225,8 @@ export default function Watchlist({ session }) {
     openDialog,
     imdbImport: imdbImportRef,
     bulkImport: bulkImportRef,
+    pickCount: pool.length,
+    openPick,
   });
 
   // a harang a fejlécben és a letapadt szűrősorban
@@ -591,7 +611,11 @@ export default function Watchlist({ session }) {
           onDelete={requestDelete}
           readOnly={readOnly}
           morphTo={editorFrom.current}
-          onClose={() => setEditing(null)}
+          pick={pick}
+          onClose={() => {
+            setEditing(null);
+            setPicked(false);
+          }}
         />
       )}
 
