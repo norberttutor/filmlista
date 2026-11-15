@@ -57,11 +57,7 @@ export default function PickOfDay({ pool, winner, spinKey, hidden, onAnother, on
     const faces = track.children;
     setWon(-1);
     setDone(false);
-    // a nyertes a sorsoló közepére
-    const step = faces[1] ? faces[1].offsetLeft - faces[0].offsetLeft : 0;
-    const center = track.parentElement.clientWidth / 2 - faces[0].offsetWidth / 2;
-    const at = (i) => `translateX(${center - i * step}px)`;
-    let timer;
+    let timer, raf, spin, at;
     const settle = () => {
       setWon(reel.target);
       timer = setTimeout(() => {
@@ -69,21 +65,40 @@ export default function PickOfDay({ pool, winner, spinKey, hidden, onAnother, on
         onSettled();
       }, reduced() ? 0 : SETTLE_MS);
     };
-    if (reduced()) {
-      track.style.transform = at(reel.target);
-      settle();
-      return () => clearTimeout(timer);
-    }
-    const spin = track.animate([{ transform: at(reel.target - (reel.order.length / ROUNDS) * (ROUNDS - 1)) }, { transform: at(reel.target) }], {
-      duration: SPIN_MS,
-      easing: 'cubic-bezier(0.12, 0.72, 0.18, 1)',
-      fill: 'forwards',
-    });
-    spin.onfinish = settle;
+    const start = () => {
+      // első megnyitáskor ez a gyermek effektje az ablak showModal()-ja ELŐTT fut: a rejtett ablakban minden méret 0
+      // (a pörgés 0-ról 0-ra menne – semmi nem mozdulna). Ilyenkor a következő képkockán mér; addig a sor láthatatlan.
+      if (!faces[0]?.offsetWidth) {
+        track.style.visibility = 'hidden';
+        raf = requestAnimationFrame(start);
+        return;
+      }
+      track.style.visibility = '';
+      // a nyertes a sorsoló közepére – tört képpontokkal (az offsetLeft kerekít, és ~30 borítón át összeadódna)
+      const box = (el) => el.getBoundingClientRect();
+      const step = faces[1] ? box(faces[1]).left - box(faces[0]).left : 0;
+      const center = track.parentElement.clientWidth / 2 - box(faces[0]).width / 2;
+      at = (i) => `translateX(${center - i * step}px)`;
+      if (reduced()) {
+        track.style.transform = at(reel.target);
+        settle();
+        return;
+      }
+      spin = track.animate([{ transform: at(reel.target - (reel.order.length / ROUNDS) * (ROUNDS - 1)) }, { transform: at(reel.target) }], {
+        duration: SPIN_MS,
+        easing: 'cubic-bezier(0.12, 0.72, 0.18, 1)',
+        fill: 'forwards',
+      });
+      spin.onfinish = settle;
+    };
+    start();
     return () => {
-      spin.onfinish = null;
-      spin.cancel();
-      track.style.transform = at(reel.target);
+      cancelAnimationFrame(raf);
+      if (spin) {
+        spin.onfinish = null;
+        spin.cancel();
+        track.style.transform = at(reel.target);
+      }
       clearTimeout(timer);
     };
   }, [reel]); // az onSettled minden rajzoláskor új – csak új sorsolónál indul újra
