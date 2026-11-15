@@ -7,7 +7,7 @@ elolvasni – ugorj oda, ami épp érdekel. Ahol egy képen sok minden van, kis 
 Időről időre frissül, nem minden apró változás után – így előfordulhat, hogy a felület már egy
 kicsit előrébb jár. A nagyobb állomásokat a végén, a **Mérföldkövek** között találod.
 
-Utolsó frissítés: 2026. 10. 22. · Élő oldal: https://filmlista-six.vercel.app/
+Utolsó frissítés: 2026. 11. 15. · Élő oldal: https://filmlista-six.vercel.app/
 
 > Tipp: VS Code-ban a **Ctrl+Shift+V** formázott előnézetben nyitja meg ezt a leírást – így a képek
 > is látszanak.
@@ -42,7 +42,8 @@ Utolsó frissítés: 2026. 10. 22. · Élő oldal: https://filmlista-six.vercel.
 **Belépés:** e-mail-cím, jelszó, **Belépés** – és már bent is vagy. A böngésző megjegyzi, így nem
 kell minden alkalommal újra begépelned. Regisztrálni nem lehet; új fiókot csak a Supabase
 felületén lehet létrehozni. Ha végeztél, a **Kilépés** gombot a fejlécben, az e-mail-címed mellett
-találod – net nélkül is működik (ilyenkor helyben léptet ki, pár másodperc alatt). (Mama a saját
+találod. Csak ezen a gépen léptet ki – a telefonodon (vagy a másik gépeden) bent maradsz. Net nélkül
+is működik (ilyenkor helyben léptet ki, pár másodperc alatt). (Mama a saját
 fiókjával lép be, és nem a listádat, hanem a saját, egyszerű oldalát látja – lásd
 [10.](#10-mama-jelölések).)
 
@@ -58,8 +59,8 @@ Elfelejtett jelszót itt nem lehet kérni.
 - Bónusz: a telepített app ikonján egy kis szám jelzi, ha olvasatlan értesítésed van (ahol a
   rendszer tudja ezt).
 - **Gyorsindítók:** jobb klikk a telepített app ikonjára (a tálcán vagy a Start menüben; telefonon
-  hosszan nyomva), és rögtön oda ugorhatsz, ahová épp mennél: **Cím hozzáadása**, **Franchise-ok**
-  vagy **Statisztika**. Az app elindul, és a lista betöltése után magától megnyitja. (Ha az app már
+  hosszan nyomva), és rögtön oda ugorhatsz, ahová épp mennél: **Cím hozzáadása**, **Franchise-ok**,
+  **Statisztika** vagy **A nap filmje**. Az app elindul, és a lista betöltése után magától megnyitja. (Ha az app már
   korábban telepítve volt, a Chrome néha csak az app újraindítása után mutatja ezeket.)
 
 **Net nélkül is elindul:** az app megjegyzi a legutóbb látott listádat, így indításkor **azonnal**
@@ -89,23 +90,47 @@ Ugyanez a „csak nézelődés” látszik indításkor is egy pillanatra, amíg
 
 Ez a főoldal, itt él a listád. Fent a cím **neonfeliratként** világít: a betűk az üvegcsövek, a fény
 a mögöttük lévő falra vetül. Egy munkamenetben egyszer, az első megnyitáskor fel is villan, mintha
-most kapcsolnád fel (a „kevesebb mozgás” beállításnál rögtön ég). A fejlécben:
+most kapcsolnád fel (a „kevesebb mozgás” beállításnál rögtön ég).
+
+**A neon él:** ha nyitva hagyod az appot, a felirat időnként, 1–4 percenként életre kel – többnyire az
+egyik cső kétszer megrebben, néha az egész újra felkapcsol. Akkor is felkapcsol, ha legalább öt perc
+után visszatérsz, vagy ha témát váltasz; és ha rámutatsz (telefonon rákoppintasz), megrebben. Csak
+akkor csinálja, ha az app látszik, és nincs nyitva ablak – legörgetve a kis cím rebben.
+
+A fejlécben:
 - ① **Cím hozzáadása** – új film vagy sorozat felvétele (lásd [4.](#4-címek-felvétele));
 - ② a **harang** – értesítések új évadokról, megjelenésekről, követett színészekről (lásd
   [11.](#11-értesítések));
 - mellette az e-mail-címed (rákattintva jelszót módosíthatsz – lásd [1.](#1-belépés-és-telepítés))
   és a **Kilépés**;
-- ③ a **téma** váltógombja – nap: világos téma, hold: sötét (lásd lent);
+- ③ a **téma** váltógombja – nap: világos téma, hold: sötét; váltáskor a nap és a hold átfordul
+  (lásd lent);
 - ④ a **⋮ További műveletek** menü – a ritkábban kellő dolgok gyűjtőhelye.
 
 <img src="docs/kepek/02-menu.jpg" width="320" alt="A ⋮ menü kinyitva, minden pont alatt rövid leírással">
 
-A ⋮ menüben minden pont alatt rövid leírás is áll, hogy ne kelljen találgatnod: **Statisztika**,
-**Franchise-ok**, **Színészek és rendezők** (lásd [5.](#5-egy-cím-adatlapja-és-szerkesztése)),
-**Toplisták** (lásd [4.](#4-címek-felvétele)), **IMDb import**, **Tömeges import**, **Mentés
-letöltése**, **Videotéka-téma** (lásd lent), **Mentések**, **Jelszó módosítása**, a **Felhasználói
-leírás** – ez a kézikönyv, az appon belül, egy ablakban (telefonon és net nélkül is) –, és ha valami
-elromlott, a végén a **Hibák** (lásd [14.](#14-mentések-és-adatbiztonság)).
+A ⋮ menüben minden pont alatt rövid leírás is áll, hogy ne kelljen találgatnod: **A nap filmje**
+(lásd lent), **Statisztika**, **Franchise-ok**, **Színészek és rendezők** (lásd
+[5.](#5-egy-cím-adatlapja-és-szerkesztése)), **Toplisták** (lásd [4.](#4-címek-felvétele)), **IMDb
+import**, **Tömeges import**, **Mentés letöltése**, **Kinézet** (lásd lent), **Mentések**, **Jelszó
+módosítása**, a **Felhasználói leírás** – ez a kézikönyv, az appon belül, egy ablakban (telefonon és
+net nélkül is) –, és ha valami elromlott, a végén a **Hibák** (lásd
+[14.](#14-mentések-és-adatbiztonság)). Ha egy pont épp nem használható, halványan látszik, és a leírása
+megmondja, miért.
+
+**A nap filmje – ha nem tudod eldönteni, mit nézz:** a ⋮ menü első pontja (vagy a gyorsindító – lásd
+[1.](#1-belépés-és-telepítés)) sorsol neked egy filmet a **letöltött, megnézendő** filmjeid közül.
+A borítóik végigpörögnek, és megállnak a nap filmjén; utána az ablak kinő a film adatlapjává (a
+„kevesebb mozgás” beállításnál rögtön az adatlap jön).
+
+![A nap filmje: az adatlap tetején szalag „A nap filmje · nov. 15., vasárnap” felirattal és „Másikat” gombbal, alatta a sorsolt film](docs/kepek/02-nap-filmje.jpg)
+
+- Az adatlap tetején szalag jelzi: „A nap filmje · nov. 15., vasárnap”; alatta minden ugyanúgy
+  működik, mint bármelyik adatlapon.
+- Naponta egy film: aznap minden gépeden ugyanazt kapod. Ha az nem tetszik, a **Másikat** gombbal
+  újat sorsolsz – ezt az a gép aznapra megjegyzi.
+- Csak filmek kerülnek a kalapba, sorozatok nem. Ha nincs letöltött, megnézendő filmed, a menüpont
+  halvány („Nincs letöltött, megnézendő film – ezek közül sorsolok”).
 
 ⑤ A fejléc alatt a **szűrősor** (részletek a [3.](#3-szűrés-keresés-rendezés) pontban), ⑥ a jobb
 szélén pedig a **nézetváltó**: két kis ikon, lista vagy rács. A kiválasztott ikon halvány türkiz
@@ -125,14 +150,30 @@ világos az alap, és az ő oldalán felirat is van a gombon: „Világos” / �
 
 ![A lista világos témában](docs/kepek/02-vilagos.jpg)
 
-**Videotéka-téma – egy kis nosztalgia:** a ⋮ menü **Videotéka-téma** pontjával a 90-es évek
+**Kinézet – téma és színek egy helyen** (⋮ menü → **Kinézet**):
+
+<img src="docs/kepek/02-kinezet.jpg" width="420" alt="A Kinézet ablak: fent a Téma (Sötét / Világos / OLED / Videotéka), alatta a Színpár öt gombja színes pöttyökkel">
+
+- **Téma:** **Sötét**, **Világos**, **OLED** vagy **Videotéka**. Az **OLED** a sötét még sötétebb
+  változata: a háttér tiszta fekete, a panelek szinte feketék, nincs derengés és filmszemcse – OLED
+  kijelzős telefonon, monitoron a legszebb, és sötét szobában is kellemes. A nap / hold gomb
+  OLED-ből (és videotékából) a világosra vált, onnan vissza a sima sötétre.
+- **Színpár:** a gombok, a neonfelirat és a saját jelöléseid (csillagok, Mama) színe – öt kimért pár
+  közül választhatsz: **Alap** (neon türkiz, lila és borostyán), **Mérgező** (lime és lila),
+  **Vaporwave** (rózsaszín, cián és napsárga), **Mélytenger** (elektromos kék, aqua és citrom) és
+  **Zöld + sárga** (neonzöld és neonsárga). Mindegyik jól olvasható sötétben és világosban is; a
+  pöttyök megmutatják a pár színeit. Váltáskor a neonfelirat újra felkapcsol. A videotéka-témának
+  saját színei vannak, ott a színpár nem választható.
+- Az ablak mindig bezárul kikattintásra – itt nincs mit elveszíteni. A választást a böngésző
+  megjegyzi.
+
+**Videotéka-téma – egy kis nosztalgia:** a Kinézet ablak **Videotéka** témájával a 90-es évek
 tékájába csöppensz. Éjszakai lilás-fekete háttér halvány képcsíkokkal, rózsaszín-sárga neonfelirat,
 a borítók fekete kazettatokban, alul a műfaj nagybetűs „kategóriacímkéje” (AKCIÓ, DRÁMA…), az
 elmúlt héten felvett címeken sárga **ÚJ!** matrica, a saját értékelésed árcédulán („8/10”), az
 állapotok videomagnó-feliratként („▶ LEJÁTSZÁS”, „■ VÉGE”, „⏏ KIADVA”). Az adatlap jelenetképén
-„▶ PLAY SP”, a Statisztika tagsági kártyás, a Toplisták pedig „A hét slágerei”. Kikapcsolni ugyanott
-lehet (**Videotéka-téma kikapcsolása** – vissza a sötétre), vagy a nap gombbal a világosra. Mama
-oldalán nincs ilyen.
+„▶ PLAY SP”, a Statisztika tagsági kártyás, a Toplisták pedig „A hét slágerei”. Kikapcsolni ugyanott,
+egy másik téma választásával lehet, vagy a nap gombbal a világosra. Mama oldalán nincs ilyen.
 
 ![A lista videotéka-témában: neonfelirat, kazettatokos borítók kategóriacímkével, videomagnós feliratok](docs/kepek/02-teka.jpg)
 
@@ -168,7 +209,8 @@ rácsban és a listában is – a lapozó és a lábléc egy közös üvegsávba
 Előző 1 2 3 Következő ›”, mellette „1–10. / 29 cím” – így minden oldalon pontosan ugyanott találod.
 Lista és rács között váltva az az oldal jön, amelyiken az addig látott első cím van, szóval nem
 veszted el a fonalat. Ha szűrsz, rendezel vagy keresel, az 1. oldalra ugrik; lapozáskor a lista
-tetejére görget, és a kártyák egymás után beúsznak.
+tetejére görget, és a kártyák egymás után beúsznak – ahogy az app indulásakor is (munkamenetenként
+egyszer).
 
 **Betöltés közben** a lista helyén halványan csillogó „csontváz” jelzi, hogy mindjárt jön minden –
 de csak a legelső alkalommal: utána az app azonnal a legutóbb látott listát mutatja, és a háttérben
@@ -178,7 +220,7 @@ frissíti (lásd [1.](#1-belépés-és-telepítés)).
 - **Élő szinkron:** ha egy másik gépen vagy telefonon módosítasz valamit (vagy Mama jelöl egy
   filmet), pár másodpercen belül itt is megjelenik – újratöltés nélkül.
 - Ha az app legalább 5 percig a háttérben volt, visszatéréskor csendben frissíti a listát (a
-  szűrők, a lapozás, a nyitott adatlap marad).
+  szűrők, a lapozás, a nyitott adatlap marad), és a neonfelirat újra felkapcsol.
 - **„Frissült az app”:** ha közben új változat jelent meg, alul sáv szól: „Frissült az app – az
   újratöltéssel az új változat indul.” → **Újratöltés**.
 - A címek adatai (magyar cím, ha eddig csak az eredeti állt ott; leírás, borító, megjelenési dátum,
@@ -197,20 +239,35 @@ A szűrősorral pillanatok alatt arra szűkítheted a listát, ami épp érdekel
 | ② | Állapot | **Mind**, mellette egy közös sávban ikonnal: Megnézendő · Megnézve, sorozatoknál Folyamatban és Abbahagyva is – mindegyik mellett a darabszám, ami a többi szűrőt is figyelembe veszi; a kiválasztott halvány türkiz háttere váltáskor átsiklik az újra |
 | ③ | Letöltés | gombcsoport: Mind / Letöltött / Nem letöltött – egy kattintással vált |
 | ④ | Műfaj | az adott típus műfajai rácsban, mindegyik a saját kis ikonjával és a darabszámmal (a 0 darabos halvány) |
-| ⑤ | Mama | Összes / Érdekli / Nem érdekli / Megkapta – csak ha van Mama-jelölés; Sorozatoknál és franchise-ra szűrve nem látszik (ott nincs értelme, lásd [10.](#10-mama-jelölések)) |
-| ⑥ | Franchise | Összes / Franchise nélkül / a franchise-aid logóval, két csoportban: fölül **Van még megnézendő** („2 hátra” címkével), alul halványan **Mind megnézve** – egy franchise kiválasztásakor az Állapot magától „Mind” lesz (lásd [9.](#9-franchise-ok-és-gyűjtemények)) |
+| ⑤ | Hol nézhető? | Bárhol / Netflix, Prime Video, Apple TV, Disney+, FilmBox+, SkyShowtime, HBO Max, MUBI / Egyiken sem – logóval és darabszámmal (lásd lent) |
+| ⑥ | Mama | Összes / Érdekli / Nem érdekli / Megkapta – csak ha van Mama-jelölés; Sorozatoknál és franchise-ra szűrve nem látszik (ott nincs értelme, lásd [10.](#10-mama-jelölések)) |
+| ⑦ | Franchise | Összes / Franchise nélkül / a franchise-aid logóval, két csoportban: fölül **Van még megnézendő** („2 hátra” címkével), alul halványan **Mind megnézve** – egy franchise kiválasztásakor az Állapot magától „Mind” lesz (lásd [9.](#9-franchise-ok-és-gyűjtemények)) |
 
-A lenyílók (Típus, Műfaj, Mama, Franchise, Rendezés) üveges panelben nyílnak, ikonokkal és
-darabszámmal, a kiválasztott mellett pipa. Ha egy szűrő nem az alapállapotában áll, a gombja halvány
+A lenyílók (Típus, Műfaj, Hol nézhető?, Mama, Franchise, Rendezés) üveges panelben nyílnak, ikonokkal
+és darabszámmal, a kiválasztott mellett pipa. Ha egy szűrő nem az alapállapotában áll, a gombja halvány
 türkiz – így látod, mire szűrsz. (Telefonon a megszokott lenyílók maradnak – lásd
 [15.](#15-telefonon).)
 
-⑦ **Vissza alapállapotba (↺):** egy kattintás, és minden szűrő visszaáll erre: Filmek – Megnézendő
+**Hol nézhető? – ami streamingen van, azt nem kell letöltened:** a ⑤ lenyílóval egy szolgáltatóra
+szűrhetsz: csak azok a címek maradnak, amelyek ott előfizetéssel, ingyen vagy reklámokkal nézhetők
+(kölcsönzés, vásárlás nem számít). Az **Egyiken sem** azokat mutatja, amelyek a nyolc közül sehol nem
+nézhetők.
+- Szolgáltató választásakor a **Letöltés** szűrő magától „Mind”-re vált (a letöltöttek is
+  látszanak), és ha a szolgáltatót leveszed, nem áll vissza. A darabszámok ezért a Letöltés-szűrőt
+  nem veszik figyelembe.
+- Az adatok a JustWatch-tól jönnek (a TMDB-n keresztül): felvételkor rögtön, utána a megnézendő
+  címeknél hetente, a megnézetteknél havonta frissülnek. Ha egy címet az app még nem nézett meg,
+  csak a **Bárhol** alatt számít.
+- Az RTL+ és a Magenta TV nincs a listán – a TMDB nem ismeri őket.
+- Logó a borítókon nincs; hogy egy cím hol nézhető, azt az adatlap mutatja (lásd
+  [5.](#5-egy-cím-adatlapja-és-szerkesztése)).
+
+⑧ **Vissza alapállapotba (↺):** egy kattintás, és minden szűrő visszaáll erre: Filmek – Megnézendő
 – Nem letöltött – Összes műfaj – Franchise nélkül (rámutatva ki is írja). Betöltéskor is így indul.
 Ha valamit átállítottál, a ↺ élénk, alapállapotban halvány – így első ránézésre látod, szűrsz-e épp
 valamire.
 
-⑧ **Keresés a listán:** a címben, az eredeti címben és a **franchise nevében** keres, és nem zavarja
+⑨ **Keresés a listán:** a címben, az eredeti címben és a **franchise nevében** keres, és nem zavarja
 a kis- és nagybetű vagy az ékezet („dune” is megtalálja a „Dűne”-t). Több szónál mindegyiknek
 szerepelnie kell. Gépelés közben az **egész listádon** keres – a szűrők félreállnak, de közben
 szűkítheted őket –, a keresés törlésekor pedig visszakapod a korábbi szűrőidet.
@@ -220,7 +277,7 @@ szűkítheted őket –, a keresés törlésekor pedig visszakapod a korábbi sz
 - A találatban a keresett rész halk türkiz aláhúzást kap; ha a franchise neve miatt került be egy cím,
   a lista fölött jelzi („N cím a franchise neve alapján: …”), és a sorban a franchise is kiemelve.
 
-⑨ **Rendezés:** Legutóbb hozzáadott · Legkorábban hozzáadott · Legjobb saját értékelés · Legjobb
+⑩ **Rendezés:** Legutóbb hozzáadott · Legkorábban hozzáadott · Legjobb saját értékelés · Legjobb
 IMDb-értékelés · Legújabb megjelenés · Legrégebbi megjelenés (pontos dátum szerint, nem csak az év
 szerint – így egy év filmjei is sorban jönnek). Ami nem kapott értéket, a végére kerül. Ha egy franchise-ra szűrsz, és annak van **saját nézési sorrendje**, a lista elején **Nézési
 sorrend** is megjelenik, és a rendezés magától erre áll; ha nincs, magától **Legrégebbi megjelenés**
@@ -238,7 +295,8 @@ beúsznak – így látod, mi változott.
 „Nem letöltött” nézetben letöltöttnek jelölöd), nem ugrik el rögtön – a helyén marad, így ha
 mellékattintottál, vissza tudod venni. A szűrés következő változásakor kerül le.
 
-**Ha nincs találat**, az üres oldal sem hagy magadra: „Szűrők törlése”, „Felfedezés”; keresésnél
+**Ha nincs találat**, az üres oldal sem hagy magadra (a rajzán a nagyító lassan körbejár, mintha
+keresgélne): „Szűrők törlése”, „Felfedezés”; keresésnél
 „Keresés a TMDB-n: „…”” (a Cím hozzáadása panel a beírt szöveggel nyílik) és „Keresés törlése”.
 
 ## 4. Címek felvétele
@@ -247,8 +305,9 @@ mellékattintottál, vissza tudod venni. A szűrés következő változásakor k
 
 **Cím hozzáadása panel** (a fejléc gombja; telefonon a jobb alsó sarokban lévő kerek **+**):
 - Kezdd el gépelni a címet (pl. „Dűne”) – egy pillanat, és ott vannak a TMDB találatai borítóval,
-  évvel, típussal. ② **Hozzáadás a listához**, és kész. ③ Ami már a listádon van, azt a „✓ A
-  listán” jelzi.
+  évvel, típussal. ② **Hozzáadás a listához**, és kész: a kis borító ívben a fejléc „N cím a
+  listán” számához repül, a szám megdobban, a gomb helyén pedig kirajzolódik a „✓ A listán” pipája.
+  ③ Ami már a listádon van, azt a „✓ A listán” jelzi.
 - **Színészre, rendezőre is kereshetsz** (pl. „Tom Hanks”): a **Színészek és rendezők** csoportban
   legfeljebb hat ember jön, kerek fotóval és azzal, amiről ismert („Színész · Forrest Gump, …”). Ha
   névre kerestél, ők állnak elöl. Egy névre kattintva a lapja nyílik (lásd
@@ -276,7 +335,7 @@ mellékattintottál, vissza tudod venni. A szűrés következő változásakor k
 széles jelenetkép, a film logója (ha nincs, a címe), év · műfajok · játékidő · „moziban júl. 29. óta”,
 a leírás eleje, és két gomb: **Adatlap** (megnézed, mielőtt felveszed) és **+ Hozzáadás** (ami már a
 listádon van, annál „✓ A listán”). Lapozni a **‹ / ›** nyíllal, a pöttyökkel vagy az alattuk lévő kis
-képekkel lehet – telefonon ujjal húzva. Magától nem lapoz, nyugodtan elolvashatod. Ha egy kiemelt film
+képekkel lehet – telefonon ujjal húzva; a képek lapozáskor egymásba tűnnek. Magától nem lapoz, nyugodtan elolvashatod. Ha egy kiemelt film
 nem érdekel, a **×**-szel elrejtheted (lásd lent), és a helyére a következő lép.
 
 ![A Felfedezés borítósorai: „Most a mozikban”, alatta a „Hamarosan a mozikban” kezdete](docs/kepek/04-felfedezes.jpg)
@@ -300,7 +359,8 @@ amit több kedvencedhez is ajánl a TMDB – az nagy eséllyel betalál. Ami má
 a magyar megjelenést nem szűri (az alcím is jelzi). Ha még nincs 8+ értékelésed, ez a sor nem látszik.
 
 **Nem érdekel:** ha egy ajánlott cím hidegen hagy, mutass a borítójára – a jobb felső sarkában
-megjelenik egy **×** (telefonon mindig látszik). Rákattintva eltűnik, és többé sem a Felfedezés, sem a
+megjelenik egy **×** (telefonon mindig látszik). Rákattintva összemegy, a sor többi tagja odacsúszik a
+helyére, és többé sem a Felfedezés, sem a
 Hasonló címek nem ajánlja (a keresésben azért továbbra is megtalálod). Fölötte 10 másodpercig ott a
 „„…” elrejtve – többé nem ajánljuk. **Visszavonás**”, ha csak elkattintottad. Később meggondoltad
 magad? A Felfedezés alján az **Elrejtett ajánlások (N)** alatt minden rejtett cím mellett ott a
@@ -363,6 +423,9 @@ Cím hozzáadása találataiból és a Felfedezésből nyílik (lásd [4.](#4-c�
   első három sora (alatta **Tovább**, ha hosszabb – kinyitva a kép és a cím a helyén marad) és az
   előzetes gombja. Az egész ablak halványan a borító színében dereng. Jelenetkép nélkül (és telefonon)
   balra a nagy borító, ill. telefonon a kép aljára úszó kis borító mellett a cím;
+- a cím végén kis kerek **Cím másolása** gomb: egy kattintás, és a cím a vágólapon van („Másolva”) –
+  jól jön, ha valahol rá akarsz keresni. Ha a böngésző nem engedi a másolást, kijelöli a címet
+  („Kijelölve – Ctrl+C”). Telefonon nincs ilyen gomb;
 - ② az **adatsor**: év · Film / Sorozat · játékidő („2 ó 47 p”) · IMDb · RT · MC. Sorozatnál a
   játékidő helyett a legutóbbi rész hossza („~56 p / rész”), előtte pedig szavakkal, hol tart a
   sorozat: „Folytatódik · eddig 2 évad”, „Befejeződött · 5 évad”, „Elkaszálták az 1. évad után” vagy
@@ -404,6 +467,9 @@ Cím hozzáadása találataiból és a Felfedezésből nyílik (lásd [4.](#4-c�
   pár másodpercig „✓ Frissítve” vagy „✓ Nincs újdonság a TMDB-n”. (Ezt az app havonta magától is
   megteszi.)
 - ⑪ **Bezárás** – jobbra fent, görgetés közben is ott marad (lásd lent).
+
+A később érkező részek (Szereplők, „Hol nézhető?”, Képek, Hasonló címek) nem bepattannak, hanem egymás
+után finoman beúsznak.
 
 ![Azonnali mentés: a Megnézve gombon kis türkiz pipa, alul „Állapot: Megnézve – mentve · Visszavonás”](docs/kepek/05-mentve.jpg)
 
@@ -476,9 +542,10 @@ bezárod az oldalt, a cím megmarad).
 - **Folyamatban** – türkiz.
 - **Megnézve** – zöld; a cím **háttérbe húzódik**: fekete-fehér, fakó borító, tompított szöveg
   (rámutatva újra teljes színű). És egy kis jutalom: amikor egy címet (vagy a nézési sorrendben egy
-  évadot) Megnézve-re állítasz, egy zöld vonal fut végig a címén – „kihúzod a listádról” –, majd
-  elhalványul (a nézési sorrend ablakában a vonal ott marad). Ha a gépen be van kapcsolva a
-  „kevesebb mozgás”, nincs animáció.
+  évadot) Megnézve-re állítasz, egy zöld vonal fut végig a címén – „kihúzod a listádról” –, és
+  vele együtt a borító színe balról jobbra kifolyik, majd a vonal elhalványul (a nézési sorrend
+  ablakában ott marad). A kártyán ez az adatlap bezárásakor játszódik le – amíg az ablak nyitva van,
+  a kártya úgysem látszik. Ha a gépen be van kapcsolva a „kevesebb mozgás”, nincs animáció.
 - **Abbahagyva** – halvány lila, csak sorozatnál (lásd [7.](#7-sorozatok-és-évadok)); ez is háttérbe
   húzódik.
 - Az adatlapon a kiválasztott állapotra újra kattintva visszaáll Megnézendőre.
@@ -488,11 +555,12 @@ bezárod az oldalt, a cím megmarad).
 
 **Letöltve:** a listasorban egy pipa, az adatlapon egy **Letöltve** gomb (újra kattintva
 kikapcsol). Amikor egy cím **Megnézve** lesz, a jelölés magától lekerül – hiszen már nem kell a gépen
-tartanod. (Ha utána mégis újra bejelölöd, megmarad.)
+tartanod. (Ha utána mégis újra bejelölöd, megmarad.) Ha letöltöttnek jelölsz egy címet, a kártyán a
+„Letöltve” jelvény lecsúszik a helyére (az adatlapról jelölve a bezáráskor).
 
 **Saját értékelés:** 1–10 csillag, borostyánszínnel. Ugyanarra a csillagra újra kattintva (vagy az
 adatlapon a „Törlés” linkkel) törlődik. Billentyűzettel a nyilak csak mutatják, hová kerülne, és az
-**Enter** (vagy a Szóköz) menti.
+**Enter** (vagy a Szóköz) menti; a **Delete** törli.
 
 ![A „Hogy tetszett?” sáv csillagsorral és „Később” gombbal](docs/kepek/06-hogy-tetszett.jpg)
 
@@ -744,8 +812,9 @@ nagy betűs, egyszerű oldalt: **Norbi filmjei** – alapból világos témában
   hogy ne legyen sok („További filmek” – még öt). Sorozatot, a saját értékelésedet és az állapotokat
   nem látja.
 - ② **Érdekel** (borostyán) és **Nem érdekel**: a **Filmek** között mindkettő leveszi a sort, és a
-  következő film lép a helyére; alul „„…” – érdekel.” / „– nem érdekel.” és **Visszavonás**, ha
-  mellényúlt. Az **Érdekel** fülön a „✓ Érdekel”-re újra kattintva visszavonja (a sor a fül
+  következő film lép a helyére – „Érdekel”-re a borító az **Érdekel** fülhöz repül (a fül száma
+  megdobban), „Nem érdekel”-re a sor balra kiúszik, a többi pedig a helyére csúszik. Alul „„…” –
+  érdekel.” / „– nem érdekel.” és **Visszavonás**, ha mellényúlt (a sor ilyenkor visszaúszik). Az **Érdekel** fülön a „✓ Érdekel”-re újra kattintva visszavonja (a sor a fül
   váltásáig a helyén marad).
 - A borítóra vagy a címre kattintva **adatlap** nyílik: jelenetkép, borító, év, műfajok, a film
   hossza, IMDb, **Előzetes megnézése**, leírás, **Hol nézhető?**, alul a két nagy gomb – az ablak
@@ -765,7 +834,8 @@ oldala net nélkül nem működik – ott nincs mentett lista.
 <img src="docs/kepek/11-harang.jpg" width="400" alt="A harang kinyitva: megjelent egy új évad, bejelentettek egy évadot, egy film digitálisan is megjelent, Mamát érdekel egy film; fent „Összes törlése”, az első sor végén ×">
 
 **Harang a fejlécben** – szól, ha valami történt a listádon. Az olvasatlan értesítések száma
-borostyán jelvényben; ha nő a szám, a harang egyszer megrezzen. Kinyitva a legutóbbi 30, borítóval,
+borostyán jelvényben; ha nő a szám, a harang egyszer megrezzen, a szám pedig megdobban. Kinyitva a
+legutóbbi 30, borítóval,
 napok szerint csoportosítva (**Ma** / **Ezen a héten** / **Korábban**). Minden fajtának saját színe és
 kis ikonja van a borító sarkán:
 - „Bejelentették a 4. évadot – várható: dec. 18.” (indigó, naptár; ha még nincs dátum, csak az első
@@ -925,10 +995,11 @@ Zsebben is ugyanaz a lista, csak a képernyőhöz igazítva (640 px alatt):
 - Az adatlapon fent a jelenetkép, a kép aljára úszik a kis borító, mellette a cím. A jelenetkép
   lapozható (jobbra fent „‹ 1 / 8 ›”, ujjal húzva is), koppintva nagy nézetben nyílik. A Hasonló
   címek csukva indul, a szereplők egy sorban, a leírás alatt látszanak; az alsó gombok középen.
-- Az állapotszűrő és a Letöltés itt lenyíló a gombsor helyett; a lapozó csak nyilakkal.
+- Az állapotszűrő és a Letöltés itt lenyíló a gombsor helyett; a lapozó csak nyilakkal. A **Hol
+  nézhető?** lenyílóban a szolgáltatók előtt ott a logójuk; összecsukott szűrőknél a címkéje „Hol: …”.
 - A Felfedezés kiemelt sávjában ujjal húzva lapozhatsz; a kép fent, a szöveg alatta van.
-- **Telefonon nincs:** lista nézet, Tömeges import, Mentés letöltése (ezek 1400 px-től érhetők el) és
-  az IMDb import (tableten már megvan).
+- **Telefonon nincs:** lista nézet, Tömeges import, Mentés letöltése (ezek 1400 px-től érhetők el), az
+  IMDb import (tableten már megvan) és az adatlapon a Cím másolása gomb.
 
 ## 16. Billentyűzet, kényelmi apróságok
 
@@ -938,14 +1009,16 @@ Zsebben is ugyanaz a lista, csak a képernyőhöz igazítva (640 px alatt):
   vagy menüt zárja, nem lép ki az appból (lásd [5.](#5-egy-cím-adatlapja-és-szerkesztése)).
 - **Kikattintás:** asztalon (és tableten) elég az ablak mellé, a sötét háttérre kattintani, és
   bezárul bármelyik ablak – az adatlap, a Statisztika, a Franchise-ok, a gyűjtemény-ablak, a
-  Színészek és rendezők, a Toplisták, a Mentések, a Hibák, a Jelszó módosítása (üresen) és a
-  Felhasználói leírás. Nem zárul be, amíg valamit szerkesztesz, megerősítesz vagy épp felveszel benne
+  Színészek és rendezők, a Toplisták, a Mentések, a Hibák, a Jelszó módosítása (üresen), a Kinézet és
+  a Felhasználói leírás. Nem zárul be, amíg valamit szerkesztesz, megerősítesz vagy épp felveszel benne
   (pl. átnevezés, visszaállítás megerősítése, mentés folyamatban) – ilyenkor megbillen. Telefonon a
   lehúzás / Esc / Vissza zár. Az importablakok (Tömeges import, IMDb import) kikattintásra nem
   zárnak – nehogy egy félrekattintás elvigye a begépelt listádat; ott a **Bezárás** gomb.
 - A **⋮ menüben**, a **franchise-** és a **műfajszűrőben** nyilakkal, Home / End-del lehet lépkedni,
   Enter választ; a lenyílók (Típus, Rendezés…) Szóközzel nyílnak, nyilakkal és Enterrel választhatsz.
-- A **csillagok** nyilakkal is állíthatók.
+- A **csillagok** és az adatlap gombsorai (Állapot, évadok, Mama) nyilakkal is kezelhetők: a nyíl
+  csak odaviszi a fókuszt, az **Enter** vagy a **Szóköz** ment – így nem mentesz el véletlenül
+  semmit, amíg lépkedsz.
 - A fejléc felugró listái (harang, ⋮) mindig a képernyőn belül nyílnak.
 - **Felhasználói leírás:** ez a kézikönyv a ⋮ menüből az appon belül is olvasható (fent
   **Tartalom** – vissza a tartalomjegyzékhez), telefonon és net nélkül is.
@@ -960,9 +1033,12 @@ Zsebben is ugyanaz a lista, csak a képernyőhöz igazítva (640 px alatt):
 - **TMDB** (The Movie Database) – címek, magyar leírások, borítók, háttérképek, jelenetképek,
   műfajok, évadok, megjelenési dátumok, előzetesek, szereplők és színészek adatai, ajánlások,
   franchise-logók és -gyűjtemények. A címek adatai havonta frissülnek innen (lásd
-  [2.](#2-a-lista-nézetek-és-lapozás)). A lap alján ott a kötelező forrásmegjelölés.
-- **OMDb** – az IMDb-értékelések (ha épp nem elérhető, az app értékelés nélkül is működik).
-- **JustWatch** (a TMDB-n keresztül) – a „Hol nézhető?” szolgáltatói adatai.
+  [2.](#2-a-lista-nézetek-és-lapozás)). A lap alján ott a kötelező forrásmegjelölés (a TMDB-é, az
+  OMDb-é és a JustWatch-é).
+- **OMDb** – az IMDb-, a Rotten Tomatoes- és a Metacritic-értékelések (ha épp nem elérhető, az app
+  értékelés nélkül is működik).
+- **JustWatch** (a TMDB-n keresztül) – a „Hol nézhető?” szolgáltatói adatai, az adatlapon és a
+  szűrőben is (lásd [3.](#3-szűrés-keresés-rendezés)).
 - **A magyar szinkron** a TMDB-n nem szerepel, ezért a Felfedezés csak közelítés (lásd
   [4.](#4-címek-felvétele)).
 - A listád a Supabase adatbázisban van, és csak a saját fiókoddal látható. Mama fiókja ebből csak
@@ -978,7 +1054,10 @@ finomítások nem szerepelnek itt; a fenti témák mindig a mostani állapotot �
 
 | Dátum | Mi jelent meg |
 |---|---|
-| 2026. 10. 22. | „Hányat láttál belőle?” a Toplistákban ([4.](#4-címek-felvétele)); gyorsabb keresés a listán. |
+| 2026. 11. 15. | „Hol nézhető?” szűrő ([3.](#3-szűrés-keresés-rendezés)); cím másolása az adatlapon ([5.](#5-egy-cím-adatlapja-és-szerkesztése)). |
+| 2026. 11. 14. | A nap filmje; OLED fekete téma ([2.](#2-a-lista-nézetek-és-lapozás)). |
+| 2026. 10. 28. | Kinézet ablak öt választható színpárral ([2.](#2-a-lista-nézetek-és-lapozás)). |
+| 2026. 10. 22. | „Hányat láttál belőle?” a Toplistákban ([4.](#4-címek-felvétele)); gyorsabb keresés a listán; a neonfelirat él, és új apró mozgások mindenfelé – kifolyó szín megnézéskor, beröppenő borító felvételkor, költöző sorok Mamánál ([2.](#2-a-lista-nézetek-és-lapozás), [6.](#6-állapotok-letöltve-értékelések)). |
 | 2026. 10. 21. | Rotten Tomatoes és Metacritic az IMDb mellett, színskálás értékelések ([12.](#12-imdb)); a sorozat állapota és a játékidő az adatlapon ([5.](#5-egy-cím-adatlapja-és-szerkesztése)); egységes „Bezárás” asztalon és lehúzható alsó lap telefonon minden ablakban ([5.](#5-egy-cím-adatlapja-és-szerkesztése), [15.](#15-telefonon)). |
 | 2026. 10. 20. | Toplisták ([4.](#4-címek-felvétele)); színészek és rendezők a keresőben, „Kit érdemes követned?” ([4.](#4-címek-felvétele), [5.](#5-egy-cím-adatlapja-és-szerkesztése)); hibanapló ([14.](#14-mentések-és-adatbiztonság)); a bejelentett új évad dátuma a sorozat borítóján ([7.](#7-sorozatok-és-évadok)). |
 | 2026. 10. 19. | Neonfelirat a fejlécben és a választható videotéka-téma ([2.](#2-a-lista-nézetek-és-lapozás)). |
