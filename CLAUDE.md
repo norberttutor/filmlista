@@ -33,9 +33,9 @@ GitHub-titok is a heti mentéshez).
 Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 
 ## Hol mi van
-- **`munka/ROADMAP.md`** – hátralévő feladatok táblázatban, becsült idővel. Kész feladat után frissítsd.
+- **`munka/ROADMAP.md`** – hátralévő feladatok táblázatban, becsült idővel. Kész feladat után a sora törlődik.
 - **`munka/terv-3/TERV.md`** – a „terv-3 NN” pontok: Norbi döntései, elvetett ötletek oka, látványterv-linkek; az új
-  pont terve ide kerül (kész után csak a jövőt érintő döntés marad).
+  pont terve ide kerül (kész után csak a jövőt érintő döntés marad – commit-hash, dátum nem).
 - Régi kódok (K/H/S/I/J, „#N”) oka: `git log --grep`.
 - A `munka/` mappa helyi (git-ből kizárva), leírása: `munka/README.md`.
 - **Ebbe a fájlba csak a mostani működés és a szabályok kerüljenek**, tömören – történet, dátumok, commit-hashek
@@ -256,7 +256,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   szolgáltató, más nyelvűnél csak HU megjelenés; sorozat – HU streaming; magyar leírás kell; dokumentum / hírek /
   valóságshow / szappanopera / talkshow / koncertfilm nincs, **az animáció benne van**. IMDb-értékelés: `imdb_ratings`
   (30 nap) → saját lista → OMDb, napi keret 400 (`DAILY_OMDB`; hullámonként újraolvasva és tárolva, a példányon
-  futó kérések levonva – párhuzamos összeállításnál sem lépi túl). Súlyozott IMDb-sorrend, ≤ 250 tárolva (valójában listánként a `rate` – 100–160 – jelölt) (`toplists`, 7
+  futó kérések levonva – párhuzamos összeállításnál sem lépi túl). Súlyozott IMDb-sorrend, listánként a `rate` (100–160) jelölt tárolva (`toplists`, 7
   nap; hiányos lista másnap újraépül). Első összeállítás 10–30 mp (`maxDuration = 60`).
 
 ### Egyéb ablakok és menük
@@ -509,7 +509,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   fejlesztés commitjában ne nyúlj hozzá. Frissítés Norbi kérésére: a leírás utolsó commitja óta készült változások
   (`git log $(git log -1 --format=%H -- FELHASZNALOI-LEIRAS.md)..HEAD`) alapján a szakaszok, a változott felület képei
   (`eszkoz/proba-lista.mjs`, majd `leiras-kepek.mjs <név>`; a jelölők és a szöveg számai egyezzenek), az „Utolsó frissítés”
-  dátuma, és a végén a **Mérföldkövek** (Norbi döntése, 2026-10-22: részletes változásnapló nincs – csak a nagyobb
+  dátuma, és a végén a **Mérföldkövek** (Norbi döntése: részletes változásnapló nincs – csak a nagyobb
   funkciók megjelenése, legújabb felül, egy sor naponta). Új funkció a meglévő számozott fejezetbe kerül, ne új
   fejezetbe (a számok eltolódnának). Norbi szemszögéből, pontos feliratokkal; tervezett funkció nem kerül bele.
   Hangnem: könnyed, tegező, de pontos. A címsorokat ne írd át (hivatkozások mutatnak rájuk). Utána a tesztfiókot
@@ -543,7 +543,7 @@ Norbi döntései; a részletek a TERV.md-ben.
   (81), lapozó nyilak a vízszintes sorokon (82), „Nemrég megnyitott” (88); „Következőnek”
   kitűzés (89), „Következik” a franchise-sávon (90), megosztás az adatlapról (92), IMDb-küszöb szűrő (93), hangalapú
   keresés (94), „Új” jelvény (96), franchise-idővonal (97), rezgés jelöléskor (98); epizódszintű követés;
-  szűrőgomb a még meg nem jelent filmekre; megjegyzés mező a felületen; C2 / C3 optimalizálás; kedvenc alkotók a
+  szűrőgomb a még meg nem jelent filmekre; megjegyzés mező a felületen; kedvenc alkotók a
   Statisztikában (112), nyomtatható lista (115), visszaállítási próba (119), borítóválasztó az adatlapon (128), magyar korhatár az adatlapon (126);
   rendezés kritikusi értékelés szerint, RT / MC a kártyán és Mamánál (127).
 
