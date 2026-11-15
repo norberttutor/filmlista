@@ -1,10 +1,15 @@
 /* ---------- A nap filmje (terv-3 143, components/PickOfDay.js) ---------- */
 /* Az adatlap tetején: szalag („A nap filmje · dátum”, „Másikat”) a film hangulatszínével, alatta a sorsoló – a
-   borítók végigpörögnek és megállnak a nap filmjén (a mozgás a JS-ben; az összecsukódás átmenete a 36-mozgas.css-ben).
-   Pörgés közben az adatlap rejtve, a helye foglalt (data-picking a dialogon); utána beúszik. A szalag pirula alakú
+   borítók végigpörögnek és megállnak a nap filmjén (a mozgás a JS-ben). Pörgés közben az adatlap nincs az ablakban
+   (data-picking a dialogon); utána a sorsoló összecsukódik, az ablak kinő, az adatlap beúszik. A szalag pirula alakú
    (nincs squircle), a sorsoló borítói kis borítók (squircle helyben – a 34-squircle.css után jön). */
 .potd {
   padding: 1rem 1.25rem 0;
+}
+
+/* pörgés közben a szakasz kapja a fókuszt (nem vezérlő – nincs kerete) */
+.potd:focus {
+  outline: none;
 }
 
 .potd-ribbon {
@@ -119,15 +124,21 @@
   }
 }
 
-/* pörgés közben az adatlap rejtve, a helye foglalt; utána beúszik */
+/* pörgés közben az adatlap nincs az ablakban – az ablak csak a szalag + a sorsoló (Norbi döntése, „A”); megálláskor
+   az ablak kinő (TitleEditor, JS), az adatlap beúszik */
+.title-editor[data-picking] .editor-page {
+  display: none;
+}
+
 .title-editor:has(> .potd) .editor-page {
   transition: opacity 0.2s ease, translate 0.2s ease;
 }
 
-.title-editor[data-picking] .editor-page {
-  opacity: 0;
-  translate: 0 8px;
-  pointer-events: none;
+@starting-style {
+  .title-editor:has(> .potd) .editor-page {
+    opacity: 0;
+    translate: 0 8px;
+  }
 }
 
 /* asztalon a szalag nem fut a „Bezárás” alá (a sorsoló a teljes szélességen) */

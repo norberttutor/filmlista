@@ -627,8 +627,6 @@ dialog[data-nudge] {
   }
 }
 
-/* A nap filmje (terv-3 143): a sorsoló megállás után 0,35 s alatt csukódik össze (a pörgés maga 1,6 s, a
-   PickOfDay indítja – „kevesebb mozgás”-nál nincs pörgés, rögtön az eredmény) */
-.potd-reel {
-  transition: grid-template-rows 0.35s ease;
-}
+/* A nap filmje (terv-3 143): két JS-ből indított kivétel, itt csak a nyilvántartás kedvéért – a pörgés 1,6 s
+   (PickOfDay), megállás után az ablak 0,32 s alatt kinő az adatlapra, a sorsoló vele együtt csukódik össze (a
+   „Másikat”-ra fordítva; TitleEditor). „Kevesebb mozgás”-nál egyik sincs, rögtön az eredmény. */

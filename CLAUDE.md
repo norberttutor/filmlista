@@ -254,7 +254,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   gyorsindító): naponta egy film a letöltött, megnézendő filmekből (`pickPool`); a napi film a dátumból (budapesti
   nap) és a felhasználóból számolódik, a „Másikat” választását az eszköz aznapra jegyzi (`filmlista-napfilmje:<userId>`).
   Az adatlap a `pick` propot kapja: tetején szalag + sorsoló (`section.potd`, nem `div` – az ablak `> div` szabályai),
-  pörgés alatt `dialog[data-picking]` – az adatlap rejtve, a helye foglalt. A „Másikat” az első lapot cseréli, a fókusz
+  pörgés alatt `dialog[data-picking]` – az adatlap `display: none`, az ablak csak a szalag + a sorsoló (Norbi döntése);
+  megálláskor az ablak kinő (a `TitleEditor` a váltás előtti / utáni magasság között animál, a sorsoló vele csukódik –
+  a sorsoló összecsukódása ezért a `spinning` propból jön, nem saját állapotból). A „Másikat” az első lapot cseréli, a fókusz
   a gombon marad (pörgés alatt `aria-disabled`, nem `disabled`). Üres készletnél a menüpont tiltva. Teszt: `mukodes/nap-filmje.mjs`.
 - `components/NotificationBell.js` + `lib/notifications.js` – `loadNotifications()` előbb lefuttatja a
   `collect_season_notifications()` / `collect_release_notifications()`-t; olvasottra csak azonosító szerint; törlés

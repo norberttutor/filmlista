@@ -130,20 +130,63 @@ export default function TitleEditor({
   // színész lapja a legutóbbi film színét tartja (a keresőből nyílt személy lapja előtt nincs film)
   const film = pages.findLast((page) => !page.person);
 
-  // A nap filmje (terv-3 143): a sorsoló pörgése alatt az adatlap rejtve (data-picking); a „Másikat” az első lapot
-  // cseréli a következő filmre, és újra pörget. A fókusz ilyenkor a gombon marad (keepFocus).
+  // A nap filmje (terv-3 143, „A” – Norbi döntése): pörgés közben az adatlap nincs az ablakban (data-picking → display:
+  // none), az ablak csak a szalag + a sorsoló; megállás után kinő az adatlapra, a „Másikat”-ra visszazsugorodik. A
+  // „Másikat” az első lapot cseréli a következő filmre, és újra pörget; a fókusz ilyenkor a gombon marad (keepFocus).
   const [picking, setPicking] = useState(Boolean(pick));
   const [pickSpin, setPickSpin] = useState(0);
   const keepFocus = useRef(false);
+  const growFrom = useRef(null); // az ablak és a sorsoló magassága a váltás előtt (a méretváltozás animációjához)
+  function measurePick() {
+    const dialog = dialogRef.current;
+    const reel = dialog.querySelector('.potd-reel');
+    growFrom.current = { dialog: dialog.getBoundingClientRect().height, reel: reel?.getBoundingClientRect().height ?? 0 };
+  }
   function pickAnother() {
     if (!canLeavePage()) return;
     const next = pick.another(stack[0].rowId);
     if (!next) return;
     keepFocus.current = true;
+    measurePick();
     setStack([{ id: nextId.current++, rowId: next.id, item: next, added: false }]);
     setPicking(true);
     setPickSpin((n) => n + 1);
   }
+  function pickSettled() {
+    measurePick();
+    setPicking(false);
+  }
+  // a váltás előtti és utáni magasság között animál (az ablak kinő / visszazsugorodik, a sorsoló vele együtt csukódik
+  // össze / nyílik ki – 36-mozgas.css kivétele); megálláskor a cím kapja a fókuszt (pörgés közben rejtve volt), kivéve
+  // ha a „Másikat” gombon van
+  useLayoutEffect(() => {
+    const from = growFrom.current;
+    growFrom.current = null;
+    if (!from) return;
+    const dialog = dialogRef.current;
+    if (!picking && !document.activeElement?.closest('.potd-another')) {
+      dialog.querySelector('.editor-page:not([hidden]) h2')?.focus({ preventScroll: true });
+    }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const reel = dialog.querySelector('.potd-reel');
+    const to = { dialog: dialog.getBoundingClientRect().height, reel: reel?.getBoundingClientRect().height ?? 0 };
+    const timing = { duration: 320, easing: 'cubic-bezier(0.2, 0, 0, 1)' };
+    dialog.style.overflow = 'hidden';
+    // a sorsoló a magasságával csukódik / nyílik (a rácssora közben nyitva, a tartalma alulról vágódik)
+    if (reel) reel.style.gridTemplateRows = '1fr';
+    const grow = dialog.animate([{ height: `${from.dialog}px` }, { height: `${to.dialog}px` }], timing);
+    const fold = reel?.animate([{ height: `${from.reel}px` }, { height: `${to.reel}px` }], timing);
+    const end = () => {
+      dialog.style.overflow = '';
+      if (reel) reel.style.gridTemplateRows = '';
+    };
+    grow.onfinish = end;
+    return () => {
+      grow.cancel();
+      fold?.cancel();
+      end();
+    };
+  }, [picking]);
   const ambient = usePosterColor(film ? (film.row ?? film.item).poster_path : null);
 
   // rajzolás előtt nyílik meg (a nézetváltás új képén már ott legyen az ablak). Lapváltáskor
@@ -159,7 +202,8 @@ export default function TitleEditor({
       keepFocus.current = false; // „Másikat”: a fókusz a gombon marad
       return;
     }
-    dialog.querySelector('.editor-page:not([hidden]) h2')?.focus({ preventScroll: true });
+    // A nap filmje pörgése alatt a cím nincs az ablakban: addig a sorsoló szakasza (különben a „Bezárás” kapná, kerettel)
+    dialog.querySelector(picking ? 'section.potd' : '.editor-page:not([hidden]) h2')?.focus({ preventScroll: true });
   }, [top.id, topPreview]);
 
   // a dialog "close" eseménye hívja az onClose-t (Esc-nél is). Asztalon a nagy borító
@@ -286,9 +330,10 @@ export default function TitleEditor({
           pool={pick.pool}
           winner={pages[0].row ?? pages[0].item}
           spinKey={pickSpin}
+          spinning={picking}
           hidden={pages.length > 1}
           onAnother={pickAnother}
-          onSettled={() => setPicking(false)}
+          onSettled={pickSettled}
         />
       )}
       {pages.map((page, i) => {

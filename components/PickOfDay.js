@@ -5,8 +5,10 @@ import { pickDayLabel } from '@/lib/pickOfDay';
 
 // A nap filmje (terv-3 143, Norbi választása: „C” + a „B” sorsolója): az adatlap tetején a szalag („A nap filmje ·
 // dátum”, „Másikat”), alatta a sorsoló – a letöltött filmek borítói végigpörögnek, és lassulva megállnak a nap
-// filmjén. Utána egy pillanat, a sorsoló összecsukódik, és beúszik az adatlap (a TitleEditor addig rejti:
-// data-picking). A „Másikat” újra pörget (spinKey). Kevesebb mozgásnál nincs pörgés, rögtön az eredmény.
+// filmjén. Utána egy pillanat, a sorsoló összecsukódik, és az ablak kinő az adatlapra (Norbi döntése, „A”: pörgés
+// közben az ablak csak a szalag + a sorsoló – a TitleEditor az adatlapot addig kiveszi: data-picking; a méretváltozást
+// is az animálja). A „Másikat” újra pörget (spinKey). Kevesebb mozgásnál nincs pörgés, rögtön az eredmény.
+// spinning: a TitleEditor picking állapota – ebből csukódik össze a sorsoló, így az ablakkal egy lépésben vált.
 const THUMB = 'https://image.tmdb.org/t/p/w185'; // a lista képmérete (a service worker tárolja)
 const ROUNDS = 4; // ennyi kör a borítókból; a nyertes az utolsóban
 const FACES = 10; // legfeljebb ennyi különböző borító a sorsolóban
@@ -22,13 +24,15 @@ function shuffle(list) {
   return a;
 }
 
-// a sorsoló borítói: ROUNDS kör, körönként keverve; target: a nyertes helye az utolsó körben
+// a sorsoló borítói: ROUNDS kör, körönként keverve; target: a nyertes helye az utolsó körben. Elé és mögé pár
+// tartalékkör, hogy kevés filmnél is legyen borító a széles ablak két szélén (induláskor balra, megálláskor jobbra).
 function buildReel(pool, winner) {
   const faces = [winner, ...shuffle(pool.filter((t) => t.id !== winner.id)).slice(0, FACES - 1)];
+  const pad = Math.ceil(6 / faces.length); // legalább 6 borító a szélekre
   const order = [];
-  for (let k = 0; k < ROUNDS; k++) order.push(...shuffle(faces));
-  const last = faces.length * (ROUNDS - 1);
-  return { order, target: last + order.slice(last).findIndex((t) => t.id === winner.id) };
+  for (let k = 0; k < pad + ROUNDS + pad; k++) order.push(...shuffle(faces));
+  const last = faces.length * (pad + ROUNDS - 1);
+  return { order, step: faces.length, target: last + order.slice(last).findIndex((t) => t.id === winner.id) };
 }
 
 const DICE = (
@@ -44,10 +48,9 @@ const SHUFFLE = (
   </svg>
 );
 
-export default function PickOfDay({ pool, winner, spinKey, hidden, onAnother, onSettled }) {
+export default function PickOfDay({ pool, winner, spinKey, spinning, hidden, onAnother, onSettled }) {
   const trackRef = useRef(null);
   const [won, setWon] = useState(-1); // a megállt borító helye
-  const [done, setDone] = useState(false); // összecsukódott, látszik az adatlap
   // új sorsoló csak „Másikat”-ra (a készlet közbeni változása – pl. megnézettre állítás – nem pörget újra)
   const reel = useMemo(() => buildReel(pool, winner), [spinKey, winner.id]);
   const day = useMemo(pickDayLabel, []);
@@ -56,14 +59,10 @@ export default function PickOfDay({ pool, winner, spinKey, hidden, onAnother, on
     const track = trackRef.current;
     const faces = track.children;
     setWon(-1);
-    setDone(false);
     let timer, raf, spin, at;
     const settle = () => {
       setWon(reel.target);
-      timer = setTimeout(() => {
-        setDone(true);
-        onSettled();
-      }, reduced() ? 0 : SETTLE_MS);
+      timer = setTimeout(onSettled, reduced() ? 0 : SETTLE_MS);
     };
     const start = () => {
       // első megnyitáskor ez a gyermek effektje az ablak showModal()-ja ELŐTT fut: a rejtett ablakban minden méret 0
@@ -84,7 +83,7 @@ export default function PickOfDay({ pool, winner, spinKey, hidden, onAnother, on
         settle();
         return;
       }
-      spin = track.animate([{ transform: at(reel.target - (reel.order.length / ROUNDS) * (ROUNDS - 1)) }, { transform: at(reel.target) }], {
+      spin = track.animate([{ transform: at(reel.target - reel.step * (ROUNDS - 1)) }, { transform: at(reel.target) }], {
         duration: SPIN_MS,
         easing: 'cubic-bezier(0.12, 0.72, 0.18, 1)',
         fill: 'forwards',
@@ -104,7 +103,8 @@ export default function PickOfDay({ pool, winner, spinKey, hidden, onAnother, on
   }, [reel]); // az onSettled minden rajzoláskor új – csak új sorsolónál indul újra
 
   return (
-    <section className="potd" aria-label="A nap filmje" hidden={hidden}>
+    // tabIndex: pörgés közben ez kapja a fókuszt (a cím még nincs az ablakban – TitleEditor)
+    <section className="potd" aria-label="A nap filmje" hidden={hidden} tabIndex={-1}>
       <div className="potd-ribbon">
         {DICE}
         <b>A nap filmje</b>
@@ -114,15 +114,15 @@ export default function PickOfDay({ pool, winner, spinKey, hidden, onAnother, on
           <button
             type="button"
             className="ghost potd-another"
-            aria-disabled={!done}
-            onClick={() => done && onAnother()}
+            aria-disabled={spinning}
+            onClick={() => !spinning && onAnother()}
           >
             {SHUFFLE}
             Másikat
           </button>
         )}
       </div>
-      <div className="potd-reel" data-done={done ? '' : undefined} aria-hidden="true">
+      <div className="potd-reel" data-done={spinning ? undefined : ''} aria-hidden="true">
         <div>
           <div className="potd-window">
             <div className="potd-track" ref={trackRef}>
@@ -136,7 +136,7 @@ export default function PickOfDay({ pool, winner, spinKey, hidden, onAnother, on
         </div>
       </div>
       <p className="sr-only" aria-live="polite">
-        {done ? `A nap filmje: ${winner.title}` : 'Sorsolás…'}
+        {spinning ? 'Sorsolás…' : `A nap filmje: ${winner.title}`}
       </p>
     </section>
   );
