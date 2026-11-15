@@ -10,7 +10,7 @@ import { loadNotifications } from '@/lib/notifications';
 import { loadOrders } from '@/lib/watchOrder';
 import { loadHidden, resetHidden } from '@/lib/hiddenSuggestions';
 import { loadFollowed, resetFollowed } from '@/lib/people';
-import { fetchAll } from '@/lib/fetchAll';
+import { afterCreated, fetchAll } from '@/lib/fetchAll';
 import { loadSnapshot, saveSnapshot, useOnline } from '@/lib/offline';
 import { useAppFreshness } from '@/lib/appVersion';
 import { hasPendingSave, writeMark, writtenSince } from '@/lib/rowSaves';
@@ -31,7 +31,8 @@ export const loadTitles = () =>
       .from('titles_with_genres')
       .select(LIST_COLUMNS)
       .order('created_at', { ascending: false })
-      .order('id', { ascending: false })
+      .order('id', { ascending: false }),
+    afterCreated
   );
 
 export const loadFranchises = () =>

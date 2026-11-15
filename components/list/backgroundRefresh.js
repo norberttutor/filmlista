@@ -57,7 +57,7 @@ export function startBackgroundRefresh({ titles, franchises, setTitles, reloadNo
 
   // a címek TMDB-adatai (magyar cím, leírás, borító, műfajok) a háttérben – a bejelentett / friss
   // címeké később érkezik a TMDB-re (terv-3 83); a változott címek teljes sora jön
-  refreshDetails(titles, replace, isCancelled).catch((err) =>
+  refreshDetails(titles, replace, merge, isCancelled).catch((err) =>
     console.warn('A TMDB-adatok frissítése sikertelen:', err.message)
   );
 

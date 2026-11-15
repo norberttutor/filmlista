@@ -313,7 +313,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `lib/radioKeys.js` – azonnal mentő rádiógomb-csoport (`onKeyDown={radioKeys}`): a nyíl csak a fókuszt viszi, az
   Enter / Szóköz ment (mint a `StarRating`). **Új mentő rádiógomb-csoportnál ezt használd.**
 - `lib/fetchAll.js` – a PostgREST kérésenként legfeljebb **1000 sort** ad. **Új, a teljes listát lekérő
-  lekérdezésnél ezt használd** (egyértelmű rendezéssel).
+  lekérdezésnél ezt használd** (egyértelmű rendezéssel), a címeknél kulcs szerinti lapozással (`afterId` /
+  `afterCreated` – eltolással a két adag között felvett / törölt cím kettőzne vagy kimaradna).
 - `lib/refreshDue.js` – esedékességi szabályok. **A route-ok ugyanezt kérdezik (részben SQL-ben) – változtatáskor
   mindkét helyen.**
 - `lib/posterColor.js` – `usePosterColor`: hangulatszín a w92-es borítóból, **saját gyorsítótár-kulccsal (`?szin`)**
@@ -374,7 +375,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   kitöltést: az évad nélkül kézzel beállított állapot / „Letöltve” a megjelent évadokra kerül; a `series_status` /
   `runtime` itt frissül, a megnézett sorozatoknál is), `tmdb/backdrops`, `tmdb/releases`,
   `tmdb/title-collections`, `tmdb/collection-parts`, `tmdb/details-refresh`, `tmdb/watch-providers` (megnézendőnél
-  hetente, megnézettnél havonta; felvételkor a `details` tölti), `franchises/logos`, `people/refresh`. **A tesztek
+  hetente, megnézettnél havonta; felvételkor a `details` tölti), `franchises/logos`, `people/refresh`. **A címet író
+  frissítő az új `updated_at`-et is visszaadja** (a `details-refresh` a csak ellenőrzöttekét is, `checked`) – különben
+  a helyben tárolt leírás elavultnak látszik, és újra letöltődik (`overviews.js`). **A tesztek
   próbacímeinél minden `*_checked_at` „most” legyen** (`checkedNow()`), különben a frissítő teszt közben átírja a sort.
   Szabályok: az értesítést írók (`collection-parts`, `people/refresh`) **előbb az értesítést írják, utána az
   ismerteket**, és első ellenőrzéskor csak megjegyeznek; le nem tölthető gyűjteményt nem jelölnek ellenőrzöttnek. A

@@ -2,7 +2,8 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
-import { addTitle, titleKey, SIMILAR_V } from '@/lib/titles';
+import { titleKey, SIMILAR_V } from '@/lib/titles';
+import { useAddCredit } from '@/components/PersonPage';
 import { afterTransition } from '@/lib/viewTransition';
 import { useHiddenSuggestions } from '@/lib/hiddenSuggestions';
 import { HideButton, HideNote, useHideSuggestion } from '@/components/HideSuggestion';
@@ -41,8 +42,8 @@ export default function SimilarTitles({ title, existingKeys, onAdded, onPreview,
   const bodyId = useId();
   const [open, setOpen] = useState(storedOpen);
   const [load, setLoad] = useState({ status: 'idle', results: [], error: '' });
-  const [adding, setAdding] = useState(null); // a felvétel alatt álló cím kulcsa
-  const [errors, setErrors] = useState({}); // kulcs → hibaüzenet
+  // a felvétel alatt álló címek – több is lehet, az első vége a másodikat nem oldja fel (átnézés 3, R4)
+  const { adding, errors, add } = useAddCredit(onAdded);
   const listRef = useRef(null);
   const fetched = useRef(false); // betöltve (újranyitáskor nem kéri le újra)
   const hidden = useHiddenSuggestions();
@@ -82,18 +83,6 @@ export default function SimilarTitles({ title, existingKeys, onAdded, onPreview,
     } catch {
       // csak most érvényes
     }
-  }
-
-  async function add(r) {
-    const key = titleKey(r);
-    setAdding(key);
-    setErrors((e) => ({ ...e, [key]: '' }));
-    try {
-      onAdded(await addTitle({ media_type: r.media_type, tmdb_id: r.tmdb_id }));
-    } catch (err) {
-      setErrors((e) => ({ ...e, [key]: err.message }));
-    }
-    setAdding(null);
   }
 
   if (!title.tmdb_id) return null;
@@ -182,11 +171,11 @@ export default function SimilarTitles({ title, existingKeys, onAdded, onPreview,
                         <button
                           type="button"
                           className="ghost mini"
-                          disabled={adding === key}
+                          disabled={!!adding?.has(key)}
                           aria-label={`Hozzáadás a listához: ${r.title}`}
                           onClick={() => add(r)}
                         >
-                          {adding === key ? 'Hozzáadás…' : '+ Hozzáadás'}
+                          {adding?.has(key) ? 'Hozzáadás…' : '+ Hozzáadás'}
                         </button>
                         )
                       )}

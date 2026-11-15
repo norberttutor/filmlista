@@ -39,9 +39,15 @@ export async function POST(request) {
             if (err.status !== 404) throw err; // a TMDB-n már nincs meg: nincs háttérkép
           }
           const fields = { backdrop_path: backdrop, backdrop_checked_at: new Date().toISOString() };
-          const { error: updateError } = await db.from('titles').update(fields).eq('id', t.id);
+          // az új updated_at is visszamegy: e nélkül a helyben tárolt lista leírása elavultnak látszana (R29)
+          const { data: row, error: updateError } = await db
+            .from('titles')
+            .update(fields)
+            .eq('id', t.id)
+            .select('updated_at')
+            .single();
           if (updateError) throw updateError;
-          updated.push({ id: t.id, ...fields });
+          updated.push({ id: t.id, ...fields, updated_at: row.updated_at });
         } catch (err) {
           console.error(err);
           failed = true;

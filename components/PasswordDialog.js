@@ -56,7 +56,8 @@ export default function PasswordDialog({ email, onClose }) {
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
   // asztalon kikattintásra bezárul – de ha már gépelt valamit, vagy mentés közben, nem (a beírt
-  // jelszavak ne vesszenek el egy félrekattintástól; a fenti „Bezárás” ugyanígy); az Esc és a Mégse mindig zár
+  // jelszavak ne vesszenek el egy félrekattintástól; a fenti „Bezárás” ugyanígy); az Esc és a Mégse mindig zár –
+  // kivéve mentés közben: akkor a csere végbemenne visszajelzés nélkül (átnézés 3, R6)
   const closing = { onClose: () => dialogRef.current.close(), canClose: () => !busy && (done || !(current || next || again)) };
   const backdrop = useBackdropClose(dialogRef, closing);
 
@@ -96,7 +97,7 @@ export default function PasswordDialog({ email, onClose }) {
   }
 
   return (
-    <dialog ref={dialogRef} className="editor password-dialog" aria-labelledby="password-title" onClose={onClose} {...backdrop}>
+    <dialog ref={dialogRef} className="editor password-dialog" aria-labelledby="password-title" onClose={onClose} onCancel={(e) => busy && e.preventDefault()} {...backdrop}>
       <DialogClose dialogRef={dialogRef} {...closing} />
       <form className="import-body" onSubmit={handleSubmit}>
         <h2 id="password-title" ref={headingRef} tabIndex={-1}>
@@ -154,7 +155,7 @@ export default function PasswordDialog({ email, onClose }) {
         {!done && (
           <div className="editor-actions">
             <span className="spacer" />
-            <button type="button" className="ghost" onClick={() => dialogRef.current.close()}>
+            <button type="button" className="ghost" disabled={busy} onClick={() => dialogRef.current.close()}>
               Mégse
             </button>
             <button type="submit" className="primary" disabled={busy}>

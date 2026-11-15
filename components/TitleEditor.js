@@ -52,6 +52,15 @@ const WIDE_QUERY = '(min-width: 900px)'; // a kétoszlopos asztali adatlap (app/
 // Rádiógombok "chip" formában; a kiválasztottra újra kattintva visszaáll üresre.
 const DOWNLOADED_OPTIONS = [{ code: 'yes', name: 'Letöltve' }];
 
+// a billentyű egy nyitott lenyílóból jön (a base-select listája – :open; ahol nem ismert, hamis)
+function selectOpen(target) {
+  try {
+    return !!target?.closest?.('select')?.matches(':open');
+  } catch {
+    return false;
+  }
+}
+
 // flash: épp mentődött (terv-3 79, „B”) – a kiválasztott gomb sarkán egy pillanatra türkiz pipa.
 // Billentyűzettel a nyíl csak a fókuszt viszi, az Enter / Szóköz ment (B15 – lib/radioKeys.js)
 function ClearableChips({ name, options, value, onChange, className, flash }) {
@@ -290,6 +299,8 @@ export default function TitleEditor({
       if (e.key !== 'Escape' || e.defaultPrevented) return;
       const t = e.target;
       if (t !== document.body && t !== document.documentElement && !dialogRef.current?.contains(t)) return;
+      // nyitott lenyíló (base-select, pl. a Franchise): az Esc csak azt csukja be (átnézés 3, R3)
+      if (selectOpen(t)) return;
       e.preventDefault();
       closeRef.current();
     };

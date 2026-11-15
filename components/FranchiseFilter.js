@@ -13,7 +13,8 @@ export function FranchiseLogo({ path }) {
   const [dark, setDark] = useState(() => toneCache.get(src) ?? false);
 
   function measure(event) {
-    if (toneCache.has(src)) return;
+    // logócserénél (új src, ugyanaz az elem) a tárolt tónust is be kell állítani (átnézés 3, R5)
+    if (toneCache.has(src)) return setDark(toneCache.get(src));
     let isDark = false;
     try {
       const canvas = document.createElement('canvas');

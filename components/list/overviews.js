@@ -5,7 +5,7 @@
 // változott (azonos updated_at – a titles minden írása lépteti, a leírás cseréje is); a hiányzók utána a háttérben
 // jönnek, és a tárolt listával együtt helyben is megmaradnak (net nélkül is látszanak).
 import { supabase } from '@/lib/supabase';
-import { fetchAll } from '@/lib/fetchAll';
+import { afterId, fetchAll } from '@/lib/fetchAll';
 
 // a titles_with_genres oszlopai az overview kivételével – a nézet új oszlopát ide is fel kell venni
 // (a teszt – munka/e2e/test-p5.mjs – az adatbázis nézetével veti össze)
@@ -44,7 +44,7 @@ export async function fillOverviews(ids, setTitles, isCancelled) {
   if (!ids.length) return;
   const got = new Map();
   if (ids.length > BULK_FROM) {
-    const { data, error } = await fetchAll(() => supabase.from('titles').select('id, overview').order('id'));
+    const { data, error } = await fetchAll(() => supabase.from('titles').select('id, overview').order('id'), afterId);
     if (error) return console.warn('A leírások betöltése sikertelen:', error.message);
     for (const r of data) got.set(r.id, r.overview);
   } else {

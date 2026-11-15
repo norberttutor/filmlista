@@ -1,7 +1,7 @@
 import { getUserFromRequest, supabaseAsUser, unauthorized } from '@/lib/server/auth';
 import { tmdbFetch } from '@/lib/server/tmdb';
 import { budapestToday, collectionDue } from '@/lib/refreshDue';
-import { fetchAll } from '@/lib/fetchAll';
+import { afterId, fetchAll } from '@/lib/fetchAll';
 
 const BATCH = 40; // egy kérésben legfeljebb ennyi film (a szerverfüggvény időkorlátja miatt)
 const PARALLEL = 8;
@@ -23,7 +23,8 @@ export async function POST(request) {
       .from('titles')
       .select('id, media_type, tmdb_id, release_year, tmdb_collection_id, collection_checked_at')
       .eq('media_type', 'movie')
-      .order('id')
+      .order('id'),
+    afterId
   );
   if (error) {
     console.error(error);
@@ -47,9 +48,15 @@ export async function POST(request) {
             if (err.status !== 404) throw err; // a TMDB-n már nincs meg: nincs gyűjtemény
           }
           const fields = { tmdb_collection_id: collection, collection_checked_at: new Date().toISOString() };
-          const { error: updateError } = await db.from('titles').update(fields).eq('id', t.id);
+          // az új updated_at is visszamegy: e nélkül a helyben tárolt lista leírása elavultnak látszana (R29)
+          const { data: row, error: updateError } = await db
+            .from('titles')
+            .update(fields)
+            .eq('id', t.id)
+            .select('updated_at')
+            .single();
           if (updateError) throw updateError;
-          updated.push({ id: t.id, ...fields });
+          updated.push({ id: t.id, ...fields, updated_at: row.updated_at });
         } catch (err) {
           console.error(err);
           failed = true;
