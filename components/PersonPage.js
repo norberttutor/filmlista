@@ -298,6 +298,10 @@ export default function PersonPage({ person: cast, titles, active, apiRef, back,
                 <h2 id={active ? 'editor-title' : undefined} tabIndex={-1}>
                   {p.name}
                 </h2>
+                {/* az ablak neve (a TitleEditor aria-labelledby-ja, mint a címlapé) */}
+                <span id={active ? 'editor-title-name' : undefined} hidden>
+                  {p.name}
+                </span>
                 {facts}
                 <FollowButton
                   person={{ id: cast.id, name: p.name, profile_path: p.profile_path }}

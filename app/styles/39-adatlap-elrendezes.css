@@ -255,11 +255,7 @@
     text-shadow: 0 2px 18px rgb(var(--glass) / 0.55);
   }
 
-  /* a másolás-gomb (terv-3 146) a nagy cím első sorához, a jelenetképen üveg háttérrel */
-  .editor-page.has-hero .editor-backdrop .editor-heading {
-    --title-line: 2.75rem;
-  }
-
+  /* a másolás-gomb (terv-3 146) a jelenetképen üveg háttérrel */
   .editor-page.has-hero .editor-backdrop .title-copy:not([data-done='ok']) {
     background-color: rgb(var(--glass) / 0.45);
   }

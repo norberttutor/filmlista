@@ -71,38 +71,33 @@
   outline: none;
 }
 
-/* a cím és mellette a másolás-gomb (terv-3 146, Norbi választása: „B”, components/CopyTitle.js): a gomb a cím első
-   sorához igazodik (--title-line: a cím sormagassága; a moziszerű fejlécben nagyobb, 39-adatlap-elrendezes.css);
-   telefonon nincs (Norbi kérése) */
-.editor-heading {
-  --title-line: calc(1.4rem * 1.2);
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-}
-
-.editor-heading h2 {
-  min-width: 0;
+/* a cím végén a másolás-gomb (terv-3 146, Norbi választása: „B”, components/CopyTitle.js): a szöveg része, az utolsó
+   szóval együtt törik (.title-end) – hosszú, többsoros címnél is a szöveg végén áll (Norbi észrevétele). A negatív
+   függőleges margó miatt a sort nem magasítja. A visszajelzés („Másolva”) buborék alatta (::after, abszolút): a gomb
+   mérete nem változik, a cím kattintásra nem törik újra. Telefonon nincs (Norbi kérése) */
+.title-end {
+  white-space: nowrap;
 }
 
 .title-copy {
+  position: relative;
   display: inline-flex;
-  flex: none;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
+  width: 2rem;
   height: 2rem;
-  min-width: 2rem;
-  margin-top: calc((var(--title-line) - 2rem) / 2);
-  padding: 0 0.5rem;
+  margin: -0.35rem 0 -0.35rem 0.5rem;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: none;
   color: var(--muted);
-  font: inherit;
-  font-size: 0.8rem;
+  font-family: var(--font-main), system-ui, sans-serif;
+  font-size: 0.75rem;
   font-weight: 650;
-  white-space: nowrap;
+  letter-spacing: normal;
+  text-shadow: none;
+  vertical-align: middle;
   cursor: pointer;
   transition:
     color 0.15s ease,
@@ -125,14 +120,32 @@
   flex: none;
 }
 
-.title-copy[data-done] {
-  padding-inline: 0.55rem 0.75rem;
-}
-
 .title-copy[data-done='ok'] {
   color: var(--accent);
   border-color: var(--accent-line);
   background-color: var(--accent-soft);
+}
+
+/* a visszajelzés buborékja: a gomb alatt, a jobb széléhez igazítva (balra nyúlik – a lap jobb szélén sem lóg ki) */
+.title-copy[data-label]::after {
+  content: attr(data-label);
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 2;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--accent-line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--accent);
+  line-height: 1.3;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.title-copy[data-done='fail']::after {
+  border-color: var(--line);
+  color: var(--text);
 }
 
 @media (max-width: 640px) {

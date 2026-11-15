@@ -1,8 +1,12 @@
 'use client';
 
-// Cím másolása az adatlapról (terv-3 146, Norbi választása: „B”): kis kerek gomb a cím mellett, kattintásra a cím a
-// vágólapra kerül, a gomb 1,5 mp-re pipára vált („Másolva”). Telefonon nincs (Norbi kérése – a CSS rejti,
-// 30-adatlap-mezok.css). Ha a böngésző nem engedi a vágólapot, a címet kijelöli, és a gomb Ctrl+C-t javasol.
+// Cím másolása az adatlapról (terv-3 146, Norbi választása: „B”): kis kerek gomb a cím végén, kattintásra a cím a
+// vágólapra kerül, a gomb 1,5 mp-re pipára vált, alatta „Másolva” buborék. Telefonon nincs (Norbi kérése – a CSS
+// rejti, 30-adatlap-mezok.css). Ha a böngésző nem engedi a vágólapot, a címet kijelöli („Kijelölve – Ctrl+C”).
+// A gomb a <h2>-n belül, az utolsó szóval egy töretlen egységben (TitleWithCopy): mindig a szöveg végén áll, egyedül
+// nem törik új sorba (hosszú, többsoros címnél a doboz jobb szélén furán állt – Norbi észrevétele). A visszajelzés nem
+// változtat a gomb méretén (a buborék ::after, abszolút) – a cím kattintásra nem törik újra. A <h2> szövege (és
+// textContent-je) a cím marad: a gombban nincs szöveg, a felolvasónak szóló állapot (CopyTitleStatus) a címen kívül.
 import { useEffect, useRef, useState } from 'react';
 
 const COPY_ICON = (
@@ -18,9 +22,11 @@ const OK_ICON = (
   </svg>
 );
 
-// text: a másolandó cím; headingRef: a cím eleme (hibánál ezt jelöli ki)
-export default function CopyTitle({ text, headingRef }) {
-  const [done, setDone] = useState(null); // null | 'ok' | 'fail'
+const LABELS = { ok: 'Másolva', fail: 'Kijelölve – Ctrl+C' };
+
+// text: a másolandó cím; headingRef: a cím eleme (hibánál ezt jelöli ki) → { done: null | 'ok' | 'fail', copy }
+export function useCopyTitle(text, headingRef) {
+  const [done, setDone] = useState(null);
   const timer = useRef(null);
 
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -49,36 +55,47 @@ export default function CopyTitle({ text, headingRef }) {
   function copy() {
     // a writeText a kattintás kezelőjében indul (különben a böngésző megtagadhatja)
     const p = navigator.clipboard?.writeText(text);
-    if (!p) {
+    const failed = () => {
       selectHeading();
       show('fail');
-      return;
-    }
-    p.then(
-      () => show('ok'),
-      () => {
-        selectHeading();
-        show('fail');
-      }
-    );
+    };
+    if (!p) return failed();
+    p.then(() => show('ok'), failed);
   }
 
+  return { done, copy };
+}
+
+// a cím szövege, a végén a gomb: az utolsó szó és a gomb együtt törik (white-space: nowrap)
+export function TitleWithCopy({ title, done, onCopy }) {
+  const m = /^([\s\S]*\s)?(\S+)\s*$/.exec(title ?? '');
+  if (!m) return title;
   return (
     <>
-      <button
-        type="button"
-        className="title-copy"
-        data-done={done ?? undefined}
-        aria-label="Cím másolása"
-        title="Cím másolása"
-        onClick={copy}
-      >
-        {done === 'ok' ? OK_ICON : COPY_ICON}
-        {done && <span className="title-copy-label">{done === 'ok' ? 'Másolva' : 'Kijelölve – Ctrl+C'}</span>}
-      </button>
-      <span className="sr-only" role="status">
-        {done === 'ok' ? 'A cím a vágólapra került' : done === 'fail' ? 'A cím kijelölve, másold Ctrl+C-vel' : ''}
+      {m[1] ?? ''}
+      <span className="title-end">
+        {m[2]}
+        <button
+          type="button"
+          className="title-copy"
+          data-done={done ?? undefined}
+          data-label={done ? LABELS[done] : undefined}
+          aria-label="Cím másolása"
+          title="Cím másolása"
+          onClick={onCopy}
+        >
+          {done === 'ok' ? OK_ICON : COPY_ICON}
+        </button>
       </span>
     </>
+  );
+}
+
+// a felolvasónak: a másolás eredménye (a címen kívül – a cím szövegébe nem kerülhet)
+export function CopyTitleStatus({ done }) {
+  return (
+    <span className="sr-only" role="status">
+      {done === 'ok' ? 'A cím a vágólapra került' : done === 'fail' ? 'A cím kijelölve, másold Ctrl+C-vel' : ''}
+    </span>
   );
 }

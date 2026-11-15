@@ -42,7 +42,7 @@ import { radioKeys } from '@/lib/radioKeys';
 import { galleryList, GalleryStrip, BackdropPager, GalleryLightbox } from '@/components/TitleGallery';
 import DialogClose from '@/components/DialogClose';
 import PickOfDay from '@/components/PickOfDay';
-import CopyTitle from '@/components/CopyTitle';
+import { CopyTitleStatus, TitleWithCopy, useCopyTitle } from '@/components/CopyTitle';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500'; // a nagy borító (asztalon)
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/'; // a háttérkép (telefonon w780, asztalon w1280)
@@ -306,7 +306,7 @@ export default function TitleEditor({
     <dialog
       ref={dialogRef}
       className="editor title-editor"
-      aria-labelledby="editor-title"
+      aria-labelledby="editor-title-name"
       onClose={onClose}
       // A böngésző magától nem zárja (closedby): Androidon nyitott ablaknál a vissza-gesztus különben az
       // ablakhoz jutna (Esc-szerű bezárási kérésként – a megállítását a Chrome korlátozza), így viszont az
@@ -423,6 +423,7 @@ function TitlePage({
     return () => controller.abort();
   }, [preview, media_type, tmdb_id]);
   const t = row ?? { ...entry.item, ...details };
+  const copyTitle = useCopyTitle(t.title, titleRef); // a cím végén a másolás-gomb (terv-3 146)
 
   const [busy, setBusy] = useState(false); // előnézet: a felvétel alatt
   const [error, setError] = useState('');
@@ -733,13 +734,15 @@ function TitlePage({
               <span>Vissza: {back}</span>
             </button>
           )}
-          {/* a cím és mellette a másolás-gomb (terv-3 146, „B”; telefonon a gomb nincs) */}
-          <div className="editor-heading">
-            <h2 ref={titleRef} id={active ? 'editor-title' : undefined} tabIndex={-1}>
-              {t.title}
-            </h2>
-            <CopyTitle text={t.title} headingRef={titleRef} />
-          </div>
+          {/* a cím, a végén a másolás-gomb (terv-3 146, „B”; telefonon a gomb nincs – components/CopyTitle.js). Az
+              ablak neve a rejtett editor-title-name (a gomb neve ne kerüljön bele) */}
+          <h2 ref={titleRef} id={active ? 'editor-title' : undefined} tabIndex={-1}>
+            <TitleWithCopy title={t.title} done={copyTitle.done} onCopy={copyTitle.copy} />
+          </h2>
+          <span id={active ? 'editor-title-name' : undefined} hidden>
+            {t.title}
+          </span>
+          <CopyTitleStatus done={copyTitle.done} />
           <p className="meta">
             {t.release_year && <span>{t.release_year}</span>}
             <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>

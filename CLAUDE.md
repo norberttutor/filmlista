@@ -178,9 +178,11 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   franchise-gyűjteményből és az importokból nem.
 - Az elöl lévő lap `apiRef`-en adja a `canLeave`-et. Megnyitáskor a fókusz a címen (`id="editor-title"` csak a
   látható lapé). A rejtett lapon nem szól az előzetes.
-- A cím mellett „Cím másolása” gomb (`components/CopyTitle.js`, `.editor-heading`; terv-3 146, Norbi döntése: **telefonon
-  nincs**, ≤ 640 px CSS-ből rejtve). A gomb a `<h2>` testvére, nem gyermeke (a tesztek a `#editor-title` szövegét
-  hasonlítják). Teszt: `mukodes/cim-masolas.mjs`.
+- A cím végén „Cím másolása” gomb (`components/CopyTitle.js`; terv-3 146, Norbi döntése: **telefonon nincs**, ≤ 640 px
+  CSS-ből rejtve). A `<h2>`-n belül, az utolsó szóval együtt törik (`.title-end`); **a gomb mérete nem változhat** (a
+  „Másolva” `::after` buborék) – különben a cím kattintásra újratörik (Norbi észrevétele). A gombban nincs szöveg (a
+  tesztek a `#editor-title` szövegét hasonlítják); az ablak neve a rejtett `#editor-title-name` (a `PersonPage`-en is).
+  Teszt: `mukodes/cim-masolas.mjs`.
 - **Azonnali mentés**: minden mező kattintásra ment (`save()` → `saveRow`), nincs Mentés / Mégse; `.saved-note`
   visszavonással (10 mp). A törölt franchise üresre állítása nem mentendő (`deleted` ref).
 - A `watched_at` nem látszik (megnézettre állításkor a mai nap). „Abbahagyva” csak sorozatnál.
