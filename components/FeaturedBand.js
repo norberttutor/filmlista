@@ -49,6 +49,17 @@ export default function FeaturedBand({ items, existingKeys, rowState, onAdd, onP
     return () => clearTimeout(timer);
   }, [turn]);
 
+  // a logók előre: telefonon a szöveg a kép alatt áll, és a lapozáskor később érkező logó (≤ 88 px) a sávot – a pöttyöket
+  // és az alatta lévőket – lejjebb lökte (T3); így a lapozott dia logója már a gyorsítótárból jön
+  const logos = items.map((x) => x.logo_path).filter(Boolean).join('|');
+  useEffect(() => {
+    for (const path of logos ? logos.split('|') : []) {
+      const img = new Image();
+      img.src = `${IMG}w500${path}`;
+      img.decode?.().catch(() => {});
+    }
+  }, [logos]);
+
   const key = titleKey(it);
   const onList = existingKeys.has(key);
   const state = rowState[key] ?? {};

@@ -50,19 +50,25 @@ export default function MoreMenu({ items }) {
   const firstRef = useRef(0); // nyitáskor ez a pont kapja a fókuszt
   const menuId = useId();
 
+  const phonePopup = usePhonePopup(open, buttonRef);
+
   // a lista kirajzolása után rögtön az első (vagy az utolsó) pont kapja a fókuszt – nem egy
   // képkockával később, különben egy gyors Esc még a gombra érkezne
-  // ha a lista nem fér ki a gomb alatt (alacsony ablak, magas fejléc), a képernyő aljáig ér és görgethető
+  useLayoutEffect(() => {
+    if (open) focusItem(firstRef.current);
+  }, [open]);
+
+  // ha a lista nem fér ki a gomb alatt (alacsony ablak, magas fejléc, telefon), a képernyő aljáig ér és görgethető.
+  // Telefonon a helyét (top) a usePhonePopup egy rajzolással később adja – akkor újra kell mérni (különben a lista
+  // alja a képernyőn kívülre lógott, a „Hibák” / „Felhasználói leírás” nem volt elérhető – T3)
   useLayoutEffect(() => {
     if (!open) return;
     const menu = menuRef.current;
-    if (menu) {
-      menu.style.maxHeight = '';
-      const room = window.innerHeight - menu.getBoundingClientRect().top - 12;
-      if (menu.scrollHeight > room) menu.style.maxHeight = `${Math.max(160, room)}px`;
-    }
-    focusItem(firstRef.current);
-  }, [open]);
+    if (!menu) return;
+    menu.style.maxHeight = '';
+    const room = window.innerHeight - menu.getBoundingClientRect().top - 12;
+    if (menu.scrollHeight > room) menu.style.maxHeight = `${Math.max(160, room)}px`;
+  }, [open, phonePopup.top]);
 
   // kívülre kattintva bezárul
   useEffect(() => {
@@ -92,7 +98,6 @@ export default function MoreMenu({ items }) {
 
   // a Vissza gomb is bezárja (terv-3 62)
   useBackLayer(open, () => close());
-  const phonePopup = usePhonePopup(open, buttonRef);
 
   function onButtonKey(e) {
     if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
