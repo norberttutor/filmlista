@@ -21,6 +21,7 @@ import {
   WATCH_ORDER,
   sameFilters,
 } from '@/components/list/listFilters';
+import { NO_PROVIDER, PROVIDERS, PROVIDER_IDS, providerMatches } from '@/lib/providers';
 
 export function useListFilters({ titles, statuses, franchises, orders, franchiseName }) {
   // franchise kiválasztásakor az állapotszűrő magától „Mind” lesz, nézési sorrendtől függetlenül
@@ -34,6 +35,7 @@ export function useListFilters({ titles, statuses, franchises, orders, franchise
   const [mama, setMama] = useState(DEFAULT_FILTERS.mama); // '' | interested | received
   const [franchise, setFranchise] = useState(DEFAULT_FILTERS.franchise);
   const [downloaded, setDownloaded] = useState(DEFAULT_FILTERS.downloaded); // all | yes | no
+  const [provider, setProvider] = useState(DEFAULT_FILTERS.provider); // '' | NO_PROVIDER | szolgáltató-azonosító
   const [sort, setSort] = useState('added_desc');
   // franchise-ra szűrve magától áll be: nézési sorrend, ha van, különben a legrégebbi megjelenés
   // (amíg a felhasználó mást nem választ)
@@ -44,7 +46,7 @@ export function useListFilters({ titles, statuses, franchises, orders, franchise
   const [query, setQuery] = useState('');
   // a keresés előtti szűrők – ref, mert a gépelés idején a szűrők átmenete még függőben lehet
   const beforeSearch = useRef(null);
-  const filters = { type, status, downloaded, genre, mama, franchise };
+  const filters = { type, status, downloaded, genre, mama, franchise, provider };
 
   function applyFilters(f) {
     statusBeforeFranchise.current = null;
@@ -54,6 +56,7 @@ export function useListFilters({ titles, statuses, franchises, orders, franchise
     setGenre(f.genre);
     setMama(f.mama);
     setFranchise(f.franchise);
+    setProvider(f.provider);
   }
 
   // a kiválasztott típus (filmek / sorozatok) címei
@@ -103,6 +106,9 @@ export function useListFilters({ titles, statuses, franchises, orders, franchise
   }, [titles, usedFranchises]);
 
   const mamaUsed = useMemo(() => titles.some((t) => t.mama_status), [titles]);
+  // a „Hol nézhető?” szűrő akkor látszik, ha már van ellenőrzött cím (közvetlenül az élesítés után a háttérfrissítés
+  // tölti fel – addig nem kínálunk üres szűrőt)
+  const providersKnown = useMemo(() => titles.some((t) => t.watch_providers != null), [titles]);
 
   // keresés a címben, az eredeti címben és a franchise nevében; több szónál mindegyiknek szerepelnie kell.
   // Ha egy szóra a teljes listán sincs pontos találat, egy betűnyi elírást elnéz (words: a javított szavak)
@@ -130,9 +136,10 @@ export function useListFilters({ titles, statuses, franchises, orders, franchise
             (franchise === NO_FRANCHISE
               ? t.franchise_id == null
               : String(t.franchise_id) === franchise)) &&
-          (!searching || matchTitle(words, searchIdx.get(t.id)))
+          (!searching || matchTitle(words, searchIdx.get(t.id))) &&
+          providerMatches(t, provider)
       ),
-    [ofType, genre, mamaFilter, franchise, searching, words, searchIdx]
+    [ofType, genre, mamaFilter, franchise, searching, words, searchIdx, provider]
   );
 
   // minden szűrő az állapot kivételével – ebből jönnek az állapotgombok darabszámai
@@ -174,30 +181,44 @@ export function useListFilters({ titles, statuses, franchises, orders, franchise
     return counts;
   }, [itemsBeforeStatus, beforeStatus]);
 
-  // a műfaj- és a Mama-lenyíló darabszámai (M3): címenként, a többi szűrővel (az adott szűrő nélkül)
+  // a műfaj-, a Mama- és a „Hol nézhető?” lenyíló darabszámai (M3, terv-3 144): címenként, a többi szűrővel (az
+  // adott szűrő nélkül). A szolgáltatóké a Letöltés-szűrő nélkül is – választáskor az úgyis „Mind”-re vált; a még
+  // nem ellenőrzött cím (watch_providers null) csak a „Bárhol”-ba számít
   const facetCounts = useMemo(() => {
     const genre_ = { all: 0 };
     const mama_ = { all: 0 };
+    const provider_ = { all: 0, [NO_PROVIDER]: 0 };
     for (const t of ofType) {
       if (
         (franchise && (franchise === NO_FRANCHISE ? t.franchise_id != null : String(t.franchise_id) !== franchise)) ||
         (searching && !matchTitle(words, searchIdx.get(t.id))) ||
-        (status !== 'all' && t.status !== status) ||
-        (downloaded !== 'all' && t.is_downloaded !== (downloaded === 'yes'))
+        (status !== 'all' && t.status !== status)
       )
         continue;
       const gs = t.genres ?? [];
-      if (!mamaFilter || t.mama_status === mamaFilter) {
+      const genreOk = !genre || gs.includes(genre);
+      const mamaOk = !mamaFilter || t.mama_status === mamaFilter;
+      if (genreOk && mamaOk) {
+        provider_.all++;
+        const ids = t.watch_providers;
+        if (ids) {
+          const known = ids.filter((id) => PROVIDER_IDS.has(id));
+          if (known.length === 0) provider_[NO_PROVIDER]++;
+          for (const id of known) provider_[id] = (provider_[id] ?? 0) + 1;
+        }
+      }
+      if ((downloaded !== 'all' && t.is_downloaded !== (downloaded === 'yes')) || !providerMatches(t, provider)) continue;
+      if (mamaOk) {
         genre_.all++;
         for (const g of gs) genre_[g] = (genre_[g] ?? 0) + 1;
       }
-      if (!genre || gs.includes(genre)) {
+      if (genreOk) {
         mama_.all++;
         if (t.mama_status) mama_[t.mama_status] = (mama_[t.mama_status] ?? 0) + 1;
       }
     }
-    return { genre: genre_, mama: mama_ };
-  }, [ofType, franchise, searching, words, searchIdx, status, downloaded, mamaFilter, genre]);
+    return { genre: genre_, mama: mama_, provider: provider_ };
+  }, [ofType, franchise, searching, words, searchIdx, status, downloaded, mamaFilter, genre, provider]);
 
   const typeOptions = franchiseChosen || searching ? [BOTH_TYPES, ...TYPES] : TYPES;
   const sortOptions = orderAvailable ? [WATCH_ORDER, ...SORTS] : SORTS;
@@ -211,7 +232,7 @@ export function useListFilters({ titles, statuses, franchises, orders, franchise
   }
 
   // ha a szűrés vagy a rendezés változik (más kulcs): 1. oldal, és a megtartott sorok elengedve
-  const filterKey = [type, status, genre, mamaFilter, franchise, downloaded, activeSort, words.join(' ')].join('|');
+  const filterKey = [type, status, genre, mamaFilter, franchise, downloaded, provider, activeSort, words.join(' ')].join('|');
 
   // a most szerkesztett címek a helyükön maradnak, amíg a szűrés nem változik: pl. a "Nem
   // letöltött" nézetben letöltöttnek jelölt film nem tűnik el azonnal (a pipa visszavehető)
@@ -331,6 +352,16 @@ export function useListFilters({ titles, statuses, franchises, orders, franchise
     }
   }
 
+  // „Hol nézhető?” (terv-3 144, Norbi döntése): szolgáltató (vagy „Egyiken sem”) választásakor a Letöltés-szűrő
+  // „Mind”-re vált – a streamingen nézhetőnél mindegy, le van-e töltve; „Bárhol”-ra váltva nem áll vissza
+  function pickProvider(value) {
+    setProvider(value);
+    if (value) setDownloaded('all');
+  }
+
+  const providerLabel = (value) =>
+    value === NO_PROVIDER ? 'Egyiken sem' : PROVIDERS.find((p) => String(p.id) === value)?.name;
+
   // kézi állapotválasztás: a franchise-szűrő megszűnésekor ez marad
   function pickStatus(value) {
     statusBeforeFranchise.current = null;
@@ -379,6 +410,7 @@ export function useListFilters({ titles, statuses, franchises, orders, franchise
     status === 'all' ? 'Minden állapot' : statuses.find((s) => s.code === status)?.name,
     downloaded !== 'all' && DOWNLOAD_FILTERS.find((d) => d.code === downloaded)?.name,
     genre,
+    provider && `Hol: ${providerLabel(provider)}`,
     mamaFilter && `Mama: ${mamaLabel(mamaFilter)}`,
     franchise === NO_FRANCHISE
       ? usedFranchises.length > 0 && 'Franchise nélkül'
@@ -398,6 +430,7 @@ export function useListFilters({ titles, statuses, franchises, orders, franchise
       clear: () => setDownloaded('all'),
     },
     genre && { key: 'genre', label: genre, clear: () => setGenre('') },
+    provider && { key: 'provider', label: `Hol: ${providerLabel(provider)}`, clear: () => pickProvider('') },
     mamaFilter && { key: 'mama', label: `Mama: ${mamaLabel(mamaFilter)}`, clear: () => setMama('') },
     franchise === NO_FRANCHISE
       ? usedFranchises.length > 0 && { key: 'franchise', label: 'Franchise nélkül', clear: () => changeFranchise('') }
@@ -431,6 +464,7 @@ export function useListFilters({ titles, statuses, franchises, orders, franchise
     franchise,
     franchiseChosen,
     downloaded,
+    provider,
     searchInput,
     query,
     activeSort,
@@ -446,6 +480,7 @@ export function useListFilters({ titles, statuses, franchises, orders, franchise
     genres,
     facetCounts,
     mamaUsed,
+    providersKnown,
     usedFranchises,
     franchiseOptions,
     filterSummary,
@@ -466,6 +501,7 @@ export function useListFilters({ titles, statuses, franchises, orders, franchise
     setDownloaded,
     setGenre,
     setMama,
+    pickProvider,
     changeFranchise,
     releaseFranchise,
     changeSort,

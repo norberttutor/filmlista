@@ -1,5 +1,6 @@
 // A szűrősor ikonjai (M3): állapot, letöltés, típus, rendezés, franchise, Mama. Egyvonalas ikonok a felirat
 // színében (a natív lenyílók --opt-icon ikonjainak párjai), felolvasónak rejtve.
+import { PROVIDER_LOGO_BASE } from '@/lib/providers';
 
 function Svg({ children, width = 1.8 }) {
   return (
@@ -134,6 +135,28 @@ export const ALL_GENRES_ICON = (
     <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5" />
   </Svg>
 );
+
+// „Hol nézhető?” (terv-3 144): képernyő lejátszás-jellel („Bárhol”), áthúzva („Egyiken sem”); a szolgáltatóké a
+// logójuk (ProviderLogo)
+export const PROVIDER_ICON = (
+  <Svg width={1.7}>
+    <rect x="3" y="5" width="18" height="12" rx="2" />
+    <path d="M8 21h8M12 17v4" />
+    <path d="m10.5 9 3.5 2-3.5 2z" />
+  </Svg>
+);
+
+export const NO_PROVIDER_ICON = (
+  <Svg width={1.7}>
+    <rect x="3" y="5" width="18" height="12" rx="2" />
+    <path d="M8 21h8M12 17v4" />
+    <path d="m4 4 16 14" />
+  </Svg>
+);
+
+export function ProviderLogo({ logo }) {
+  return <img className="filter-icon provider-logo" src={PROVIDER_LOGO_BASE + logo} alt="" decoding="async" />;
+}
 
 // naptár (a Toplisták évtizedszűrője – terv-3 120)
 export const DECADE_ICON = (

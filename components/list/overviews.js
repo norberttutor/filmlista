@@ -14,7 +14,8 @@ export const LIST_COLUMNS =
   'notes, watched_at, created_at, updated_at, is_downloaded, mama_status, franchise_id, imdb_rating, imdb_votes, ' +
   'imdb_rating_updated_at, seasons_checked_at, backdrop_path, backdrop_checked_at, theatrical_release, ' +
   'digital_release, release_checked_at, tmdb_collection_id, collection_checked_at, franchise_suggestion_off, ' +
-  'release_date, details_checked_at, runtime, series_status, rt_rating, mc_rating, status_name, genres, seasons';
+  'release_date, details_checked_at, runtime, series_status, rt_rating, mc_rating, ' +
+  'watch_providers, providers_checked_at, status_name, genres, seasons';
 
 // ennél több hiányzónál egyben (ezres adagokban) az összeset kéri, különben azonosítónként, adagolva
 const BULK_FROM = 200;

@@ -57,8 +57,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `app/manifest.js` – gyorsindítók `/?nyit=hozzaadas|franchise-ok|statisztika|a-nap-filmje` (`SHORTCUTS` a `Watchlist`-ben).
 - `app/error.js` + `app/sorrend/[token]/error.js` → `components/ErrorScreen.js`.
 - `components/LoginForm.js` – regisztráció nincs (ki van kapcsolva).
-- `components/SiteFooter.js` – kötelező TMDB forrásmegjelölés, ne töröld; a szponzor `span.sponsor`, nem `p` (a teszt
-  egy bekezdést vár a láblécben).
+- `components/SiteFooter.js` – kötelező TMDB (és a szolgáltatói adatoké: JustWatch) forrásmegjelölés, ne töröld; a
+  szponzor `span.sponsor`, nem `p` (a teszt egy bekezdést vár a láblécben).
 
 ### Téma
 - `lib/theme.js` + `lib/themeBoot.js` (React nélküli – a szerverkomponens is használja) + `ThemeToggle`: sötét (alap),
@@ -110,7 +110,15 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   Franchise nélkül. „Folyamatban” / „Abbahagyva” csak sorozatos típusnál (`MOVIE_HIDDEN_STATUSES`). Mama-szűrő
   sorozatnál / franchise-ra szűrve nem szűr (`mamaFilter`). Franchise választásakor a típus „all”, megszűnésekor
   vissza Filmek; az állapot „Mind” (`statusBeforeFranchise`). Asztalon (≥ 641 px) saját lenyílók (`FranchiseFilter`),
-  telefonon natív `<select>`-ek. Teszt: `kinezet/szurosor-asztal.mjs`.
+  telefonon natív `<select>`-ek. Teszt: `kinezet/szurosor-asztal.mjs`. **2560 px-en a szűrősor egy sor** (a kereső,
+  rendezés, nézetváltó is – háromjegyű darabszámokkal ~33 px tartalék; ezért asztalon a rések 1 rem / 0,6 rem): új
+  szűrőnél mérd újra.
+- **„Hol nézhető?” szűrő** (terv-3 144, Norbi döntése: „A” lenyíló a Műfaj után; `lib/providers.js`): a
+  `titles.watch_providers` (HU flatrate + free + ads, az „… Amazon Channel” a fő szolgáltatóé) alapján; csak a
+  `PROVIDERS` nyolc szolgáltatója (RTL+, Magenta nincs a TMDB-n) + „Egyiken sem”; a még nem ellenőrzött cím
+  (`null`) egyikbe sem illik, csak a „Bárhol”-ba számít. **Választáskor a Letöltés „Mind”-re vált** (nem áll vissza).
+  A darabszám a Letöltés-szűrő nélkül számol. Logó a borítón nincs (Norbi döntése). Csak akkor látszik, ha van
+  ellenőrzött cím (`providersKnown`). Telefonon az opció előtt a logó (`--opt-logo`). Teszt: `mukodes/szolgaltato-szuro.mjs`.
 - **Keresés**: `lib/listSearch.js` (`fold()`, `resolveWords` – elírás-tűrés), `components/Highlight.js`; gépeléskor a
   szűrők félreállnak (`SEARCH_FILTERS`). A mező (`searchInput`) azonnal frissül, a lista szűrése (`query` + a
   szűrőváltás együtt) `startTransition`-ben – a leütés nem vár rá. **A tesztek a lista keresőjébe írás után a
@@ -170,6 +178,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   franchise-gyűjteményből és az importokból nem.
 - Az elöl lévő lap `apiRef`-en adja a `canLeave`-et. Megnyitáskor a fókusz a címen (`id="editor-title"` csak a
   látható lapé). A rejtett lapon nem szól az előzetes.
+- A cím mellett „Cím másolása” gomb (`components/CopyTitle.js`, `.editor-heading`; terv-3 146, Norbi döntése: **telefonon
+  nincs**, ≤ 640 px CSS-ből rejtve). A gomb a `<h2>` testvére, nem gyermeke (a tesztek a `#editor-title` szövegét
+  hasonlítják). Teszt: `mukodes/cim-masolas.mjs`.
 - **Azonnali mentés**: minden mező kattintásra ment (`save()` → `saveRow`), nincs Mentés / Mégse; `.saved-note`
   visszavonással (10 mp). A törölt franchise üresre állítása nem mentendő (`deleted` ref).
 - A `watched_at` nem látszik (megnézettre állításkor a mai nap). „Abbahagyva” csak sorozatnál.
@@ -360,7 +371,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   `imdb/refresh` (az `rt_rating` / `mc_rating` is), `tmdb/seasons` (az állapothoz nem nyúl – kivéve az első
   kitöltést: az évad nélkül kézzel beállított állapot / „Letöltve” a megjelent évadokra kerül; a `series_status` /
   `runtime` itt frissül, a megnézett sorozatoknál is), `tmdb/backdrops`, `tmdb/releases`,
-  `tmdb/title-collections`, `tmdb/collection-parts`, `tmdb/details-refresh`, `franchises/logos`, `people/refresh`.
+  `tmdb/title-collections`, `tmdb/collection-parts`, `tmdb/details-refresh`, `tmdb/watch-providers` (megnézendőnél
+  hetente, megnézettnél havonta; felvételkor a `details` tölti), `franchises/logos`, `people/refresh`. **A tesztek
+  próbacímeinél minden `*_checked_at` „most” legyen** (`checkedNow()`), különben a frissítő teszt közben átírja a sort.
   Szabályok: az értesítést írók (`collection-parts`, `people/refresh`) **előbb az értesítést írják, utána az
   ismerteket**, és első ellenőrzéskor csak megjegyeznek; le nem tölthető gyűjteményt nem jelölnek ellenőrzöttnek. A
   `details-refresh` a címet **csak akkor** cseréli a magyarra, ha most az eredeti áll ott (a kézzel adottak maradnak),
@@ -383,7 +396,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (1–10), `notes`, `watched_at`, `release_date` (sorozatnál `first_air_date`), `runtime` (perc; sorozatnál a
   legutóbbi részé – a TMDB `episode_run_time` szinte mindig üres), `series_status` (a TMDB `status` szövege, a
   kliens fordítja; `pickFacts()`), `rt_rating` / `mc_rating` (0–100, az OMDb `Ratings` tömbjéből; sorozatnál
-  gyakran nincs), …, ellenőrzési időbélyegek (`*_checked_at`). Egyedi `(user_id, media_type,
+  gyakran nincs), `watch_providers` (int[], TMDB szolgáltató-azonosítók; `[]` sehol, NULL még nem néztük),
+  …, ellenőrzési időbélyegek (`*_checked_at`). Egyedi `(user_id, media_type,
   tmdb_id)`.
 - Trigger: „Megnézve”-re váltáskor az `is_downloaded` hamis lesz (utána kézzel bejelölhető); a felület is leveszi.
 - `title_seasons` (PK `(title_id, season_number)`). Triggerek: a sorozat `status` / `is_downloaded` / `watched_at` az

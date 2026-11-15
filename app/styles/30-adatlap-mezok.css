@@ -71,6 +71,76 @@
   outline: none;
 }
 
+/* a cím és mellette a másolás-gomb (terv-3 146, Norbi választása: „B”, components/CopyTitle.js): a gomb a cím első
+   sorához igazodik (--title-line: a cím sormagassága; a moziszerű fejlécben nagyobb, 39-adatlap-elrendezes.css);
+   telefonon nincs (Norbi kérése) */
+.editor-heading {
+  --title-line: calc(1.4rem * 1.2);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.editor-heading h2 {
+  min-width: 0;
+}
+
+.title-copy {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  height: 2rem;
+  min-width: 2rem;
+  margin-top: calc((var(--title-line) - 2rem) / 2);
+  padding: 0 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.title-copy:hover {
+  color: var(--text);
+  border-color: var(--muted);
+  background-color: var(--hover-tint);
+}
+
+.title-copy:active {
+  background-color: var(--press-tint);
+}
+
+.title-copy svg {
+  display: block;
+  flex: none;
+}
+
+.title-copy[data-done] {
+  padding-inline: 0.55rem 0.75rem;
+}
+
+.title-copy[data-done='ok'] {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background-color: var(--accent-soft);
+}
+
+@media (max-width: 640px) {
+  .title-copy {
+    display: none;
+  }
+}
+
 .editor-overview {
   margin: 0.6rem 0 0;
   font-size: 0.85rem;

@@ -8,6 +8,7 @@ import {
   refreshFranchiseLogos,
   refreshSeasons,
   refreshBackdrops,
+  refreshWatchProviders,
   refreshReleases,
   refreshTitleCollections,
   refreshDetails,
@@ -42,6 +43,11 @@ export function startBackgroundRefresh({ titles, franchises, setTitles, reloadNo
   // a szerkesztő ablak háttérképei a háttérben (a még meg nem nézett címekhez)
   refreshBackdrops(titles, merge, isCancelled).catch((err) =>
     console.warn('Háttérképek lekérése sikertelen:', err.message)
+  );
+
+  // hol nézhető (terv-3 144, a „Hol nézhető?” szűrőhöz): a még nem ellenőrzött címek, és hetente / havonta újra
+  refreshWatchProviders(titles, merge, isCancelled).catch((err) =>
+    console.warn('A szolgáltatók lekérése sikertelen:', err.message)
   );
 
   // a filmek TMDB-gyűjteménye a háttérben (a franchise-javaslathoz, terv-3 35)

@@ -450,6 +450,16 @@ body:has(.filters[data-stuck]):not(:has(.filters [aria-expanded='true'])) .title
   height: 1.5rem;
 }
 
+/* a szolgáltató logója (terv-3 144, „Hol nézhető?”): kis lekerekített négyzet */
+.provider-logo {
+  display: block;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 0.32rem;
+  object-fit: cover;
+  background: var(--placeholder-bg);
+}
+
 .genre-filter .franchise-listbox li {
   gap: 0.6rem;
   padding-block: 0.32rem;
@@ -873,12 +883,36 @@ body:has(.filters[data-stuck]):not(:has(.filters [aria-expanded='true'])) .title
    nyugalomban is foglalt („A – Egy sáv”, .stuck-tools[data-off]) – így a sor a legtöbb szélességen ugyanannyi sorba
    törik, mint a gyorsgombok előtt (mérve 660–2560 px között) */
 @media (min-width: 641px) {
+  /* M3: 1,75 → 1,5 rem; terv-3 144 (Norbi jóváhagyásával): 1,5 → 1 rem, hogy 2560 px-en a „Hol nézhető?” lenyíló
+     mellett is egy sor maradjon – háromjegyű darabszámokkal is (mérve: ~33 px tartalék) */
   .filters {
-    column-gap: 1.5rem; /* M3: 1,75 → 1,5 rem, hogy 2560 px-en az új állapotsáv és Letöltés-gombcsoport mellett is egy sor maradjon */
+    column-gap: 1rem;
   }
 
   .filter-group {
-    column-gap: 1.25rem;
+    column-gap: 1rem;
+  }
+
+  .filter-end {
+    gap: 0.6rem;
+  }
+
+  /* „Hol nézhető?” (terv-3 144): a szolgáltató logója a gombon és a listában; a lista elfér egyben, az
+     „Egyiken sem” vonallal elválasztva */
+  .filters .provider-filter .franchise-filter-button > .provider-logo {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+
+  .provider-filter .franchise-listbox {
+    max-height: 30rem;
+  }
+
+  .provider-filter .franchise-listbox li:last-child {
+    margin-top: 0.3rem;
+    border-top: 1px solid var(--line);
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
   }
 
   .list-search {

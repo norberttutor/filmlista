@@ -1,6 +1,6 @@
 'use client';
 
-// A fő lista szűrősora (components/Watchlist.js): típus, állapot, letöltés, műfaj, Mama, franchise, alaphelyzet,
+// A fő lista szűrősora (components/Watchlist.js): típus, állapot, letöltés, műfaj, hol nézhető, Mama, franchise, alaphelyzet,
 // keresés, rendezés, lista / rács váltó; telefonon összecsukva. Az állapot és a logika: useListFilters.js.
 import { Fragment, useState } from 'react';
 import ProgressiveBlur from '@/components/ProgressiveBlur';
@@ -12,6 +12,9 @@ import {
   FRANCHISE_ICON,
   MAMA_ICON,
   MamaDot,
+  NO_PROVIDER_ICON,
+  PROVIDER_ICON,
+  ProviderLogo,
   SORT_ICONS,
   STATUS_ICONS,
   TYPE_ICONS,
@@ -20,6 +23,7 @@ import { MAMA_OPTIONS } from '@/lib/titles';
 import { useSlidingThumb } from '@/lib/useSlidingThumb';
 import { useScrollFade } from '@/lib/useScrollFade';
 import { DEFAULT_FILTERS, DOWNLOAD_FILTERS, NO_FRANCHISE } from '@/components/list/listFilters';
+import { NO_PROVIDER, PROVIDERS, PROVIDER_LOGO_BASE } from '@/lib/providers';
 
 function Chip({ active, onClick, label, count, icon, className }) {
   return (
@@ -217,6 +221,44 @@ export default function FilterBar({ f, isPhone, isDesktop, view, changeView, sec
           />
         </div>
       )}
+
+      {/* „Hol nézhető?” (terv-3 144, Norbi választása: „A” lenyíló): egy szolgáltató vagy „Egyiken sem”; asztalon
+          logóval és darabszámmal, telefonon natív lenyíló; választáskor a Letöltés „Mind”-re vált */}
+      {(f.providersKnown || f.provider) &&
+        (isPhone ? (
+          <label className="inline-field">
+            Hol nézhető?
+            <select className="provider-select" value={f.provider} onChange={(e) => f.pickProvider(e.target.value)}>
+              <option value="">Bárhol</option>
+              {PROVIDERS.map((p) => (
+                <option key={p.id} value={String(p.id)} style={{ '--opt-logo': `url(${PROVIDER_LOGO_BASE}${p.logo})` }}>
+                  {p.name}
+                </option>
+              ))}
+              <option value={NO_PROVIDER}>Egyiken sem</option>
+            </select>
+          </label>
+        ) : (
+          <FranchiseFilter
+            rootClass="filter-select"
+            className="provider-filter"
+            label="Hol nézhető?"
+            lead="icon"
+            changed={!!f.provider}
+            value={f.provider}
+            onChange={f.pickProvider}
+            options={[
+              { value: '', label: 'Bárhol', icon: PROVIDER_ICON, count: f.facetCounts.provider.all },
+              ...PROVIDERS.map((p) => ({
+                value: String(p.id),
+                label: p.name,
+                icon: <ProviderLogo logo={p.logo} />,
+                count: f.facetCounts.provider[p.id] ?? 0,
+              })),
+              { value: NO_PROVIDER, label: 'Egyiken sem', icon: NO_PROVIDER_ICON, count: f.facetCounts.provider[NO_PROVIDER] },
+            ]}
+          />
+        ))}
 
       {/* csak ha van a listán Mama-jelölés, és nem Sorozatok / franchise-ra szűrve (terv-3 58) */}
       {(f.mamaUsed || f.mama) && !f.mamaOff &&

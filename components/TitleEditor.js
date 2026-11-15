@@ -42,6 +42,7 @@ import { radioKeys } from '@/lib/radioKeys';
 import { galleryList, GalleryStrip, BackdropPager, GalleryLightbox } from '@/components/TitleGallery';
 import DialogClose from '@/components/DialogClose';
 import PickOfDay from '@/components/PickOfDay';
+import CopyTitle from '@/components/CopyTitle';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500'; // a nagy borító (asztalon)
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/'; // a háttérkép (telefonon w780, asztalon w1280)
@@ -406,6 +407,7 @@ function TitlePage({
   const online = useOnline(); // a csak olvasható mód oka (S10): nincs net, vagy a lista még nem frissült
   const pageEl = useRef(null);
   const deleteButtonRef = useRef(null);
+  const titleRef = useRef(null); // a cím (a másolás-gomb hibánál kijelöli)
 
   // előnézetnél a cím adatai a TMDB-ről (/api/tmdb/details; felvételkor ugyanezek kerülnek a
   // listára, nem kérdezzük le újra); amíg jönnek, a találat adatai (cím, év, borító) látszanak
@@ -731,9 +733,13 @@ function TitlePage({
               <span>Vissza: {back}</span>
             </button>
           )}
-          <h2 id={active ? 'editor-title' : undefined} tabIndex={-1}>
-            {t.title}
-          </h2>
+          {/* a cím és mellette a másolás-gomb (terv-3 146, „B”; telefonon a gomb nincs) */}
+          <div className="editor-heading">
+            <h2 ref={titleRef} id={active ? 'editor-title' : undefined} tabIndex={-1}>
+              {t.title}
+            </h2>
+            <CopyTitle text={t.title} headingRef={titleRef} />
+          </div>
           <p className="meta">
             {t.release_year && <span>{t.release_year}</span>}
             <span>{t.media_type === 'tv' ? 'Sorozat' : 'Film'}</span>

@@ -163,6 +163,33 @@ select:hover {
     --opt-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Cpath d='M10 6h10M10 12h10M10 18h10M4 5.5h1.5v3M4 8.5h3M4 15.5c0-1 2.5-1.5 2.5 0 0 1-2.5 1.8-2.5 3h2.8'/%3E%3C/svg%3E");
   }
 
+  /* telefonon a „Hol nézhető?” lenyíló (terv-3 144): az opció előtt a szolgáltató logója (--opt-logo, a FilterBar
+     adja soronként), a „Bárhol” / „Egyiken sem” előtt képernyő-ikon (mint asztalon, components/FilterIcons.js) */
+  .provider-select option::before {
+    content: '';
+    flex: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    background: var(--opt-logo) center / cover no-repeat;
+  }
+
+  .provider-select option:is([value=''], [value='none'])::before {
+    border-radius: 0;
+    background: currentColor;
+    opacity: 0.8;
+    -webkit-mask: var(--opt-icon) center / contain no-repeat;
+    mask: var(--opt-icon) center / contain no-repeat;
+  }
+
+  .provider-select option[value=''] {
+    --opt-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='12' rx='2'/%3E%3Cpath d='M8 21h8M12 17v4'/%3E%3Cpath d='m10.5 9 3.5 2-3.5 2z'/%3E%3C/svg%3E");
+  }
+
+  .provider-select option[value='none'] {
+    --opt-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='12' rx='2'/%3E%3Cpath d='M8 21h8M12 17v4'/%3E%3Cpath d='m4 4 16 14'/%3E%3C/svg%3E");
+  }
+
   /* telefonon az állapot-lenyíló: az opció előtt az állapot színe (Megnézendő: üres kör) */
   :is(.status-select, .mama-select) option::before {
     content: '';

@@ -3,6 +3,7 @@ import { tmdbFetch, tmdbErrorResponse, yearOf, pickSeasons, pickReleaseDates, pi
 
 const HOUR = HOUR_S * 1000;
 import { omdbEnabled, fetchImdbRating } from '@/lib/server/omdb';
+import { providerIds } from '@/lib/providers';
 
 // IMDb-értékelés az OMDb-ből (1 óráig tárolva – az OMDb napi kerete véges; a hibás válasz nem
 // tárolódik); ha nem sikerül, a cím attól még felvehető, a hiányzó értékelést a
@@ -45,7 +46,8 @@ export async function GET(request) {
 async function loadDetails(type, id) {
   const data = await tmdbFetch(`/${type}/${id}`, {
     language: 'hu-HU',
-    append_to_response: type === 'movie' ? 'external_ids,translations,release_dates' : 'external_ids,translations',
+    append_to_response:
+      type === 'movie' ? 'external_ids,translations,release_dates,watch/providers' : 'external_ids,translations,watch/providers',
   });
 
   // a TMDB néha üres szöveget ad IMDb ID helyett; az adatbázis csak tt1234567 formát fogad el
@@ -70,6 +72,9 @@ async function loadDetails(type, id) {
     genres: (data.genres ?? []).map(({ id, name }) => ({ id, name })),
     // játékidő, sorozatnál az állapota is (terv-3 125, 129)
     ...pickFacts(type, data),
+    // hol nézhető (terv-3 144, a „Hol nézhető?” szűrő; utána a /api/tmdb/watch-providers frissíti)
+    watch_providers: providerIds(data['watch/providers']?.results),
+    providers_checked_at: new Date().toISOString(),
     ...(type === 'tv' && { seasons: pickSeasons(data) }),
     // filmnél a mozis és a digitális megjelenés (a még meg nem jelent filmek jelvényéhez)
     ...(type === 'movie' && {

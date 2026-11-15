@@ -28,6 +28,7 @@ export const DEFAULT_FILTERS = {
   genre: '',
   mama: '',
   franchise: NO_FRANCHISE,
+  provider: '', // „Hol nézhető?” (terv-3 144): '' bárhol, NO_PROVIDER, vagy a szolgáltató azonosítója szövegként
 };
 
 // keresés közben minden cím látszik; a keresés előtti szűrők a keresés törlésekor visszaállnak
@@ -38,6 +39,7 @@ export const SEARCH_FILTERS = {
   genre: '',
   mama: '',
   franchise: '',
+  provider: '',
 };
 
 export const sameFilters = (a, b) => Object.keys(a).every((k) => a[k] === b[k]);

@@ -11,6 +11,11 @@ export default function SiteFooter() {
         <a href="https://www.omdbapi.com/" target="_blank" rel="noopener noreferrer">
           OMDb API
         </a>
+        . Hol nézhető:{' '}
+        {/* a szolgáltatói adatok forrása (TMDB-feltétel; a lista „Hol nézhető?” szűrője is ezt használja – terv-3 144) */}
+        <a href="https://www.justwatch.com/hu" target="_blank" rel="noopener noreferrer">
+          JustWatch
+        </a>
         .
       </p>
       {/* jobbra lent (Norbi kérése, 2026-10-05) */}
