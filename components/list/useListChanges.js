@@ -10,6 +10,7 @@ import {
   registerPendingDelete,
   unregisterPendingDelete,
   createFranchise,
+  freshTitleRow,
   deleteFranchise,
   renameFranchise,
 } from '@/lib/titles';
@@ -17,7 +18,7 @@ import { toast, dismissToast } from '@/lib/toast';
 import { afterDialogs } from '@/lib/afterDialogs';
 import { article, collectionFranchiseMap, suggestedFranchiseId } from '@/lib/franchiseSuggest';
 import { isOptimistic, noteLocalWrite, saveRow } from '@/lib/rowSaves';
-import { byName } from '@/components/list/useListData';
+import { byName, frKey } from '@/components/list/useListData';
 
 const TOAST_THUMB = 'https://image.tmdb.org/t/p/w92';
 
@@ -71,7 +72,16 @@ export function useListChanges({ data, keepShown, releaseFranchise, openFranchis
 
   function requestDelete(t) {
     setTitles((ts) => ts.filter((x) => x.id !== t.id));
-    const restore = () => setTitles((ts) => (ts.some((x) => x.id === t.id) ? ts : [t, ...ts]));
+    // visszavonáskor a törléskori sor jön vissza, utána a friss: a függő törlés alatt érkezett távoli változást (pl. Mama
+    // jelölését) az élő szinkron kihagyta (R17)
+    const restore = () => {
+      setTitles((ts) => (ts.some((x) => x.id === t.id) ? ts : [t, ...ts]));
+      freshTitleRow(t.id).then((row) => {
+        if (!row || !titlesRef.current.some((x) => x.id === t.id)) return;
+        titlesRef.current = titlesRef.current.map((x) => (x.id === row.id ? row : x));
+        replaceTitle(row);
+      });
+    };
     let toastId = 0;
     let stopWaiting = null; // (nyitott ablak nélkül az afterDialogs rögtön hív – a lemondó ekkor még nincs meg)
     stopWaiting = afterDialogs(() => {
@@ -257,17 +267,20 @@ export function useListChanges({ data, keepShown, releaseFranchise, openFranchis
 
   async function handleCreateFranchise(name) {
     const created = await createFranchise(name);
+    noteLocalWrite(frKey(created.id));
     setFranchises((fs) => [...fs, created].sort(byName));
     return created;
   }
 
   async function handleRenameFranchise(id, name) {
     const renamed = await renameFranchise(id, name);
+    noteLocalWrite(frKey(id));
     setFranchises((fs) => fs.map((f) => (f.id === id ? { ...f, name: renamed.name } : f)).sort(byName));
   }
 
   async function handleDeleteFranchise(id) {
     await deleteFranchise(id);
+    noteLocalWrite(frKey(id));
     setFranchises((fs) => fs.filter((f) => f.id !== id));
     setOrders((os) => os.filter((o) => o.franchise_id !== id));
     // az adatbázis már üresre állította a címeknél, itt csak helyben követjük
@@ -277,6 +290,7 @@ export function useListChanges({ data, keepShown, releaseFranchise, openFranchis
 
   // a franchise adatai (logó, gyűjtemények) a gyűjtemény-ablakból / a Franchise-ok ablakból
   function handleFranchiseUpdated(f) {
+    noteLocalWrite(frKey(f.id));
     setFranchises((fs) => fs.map((x) => (x.id === f.id ? { ...x, ...f } : x)));
   }
 

@@ -1,4 +1,4 @@
-import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
+import { checkAuth } from '@/lib/server/auth';
 import { tmdbFetch, tmdbErrorResponse, cached, cachedResponse, DAY_S, titleParams } from '@/lib/server/tmdb';
 
 const DAY = DAY_S * 1000;
@@ -20,7 +20,8 @@ function pickLogos(logos) {
 // A franchise-logó kézi választásához (átnézés J8, 2026-10-15): a cím címlogói a TMDB-ről, legfeljebb 4.
 // Válasz: { logos: [{ path, lang }] } (a TMDB-n már nem létező címnél üres).
 export async function GET(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const { type, id, bad } = titleParams(request);
   if (bad) return bad;

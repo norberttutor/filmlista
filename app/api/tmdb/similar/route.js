@@ -1,4 +1,4 @@
-import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
+import { checkAuth } from '@/lib/server/auth';
 import {
   tmdbFetch,
   tmdbErrorResponse,
@@ -25,7 +25,8 @@ const MAX_PAGES = 2; // forrásonként ennyi oldalig pótol, ha a szűrés után
 // borítóval rendelkezők, a fenti szűréssel, legfeljebb 12. A válasz mezőnevei ugyanazok, mint a
 // keresésé.
 export async function GET(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const { type, id, bad } = titleParams(request);
   if (bad) return bad;

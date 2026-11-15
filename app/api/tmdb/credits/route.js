@@ -1,4 +1,4 @@
-import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
+import { checkAuth } from '@/lib/server/auth';
 import { tmdbErrorResponse, cachedResponse, DAY_S, titleParams } from '@/lib/server/tmdb';
 import { loadCredits } from '@/lib/server/credits';
 
@@ -10,7 +10,8 @@ import { loadCredits } from '@/lib/server/credits';
 // TMDB-n, üres lista.
 // Válasz: { cast: [{ id, name, character, profile_path }], directors: [{ id, name, profile_path }] }.
 export async function GET(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const { type, id, bad } = titleParams(request);
   if (bad) return bad;

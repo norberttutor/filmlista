@@ -19,7 +19,7 @@ import {
   formatRuntime,
   seriesStatusText,
 } from '@/lib/titles';
-import { saveRow } from '@/lib/rowSaves';
+import { rebasePending, saveRow } from '@/lib/rowSaves';
 import StarRating from '@/components/StarRating';
 import FranchiseSelect from '@/components/FranchiseSelect';
 import { Lock } from '@/components/TitleTable';
@@ -624,7 +624,8 @@ function TitlePage({
     setError('');
     try {
       const { row: fresh, changed, gone } = await refreshTitleDetails(t.id);
-      if (fresh) onChanged(fresh);
+      // függő mentésnél a friss sor a mentés alapjába kerül, a függő módosítás rajta marad (mint a háttérfrissítésnél – R23)
+      if (fresh) onChanged(rebasePending(fresh.id, () => fresh) ?? fresh);
       if (gone) {
         // átnézés H10: ne „Nincs újdonság” legyen, ha a TMDB-n már nincs meg
         setTmdbRefresh(null);

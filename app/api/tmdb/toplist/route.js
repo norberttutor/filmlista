@@ -1,4 +1,4 @@
-import { getUserFromRequest, supabaseAsUser, unauthorized } from '@/lib/server/auth';
+import { checkAuth, supabaseAsUser } from '@/lib/server/auth';
 import { tmdbErrorResponse, cachedResponse, HOUR_S } from '@/lib/server/tmdb';
 import { TOPLIST_TYPES, TOPLIST_LISTS, loadToplist } from '@/lib/server/toplists';
 
@@ -10,7 +10,8 @@ export const maxDuration = 60;
 // szerint (a böngésző szűr műfajra / évtizedre, és 100-at mutat). complete: hamis, ha az OMDb napi
 // kerete elfogyott – a hiányzó értékelések holnap jönnek. Kész listánál egy óráig a böngészőben tárolva.
 export async function GET(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const params = new URL(request.url).searchParams;
   const type = params.get('type');
@@ -21,8 +22,18 @@ export async function GET(request) {
       { status: 400 }
     );
   }
+  const db = supabaseAsUser(request);
+  // a néző (Mama, list_viewers) nem nyit toplistát, és a közös gyorsítótárba sem ír – az összeállítása az OMDb napi
+  // keretét a tárolás nélkül, beszámítatlanul fogyasztaná (átnézés 3, R19)
+  const { data: viewer, error: viewerError } = await db
+    .from('list_viewers')
+    .select('owner_id')
+    .eq('viewer_id', auth.user.id)
+    .maybeSingle();
+  if (viewerError) console.error(viewerError);
+  if (viewer) return Response.json({ error: 'Ebben a fiókban a toplisták nem érhetők el.' }, { status: 403 });
   try {
-    const { items, complete, built_at } = await loadToplist(supabaseAsUser(request), type, list);
+    const { items, complete, built_at } = await loadToplist(db, type, list);
     const body = { items, complete, built_at };
     return complete ? cachedResponse(body, HOUR_S) : Response.json(body);
   } catch (err) {

@@ -1,4 +1,4 @@
-import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
+import { checkAuth } from '@/lib/server/auth';
 import { cached, tmdbFetch, tmdbErrorResponse, cachedResponse, DAY_S } from '@/lib/server/tmdb';
 import { loadCollection } from '@/lib/server/collections';
 
@@ -17,7 +17,8 @@ const ids = (value) =>
 // tartozik, plusz a kézzel hozzárendeltek (extra). A gyűjtemények a legkorábbi részük szerint
 // sorban. Válasz: { collections: [{ id, name, backdrop_path, parts }] } (üres, ha nincs).
 export async function GET(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const params = new URL(request.url).searchParams;
   const movies = ids(params.get('movies')).slice(0, MAX_MOVIES);

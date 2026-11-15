@@ -181,9 +181,10 @@ export default function ImdbRatingsImport({ titles, onApplied, onAdded, ref }) {
           runRef.current++;
           setView(null);
         }}
-        onCancel={(e) => watch?.phase === 'adding' && e.preventDefault()} // felvétel közben ne záródjon
+        // felvétel és az értékelések beírása közben ne záródjon (az eredmény / a hiba elveszne – R25)
+        onCancel={(e) => (watch?.phase === 'adding' || busy) && e.preventDefault()}
       >
-        <DialogClose dialogRef={dialogRef} canClose={() => watch?.phase !== 'adding'} />
+        <DialogClose dialogRef={dialogRef} canClose={() => watch?.phase !== 'adding' && !busy} />
         <div className="import-body">
           <h2 id="imdb-import-title">{watch ? 'IMDb-figyelőlista betöltése' : 'IMDb-értékelések betöltése'}</h2>
 
@@ -320,7 +321,7 @@ export default function ImdbRatingsImport({ titles, onApplied, onAdded, ref }) {
             <span className="spacer" />
             {plan && view?.done == null && plan.changes.length > 0 ? (
               <>
-                <button type="button" className="ghost" onClick={close}>
+                <button type="button" className="ghost" disabled={busy} onClick={close}>
                   Mégse
                 </button>
                 <button type="button" className="primary" disabled={busy} onClick={apply}>

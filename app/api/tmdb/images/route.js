@@ -1,4 +1,4 @@
-import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
+import { checkAuth } from '@/lib/server/auth';
 import { tmdbFetch, tmdbErrorResponse, cached, cachedResponse, DAY_S, titleParams } from '@/lib/server/tmdb';
 
 const DAY = DAY_S * 1000;
@@ -18,7 +18,8 @@ function pickBackdrops(images) {
 // Képgaléria az adatlapon (terv-3 95, 2026-10-14): a cím jelenetképei a TMDB-ről, legfeljebb 8.
 // Válasz: { images: ['/abc.jpg', …] } (a TMDB-n már nem létező címnél üres).
 export async function GET(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const { type, id, bad } = titleParams(request);
   if (bad) return bad;

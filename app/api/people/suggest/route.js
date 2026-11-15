@@ -1,4 +1,4 @@
-import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
+import { checkAuth } from '@/lib/server/auth';
 import { tmdbErrorResponse, cachedResponse, DAY_S } from '@/lib/server/tmdb';
 import { loadCredits } from '@/lib/server/credits';
 
@@ -16,7 +16,8 @@ const MAX_PEOPLE = 24;
 // Válasz: { people: [{ id, role: 'actor' | 'director', name, profile_path, keys: [titleKey] }] } – a
 // gyakoriság szerint, egyenlőségnél a jobb stáblista-hely szerint.
 export async function GET(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const seeds = (new URL(request.url).searchParams.get('ids') ?? '')
     .split(',')

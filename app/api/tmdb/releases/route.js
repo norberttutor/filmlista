@@ -1,4 +1,4 @@
-import { getUserFromRequest, supabaseAsUser, unauthorized } from '@/lib/server/auth';
+import { checkAuth, supabaseAsUser } from '@/lib/server/auth';
 import { tmdbFetch, pickReleaseDates } from '@/lib/server/tmdb';
 import { budapestToday, releaseDue } from '@/lib/refreshDue';
 import { afterId, fetchAll } from '@/lib/fetchAll';
@@ -14,7 +14,8 @@ const PARALLEL = 8;
 // hívja, adagonként. Válasz: { updated: [{ id, theatrical_release, digital_release,
 // release_checked_at }], remaining }
 export async function POST(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const db = supabaseAsUser(request);
   // az összes film (ezres adagokban: egy kérés legfeljebb 1000 sort ad – lib/fetchAll.js)

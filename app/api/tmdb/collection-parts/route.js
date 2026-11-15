@@ -1,4 +1,4 @@
-import { getUserFromRequest, supabaseAsUser, unauthorized } from '@/lib/server/auth';
+import { checkAuth, supabaseAsUser } from '@/lib/server/auth';
 import { loadCollection } from '@/lib/server/collections';
 import { COLLECTION_PARTS_DAYS } from '@/lib/refreshDue';
 
@@ -18,7 +18,8 @@ const MAX_COLLECTIONS = 15; // franchise-onként (mint a gyűjtemény-ablakban)
 // a TMDB-n már nem létező (404) gyűjtemény üresnek számít.
 // Válasz: { notified: az új értesítések száma, remaining: maradt-e esedékes franchise }
 export async function POST(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const db = supabaseAsUser(request);
   // esedékes: ugyanaz, mint a lib/refreshDue.js collectionPartsDue()-ja

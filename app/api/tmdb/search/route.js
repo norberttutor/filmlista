@@ -1,4 +1,4 @@
-import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
+import { checkAuth } from '@/lib/server/auth';
 import { tmdbFetch, tmdbErrorResponse, yearOf, cachedResponse } from '@/lib/server/tmdb';
 
 const MAX_PEOPLE = 6;
@@ -9,7 +9,8 @@ const KNOWN_FOR = 3; // a személy ismert munkáiból ennyi cím
 // (terv-3 110): people – { person_id, name, profile_path, role ('actor' | 'director'), known_for: [cím] };
 // peopleFirst: a TMDB a személyt tette az első helyre (pl. „tom hanks”), a felület ilyenkor őket mutatja elöl.
 export async function GET(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const query = new URL(request.url).searchParams.get('q')?.trim() ?? '';
   if (query.length < 2) return Response.json({ results: [], people: [], peopleFirst: false });

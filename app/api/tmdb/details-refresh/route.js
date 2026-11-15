@@ -1,4 +1,4 @@
-import { getUserFromRequest, supabaseAsUser, unauthorized } from '@/lib/server/auth';
+import { checkAuth, supabaseAsUser } from '@/lib/server/auth';
 import { tmdbFetch, yearOf, pickOverview, pickFacts } from '@/lib/server/tmdb';
 import { budapestToday, detailsDue } from '@/lib/refreshDue';
 import { afterId, fetchAll } from '@/lib/fetchAll';
@@ -22,7 +22,8 @@ const DUE_FIELDS = 'id, tmdb_id, status, release_date, details_checked_at, creat
 // Válasz: { updated: [a változott címek sora a titles_with_genres nézetből], remaining } | egy címnél
 // { row, changed, gone } (gone: a cím már nincs meg a TMDB-n)
 export async function POST(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
   const db = supabaseAsUser(request);
   const body = await request.json().catch(() => null);
   const single = body?.id != null ? Number(body.id) : null;

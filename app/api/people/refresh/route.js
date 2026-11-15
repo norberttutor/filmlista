@@ -1,6 +1,7 @@
-import { getUserFromRequest, supabaseAsUser, unauthorized } from '@/lib/server/auth';
+import { checkAuth, supabaseAsUser } from '@/lib/server/auth';
 import { loadPerson } from '@/lib/server/people';
 import { PEOPLE_DAYS, budapestToday } from '@/lib/refreshDue';
+import { fetchAll } from '@/lib/fetchAll';
 
 const BATCH = 8; // egy kérésben legfeljebb ennyi személy (a szerverfüggvény időkorlátja miatt)
 const RECENT_DAYS = 30; // ennél régebben megjelent „új” filmről nem szól (a TMDB utólag pótolt régi adata)
@@ -18,7 +19,8 @@ const RECENT_DAYS = 30; // ennél régebben megjelent „új” filmről nem sz�
 // Ha a TMDB most nem érhető el, a személyt nem jelöli ellenőrzöttnek (legközelebb újra).
 // Válasz: { notified: az új értesítések száma, remaining: maradt-e esedékes személy }
 export async function POST(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const db = supabaseAsUser(request);
   // esedékes: ugyanaz, mint a lib/refreshDue.js personDue()-ja
@@ -36,10 +38,16 @@ export async function POST(request) {
   }
   if (batch.length === 0) return Response.json({ notified: 0, remaining: false });
 
-  const { data: knownRows, error: knownError } = await db
-    .from('followed_person_credits')
-    .select('person_id, role, tmdb_id')
-    .in('person_id', batch.map((p) => p.person_id));
+  // ezres adagokban (lib/fetchAll.js): sok szerepes személyeknél 1000 sor fölött a többi „új filmnek” látszott (R26)
+  const { data: knownRows, error: knownError } = await fetchAll(() =>
+    db
+      .from('followed_person_credits')
+      .select('person_id, role, tmdb_id')
+      .in('person_id', batch.map((p) => p.person_id))
+      .order('person_id')
+      .order('role')
+      .order('tmdb_id')
+  );
   if (knownError) {
     console.error(knownError);
     return Response.json({ error: 'Nem sikerült lekérdezni az ismert filmeket.' }, { status: 500 });

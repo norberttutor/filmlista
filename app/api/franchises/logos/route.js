@@ -1,4 +1,4 @@
-import { getUserFromRequest, supabaseAsUser, unauthorized } from '@/lib/server/auth';
+import { checkAuth, supabaseAsUser } from '@/lib/server/auth';
 import { tmdbFetch, pickLogo } from '@/lib/server/tmdb';
 
 const RETRY_DAYS = 7; // ha nem volt logó, ennyi nap múlva próbáljuk újra
@@ -9,7 +9,8 @@ const PARALLEL = 6;
 // A belépett felhasználó logó nélküli franchise-ainál lekéri a franchise első (legkorábbi)
 // filmjének címlogóját a TMDB-ről, és elmenti. Válasz: { updated: [{ id, logo_path }] }
 export async function POST(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const db = supabaseAsUser(request);
   const cutoff = new Date(Date.now() - RETRY_DAYS * 24 * 60 * 60 * 1000).toISOString();

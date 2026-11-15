@@ -2,8 +2,6 @@
 
 ## Kommunikáció
 - A felhasználóval (Norbi) **magyarul** kommunikálj.
-- Norbi SQL-ben és telefonos rendszerekben (Asterisk) jártas, a JavaScript/Next.js világ új neki.
-  Röviden magyarázd el, mit és miért csinálsz, és a terminálparancsokat is írd le.
 - Windowson dolgozik, VS Code-ban, a terminál alapprofilja Command Prompt (cmd).
 
 ## Mi ez?
@@ -258,7 +256,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   szolgáltató, más nyelvűnél csak HU megjelenés; sorozat – HU streaming; magyar leírás kell; dokumentum / hírek /
   valóságshow / szappanopera / talkshow / koncertfilm nincs, **az animáció benne van**. IMDb-értékelés: `imdb_ratings`
   (30 nap) → saját lista → OMDb, napi keret 400 (`DAILY_OMDB`; hullámonként újraolvasva és tárolva, a példányon
-  futó kérések levonva – párhuzamos összeállításnál sem lépi túl). Súlyozott IMDb-sorrend, ≤ 250 tárolva (`toplists`, 7
+  futó kérések levonva – párhuzamos összeállításnál sem lépi túl). Súlyozott IMDb-sorrend, ≤ 250 tárolva (valójában listánként a `rate` – 100–160 – jelölt) (`toplists`, 7
   nap; hiányos lista másnap újraépül). Első összeállítás 10–30 mp (`maxDuration = 60`).
 
 ### Egyéb ablakok és menük
@@ -363,8 +361,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 
 ### Szerveroldal
 - Minden `lib/server/` modul `import 'server-only'`-val kezdődik (újba is tedd bele).
-- `lib/server/auth.js` – `getUserFromRequest()` (a tokent helyben, `getClaims()`-szel ellenőrzi), `supabaseAsUser()`;
-  az `/api/tmdb/*` token nélkül 401.
+- `lib/server/auth.js` – `checkAuth()` (a tokent helyben, `getClaims()`-szel ellenőrzi; `{ user }` vagy `{ response }`:
+  401 – a névtelen munkamenet is –, az ellenőrzés hibájánál 503), `supabaseAsUser()`; az `/api/tmdb/*` token nélkül 401.
 - `lib/server/tmdb.js` – `tmdbFetch()` (10 mp), `titleParams(request)`, `cachedResponse(body, mp)` – **hibás vagy
   részben hiányos válasz soha nem tárolható** (ilyenkor sima `Response.json`), `cached(kulcs, ms, betöltő, keep?)`
   (memória), `pickReleaseDates`, `pickSeasons`, `pickOverview`, `pickFacts` (runtime, series_status – a `details`,
@@ -439,7 +437,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `titles_with_genres` nézet (`security_invoker`): `titles.*` + `status_name` + `genres` + `seasons`.
 - Realtime: `titles`, `title_seasons`, `notifications`, `franchises`.
 - Nincs a mentésben: `franchise_shares`, `list_viewers`, `client_errors`, `imdb_ratings`, `toplists`,
-  `franchise_collection_parts`, `followed_person_credits`.
+  `franchise_collection_parts`, `followed_person_credits`, és a cím nélküli értesítések (`collection_new`, `person_new` – a
+  mentés a címeken át gyűjti őket).
 - Minden táblán RLS: a felhasználó csak a saját sorait látja / módosítja.
 - **Szabályok:**
   - Sémamódosításnál új számozott SQL fájl a `supabase/` mappába. Ha a nézet oszlopai változnak (a `t.*` is!), a

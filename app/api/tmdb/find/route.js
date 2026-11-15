@@ -1,4 +1,4 @@
-import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
+import { checkAuth } from '@/lib/server/auth';
 import { tmdbFetch, tmdbErrorResponse, cached, yearOf, cachedResponse, DAY_S } from '@/lib/server/tmdb';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -8,7 +8,8 @@ const DAY = 24 * 60 * 60 * 1000;
 // Válasz: { result: { media_type, tmdb_id, title, original_title, release_year, poster_path } }
 // vagy { result: null }, ha a TMDB nem ismeri (vagy nem film / sorozat, pl. epizód).
 export async function GET(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const imdb = new URL(request.url).searchParams.get('imdb') ?? '';
   if (!/^tt\d{5,10}$/.test(imdb)) {

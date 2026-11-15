@@ -1,4 +1,4 @@
-import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
+import { checkAuth } from '@/lib/server/auth';
 import { tmdbFetch, tmdbErrorResponse, yearOf, pickSeasons, pickReleaseDates, pickOverview, pickFacts, cached, cachedResponse, HOUR_S, titleParams } from '@/lib/server/tmdb';
 
 const HOUR = HOUR_S * 1000;
@@ -25,7 +25,8 @@ async function imdbFields(imdbId) {
 // Egy film/sorozat adatai a titles táblába illeszthető formában, plusz a műfajai;
 // sorozatnál az évadai is (seasons: a title_seasons tábla oszlopaival).
 export async function GET(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const { type, id, bad } = titleParams(request);
   if (bad) return bad;

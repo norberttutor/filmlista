@@ -1,4 +1,4 @@
-import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
+import { checkAuth } from '@/lib/server/auth';
 import { tmdbFetch, tmdbErrorResponse, cached, cachedResponse, DAY_S, titleParams } from '@/lib/server/tmdb';
 
 const DAY = DAY_S * 1000;
@@ -18,7 +18,8 @@ function pickTrailer(videos) {
 // A cím előzetese a TMDB-ről: előbb a magyar nyelvű (szinkron vagy felirat), ha nincs, az angol.
 // Válasz: { video: { key, name, lang } } vagy { video: null }.
 export async function GET(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const { type, id, bad } = titleParams(request);
   if (bad) return bad;

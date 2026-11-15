@@ -154,15 +154,25 @@ function readListPaths() {
   });
 }
 
-// a lista képei (rövid ideig megjegyezve: egy oldalnyi borító egyszerre érkezik)
+// a lista képei (rövid ideig megjegyezve: egy oldalnyi borító egyszerre érkezik). A folyamatban lévő olvasást a
+// közben érkező kérések megvárják – eddig minden borító külön kiolvasta a teljes tárolt listát (átnézés 3, R28)
 let listPaths = null;
 let listPathsAt = 0;
-async function getListPaths(fresh = false) {
-  if (fresh || !listPaths || Date.now() - listPathsAt > 30000) {
-    listPaths = await readListPaths();
-    listPathsAt = Date.now();
-  }
-  return listPaths;
+let listPathsJob = null;
+function getListPaths(fresh = false) {
+  if (!fresh && listPaths && Date.now() - listPathsAt <= 30000) return Promise.resolve(listPaths);
+  if (!fresh && listPathsJob) return listPathsJob;
+  const job = readListPaths().then((paths) => {
+    if (listPathsJob === job) {
+      listPaths = paths;
+      listPathsAt = Date.now();
+      listPathsJob = null;
+    }
+    return paths;
+  });
+  job.catch(() => listPathsJob === job && (listPathsJob = null));
+  listPathsJob = job;
+  return job;
 }
 
 function isListImage(url, paths) {
@@ -171,27 +181,39 @@ function isListImage(url, paths) {
 }
 
 // a borítótároló igazítása a listához: a listáról lekerült címek képei törlődnek, a még a kis
-// tárolóban lévő listaképek átkerülnek (pl. az első betöltéskor, amikor a lista még nem volt helyben)
-let syncing = false;
-async function syncPosters() {
-  if (syncing) return;
-  syncing = true;
-  try {
-    const paths = await getListPaths(true);
-    if (!paths) return;
-    const posters = await caches.open(POSTERS);
-    for (const req of await posters.keys()) {
-      if (!isListImage(new URL(req.url), paths)) await posters.delete(req);
-    }
-    const extra = await caches.open(IMAGES);
-    for (const req of await extra.keys()) {
-      if (!isListImage(new URL(req.url), paths)) continue;
-      const res = await extra.match(req);
-      if (res) await posters.put(req, res).catch(() => {});
-      await extra.delete(req);
-    }
-  } finally {
-    syncing = false;
+// tárolóban lévő listaképek átkerülnek (pl. az első betöltéskor, amikor a lista még nem volt helyben). Ha közben
+// újabb igazítás kell (pl. kilépéskor a borítók ürítése), a futó után még egyszer lefut – eddig kimaradt (R28)
+let syncing = null;
+let syncAgain = false;
+function syncPosters() {
+  if (syncing) {
+    syncAgain = true;
+    return syncing;
+  }
+  syncing = (async () => {
+    do {
+      syncAgain = false;
+      await syncOnce();
+    } while (syncAgain);
+  })().finally(() => {
+    syncing = null;
+  });
+  return syncing;
+}
+
+async function syncOnce() {
+  const paths = await getListPaths(true);
+  if (!paths) return;
+  const posters = await caches.open(POSTERS);
+  for (const req of await posters.keys()) {
+    if (!isListImage(new URL(req.url), paths)) await posters.delete(req);
+  }
+  const extra = await caches.open(IMAGES);
+  for (const req of await extra.keys()) {
+    if (!isListImage(new URL(req.url), paths)) continue;
+    const res = await extra.match(req);
+    if (res) await posters.put(req, res).catch(() => {});
+    await extra.delete(req);
   }
 }
 

@@ -1,11 +1,12 @@
-import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
+import { checkAuth } from '@/lib/server/auth';
 import { tmdbErrorResponse, cachedResponse, HOUR_S } from '@/lib/server/tmdb';
 import { DISCOVER_LISTS, discoverList } from '@/lib/server/discover';
 
 // GET /api/tmdb/discover?list=cinema|upcoming|digital|tv
 // A „Cím hozzáadása” panel felfedező sorai (üres keresőnél). Egy óráig gyorsítótárazva.
 export async function GET(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const name = new URL(request.url).searchParams.get('list');
   if (!DISCOVER_LISTS.includes(name)) {

@@ -1,4 +1,4 @@
-import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
+import { checkAuth } from '@/lib/server/auth';
 import { tmdbFetch, tmdbErrorResponse, cached, cachedResponse, DAY_S } from '@/lib/server/tmdb';
 
 const LIMIT = 8;
@@ -22,7 +22,8 @@ async function searchCollections(query) {
 // ha egy keresés elbukik, a válasz a többivel jön, tárolás nélkül.
 // Válasz: { results: [{ id, name, poster_path }] }
 export async function GET(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const params = new URL(request.url).searchParams;
   const suggest = params.get('suggest');

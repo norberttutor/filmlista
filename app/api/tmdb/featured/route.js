@@ -1,4 +1,4 @@
-import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
+import { checkAuth } from '@/lib/server/auth';
 import {
   cached,
   tmdbFetch,
@@ -65,7 +65,8 @@ async function loadFeatured() {
 // Válasz: { results: [{ media_type, tmdb_id, title, …, backdrop_path, overview, genres, runtime,
 // cinema_date, logo_path }] }
 export async function GET(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
   try {
     const day = new Date().toISOString().slice(0, 10);
     const { results, complete } = await cached(`featured:v2:${day}`, HOUR, loadFeatured, (v) => v.complete);

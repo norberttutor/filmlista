@@ -1,4 +1,4 @@
-import { getUserFromRequest, supabaseAsUser, unauthorized } from '@/lib/server/auth';
+import { checkAuth, supabaseAsUser } from '@/lib/server/auth';
 import { tmdbFetch } from '@/lib/server/tmdb';
 
 const BATCH = 40; // egy kérésben legfeljebb ennyi cím (a szerverfüggvény időkorlátja miatt)
@@ -11,7 +11,8 @@ const PARALLEL = 8;
 // backdrop_checked_at kerül be, így nem kérdezzük újra.
 // Válasz: { updated: [{ id, backdrop_path, backdrop_checked_at }], remaining }
 export async function POST(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const db = supabaseAsUser(request);
   // esedékes: ugyanaz, mint a lib/refreshDue.js backdropDue()-ja (a böngésző azzal dönti el, hív-e)

@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { afterId, fetchAll } from '@/lib/fetchAll';
 
 // a titles_with_genres oszlopai az overview kivételével – a nézet új oszlopát ide is fel kell venni
-// (a teszt – munka/e2e/test-p5.mjs – az adatbázis nézetével veti össze)
+// (a teszt – munka/e2e/mukodes/lista-leiras-nelkul.mjs – az adatbázis nézetével veti össze)
 export const LIST_COLUMNS =
   'id, user_id, media_type, title, original_title, release_year, poster_path, tmdb_id, imdb_id, status, my_rating, ' +
   'notes, watched_at, created_at, updated_at, is_downloaded, mama_status, franchise_id, imdb_rating, imdb_votes, ' +

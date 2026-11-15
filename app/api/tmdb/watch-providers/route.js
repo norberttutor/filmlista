@@ -1,4 +1,4 @@
-import { getUserFromRequest, supabaseAsUser, unauthorized } from '@/lib/server/auth';
+import { checkAuth, supabaseAsUser } from '@/lib/server/auth';
 import { tmdbFetch } from '@/lib/server/tmdb';
 import { providerIds } from '@/lib/providers';
 import { PROVIDERS_REFRESH_DAYS, PROVIDERS_REFRESH_DONE_DAYS } from '@/lib/refreshDue';
@@ -15,7 +15,8 @@ const DAY_MS = 864e5;
 // TMDB-n, üres lista kerül be. TMDB-hibánál az adott cím nem kerül be, és a kör leáll.
 // Válasz: { updated: [{ id, watch_providers, providers_checked_at }], remaining }
 export async function POST(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const db = supabaseAsUser(request);
   const now = Date.now();

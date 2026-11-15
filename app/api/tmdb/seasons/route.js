@@ -1,4 +1,4 @@
-import { getUserFromRequest, supabaseAsUser, unauthorized } from '@/lib/server/auth';
+import { checkAuth, supabaseAsUser } from '@/lib/server/auth';
 import { tmdbFetch, pickSeasons, pickFacts } from '@/lib/server/tmdb';
 import { budapestToday, SEASONS_REFRESH_DAYS } from '@/lib/refreshDue';
 
@@ -20,7 +20,8 @@ const aired = (s, today) => s.air_date != null && s.air_date <= today;
 // volt évadja) a már megjelentekről nem szólunk. Abbahagyott sorozatról nincs bejelentés.
 // Válasz: { updated: [a frissített sorok a titles_with_genres nézetből], remaining }
 export async function POST(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const db = supabaseAsUser(request);
   const today = budapestToday();

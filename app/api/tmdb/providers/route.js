@@ -1,4 +1,4 @@
-import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
+import { checkAuth } from '@/lib/server/auth';
 import { tmdbFetch, tmdbErrorResponse, cached, pickProviders, cachedResponse, DAY_S, titleParams } from '@/lib/server/tmdb';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -8,7 +8,8 @@ const DAY = 24 * 60 * 60 * 1000;
 // az adatok forrása a JustWatch). Egy napig gyorsítótárazva. Ha a cím már nincs a TMDB-n,
 // üres lista. Válasz: { providers: [{ id, name, logo, free }] }.
 export async function GET(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const { type, id, bad } = titleParams(request);
   if (bad) return bad;

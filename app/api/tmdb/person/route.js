@@ -1,4 +1,4 @@
-import { getUserFromRequest, unauthorized } from '@/lib/server/auth';
+import { checkAuth } from '@/lib/server/auth';
 import { tmdbErrorResponse, cachedResponse, DAY_S } from '@/lib/server/tmdb';
 import { loadPerson, ROLES } from '@/lib/server/people';
 
@@ -11,7 +11,8 @@ import { loadPerson, ROLES } from '@/lib/server/people';
 // ha nincs, angolul (bio_lang). Egy napig gyorsítótárazva; ha a személy nincs a TMDB-n:
 // { person: null, credits: [] }.
 export async function GET(request) {
-  if (!(await getUserFromRequest(request))) return unauthorized();
+  const auth = await checkAuth(request);
+  if (auth.response) return auth.response;
 
   const params = new URL(request.url).searchParams;
   const id = Number(params.get('id'));

@@ -20,6 +20,21 @@ import { LIST_COLUMNS, fillOverviews, withOverviews } from '@/components/list/ov
 
 export const byName = (a, b) => a.name.localeCompare(b.name, 'hu');
 
+// a franchise helyi írásának kulcsa a lib/rowSaves.js jegyzékében (a cím-id-ktől elkülönítve) – a csendes
+// újratöltés a kérése után helyben létrehozott / átnevezett / törölt franchise-nál a helyit tartja (átnézés 3, R16)
+export const frKey = (id) => `fr:${id}`;
+
+// a betöltött franchise-ok a helyiekkel összefésülve (mint a címeknél a B1)
+function mergeFranchises(prev, fresh, mark) {
+  const newer = (id) => writtenSince(frKey(id), mark);
+  const local = new Map(prev.map((f) => [f.id, f]));
+  const rows = fresh
+    .filter((f) => !(newer(f.id) && !local.has(f.id)))
+    .map((f) => (newer(f.id) ? local.get(f.id) : f));
+  const ids = new Set(rows.map((f) => f.id));
+  return [...rows, ...prev.filter((f) => newer(f.id) && !ids.has(f.id))].sort(byName);
+}
+
 // a tárolt listán állva (a szerver nem érhető el) ennyi időnként újrapróbálja
 const RETRY_MS = 30_000;
 
@@ -157,7 +172,7 @@ export function useListData(userId, notes) {
         });
         fillOverviews(missing, setTitles, stopped);
         setStatuses(statusesRes.data);
-        setFranchises(franchisesRes.data.sort(byName));
+        setFranchises((prev) => mergeFranchises(prev, franchisesRes.data, mark));
         loadOrders()
           .then(
             (rows) =>
