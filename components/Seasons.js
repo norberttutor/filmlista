@@ -401,7 +401,9 @@ export function SeasonList({ title, actions }) {
         )}
       </p>
       {confirming ? (
-        <div className="season-actions">
+        // a megerősítés alatt az adatlap kikattintásra / lapváltáskor nem zárul (a TitleEditor canLeave-je a
+        // .season-confirm-ot nézi – R21); az Esc zár, mint a cím törlésének megerősítésénél
+        <div className="season-actions season-confirm">
           <span className="season-confirm-text">
             <span className="confirm-text">
               Törlöd {article(last)} {last}. évadot?

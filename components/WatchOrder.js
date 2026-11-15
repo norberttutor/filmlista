@@ -99,6 +99,8 @@ export default function WatchOrder({
     const changed = keys.join() !== items.map((i) => i.key).join();
     setSaving(true);
     setError('');
+    // mentés közben a gyűjtemény-ablak az Esc / Vissza gombra nem veti el a szerkesztést (a mentés úgyis érvényesülne – R12)
+    onEditingChange('saving');
     try {
       if (reset && stored) {
         await clearOrder(franchise.id);
@@ -110,6 +112,7 @@ export default function WatchOrder({
       onEditingChange(false);
     } catch (err) {
       setError(err.message);
+      onEditingChange(true);
     } finally {
       setSaving(false);
     }

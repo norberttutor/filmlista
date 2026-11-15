@@ -61,7 +61,9 @@ export async function POST(request) {
     const loaded = await loadPerson(p.person_id, p.role).catch(() => null);
     if (!loaded) continue; // a TMDB most nem érhető el: legközelebb újra
     const seen = known.get(keyOf(p));
-    const silent = !seen || seen.size === 0;
+    // csak az első ellenőrzés csendes (megjegyez) – az ismert filmek száma nem jó jelző: ha akkor még nem volt fő- /
+    // rendezett filmje, minden későbbi ellenőrzés „első” maradt, és soha nem jött értesítés (átnézés 3, R8)
+    const silent = p.checked_at == null;
     const films = loaded.credits.filter((c) => c.media_type === 'movie' && c.lead && !c.minor_genre);
     for (const film of films) {
       if (seen?.has(film.tmdb_id)) continue;

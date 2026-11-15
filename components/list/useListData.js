@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { cancelPendingDeletes, isPendingDelete } from '@/lib/titles';
 import { toast } from '@/lib/toast';
 import { loadNotifications } from '@/lib/notifications';
-import { loadOrders } from '@/lib/watchOrder';
+import { loadOrders, orderMark, orderWrittenSince } from '@/lib/watchOrder';
 import { loadHidden, resetHidden } from '@/lib/hiddenSuggestions';
 import { loadFollowed, resetFollowed } from '@/lib/people';
 import { afterCreated, fetchAll } from '@/lib/fetchAll';
@@ -108,6 +108,7 @@ export function useListData(userId, notes) {
     const stopped = () => cancelled; // a háttérfrissítések körönként nézik (kódaudit #30)
     loadRunning.current = true;
     const mark = writeMark(); // B1: az ezután helyben írt címeknél a helyi sor az érvényes
+    const omark = orderMark(); // R13: ugyanez a nézési sorrendeknél
 
     async function load() {
       const [titlesRes, statusesRes, franchisesRes, snap] = await Promise.all([
@@ -158,7 +159,14 @@ export function useListData(userId, notes) {
         setStatuses(statusesRes.data);
         setFranchises(franchisesRes.data.sort(byName));
         loadOrders()
-          .then((rows) => !cancelled && setOrders(rows))
+          .then(
+            (rows) =>
+              !cancelled &&
+              setOrders((prev) => {
+                const newer = (o) => orderWrittenSince(o.franchise_id, omark);
+                return [...prev.filter(newer), ...rows.filter((o) => !newer(o))];
+              })
+          )
           .catch((err) => console.warn('Nézési sorrendek betöltése sikertelen:', err.message));
         // „Nem érdekel” – elrejtett ajánlások (a Felfedezés és a Hasonló címek szűri)
         loadHidden().catch((err) => console.warn('Elrejtett ajánlások betöltése sikertelen:', err.message));

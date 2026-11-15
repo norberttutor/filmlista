@@ -41,22 +41,26 @@ export async function POST(request) {
           .not('tmdb_id', 'is', null)
           .order('release_year', { ascending: true, nullsFirst: false })
           .order('imdb_votes', { ascending: false, nullsFirst: false })
-          .limit(1);
+          .limit(3);
         if (firstError) {
           console.error(firstError); // átmeneti hiba: a következő betöltéskor újra
           return;
         }
         if (!first?.length) return; // még nincs filmje: majd ha lesz
 
-        let logo;
-        try {
-          const images = await tmdbFetch(`/${first[0].media_type}/${first[0].tmdb_id}/images`, {
-            include_image_language: 'en,null',
-          });
-          logo = pickLogo(images.logos ?? []);
-        } catch (err) {
-          console.error(err); // átmeneti TMDB-hiba: a következő betöltéskor újra
-          return;
+        // a legkorábbi filmé; ha az már nincs a TMDB-n (404), a következőé – és ha egyiké sincs, ellenőrzöttnek
+        // jelöljük (RETRY_DAYS múlva újra): eddig a 404 minden betöltéskor újrakérést okozott (átnézés 3, R9)
+        let logo = null;
+        for (const t of first) {
+          try {
+            const images = await tmdbFetch(`/${t.media_type}/${t.tmdb_id}/images`, { include_image_language: 'en,null' });
+            logo = pickLogo(images.logos ?? []);
+            break;
+          } catch (err) {
+            if (err.status === 404) continue;
+            console.error(err); // átmeneti TMDB-hiba: a következő betöltéskor újra
+            return;
+          }
         }
         // csak ha közben nem választottak kézzel logót (a „Csak a név” – '' – is választás)
         const { data: written, error: updateError } = await db

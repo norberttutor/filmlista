@@ -164,8 +164,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   felolvasónak „Név, 2 hátra” (a teszt `frOption()`-ja erre épít). **A `.grid` osztálynév foglalt** (borítórács) – a
   rácsos panelé `.ff-grid`. Nyitva Vissza-réteg (`useBackLayer`).
 - `components/FranchiseSelect.js` – `.franchise-new` módban az adatlap nem zár kikattintásra.
-- `components/StarRating.js` – billentyűzettel a nyíl csak előnézet, Enter / Szóköz ment; a kiválasztottra újra
-  kattintva `null`.
+- `components/StarRating.js` – billentyűzettel a nyíl csak előnézet, Enter / Szóköz ment (a kiválasztotton egyik sem
+  töröl, a Delete töröl); a kiválasztottra újra kattintva `null`.
 - `components/Toaster.js` + `lib/toast.js` – `toast({ text, image, content, action, hideClose, duration = 8000,
   onExpire, kind })`, `dismissToast`; az `onExpire` lejáratkor és ×-re fut (az action-re nem); legfeljebb 3;
   `duration: null` nem jár le. **Nyitott `<dialog>` fölött a sáv nem kattintható** – ablakon belül helyi
@@ -191,7 +191,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - Adatsor (`.meta`, Norbi választása – „D”): év · Film / Sorozat · sorozatnál az állapot szavakkal
   (`seriesStatusText`) · játékidő (`formatRuntime`; sorozatnál a legutóbbi rész) · IMDb. Korhatár nincs (elvetve).
   Mamánál csak a játékidő. Teszt: `kinezet/adatlap-adatsor.mjs`.
-- **Bezárás**: „Bezárás” (`DialogClose`, asztalon), Esc, kikattintás asztalon, Vissza gomb (`backHandler`).
+- **Bezárás**: „Bezárás” (`DialogClose`, asztalon), Esc, kikattintás asztalon, Vissza gomb (`backHandler`). Törlés-
+  megerősítésnél (az utolsó évadénál is – `.season-confirm`) a kikattintás nem zár, az Esc igen.
   `closedby="none"` (Android – lásd `lib/backClose.js`). Telefonon alsó lap fogantyúval (`DialogClose`), nincs gomb.
 - **Nézetváltás** (`lib/viewTransition.js`): a borító átsiklik az adatlapra, ezért a `showModal()`
   `useLayoutEffect`-ben fut. Csak az első lapról siklik vissza, törléskor nem.
@@ -411,7 +412,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   közvetlen írásakor a `dropped` kivételével mindig az évadokból számolt érték kerül be. Évadok nélkül a cím kézi.
 - `franchises` (`logo_path`: null = még nincs, `''` = „Csak a név”; `tmdb_collection_ids` NULL is lehet – üresnek
   veendő); egyedi `(user_id, lower(name))`.
-- `franchise_order` (`season_number` 0 = film); `set_franchise_order(franchise, items)` egy tranzakcióban. Trigger:
+- `franchise_order` (`season_number` 0 = film); `set_franchise_order(franchise, items)` egy tranzakcióban, csak a
+  franchise-ban lévő címeket veszi fel (34). Kliensben a helyben mentett sorrendet a csendes újratöltés nem írja felül
+  (`orderWrittenSince`). Trigger:
   más franchise-ba került cím kikerül a régi sorrendből.
 - `franchise_collection_parts`, `followed_person_credits`: ismert részek / filmek (ebből derül ki, mi új); nincsenek
   a mentésben.

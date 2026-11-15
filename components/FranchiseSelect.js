@@ -26,10 +26,12 @@ export default function FranchiseSelect({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const selectRef = useRef(null);
+  const session = useRef(0); // a szerkesztés sorszáma: a „Mégse” / Esc (finish) lépteti
   const current = franchises.find((f) => f.id === value);
 
   // vissza a lenyílóhoz, és a fókusz is oda kerül
   function finish() {
+    session.current++;
     flushSync(() => {
       setMode('');
       setName('');
@@ -38,14 +40,18 @@ export default function FranchiseSelect({
     selectRef.current?.focus();
   }
 
+  // mentés közben a „Mégse” / Esc elveti a szerkesztést (mint a Franchise-ok ablakban, B11): a válasz után az elvetett
+  // szerkesztés már nem változtat semmit – az új franchise nem kerül a címre (átnézés 3, R10). alive(): még az a szerkesztés
   async function run(action) {
+    const mine = session.current;
+    const alive = () => session.current === mine;
     setBusy(true);
     setError('');
     try {
-      await action();
-      finish();
+      await action(alive);
+      if (alive()) finish();
     } catch (err) {
-      setError(err.message);
+      if (alive()) setError(err.message);
     }
     setBusy(false);
   }
@@ -56,9 +62,9 @@ export default function FranchiseSelect({
       setError('Adj meg egy nevet.');
       return;
     }
-    run(async () => {
+    run(async (alive) => {
       const franchise = await onCreate(trimmed);
-      onChange(franchise.id);
+      if (alive()) onChange(franchise.id);
     });
   }
 

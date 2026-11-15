@@ -256,7 +256,7 @@ export function CollectionDialog({
   const [error, setError] = useState('');
   const [searching, setSearching] = useState(false); // a „+ TMDB-gyűjtemény” kereső nyitva
   const [tab, setTab] = useState('collection');
-  const [ordering, setOrdering] = useState(false); // a nézési sorrend szerkesztése folyik
+  const [ordering, setOrdering] = useState(false); // a nézési sorrend szerkesztése folyik ('saving': a „Kész” mentése)
   const [sharing, setSharing] = useState(false); // a megosztás visszavonásának megerősítése / kérése
   const [edit, setEdit] = useState(null); // { mode: 'rename' | 'delete', name, error, busy } – terv-3 57
   const tabRefs = useRef({});
@@ -396,7 +396,7 @@ export function CollectionDialog({
         if (e.target !== e.currentTarget) return;
         if (ordering) {
           e.preventDefault();
-          setOrdering(false);
+          if (ordering !== 'saving') setOrdering(false);
         } else if (edit) {
           e.preventDefault();
           if (!edit.busy) setEdit(null);

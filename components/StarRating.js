@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 
 const STARS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
@@ -21,6 +21,7 @@ export default function StarRating({ name, label, value, onChange }) {
   const [hover, setHover] = useState(0);
   // az imént választott érték: a csillagai egymás után "pattannak" (betöltéskor nem)
   const [popped, setPopped] = useState(0);
+  const bySpace = useRef(false); // a következő kattintást a Szóköz váltja ki (R22)
   const hintId = useId();
   const shown = hover || value || 0;
 
@@ -30,6 +31,7 @@ export default function StarRating({ name, label, value, onChange }) {
   }
 
   function onKeyDown(e) {
+    bySpace.current = e.key === ' ';
     const n = Number(e.target.dataset.n);
     if (!n) return;
     let to;
@@ -39,6 +41,11 @@ export default function StarRating({ name, label, value, onChange }) {
     else if (e.key === 'Enter') {
       e.preventDefault();
       if (n !== value) choose(n);
+      return;
+    } else if ((e.key === 'Delete' || e.key === 'Backspace') && value != null) {
+      // billentyűzettel a törlés külön billentyű: a kiválasztotton az Enter és a Szóköz egyformán nem töröl (R22)
+      e.preventDefault();
+      choose(null);
       return;
     } else return;
     e.preventDefault();
@@ -57,7 +64,7 @@ export default function StarRating({ name, label, value, onChange }) {
       onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setHover(0)}
     >
       <span id={hintId} className="sr-only">
-        Nyilakkal válassz, Enter vagy Szóköz: mentés.
+        Nyilakkal válassz, Enter vagy Szóköz: mentés, Delete: törlés.
       </span>
       {STARS.map((n) => (
         <label
@@ -75,7 +82,12 @@ export default function StarRating({ name, label, value, onChange }) {
             aria-label={`${n} csillag`}
             checked={value === n}
             onChange={() => choose(n)}
-            onClick={() => value === n && choose(null)}
+            // egérrel / ujjal a kiválasztottra újra kattintva törlődik; a Szóközzel nem – mint az Enterrel (R22)
+            onClick={() => {
+              const space = bySpace.current;
+              bySpace.current = false;
+              if (value === n && !space) choose(null);
+            }}
           />
           <Star />
         </label>

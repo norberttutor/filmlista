@@ -26,10 +26,10 @@ export function useListChanges({ data, keepShown, releaseFranchise, openFranchis
   const { setTitles, titlesRef, franchises, setFranchises, setOrders } = data;
 
   // a nyitott szerkesztő ablak is a friss sort kapja (pl. évadok változása után); a sor a
-  // szűrés változásáig a helyén marad – de csak ha eddig is látszott (keepShown). remote: az élő szinkron
-  // hozta (másik eszköz) – a többi helyi írás, azt a közben induló újratöltés nem írja felül (B1)
-  function replaceTitle(row, { remote = false } = {}) {
-    if (!remote) noteLocalWrite(row.id);
+  // szűrés változásáig a helyén marad – de csak ha eddig is látszott (keepShown). A közben induló újratöltés nem írja
+  // felül (B1; az élő szinkronnal érkezettet sem – R2)
+  function replaceTitle(row) {
+    noteLocalWrite(row.id);
     setTitles((ts) => ts.map((x) => (x.id === row.id ? row : x)));
     keepShown(row);
     // más franchise-ba került: a régi sorrendből kikerült (az adatbázis-trigger is ezt teszi) – csak a
