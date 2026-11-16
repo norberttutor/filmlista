@@ -329,6 +329,8 @@
 
 /* a jelenetkép a leírás mögött, balra a sor színébe olvadva */
 .titles-table td.cell-title {
+  position: relative; /* a jelenetkép ehhez igazodik (eddig az első cella szabálya adta – a jelölőnégyzet-oszlop óta
+                         nem ez az első cella, és a kép az egész táblázatra került) */
   isolation: isolate;
   overflow: hidden;
 }
