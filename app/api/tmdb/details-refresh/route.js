@@ -160,7 +160,8 @@ async function refreshOne(db, t, genreIds) {
     .update({ ...changes, details_checked_at: new Date().toISOString() })
     .eq('id', t.id)
     .select('updated_at, details_checked_at')
-    .single();
+    .maybeSingle(); // a közben törölt cím: nincs sora, kimarad (K2.3 – a .single() hibája leállította a frissítőt)
   if (error) throw error;
+  if (!stamp) return { changed: false, gone: false, stamp: null };
   return { changed: genresChanged || Object.keys(changes).length > 0, gone: !data, stamp };
 }

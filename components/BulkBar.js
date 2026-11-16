@@ -61,8 +61,12 @@ export default function BulkBar({ bulk, statuses, franchises }) {
     if (menu) rootRef.current?.querySelector('.bulk-menu [role="menuitem"]:not([aria-disabled="true"])')?.focus();
   }, [menu]);
 
+  // a kérdés megnyílásakor a Törlés gombja; „Mégse” / Esc után vissza a sáv Törlés gombjára (K2.10)
+  const asked = useRef(false);
   useEffect(() => {
     if (confirming) rootRef.current?.querySelector('.bb-confirm .danger')?.focus();
+    else if (asked.current) rootRef.current?.querySelector('.bb-btn.del')?.focus();
+    asked.current = confirming;
   }, [confirming]);
 
   function closeMenu() {
@@ -90,8 +94,9 @@ export default function BulkBar({ bulk, statuses, franchises }) {
     }
   }
 
+  // választás után a fókusz a menü gombjára (a lebomló menüből különben a body-ra esne – K2.10)
   function choose(what, value) {
-    setMenu(null);
+    closeMenu();
     bulk.apply(what, value);
   }
 

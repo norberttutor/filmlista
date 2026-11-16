@@ -260,6 +260,15 @@
     background-color: rgb(var(--glass) / 0.45);
   }
 
+  /* rámutatva világosodik, lenyomva sötétedik – a fátyol az üveg fölött (az üveg háttere felülírta – K2) */
+  .editor-page.has-hero .editor-backdrop .title-copy:not([data-done='ok']):hover {
+    background-image: linear-gradient(var(--hover-tint), var(--hover-tint));
+  }
+
+  .editor-page.has-hero .editor-backdrop .title-copy:not([data-done='ok']):active {
+    background-image: linear-gradient(var(--press-tint), var(--press-tint));
+  }
+
   .editor-page.has-hero .editor-backdrop .meta {
     margin-top: 0.6rem;
     font-size: 0.88rem;

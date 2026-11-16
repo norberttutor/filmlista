@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { useBackdropClose } from '@/lib/useBackdropClose';
 import DialogClose from '@/components/DialogClose';
+import { useHoldEscape } from '@/lib/useHoldEscape';
 import { signInErrorKind } from '@/lib/authErrors';
 
 const MIN_LENGTH = 8;
@@ -53,6 +54,7 @@ export default function PasswordDialog({ email, onClose }) {
   const [next, setNext] = useState('');
   const [again, setAgain] = useState('');
   const [busy, setBusy] = useState(false);
+  useHoldEscape(busy); // mentés közben a második Esc sem zárja (K2.4)
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
   // asztalon kikattintásra bezárul – de ha már gépelt valamit, vagy mentés közben, nem (a beírt

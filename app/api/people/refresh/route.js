@@ -11,8 +11,9 @@ const RECENT_DAYS = 30; // ennél régebben megjelent „új” filmről nem sz�
 // felhasználó követettjei közül a még nem, vagy 7 napnál régebben ellenőrzöttek filmjeit (színésznél
 // a főszerepek – a stáblista első 3 helye –, rendezőnél a rendezett filmek; animáció / dokumentum /
 // talkshow… és önmaga-szerep nélkül) összeveti az ismertekkel (followed_person_credits):
-// - ha a személynek még nincs ismert filmje (első ellenőrzés, vagy visszaállítás után), csak megjegyzi
-//   őket – különben minden régi filmje „új” lenne;
+// - ha a személynek még nincs ismert sora (első ellenőrzés, vagy visszaállítás után – az ismert filmek nincsenek a
+//   mentésben), csak megjegyzi őket – különben minden régi filmje „új” lenne; minden ellenőrzés egy jelzősort
+//   (tmdb_id 0) is hagy;
 // - utána az új film → person_new értesítés, ha van megjelenési dátuma (Norbi döntése: csak a
 //   dátummal bejelentett), az nem régebbi 30 napnál, nincs a listán és nincs elrejtve („Nem érdekel”);
 //   személyenként egyszer (egyedi kulcs).
@@ -69,9 +70,12 @@ export async function POST(request) {
     const loaded = await loadPerson(p.person_id, p.role).catch(() => null);
     if (!loaded) continue; // a TMDB most nem érhető el: legközelebb újra
     const seen = known.get(keyOf(p));
-    // csak az első ellenőrzés csendes (megjegyez) – az ismert filmek száma nem jó jelző: ha akkor még nem volt fő- /
-    // rendezett filmje, minden későbbi ellenőrzés „első” maradt, és soha nem jött értesítés (átnézés 3, R8)
-    const silent = p.checked_at == null;
+    // csak az első ellenőrzés csendes (megjegyez): amíg a személynek egy ismert sora sincs. Minden ellenőrzés hagy egy
+    // jelzősort (tmdb_id 0) – így a fő- / rendezett film nélküli személy sem marad örökre „első” (átnézés 3, R8), a
+    // mentés visszaállítása után viszont (az ismert filmek nincsenek a mentésben) újra csak megjegyez, a régi filmjeiről
+    // nem szól (K2.2; a checked_at-et a mentés visszahozza, ezért az nem jó jelző)
+    const silent = !seen;
+    if (!seen?.has(0)) newCredits.push({ person_id: p.person_id, role: p.role, tmdb_id: 0 });
     const films = loaded.credits.filter((c) => c.media_type === 'movie' && c.lead && !c.minor_genre);
     for (const film of films) {
       if (seen?.has(film.tmdb_id)) continue;

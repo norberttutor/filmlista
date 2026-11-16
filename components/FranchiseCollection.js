@@ -9,6 +9,7 @@ import WatchOrder from '@/components/WatchOrder';
 import { useSlidingThumb } from '@/lib/useSlidingThumb';
 import { FranchiseActions, FranchiseLogoPicker } from '@/components/FranchiseActions';
 import DialogClose from '@/components/DialogClose';
+import { useHoldEscape } from '@/lib/useHoldEscape';
 import { article } from '@/lib/franchiseSuggest';
 
 const IMG = 'https://image.tmdb.org/t/p/';
@@ -259,6 +260,8 @@ export function CollectionDialog({
   const [ordering, setOrdering] = useState(false); // a nézési sorrend szerkesztése folyik ('saving': a „Kész” mentése)
   const [sharing, setSharing] = useState(false); // a megosztás visszavonásának megerősítése / kérése
   const [edit, setEdit] = useState(null); // { mode: 'rename' | 'delete', name, error, busy } – terv-3 57
+  // a sorrend / a fejléc mentése közben a második Esc sem zárja (K2.4)
+  useHoldEscape(ordering === 'saving' || !!edit?.busy);
   const tabRefs = useRef({});
   const tabsThumb = useSlidingThumb(); // csúszó kijelölő a füleken (terv-3 100)
   const uniqueParts = (keep) => [

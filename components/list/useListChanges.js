@@ -12,6 +12,7 @@ import {
   unregisterPendingDelete,
   createFranchise,
   freshTitleRow,
+  freshTitleRows,
   deleteFranchise,
   renameFranchise,
 } from '@/lib/titles';
@@ -82,13 +83,14 @@ export function useListChanges({ data, keepShown, releaseFranchise, openFranchis
     const restore = () => {
       const back = [...gone.values()];
       setTitles((ts) => [...back.filter((t) => !ts.some((x) => x.id === t.id)), ...ts]);
-      for (const t of back) {
-        freshTitleRow(t.id).then((row) => {
-          if (!row || !titlesRef.current.some((x) => x.id === t.id)) return;
-          titlesRef.current = titlesRef.current.map((x) => (x.id === row.id ? row : x));
-          replaceTitle(row);
-        });
-      }
+      const apply = (row) => {
+        if (!row || !titlesRef.current.some((x) => x.id === row.id)) return;
+        titlesRef.current = titlesRef.current.map((x) => (x.id === row.id ? row : x));
+        replaceTitle(row);
+      };
+      // több cím: egy lekéréssel (200-asával), nem címenként (K2.9)
+      if (back.length === 1) freshTitleRow(back[0].id).then(apply);
+      else freshTitleRows(back.map((t) => t.id)).then((rows) => rows?.forEach(apply));
     };
     let toastId = 0;
     let stopWaiting = null; // (nyitott ablak nélkül az afterDialogs rögtön hív – a lemondó ekkor még nincs meg)
@@ -140,8 +142,10 @@ export function useListChanges({ data, keepShown, releaseFranchise, openFranchis
         if (ids.length === 0) return;
         for (const id of ids) noteLocalWrite(id); // a közben induló újratöltés válasza ne hozza vissza (B1)
         (ids.length === 1 ? deleteTitle(ids[0]) : deleteTitles(ids)).catch((err) => {
+          // a részleges hibánál a már törölt címek nem jönnek vissza (K2.8)
+          for (const id of err.deleted ?? []) gone.delete(id);
           restore();
-          const what = ids.length === 1 ? `„${gone.get(ids[0]).title}”` : `${ids.length} címet`;
+          const what = ids.length === 1 ? `„${gone.get(ids[0]).title}”` : `${gone.size} címet`;
           toast({ text: `Nem sikerült törölni: ${what}. ${err.message}` });
         });
       },

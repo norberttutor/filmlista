@@ -96,7 +96,7 @@ export function moreMenuItems({
     {
       id: 'appearance',
       label: 'Kinézet',
-      description: 'Sötét, világos vagy videotéka-téma; a gombok és a neonfelirat színpárja',
+      description: 'Sötét, világos, OLED fekete vagy videotéka-téma; a gombok és a neonfelirat színpárja',
       icon: 'palette',
       onSelect: () => openDialog('appearance'),
     },

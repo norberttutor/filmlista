@@ -4,7 +4,7 @@
 // (vagy Mama oldalán) változott címek sorát a nézetből újratölti; a saját mentés visszhangja (ugyanaz a sor) nem
 // változtat semmit, a még függő mentésű (lib/rowSaves.js – a válasza úgyis a friss sort hozza) és a visszavonható
 // törlésű cím kimarad.
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { isPendingDelete } from '@/lib/titles';
 import { loadNotifications } from '@/lib/notifications';
@@ -39,6 +39,28 @@ export function useLiveTitles(enabled, userId, { data, notes, replaceTitle, rele
   // friss sorát a korábbi (régebbi) válasz nem írhatja felül
   const syncAsked = useRef(new Map());
   const syncSeq = useRef(0);
+  // a hibánál újrapróbáló időzítők: kikapcsoláskor (kilépés, net nélkül) / lebontáskor leállnak (K2.5)
+  const retries = useRef(new Set());
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
+  useEffect(() => {
+    if (enabled) return;
+    for (const id of retries.current) clearTimeout(id);
+    retries.current.clear();
+  }, [enabled]);
+  useEffect(
+    () => () => {
+      for (const id of retries.current) clearTimeout(id);
+    },
+    []
+  );
+  function retryLater(fn, ms) {
+    const id = setTimeout(() => {
+      retries.current.delete(id);
+      if (enabledRef.current) fn();
+    }, ms);
+    retries.current.add(id);
+  }
 
   async function syncTitles(ids, deletedIds, attempt = 0) {
     const seq = ++syncSeq.current;
@@ -55,7 +77,8 @@ export function useLiveTitles(enabled, userId, { data, notes, replaceTitle, rele
       const { data, error } = await supabase.from('titles_with_genres').select('*').in('id', part);
       if (error) {
         console.warn('Élő szinkron: a címek újratöltése sikertelen:', error.message);
-        if (attempt < SYNC_RETRIES) setTimeout(() => syncTitles(ids, deletedIds, attempt + 1), 3000 * (attempt + 1));
+        if (!enabledRef.current) return;
+        if (attempt < SYNC_RETRIES) retryLater(() => syncTitles(ids, deletedIds, attempt + 1), 3000 * (attempt + 1));
         else reload();
         return;
       }

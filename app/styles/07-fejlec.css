@@ -296,17 +296,27 @@ body:not(:has(.filters[data-stuck])) .top.collapsing[data-compact] {
   color: var(--muted);
 }
 
-.more-item:hover,
+.more-item:hover:not([aria-disabled='true']),
 .more-item:focus-visible {
   background-color: var(--hover-tint);
   outline: none;
+}
+
+/* a tiltott pont (pl. A nap filmje üres készletnél): halvány, nem emelkedik ki – a leírása mondja meg, miért (K2.13) */
+.more-item[aria-disabled='true'] {
+  cursor: default;
+}
+
+.more-item[aria-disabled='true'] .more-label,
+.more-item[aria-disabled='true'] svg {
+  color: var(--muted);
 }
 
 .more-item:focus-visible {
   box-shadow: inset 0 0 0 1px var(--accent-line);
 }
 
-.more-item:hover svg,
+.more-item:hover:not([aria-disabled='true']) svg,
 .more-item:focus-visible svg {
   color: var(--accent);
 }

@@ -30,7 +30,9 @@ const TEXT_FIELD = 'input:not([type="checkbox"]):not([type="radio"]), select, te
 // requestDelete(címek)
 export function useBulkEdit({ enabled, visible, paged, filterKey, statuses, franchises, rowOf, show, requestDelete }) {
   const [picked, setPicked] = useState(() => new Set()); // kijelölt cím-azonosítók
-  const [allMatches, setAllMatches] = useState(false); // „Mind a N találat”
+  // „Mind a N találat” – csak a sáv feliratához: a kijelölés a kattintáskori találatok pillanatképe (a picked-ben), a
+  // később felkerülő / visszavont cím nem kerül bele magától (K2.7)
+  const [allMatches, setAllMatches] = useState(false);
   const anchor = useRef(null); // a Shift-kattintás kezdőpontja
 
   const visibleRows = useMemo(() => {
@@ -43,9 +45,8 @@ export function useBulkEdit({ enabled, visible, paged, filterKey, statuses, fran
   // a kijelölésből csak a most látható címek számítanak (a törölt / kiszűrt kiesik)
   const selected = useMemo(() => {
     if (!enabled) return [];
-    if (allMatches) return [...visibleRows.values()];
     return [...picked].filter((id) => visibleRows.has(id)).map((id) => visibleRows.get(id));
-  }, [enabled, allMatches, picked, visibleRows]);
+  }, [enabled, picked, visibleRows]);
   const selectedIds = useMemo(() => new Set(selected.map((t) => t.id)), [selected]);
 
   function clear() {
@@ -54,15 +55,14 @@ export function useBulkEdit({ enabled, visible, paged, filterKey, statuses, fran
     anchor.current = null;
   }
 
-  // más szűrés / keresés: a kijelölés a még látható címekre szűkül; az „összes találat” nem viszi át magát az új
-  // találatokra
+  // más szűrés / keresés: a kijelölés a még látható címekre szűkül
   const lastKey = useRef(filterKey);
   useEffect(() => {
     if (lastKey.current === filterKey) return;
     lastKey.current = filterKey;
     setAllMatches(false);
-    setPicked((s) => (allMatches ? new Set() : new Set([...s].filter((id) => visibleRows.has(id)))));
-  }, [filterKey, allMatches, visibleRows]);
+    setPicked((s) => new Set([...s].filter((id) => visibleRows.has(id))));
+  }, [filterKey, visibleRows]);
 
   useEffect(() => {
     if (!enabled) clear();
@@ -81,8 +81,8 @@ export function useBulkEdit({ enabled, visible, paged, filterKey, statuses, fran
     return () => document.removeEventListener('keydown', onKey);
   }, [count]);
 
-  // a kijelölés mostani állapota (az „összes találat” felbontva, hogy egy cím levehető legyen róla)
-  const current = () => (allMatches ? new Set(visibleRows.keys()) : new Set(selectedIds));
+  // a kijelölés mostani állapota (csak a látható címek)
+  const current = () => new Set(selectedIds);
 
   function toggle(id, shift) {
     const next = current();
@@ -141,22 +141,25 @@ export function useBulkEdit({ enabled, visible, paged, filterKey, statuses, fran
       }
       return updateTitlesBatch([...groups.values()]);
     });
+    // a mentett cím a friss sorát kapja (ha a lekérés elbukott: a módosított sort – K2.6), a nem mentett visszaáll
     const saves = plan.map(({ t, changes }) =>
       saveRow(
         t,
         (row) => withChanges(row, changes),
         () => {
           if (++ready === plan.length) release();
-          return result.then(({ rows }) => rows.get(t.id) ?? null);
+          return result.then(({ saved, rows }) =>
+            !saved.has(t.id) ? null : rows ? (rows.get(t.id) ?? null) : withChanges(t, changes)
+          );
         },
         show
       ).catch(() => null)
     );
     return Promise.all(saves).then(() =>
-      result.then(
-        ({ error }) => ({ done: plan.map(({ t, changes }) => ({ t, before: pick(t, changes) })), error }),
-        (error) => ({ done: [], error })
-      )
+      result.then(({ saved, error }) => ({
+        done: plan.filter(({ t }) => saved.has(t.id)).map(({ t, changes }) => ({ t, before: pick(t, changes) })),
+        error,
+      }))
     );
   }
 
@@ -230,8 +233,14 @@ export function useBulkEdit({ enabled, visible, paged, filterKey, statuses, fran
     const [batch, seasons] = await Promise.all([saveBatch(plan), seasonsWatched(seasonRows)]);
     const seasonsDone = seasons.filter((s) => !s.error);
     const error = batch.error ?? seasons.find((s) => s.error)?.error;
+    const saved = batch.done.length + seasonsDone.length;
+    // részleges hibánál is visszavonható, ami mentődött (K2.6)
+    const undoAction = saved > 0 && {
+      action: { label: 'Visszavonás', onClick: () => undo(batch.done, seasonsDone) },
+      needsNet: 'action',
+    };
     if (error) {
-      toast({ text: error.message });
+      toast({ text: saved > 0 ? `${saved} cím mentve, a többi nem. ${error.message}` : error.message, ...undoAction });
       return;
     }
     const lostDownload =
@@ -244,11 +253,7 @@ export function useBulkEdit({ enabled, visible, paged, filterKey, statuses, fran
           {skipped > 0 && ` · ${skipNote(what, skipped)}`}
         </>
       ),
-      action: {
-        label: 'Visszavonás',
-        onClick: () => undo(batch.done, seasonsDone),
-      },
-      needsNet: 'action',
+      ...undoAction,
     });
   }
 
@@ -276,7 +281,10 @@ export function useBulkEdit({ enabled, visible, paged, filterKey, statuses, fran
     selectPage,
     onlyPage,
     allMatches,
-    selectAllMatches: () => setAllMatches(true),
+    selectAllMatches: () => {
+      setPicked(new Set(visibleRows.keys()));
+      setAllMatches(true);
+    },
     matchCount: visibleRows.size,
     pageCount: pageIds.length,
     clear,
@@ -298,7 +306,9 @@ function changesFor(t, what, value) {
       if (value === DROPPED_STATUS) return t.status === DROPPED_STATUS ? null : { status: DROPPED_STATUS };
       if (value === 'watched') {
         const open = t.seasons.some((s) => seasonAired(s) && s.status !== 'watched');
-        return open || t.status === DROPPED_STATUS ? 'seasons' : null;
+        if (open || t.status === DROPPED_STATUS) return 'seasons';
+        // még nincs megjelent évada (csak bejelentett): nem „már ilyen”, hanem kimarad (K2.14)
+        return t.status === 'watched' ? null : 'skip';
       }
       return t.status === DROPPED_STATUS ? { status: value } : 'skip';
     }

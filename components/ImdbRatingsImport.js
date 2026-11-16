@@ -6,6 +6,7 @@ import { mapLimit } from '@/lib/bulkImport';
 import { apiGet } from '@/lib/api';
 import { addTitle, applyMyRatings, titleKey } from '@/lib/titles';
 import DialogClose from '@/components/DialogClose';
+import { useHoldEscape } from '@/lib/useHoldEscape';
 
 const stars = (n) => (n == null ? '–' : `${n}`);
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w92';
@@ -23,6 +24,8 @@ export default function ImdbRatingsImport({ titles, onApplied, onAdded, ref }) {
   // { plan } (értékelések) | { watch } (figyelőlista) | { error } | { done }
   const [view, setView] = useState(null);
   const [busy, setBusy] = useState(false);
+  // felvétel / beírás közben a második Esc sem zárja (K2.4)
+  useHoldEscape(busy || view?.watch?.phase === 'adding');
   // a futás azonosítója: bezáráskor és új fájlnál változik – a háttérben tovább futó régi keresés /
   // felvétel már nem nyúl az ablakhoz (különben bezárás után null állapotot olvasna, és az app
   // összeomlana; kódaudit #7). A felvétel ettől még végigfut, a címek felkerülnek.

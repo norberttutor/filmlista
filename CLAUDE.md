@@ -334,6 +334,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   ablakot is észreveszi – DOM-figyelő); `useAppearance(on)`: a jelölés
   megjelenésének mozgása az adatlap bezárásakor (`'wait'` → `'play'`; a kártyán az adatlap mögött nem látszana –
   így a „Letöltve” jelvény, 141 a; a kihúzás is erre vár, 133).
+- `lib/useHoldEscape.js` – `useHoldEscape(active)`: **mentés közben az Esc ne zárja az ablakot – ehhez ez kell**, a
+  `cancel` `preventDefault`-ja nem elég (a Chrome a második Esc-et már nem engedi megakasztani; K2.4).
 - `lib/useBackdropClose.js` – `useBackdropClose(dialogRef, { onClose, canClose, onBlocked })`: kikattintásra zár
   (asztalon), ha nem zárhat, `nudgeDialog()`. Nem zár: adatlap (megerősítés / név gépelése / felvétel; net nélkül zár), Színészek
   és rendezők és Toplisták (felvétel), Franchise-ok (szerkesztés, megerősítés, nyitott gyűjtemény-ablak – a
@@ -400,7 +402,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 ### Dokumentáció
 - `supabase/*.sql` – a már lefuttatott adatbázis-szkriptek (számozva).
 - `FELHASZNALOI-LEIRAS.md` – felhasználói leírás (képek: `docs/kepek/*.jpg`, `munka/e2e/eszkoz/proba-lista.mjs`
-  + `leiras-kepek.mjs <név>`); frissítése: Konvenciók → „Felhasználói leírás”.
+  + `munka/terv-3/33-leiras/leiras-kepek.mjs <név>`); frissítése: Konvenciók → „Felhasználói leírás”.
 
 ## Adatbázis (részletek: `supabase/`)
 - `genres (id = TMDB műfaj ID)`. `statuses`: `to_watch`, `watching`, `watched`, `dropped` (a felület csak sorozatnál
@@ -425,7 +427,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   (`orderWrittenSince`). Trigger:
   más franchise-ba került cím kikerül a régi sorrendből.
 - `franchise_collection_parts`, `followed_person_credits`: ismert részek / filmek (ebből derül ki, mi új); nincsenek
-  a mentésben.
+  a mentésben. A `followed_person_credits`-ben ellenőrzésenként egy jelzősor (`tmdb_id = 0`): **az első (csendes)
+  ellenőrzés jele, hogy a személynek nincs ismert sora** (a `checked_at` nem jó – a mentés visszahozza; K2.2).
 - `hidden_suggestions`, `followed_people` (PK `(user_id, person_id, role)`).
 - `notifications` – `kind`: 'season_announced' | 'season_aired' | 'movie_digital' | 'mama_interested' |
   'collection_new' | 'person_new' (az utóbbi kettőnél `title_id` üres). A törölt (`dismissed_at`) sor megmarad, így
@@ -439,7 +442,9 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - `franchise_shares` (token; visszavonás = törlés), `shared_watch_order(token)` (security definer, `anon` is):
   állapot, értékelés, letöltve, Mama, megjegyzés, user_id soha.
 - `list_viewers (viewer_id → owner_id)`: írni csak SQL-ből (`munka/e2e/eszkoz/mama-kapcsolas.mjs`). `mama_list()`,
-  `mama_mark()` (security definer; Mama a `titles` táblát közvetlenül nem látja). **`title_released(t)` a
+  `mama_mark()` (security definer; Mama a `titles` táblát közvetlenül nem látja; a „Nem érdekli” → „Érdekli” csak a
+  listáján lévő filmre, vagy ha korábban „Érdekli” volt – a `mama_interested` értesítéssor, a „Nem érdekel” egy eleve
+  törölt sort ír, 36). **`title_released(t)` a
   `releaseState()` szabálya SQL-ben – ha az egyik változik, a másikat is.** Teszt: `adatbazis/mama-hozzaferes.mjs` (`--live`).
 - `client_errors` – írni csak a `log_client_error()`; Mamánál a gazda naplójába kerül. A `clearTestAccount()` üríti.
 - `imdb_ratings`, `toplists`: **közös** (nem felhasználói) gyorsítótár; írni csak a `store_*` függvények. A közös táblákat (`genres` is) a
@@ -449,7 +454,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - Nincs a mentésben: `franchise_shares`, `list_viewers`, `client_errors`, `imdb_ratings`, `toplists`,
   `franchise_collection_parts`, `followed_person_credits`, és a cím nélküli értesítések (`collection_new`, `person_new` – a
   mentés a címeken át gyűjti őket).
-- Minden táblán RLS: a felhasználó csak a saját sorait látja / módosítja.
+- Minden táblán RLS: a felhasználó csak a saját sorait látja / módosítja. Az `anon` szerep csak olvashat (a
+  `keepalive` a `statuses`-t olvassa), TRUNCATE senkinek (36; az alapértelmezett jogok az új táblákra is így).
 - **Szabályok:**
   - Sémamódosításnál új számozott SQL fájl a `supabase/` mappába. Ha a nézet oszlopai változnak (a `t.*` is!), a
     nézetet újra kell létrehozni (`drop view` + `create view`).
@@ -467,7 +473,8 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
   szűrőgomb nevezi meg). Az adatlapon a kiválasztott állapotra / Mamára újra kattintva üres lesz.
 - A megnézett és az abbahagyott címek háttérbe húzódnak: fekete-fehér, fakó borító, tompított, de olvasható szöveg
   (`--watched-text`, ≥ 4,5:1) – nem az egész sor átlátszó. Rámutatáskor és fókusznál teljes színű.
-- **Két téma**: a sötét az alap (`:root`), a világos az `app/styles/02-vilagos.css`-ben. **Új színtokennél a
+- **Témák**: a sötét az alap (`:root`), a világos az `app/styles/02-vilagos.css`-ben (az OLED és a téka a sötétre /
+  saját fájlra épül – Téma szakasz). **Új színtokennél a
   világosba is kell érték**, és a kontrasztot mérd (`munka/terv-3/terv-50/kontraszt.mjs`, `VEGLEGES=1`). **Beégetett
   színt ne használj**: fátyol `rgb(var(--tint) / 0.05)`, árnyék `rgb(var(--shade) / calc(0.6 * var(--shade-k)))`,
   üveg `rgb(var(--glass) / 0.8)`, `::backdrop` `rgb(var(--scrim) / calc(0.62 * var(--scrim-k)))`; teli piros gomb
@@ -518,7 +525,7 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - **Felhasználói leírás** (`FELHASZNALOI-LEIRAS.md`): **időszakosan frissül, nem minden fejlesztés után**; a
   fejlesztés commitjában ne nyúlj hozzá. Frissítés Norbi kérésére: a leírás utolsó commitja óta készült változások
   (`git log $(git log -1 --format=%H -- FELHASZNALOI-LEIRAS.md)..HEAD`) alapján a szakaszok, a változott felület képei
-  (`eszkoz/proba-lista.mjs`, majd `leiras-kepek.mjs <név>`; a jelölők és a szöveg számai egyezzenek), az „Utolsó frissítés”
+  (`eszkoz/proba-lista.mjs`, majd `terv-3/33-leiras/leiras-kepek.mjs <név>`; a jelölők és a szöveg számai egyezzenek), az „Utolsó frissítés”
   dátuma, és a végén a **Mérföldkövek** (Norbi döntése: részletes változásnapló nincs – csak a nagyobb
   funkciók megjelenése, legújabb felül, egy sor naponta). Új funkció a meglévő számozott fejezetbe kerül, ne új
   fejezetbe (a számok eltolódnának). Norbi szemszögéből, pontos feliratokkal; tervezett funkció nem kerül bele.
@@ -556,7 +563,7 @@ Norbi döntései; a részletek a TERV.md-ben.
   szűrőgomb a még meg nem jelent filmekre; megjegyzés mező a felületen; kedvenc alkotók a
   Statisztikában (112), nyomtatható lista (115), visszaállítási próba (119), borítóválasztó az adatlapon (128), magyar korhatár az adatlapon (126);
   rendezés kritikusi értékelés szerint, RT / MC a kártyán és Mamánál (127); tömeges szerkesztés rácsban / telefonon,
-  tömeges értékelés, CSV a kijelöltekből (145).
+  tömeges értékelés, CSV a kijelöltekből (145); „Feliratos” jelzés (147 – a „Hol nézhető?” szűrő mellett nem kell).
 
 ## Fejlesztői megjegyzés
 - Ha a terminál nem ismeri a `node`/`npm` parancsot, a VS Code-ot újra kell indítani (a Node a

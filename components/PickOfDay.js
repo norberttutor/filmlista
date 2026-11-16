@@ -110,7 +110,8 @@ export default function PickOfDay({ pool, winner, spinKey, spinning, hidden, onA
         <b>A nap filmje</b>
         <span className="potd-day">· {day}</span>
         {/* pörgés közben nem tiltott (disabled), csak nem csinál semmit: a fókusz a gombon marad */}
-        {pool.length > 1 && (
+        {/* van-e más film (ha a napi filmet közben megnézetted, már nincs a készletben – akkor is lehet másikat) */}
+        {pool.some((t) => t.id !== winner.id) && (
           <button
             type="button"
             className="ghost potd-another"

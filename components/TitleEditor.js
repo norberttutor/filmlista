@@ -174,7 +174,10 @@ export default function TitleEditor({
     growFrom.current = null;
     if (!from) return;
     const dialog = dialogRef.current;
-    if (!picking && !document.activeElement?.closest('.potd-another')) {
+    // (csak ha a fókusz a sorsolón / sehol van – a pörgés közben máshová, pl. a „Bezárás”-ra vitt fókuszt nem veszi el)
+    const focused = document.activeElement;
+    const idle = !focused || focused === document.body || focused === dialog || focused.matches('section.potd');
+    if (!picking && idle) {
       dialog.querySelector('.editor-page:not([hidden]) h2')?.focus({ preventScroll: true });
     }
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -748,7 +751,13 @@ function TitlePage({
           )}
           {/* a cím, a végén a másolás-gomb (terv-3 146, „B”; telefonon a gomb nincs – components/CopyTitle.js). Az
               ablak neve a rejtett editor-title-name (a gomb neve ne kerüljön bele) */}
-          <h2 ref={titleRef} id={active ? 'editor-title' : undefined} tabIndex={-1}>
+          <h2
+            ref={titleRef}
+            id={active ? 'editor-title' : undefined}
+            tabIndex={-1}
+            // a címsor felolvasott neve is csak a cím (a gombé nélkül – K2.12)
+            aria-labelledby={active ? 'editor-title-name' : undefined}
+          >
             <TitleWithCopy title={t.title} done={copyTitle.done} onCopy={copyTitle.copy} />
           </h2>
           <span id={active ? 'editor-title-name' : undefined} hidden>

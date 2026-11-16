@@ -193,7 +193,8 @@ function syncPosters() {
   syncing = (async () => {
     do {
       syncAgain = false;
-      await syncOnce();
+      // egy kör hibája (pl. caches.open) ne vigye el a közben kért következőt (K2)
+      await syncOnce().catch(() => {});
     } while (syncAgain);
   })().finally(() => {
     syncing = null;

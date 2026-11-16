@@ -64,9 +64,9 @@ export async function POST(request) {
             .update(fields)
             .eq('id', t.id)
             .select('updated_at')
-            .single();
+            .maybeSingle(); // a közben törölt cím: nincs sora, kimarad (K2.3 – a .single() hibája leállította a frissítőt)
           if (updateError) throw updateError;
-          updated.push({ id: t.id, ...fields, updated_at: row.updated_at });
+          if (row) updated.push({ id: t.id, ...fields, updated_at: row.updated_at });
         } catch (err) {
           console.error(err);
           failed = true;

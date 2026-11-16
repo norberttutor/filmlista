@@ -28,6 +28,22 @@
     border-radius: 16px;
   }
 
+  /* a „Hol nézhető?” szűrő logói (terv-3 144) és a tömeges szerkesztés menüpontjai (terv-3 145) – K2 */
+  .provider-logo,
+  .provider-select option::before {
+    corner-shape: squircle;
+    border-radius: 7px;
+  }
+
+  .provider-select option:is([value=''], [value='none'])::before {
+    border-radius: 0;
+  }
+
+  .bulk-menu button {
+    corner-shape: squircle;
+    border-radius: 13px;
+  }
+
   .editor-poster {
     corner-shape: squircle;
     border-radius: 28px;
