@@ -18,6 +18,7 @@
 @import './styles/12-boritofal.css'; /* borítófal, meg nem jelent film */
 @import './styles/13-csillag.css'; /* csillagos értékelés */
 @import './styles/14-soros-nezet.css'; /* asztali lista (TitleTable) */
+@import './styles/14b-kijeloles.css'; /* tömeges szerkesztés: kijelölés, műveletsáv */
 @import './styles/15-evadok.css'; /* évadok */
 @import './styles/16-imdb-import.css'; /* IMDb import */
 @import './styles/17-lehuzas.css'; /* lehúzás frissítéshez */

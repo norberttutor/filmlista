@@ -53,6 +53,8 @@ import { useCollapsingHeader } from '@/components/list/useCollapsingHeader';
 import { useListView } from '@/components/list/useListView';
 import { useListChanges } from '@/components/list/useListChanges';
 import { useLiveTitles } from '@/components/list/useLiveTitles';
+import { useBulkEdit } from '@/components/list/useBulkEdit';
+import BulkBar from '@/components/BulkBar';
 import { anotherPick, dailyPick, pickPool } from '@/lib/pickOfDay';
 import { toast } from '@/lib/toast';
 
@@ -174,6 +176,19 @@ export default function Watchlist({ session }) {
   const { handleAdded, handleRowUpdated, requestDelete } = changes;
   const onUpdatedQuiet = (row) => handleRowUpdated(row, false); // a gyűjtemény-ablakokból: nem kérdez értékelést
 
+  // tömeges szerkesztés (terv-3 145, Norbi döntése): csak az asztali listanézetben, írható listán
+  const bulk = useBulkEdit({
+    enabled: listShown && isDesktop && view === 'list' && !readOnly,
+    visible,
+    paged,
+    filterKey,
+    statuses,
+    franchises,
+    rowOf: (id) => data.titlesRef.current.find((t) => t.id === id),
+    show: onUpdatedQuiet,
+    requestDelete,
+  });
+
   useLiveTitles(!loading && !readOnly && !failed, userId, {
     data,
     notes,
@@ -250,6 +265,8 @@ export default function Watchlist({ session }) {
       data-head-away={adding && !readOnly ? undefined : ''}
       // net nélkül a tiltott vezérlők halványabbak (CSS, átnézés J3)
       data-readonly={readOnly ? '' : undefined}
+      // van kijelölt cím (terv-3 145): minden sor jelölőnégyzete látszik, alul a műveletsáv
+      data-selecting={bulk.count > 0 ? '' : undefined}
     >
       <header className="top collapsing" ref={headRef}>
         {/* összecsukva a sáv bal szélén a kis cím (terv-3 99); felolvasónak a nagy cím elég */}
@@ -489,6 +506,7 @@ export default function Watchlist({ session }) {
               readOnly={readOnly}
               paging={paging}
               reflowKey={filterKey}
+              bulk={bulk}
             />
           ) : (
             <Reflow trigger={filterKey} boxRef={gridRef}>
@@ -518,6 +536,7 @@ export default function Watchlist({ session }) {
               docked={isDesktop} // asztalon lista- és rácsnézetben is az ablak alján (egységesen, Norbi kérése, 2026-10-15)
             />
           )}
+          {bulk.count > 0 && <BulkBar bulk={bulk} statuses={statuses} franchises={franchises} />}
         </>
       )}
 

@@ -1,0 +1,317 @@
+/* ---------- Tömeges szerkesztés (terv-3 145, Norbi döntése: „A” – látványterv: munka/terv-3/terv-145/) ----------
+   Az asztali listában a sor elején jelölőnégyzet (üresen csak rámutatva, mint a kuka; kijelölés közben mindegyik),
+   alul középen lebegő műveletsáv (components/BulkBar.js). */
+
+.titles-table .col-pick {
+  width: 3.1rem;
+  text-align: center;
+}
+
+.titles-table th.col-pick {
+  padding-left: 1rem;
+}
+
+/* a „Cím” fejléc balra (eddig az első oszlop volt; a többi fejléc középen áll) */
+.titles-table th.col-pick + th {
+  text-align: left;
+  padding-left: 0.45rem;
+}
+
+.titles-table td.col-pick {
+  padding-right: 0.15rem;
+}
+
+.titles-table td.col-pick + td.cell-title {
+  padding-left: 0.45rem;
+}
+
+@media (hover: hover) {
+  .titles-table td.col-pick input:not(:checked) {
+    opacity: 0;
+    transition: opacity 0.12s;
+  }
+
+  .titles-table tr:hover td.col-pick input,
+  .titles-table tr:focus-within td.col-pick input,
+  main[data-selecting] .titles-table td.col-pick input {
+    opacity: 1;
+  }
+}
+
+/* a kijelölt sor: halvány türkiz fátyol és türkiz szél (a kiválasztás színe) – a `main` előtag: a későbbi
+   hangulatszín (33-hangulatszin.css) sorháttere ne írja felül */
+main .titles-table tbody tr[data-selected] > td {
+  background: color-mix(in oklab, var(--accent) 9%, transparent);
+  border-color: var(--accent-line);
+}
+
+main .titles-table tbody tr[data-selected]:is(:hover, :has(:focus-visible)) > td {
+  background: color-mix(in oklab, var(--accent) 13%, transparent);
+}
+
+/* a lebegő sáv ne takarja az utolsó sort */
+main[data-selecting] .table-wrap {
+  padding-bottom: 7rem;
+}
+
+/* ---------- a műveletsáv ---------- */
+.bulk-bar {
+  --bulk-bar-h: 3.3rem;
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--docked-footer-h, 0px) + 1.25rem);
+  z-index: 40; /* a letapadt szűrősor (30) és a lapozó (26) fölött, az értesítősáv (60) alatt */
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  box-sizing: border-box;
+  min-height: var(--bulk-bar-h);
+  max-width: calc(100vw - 2rem);
+  padding: 0.4rem 0.45rem 0.4rem 0.4rem;
+  border-radius: 999px;
+  background: var(--surface-raised);
+  box-shadow:
+    0 0 0 1px var(--edge),
+    var(--shadow-pop);
+  animation: bulk-bar-in 0.18s ease-out;
+}
+
+@keyframes bulk-bar-in {
+  from {
+    opacity: 0;
+    translate: -50% 14px;
+  }
+}
+
+/* az értesítősáv a műveletsáv fölött (a 26-lapozo.css szabályánál erősebb) */
+body:has(main[data-docked]):has(.bulk-bar) .toaster {
+  bottom: calc(var(--docked-footer-h) + 1.25rem + 3.3rem + 0.6rem);
+}
+
+.bb-count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0 0.6rem 0 0.25rem;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.bb-count b {
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.bulk-bar .bb-all {
+  padding: 0.3rem 0.55rem;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.bulk-bar .bb-all:hover {
+  background: var(--hover-tint);
+}
+
+.bb-sep {
+  flex: none;
+  width: 1px;
+  height: 1.4rem;
+  margin-inline: 0.2rem;
+  background: var(--line);
+}
+
+.bb-act {
+  position: relative;
+}
+
+.bulk-bar .bb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.8rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.92rem;
+  white-space: nowrap;
+}
+
+.bulk-bar .bb-btn:hover,
+.bulk-bar .bb-btn[aria-expanded='true'] {
+  background: var(--hover-tint);
+}
+
+.bulk-bar .bb-btn:active {
+  background: var(--press-tint);
+}
+
+.bb-btn .filter-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--muted);
+}
+
+.bb-btn > svg:last-child:not(.filter-icon) {
+  color: var(--muted);
+}
+
+.bulk-bar .bb-btn.del,
+.bulk-bar .bb-btn.del .filter-icon {
+  color: var(--danger);
+}
+
+.bulk-bar .bb-x {
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+}
+
+.bulk-bar .bb-x:hover {
+  color: var(--text);
+  background: var(--hover-tint);
+}
+
+/* törlés előtti kérdés a sávon belül */
+.bb-confirm {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-left: 0.8rem;
+}
+
+.bb-question {
+  margin-right: 0.4rem;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+/* a műveletek lenyílója (a sáv fölé nyílik) */
+.bulk-menu {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.55rem);
+  z-index: 5;
+  translate: -50% 0;
+  display: grid;
+  min-width: 15rem;
+  max-height: min(60vh, 28rem);
+  overflow-y: auto;
+  padding: 0.35rem;
+  border-radius: 16px;
+  background: var(--surface-raised);
+  box-shadow:
+    0 0 0 1px var(--edge),
+    var(--shadow-pop);
+  animation: bulk-menu-in 0.14s ease-out;
+}
+
+@supports (corner-shape: squircle) {
+  .bulk-menu {
+    corner-shape: squircle;
+    border-radius: 20px;
+  }
+}
+
+@keyframes bulk-menu-in {
+  from {
+    opacity: 0;
+    scale: 0.97;
+  }
+}
+
+.bulk-menu button {
+  display: grid;
+  grid-template-columns: 1.4rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.93rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.bulk-menu button:is(:hover, :focus-visible):not([aria-disabled='true']) {
+  background: var(--hover-tint);
+}
+
+.bulk-menu button[aria-disabled='true'] {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.bulk-menu .why {
+  grid-column: 2 / -1;
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: normal;
+}
+
+.bulk-menu .n {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.bulk-menu .menu-sep {
+  height: 1px;
+  margin: 0.3rem 0.4rem;
+  background: var(--line);
+}
+
+.bulk-menu .filter-icon {
+  justify-self: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--muted);
+}
+
+.bulk-menu .mama-dot {
+  justify-self: center;
+}
+
+/* állapotpötty: az állapot színe; az alapállapot üres kör */
+.bulk-dot {
+  justify-self: center;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: var(--st);
+}
+
+.bulk-dot[data-status='to_watch'] {
+  box-shadow: inset 0 0 0 1.5px var(--muted);
+}
+
+.bulk-dot[data-status='watching'] {
+  --st: var(--st-watching);
+}
+
+.bulk-dot[data-status='watched'] {
+  --st: var(--st-watched);
+}
+
+.bulk-dot[data-status='dropped'] {
+  --st: var(--st-dropped);
+}

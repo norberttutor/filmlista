@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   updateTitle,
   externalLink,
@@ -44,14 +44,21 @@ export default function TitleTable({
   readOnly, // net nélkül (terv-3 44): a vezérlők letiltva
   paging, // lapozás után: a sorok egymás után úsznak be (terv-3 49.8)
   reflowKey, // ha változik (szűrés / rendezés): a sorok a helyükre csúsznak (terv-3 49.3)
+  bulk, // tömeges szerkesztés (terv-3 145, useBulkEdit): a sor elején jelölőnégyzet; csak olvasható listánál nincs
 }) {
   const wrapRef = useRef(null);
   const bodyRef = useRef(null);
+  const picking = bulk?.enabled;
   return (
     <div className="table-wrap" ref={wrapRef}>
       <table className="titles-table">
         <thead>
           <tr>
+            {picking && (
+              <th scope="col" className="col-pick">
+                <PageCheckbox bulk={bulk} />
+              </th>
+            )}
             <th scope="col">Cím</th>
             <th scope="col" className="col-check">
               Letöltve
@@ -87,12 +94,31 @@ export default function TitleTable({
                 onUpdated={onUpdated}
                 onDelete={onDelete}
                 readOnly={readOnly}
+                bulk={picking ? bulk : null}
+                picked={picking && bulk.isSelected(e.title.id)}
               />
             ))}
           </tbody>
         </Reflow>
       </table>
     </div>
+  );
+}
+
+// a fejléc jelölőnégyzete: az oldal minden címe ki / le; részleges kijelölésnél „határozatlan”
+function PageCheckbox({ bulk }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = bulk.pageState === 'some';
+  }, [bulk.pageState]);
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      aria-label="Az oldal minden címének kijelölése"
+      checked={bulk.pageState === 'all'}
+      onChange={bulk.togglePage}
+    />
   );
 }
 
@@ -119,6 +145,8 @@ function TitleRow({
   onUpdated,
   onDelete,
   readOnly, // net nélkül (terv-3 44): a vezérlők letiltva
+  bulk, // tömeges szerkesztés (terv-3 145): a jelölőnégyzet; null: nincs
+  picked, // a sor kijelölt
 }) {
   const [saveState, setSaveState] = useState(''); // '' | 'saving' | 'saved'
   const [error, setError] = useState('');
@@ -174,10 +202,23 @@ function TitleRow({
       data-release={release ? release.kind : undefined}
       data-draining={draining ? '' : undefined}
       data-img={t.backdrop_path ? '' : undefined}
+      data-selected={picked ? '' : undefined}
       style={{ ...ambientStyle, ...(t.backdrop_path && { '--row-img': `url(${BACKDROP_BASE}${t.backdrop_path})` }) }}
       {...ambientData}
       {...prefetch}
     >
+      {bulk && (
+        <td className="col-pick">
+          {/* a Shift a kattintás eseményén látszik (a change-én nem): Shift-kattintással tartomány az oldalon */}
+          <input
+            type="checkbox"
+            aria-label={`Kijelölés – ${t.title}`}
+            checked={picked}
+            onChange={() => {}}
+            onClick={(e) => bulk.toggle(t.id, e.shiftKey)}
+          />
+        </td>
+      )}
       <td className="cell-title">
         <div className="row-title">
           {/* a borítóra kattintva a szerkesztő ablak (részletek, hasonló címek) – mint a kártyán */}

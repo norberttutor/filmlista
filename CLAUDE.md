@@ -128,6 +128,16 @@ Soha ne használd a Supabase secret/service_role kulcsot a kliensben.
 - **Törlés visszavonással** (`requestDelete`): azonnal lekerül, 8 mp „Visszavonás”; az adatbázisból csak lejáratkor
   / ×-re törlődik. Nyitott ablak (pl. Színészek és rendezők) fölötti adatlapból a sáv és a visszaszámlálás az
   ablakok bezárásáig vár (`afterDialogs`). Mentés visszaállításakor a függő törlések elmaradnak.
+- **Tömeges szerkesztés** (terv-3 145, Norbi döntése: „A”; `components/list/useBulkEdit.js`, `components/BulkBar.js`,
+  `14b-kijeloles.css`): **csak az asztali listanézetben**, írható listán. A sor elején jelölőnégyzet (`td.col-pick` –
+  **ez az első cella, a `td:first-child` szabályok – állapotpálca, sarkok – ide esnek**), Shift-kattintás = tartomány
+  az oldalon; a fejlécé az oldalt jelöli, utána a sáv felajánlja az összes találatot. Kijelöléskor `main[data-selecting]`,
+  alul lebegő sáv: Állapot / Letöltve / Franchise / Mama / Törlés (megerősítés a sávon belül, utána a `requestDelete`
+  tömbbel – egy sáv). A kijelölés a művelet után marad, szűrésváltáskor a látható címekre szűkül, Esc törli. Mentés:
+  címenként `saveRow`, de egy kötegelt kérés (`updateTitlesBatch`) – az csak akkor indul, amikor minden érintett sor
+  sorra került. Visszavonás: a régi mezőértékek visszaírása. Évados sorozat: „Megnézve” = minden megjelent évad
+  (`markAllSeasonsWatched`), „Abbahagyva” közvetlenül; a többi állapot és a „Letöltve” kimarad (a sáv megmondja). A Mama
+  csak `mamaApplies`-nál. Teszt: `mukodes/tomeges-szerkesztes.mjs`.
 - **„Hogy tetszett?”**: táblázatból Megnézve-re váltott, értékelés nélküli címnél, csak a mentett sorra, egyszer; a
   szerkesztő ablakból nem.
 - **Lapozás**: 25 (telefon / keskeny rács), 10 (asztali lista), 22 (asztali rács); asztalon a lapozó és a lábléc
@@ -545,7 +555,8 @@ Norbi döntései; a részletek a TERV.md-ben.
   keresés (94), „Új” jelvény (96), franchise-idővonal (97), rezgés jelöléskor (98); epizódszintű követés;
   szűrőgomb a még meg nem jelent filmekre; megjegyzés mező a felületen; kedvenc alkotók a
   Statisztikában (112), nyomtatható lista (115), visszaállítási próba (119), borítóválasztó az adatlapon (128), magyar korhatár az adatlapon (126);
-  rendezés kritikusi értékelés szerint, RT / MC a kártyán és Mamánál (127).
+  rendezés kritikusi értékelés szerint, RT / MC a kártyán és Mamánál (127); tömeges szerkesztés rácsban / telefonon,
+  tömeges értékelés, CSV a kijelöltekből (145).
 
 ## Fejlesztői megjegyzés
 - Ha a terminál nem ismeri a `node`/`npm` parancsot, a VS Code-ot újra kell indítani (a Node a

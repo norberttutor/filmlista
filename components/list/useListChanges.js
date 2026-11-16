@@ -7,6 +7,7 @@ import StarRating from '@/components/StarRating';
 import {
   updateTitle,
   deleteTitle,
+  deleteTitles,
   registerPendingDelete,
   unregisterPendingDelete,
   createFranchise,
@@ -70,56 +71,78 @@ export function useListChanges({ data, keepShown, releaseFranchise, openFranchis
     };
   }, []);
 
-  function requestDelete(t) {
-    setTitles((ts) => ts.filter((x) => x.id !== t.id));
+  // target: egy cím, vagy (tömeges törlés, terv-3 145) címek tömbje – egy sávval, egyben visszavonható
+  function requestDelete(target) {
+    const list = Array.isArray(target) ? target : [target];
+    if (list.length === 0) return;
+    const gone = new Map(list.map((t) => [t.id, t])); // a még függő törlések (az újra felvett kikerül)
+    setTitles((ts) => ts.filter((x) => !gone.has(x.id)));
     // visszavonáskor a törléskori sor jön vissza, utána a friss: a függő törlés alatt érkezett távoli változást (pl. Mama
     // jelölését) az élő szinkron kihagyta (R17)
     const restore = () => {
-      setTitles((ts) => (ts.some((x) => x.id === t.id) ? ts : [t, ...ts]));
-      freshTitleRow(t.id).then((row) => {
-        if (!row || !titlesRef.current.some((x) => x.id === t.id)) return;
-        titlesRef.current = titlesRef.current.map((x) => (x.id === row.id ? row : x));
-        replaceTitle(row);
-      });
+      const back = [...gone.values()];
+      setTitles((ts) => [...back.filter((t) => !ts.some((x) => x.id === t.id)), ...ts]);
+      for (const t of back) {
+        freshTitleRow(t.id).then((row) => {
+          if (!row || !titlesRef.current.some((x) => x.id === t.id)) return;
+          titlesRef.current = titlesRef.current.map((x) => (x.id === row.id ? row : x));
+          replaceTitle(row);
+        });
+      }
     };
     let toastId = 0;
     let stopWaiting = null; // (nyitott ablak nélkül az afterDialogs rögtön hív – a lemondó ekkor még nincs meg)
     stopWaiting = afterDialogs(() => {
-      toastId = showDeleteToast(t, restore);
+      toastId = showDeleteToast(list, gone, restore);
       if (stopWaiting) waitingDeletes.current.delete(stopWaiting);
     });
     if (!toastId) waitingDeletes.current.add(stopWaiting);
-    // ha közben újra felveszed (kereső, Felfedezés…): a törlés elmarad, a sávot eltüntetjük, a
-    // sort a felvétel (handleAdded) teszi vissza (kódaudit #22)
-    registerPendingDelete(t, () => {
-      unregisterPendingDelete(t);
-      stopWaiting();
-      waitingDeletes.current.delete(stopWaiting);
-      if (toastId) dismissToast(toastId);
-    });
+    // ha közben újra felveszed (kereső, Felfedezés…): az ő törlése elmarad, a sort a felvétel (handleAdded) teszi
+    // vissza (kódaudit #22); ha már egy sem maradt, a sáv is eltűnik
+    for (const t of list) {
+      registerPendingDelete(t, () => {
+        unregisterPendingDelete(t);
+        gone.delete(t.id);
+        if (gone.size > 0) return;
+        stopWaiting();
+        waitingDeletes.current.delete(stopWaiting);
+        if (toastId) dismissToast(toastId);
+      });
+    }
   }
 
-  function showDeleteToast(t, restore) {
+  function showDeleteToast(list, gone, restore) {
+    const release = () => {
+      for (const t of gone.values()) unregisterPendingDelete(t);
+    };
     return toast({
       kind: 'delete',
-      text: (
-        <>
-          „<b>{t.title}</b>” lekerült a listáról
-        </>
-      ),
+      text:
+        list.length === 1 ? (
+          <>
+            „<b>{list[0].title}</b>” lekerült a listáról
+          </>
+        ) : (
+          <>
+            <b>{list.length} cím</b> lekerült a listáról
+          </>
+        ),
       action: {
         label: 'Visszavonás',
         onClick: () => {
-          unregisterPendingDelete(t);
+          release();
           restore();
         },
       },
       onExpire: () => {
-        unregisterPendingDelete(t);
-        noteLocalWrite(t.id); // a közben induló újratöltés válasza ne hozza vissza (B1)
-        deleteTitle(t.id).catch((err) => {
+        release();
+        const ids = [...gone.keys()];
+        if (ids.length === 0) return;
+        for (const id of ids) noteLocalWrite(id); // a közben induló újratöltés válasza ne hozza vissza (B1)
+        (ids.length === 1 ? deleteTitle(ids[0]) : deleteTitles(ids)).catch((err) => {
           restore();
-          toast({ text: `Nem sikerült törölni: „${t.title}”. ${err.message}` });
+          const what = ids.length === 1 ? `„${gone.get(ids[0]).title}”` : `${ids.length} címet`;
+          toast({ text: `Nem sikerült törölni: ${what}. ${err.message}` });
         });
       },
     });
