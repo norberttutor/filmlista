@@ -82,7 +82,8 @@
 }
 
 .tile[data-tile='watched'],
-.tile[data-tile='months'] {
+.tile[data-tile='months'],
+.tile[data-tile='recent'] {
   --tile: var(--c-sage);
 }
 
@@ -125,6 +126,10 @@
 
 .tile-4 {
   grid-column: span 4;
+}
+
+.tile-6 {
+  grid-column: 1 / -1;
 }
 
 .tile .big {
@@ -321,6 +326,100 @@
   margin-top: 0.4rem;
 }
 
+/* Legutóbb megnézett filmek: öt film egymás mellett (telefonon egymás alatt) – kis borító, cím, a
+   nézés napja és a saját értékelés borostyánban (saját jelölés) */
+.recent-films {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recent-films li {
+  display: grid;
+  grid-template-columns: 3.4rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.7rem;
+}
+
+.recent-films img,
+.recent-noposter {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  background: var(--line-soft);
+  border-radius: 8px;
+}
+
+@supports (corner-shape: squircle) {
+  .recent-films img,
+  .recent-noposter {
+    corner-shape: squircle;
+    border-radius: 13px;
+  }
+}
+
+.recent-text {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.recent-title {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.recent-text .sub {
+  font-size: 0.8rem;
+}
+
+.recent-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 700;
+  color: var(--accent-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.recent-rating small {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.tile .recent-rating svg {
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
+}
+
+@media (max-width: 900px) {
+  .recent-films {
+    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .recent-films {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.7rem;
+  }
+
+  .recent-films li {
+    grid-template-columns: 2.6rem minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 900px) {
   .bento {
     grid-template-columns: 1fr;
@@ -328,7 +427,8 @@
 
   .tile-2,
   .tile-3,
-  .tile-4 {
+  .tile-4,
+  .tile-6 {
     grid-column: auto;
   }
 }

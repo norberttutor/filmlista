@@ -7,6 +7,8 @@ import { useBackdropClose } from '@/lib/useBackdropClose';
 import { usePosterColor, franchisePosterPath } from '@/lib/posterColor';
 import { useTheme } from '@/lib/theme';
 import { tekaStamp } from '@/lib/teka';
+import { formatDate } from '@/lib/titles';
+import { Star } from '@/components/StarRating';
 import DialogClose from '@/components/DialogClose';
 
 const THUMB_BASE = 'https://image.tmdb.org/t/p/w154';
@@ -120,6 +122,40 @@ export default function StatsDialog({ titles, franchiseName, onClose }) {
             <h3 id="st-months">Havonta megnézett címek</h3>
             <MonthChart months={s.months} />
           </section>
+
+          {s.recentFilms.length > 0 && (
+            <section className="tile tile-6" data-tile="recent" aria-labelledby="st-recent">
+              <h3 id="st-recent">Legutóbb megnézett filmek</h3>
+              <ol className="recent-films">
+                {s.recentFilms.map((t) => (
+                  <li key={t.id}>
+                    {t.poster_path ? (
+                      <img src={THUMB_BASE + t.poster_path} alt="" loading="lazy" />
+                    ) : (
+                      <span className="recent-noposter" aria-hidden="true" />
+                    )}
+                    <span className="recent-text">
+                      <span className="recent-title" title={t.title}>
+                        {t.title}
+                      </span>
+                      <time className="sub" dateTime={t.watched_at}>
+                        {formatDate(t.watched_at)}
+                      </time>
+                      {t.my_rating ? (
+                        <span className="recent-rating" aria-label={`Értékelésed: ${t.my_rating}/10`}>
+                          <Star />
+                          {t.my_rating}
+                          <small>/10</small>
+                        </span>
+                      ) : (
+                        <span className="sub">Nincs értékelve</span>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
 
           <section className="tile tile-3" data-tile="genres" aria-labelledby="st-genres">
             <h3 id="st-genres">Műfajok a listán</h3>
