@@ -27,6 +27,8 @@ const TABS = [
 // Címenként sorba állítva: gyors kattintásoknál (jelölés + visszavonás) a kérések sorrendje
 // így biztosan az, amit a felület mutat.
 const markQueues = new Map();
+// a befejeződött jelölések száma: a csendes újratöltés ebből látja, hogy a kérése alatt mentődött-e jelölés
+let marksDone = 0;
 
 // a kieső sor mozgása (Reflow exit): „Nem érdekel” – balra kiúszik; „Érdekel” – elhalványul (a borítója közben a
 // fülhöz repül)
@@ -57,7 +59,10 @@ async function sendMark(id, choice) {
 function mamaMark(id, choice) {
   const run = (markQueues.get(id) ?? Promise.resolve()).catch(() => {}).then(() => sendMark(id, choice));
   markQueues.set(id, run);
-  const done = () => markQueues.get(id) === run && markQueues.delete(id);
+  const done = () => {
+    marksDone++;
+    if (markQueues.get(id) === run) markQueues.delete(id);
+  };
   run.then(done, done);
   return run;
 }
@@ -104,14 +109,17 @@ export default function MamaView() {
   // silent: csendes újratöltés (visszatéréskor) – hibánál a meglévő lista marad, hibasáv nélkül
   async function load(silent = false) {
     if (!silent) setLoadError('');
+    const busyAtStart = markQueues.size > 0;
+    const doneAtStart = marksDone;
     const { data, error } = await supabase.rpc('mama_list');
     if (error) {
       reportError(error);
       if (!silent) setLoadError('Nem sikerült betölteni a filmeket. Ellenőrizd az internetkapcsolatot, és próbáld újra.');
       return;
     }
-    // menet közbeni jelölésnél a szerver még a régit adhatná: a felület marad, ahogy van
-    if (silent && markQueues.size > 0) return;
+    // ha a kérés alatt jelölés futott vagy mentődött, a válasz a jelölés előtti lehet: a felület marad, ahogy van
+    // (a kérés indulásakor / végén függő, vagy közben befejeződött jelölés)
+    if (silent && (busyAtStart || markQueues.size > 0 || marksDone !== doneAtStart)) return;
     setList(data);
   }
 
