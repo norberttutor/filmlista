@@ -295,7 +295,9 @@ Norbi filmjeit látja és jelöli. Az adatmodell felhasználónként elkülöní
     `<dialog>`-okat MutationObserver kezeli – **új ablakhoz nem kell semmi**; saját szabály: `dialog.backHandler` →
     'stay' | 'stepped' | 'closing'; nem dialog réteg: `useBackLayer(open, close)`. **Android**: nyitott modális
     ablaknál a vissza-gesztus `cancel`-ként jut az ablakhoz, ezért az adatlap `closedby="none"`, az Esc-et `keydown`
-    kezeli, a lapjai saját bejegyzést kapnak (`pushDialogPage` / `popDialogPage`). **A bejegyzések
+    kezeli, a lapjai saját bejegyzést kapnak (`pushDialogPage` / `popDialogPage`). Egy `closedby="none"` ablak alatt a
+    figyelő a többi nyitott ablakot is `none`-ra állítja, amíg az felül van (különben a gesztus az alsóhoz menne
+    bezárási kérésként, és semmi nem történne – pl. a Toplisták fölötti adatlap). **A bejegyzések
     `scrollRestoration = 'manual'`-lal** (`pushOwn`) – különben a réteg bezárásakor a lap a nyitásakori helyre ugrana.
 - `public/sw.js` + `lib/offline.js`: service worker (csak kiadott változatban); az `/api` és a Supabase nem
   tárolódik. A borítótároló a tárolt listából dönt: `LIST_SIZES` w342 / w185 – **a `PosterCard` / `TitleTable` /
